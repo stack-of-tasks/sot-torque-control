@@ -1,0 +1,1 @@
+rosrun dynamic_graph_bridge run_command
