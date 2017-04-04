@@ -31,6 +31,7 @@ SET(CUSTOM_HEADER_DIR "sot/torque-control")
 # Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
 #add_compile_options(-std=c++11) # CMake 2.8.12 or newer
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 SET(PKG_CONFIG_ADDITIONAL_VARIABLES
   ${PKG_CONFIG_ADDITIONAL_VARIABLES}
@@ -72,6 +73,7 @@ SET(robot_name_sources
 #SET(license_file_robot ${data_robot_dir}/hrp2_14_license_file.txt)
 #SET(urdf_file_robot $ENV{ROS_WORKSPACE}/stacks/hrp2/hrp2_14_description/urdf/hrp2_14_reduced_no_fixed.urdf)
 #message (STATUS ${METAPODFROMURDF_EXECUTABLE} " --name " hrp2_14 " --libname " ${lib_robot_name} " --directory " ${dir_robot} " --config-file " ${config_file_robot} " --license-file " ${license_file_robot} " " ${urdf_file_robot})
+include_directories(hrp2-torque-control/include)
 ADD_LIBRARY(${lib_robot_name} SHARED ${robot_name_sources})
 # Install the generated files
 INSTALL(FILES ${robot_name_sources} DESTINATION include/metapod/models/hrp2_14)
@@ -80,6 +82,7 @@ INSTALL(TARGETS ${lib_robot_name} DESTINATION lib)
 
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
+
 
 SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/joint-torque-controller.hh
