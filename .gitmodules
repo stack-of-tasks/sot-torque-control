@@ -1,6 +1,6 @@
 [submodule "cmake"]
 	path = cmake
-	url = ssh://git@github.com:jrl-umi3218/jrl-cmakemodules.git
+	url = git://github.com/jrl-umi3218/jrl-cmakemodules.git
 [submodule "hrp2-torque-control"]
 	path = hrp2-torque-control
 	url = ssh://git@redmine.laas.fr/laas/sot-torque-control/hrp2-torque-control.git
