@@ -4,8 +4,8 @@
 @author: Andrea Del Prete
 """
 
-from create_entities_utils import *
-from hrp2_motors_parameters import *
+from dynamic_graph.sot.torque_control.create_entities_utils import *
+from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 
 ''' Main function to call before starting the graph. '''
 def main_pre_start_pwm(robot,dt=0.001,delay=0.01, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
