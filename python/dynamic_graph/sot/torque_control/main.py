@@ -11,6 +11,7 @@ from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 def main_pre_start_pwm(robot,dt=0.001,delay=0.01, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
     robot.device.setControlInputType('position');
     traj_gen        = create_trajectory_generator(robot.device, dt);
+    com_traj_gen    = create_com_traj_gen(dt);
     estimator       = create_estimator(robot.device, dt, delay, traj_gen);
 
     ff_locator      = create_free_flyer_locator(robot.device, estimator, urdfFileName, robot.dynamic);
@@ -20,13 +21,13 @@ def main_pre_start_pwm(robot,dt=0.001,delay=0.01, urdfFileName='/opt/openrobots/
     pos_ctrl        = create_position_controller(robot.device, estimator, dt, traj_gen);
     torque_ctrl     = create_torque_controller(robot.device, estimator);    
 #    inv_dyn         = create_inverse_dynamics(robot.device, estimator, torque_ctrl, traj_gen, dt);    
-    inv_dyn         = create_balance_controller(robot.device, floatingBase, estimator, torque_ctrl, traj_gen, urdfFileName, dt);    
+    inv_dyn         = create_balance_controller(robot.device, floatingBase, estimator, torque_ctrl, traj_gen, com_traj_gen, urdfFileName, dt);    
     ctrl_manager    = create_ctrl_manager(robot.device, torque_ctrl, pos_ctrl, inv_dyn, estimator, dt);
     
 
     estimator.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
-    return (estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,ff_locator,flex_est,floatingBase);
+    return (estimator,torque_ctrl,traj_gen,com_traj_gen,ctrl_manager,inv_dyn,pos_ctrl,ff_locator,flex_est,floatingBase);
 
 ''' Main function to call before starting the graph. '''
 def main_pre_start_pwm_noTorqueControl(robot,dt=0.001,delay=0.01):
