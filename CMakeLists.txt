@@ -159,15 +159,29 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_LIBRARIES})
 INSTALL(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 FINDPYTHON()
-INSTALL(FILES python/main.py
-              python/create_entities_utils.py
-              python/main_sim.py
-              python/identification/identification_utils.py
-              hrp2-torque-control/python/config/hrp2_motors_parameters.py
-              hrp2-torque-control/python/config/hrp2_joint_pos_ctrl_gains.py
-              hrp2-torque-control/python/config/balance_ctrl_conf.py
-              hrp2-torque-control/python/config/balance_ctrl_sim_conf.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/)
+INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
+              python/dynamic_graph/sot/torque_control/main.py
+              python/dynamic_graph/sot/torque_control/create_entities_utils.py
+              python/dynamic_graph/sot/torque_control/main_sim.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
+         
+INSTALL(FILES python/dynamic_graph/sot/torque_control/identification/__init__.py
+              python/dynamic_graph/sot/torque_control/identification/identification_utils.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/identification)
+         
+INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
+              python/dynamic_graph/sot/torque_control/utils/plot_utils.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
+         
+INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+         
+INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/__init__.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/motors_parameters.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/hrp2)
 
 ADD_SUBDIRECTORY(src)
 

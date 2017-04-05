@@ -14,9 +14,9 @@ from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.position_controller import PositionController
 from dynamic_graph.tracer_real_time import TracerRealTime
-from dynamic_graph.sot.torque_control.config.hrp2_motors_parameters import NJ
-from dynamic_graph.sot.torque_control.config.hrp2_motors_parameters import *
-from dynamic_graph.sot.torque_control.config.hrp2_joint_pos_ctrl_gains import *
+from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
+from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
+from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
 def create_free_flyer_locator(device, estimator, urdf, dynamic=None):
     from dynamic_graph.sot.torque_control.free_flyer_locator import FreeFlyerLocator
@@ -159,7 +159,7 @@ def create_balance_controller(device, floatingBase, estimator, torque_ctrl, traj
     plug(ctrl.tau_des,                      torque_ctrl.jointsTorquesDesired);
     plug(ctrl.tau_des,                      estimator.tauDes);
 
-    import balance_ctrl_conf as conf
+    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
     ctrl.com_ref_pos.value = conf.COM_DES;
     ctrl.com_ref_vel.value = 3*(0.0,);
     ctrl.com_ref_acc.value = 3*(0.0,);

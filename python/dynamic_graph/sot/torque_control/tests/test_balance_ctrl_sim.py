@@ -7,16 +7,16 @@
 import numpy as np
 from numpy.linalg import norm
 from dynamic_graph import plug
-from create_entities_utils import NJ
+from dynamic_graph.sot.torque_control.create_entities_utils import NJ
 from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
-from dynamic_graph.sot.torque_control.hrp2_device_torque_ctrl import HRP2DeviceTorqueCtrl
+#from dynamic_graph.sot.torque_control.hrp2_device_torque_ctrl import HRP2DeviceTorqueCtrl
 from dynamic_graph.sot.core.robot_simu import RobotSimu
-from create_entities_utils import *
+from dynamic_graph.sot.torque_control.create_entities_utils import *
 from time import sleep
 
 from pinocchio_inv_dyn.simulator import Simulator
 from pinocchio_inv_dyn.robot_wrapper import RobotWrapper
-import test_balance_ctrl_sim_conf as conf
+import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as conf
 from pinocchio.utils import zero as mat_zeros
 from pinocchio import Quaternion
 from pinocchio.rpy import rpyToMatrix

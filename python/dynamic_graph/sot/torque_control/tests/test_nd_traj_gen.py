@@ -9,8 +9,8 @@ import numpy as np
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
 from time import sleep
-from plot_utils import create_empty_figure
-import plot_utils
+from dynamic_graph.sot.torque_control.utils.plot_utils import create_empty_figure
+import dynamic_graph.sot.torque_control.utils.plot_utils
 import matplotlib.pyplot as plt    
 
 def main(dt):
