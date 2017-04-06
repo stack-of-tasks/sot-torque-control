@@ -518,6 +518,7 @@ namespace dynamicgraph
         }
         if(s.size()!=2)
           s.resize(2);
+
         m_f_des_right_footSOUT(iter);
         if(fabs(m_f_RF(2)>1.0))
         {
@@ -571,6 +572,7 @@ namespace dynamicgraph
         {
           m_zmp_RF(0) = -m_f_RF(4) / m_f_RF(2);
           m_zmp_RF(1) =  m_f_RF(3) / m_f_RF(2);
+          m_zmp_RF(2) = -H_rf.translation()(2);
         }
         else
           m_zmp_RF.setZero();
@@ -597,6 +599,7 @@ namespace dynamicgraph
         {
           m_zmp_LF(0) = -m_f_LF(4) / m_f_LF(2);
           m_zmp_LF(1) =  m_f_LF(3) / m_f_LF(2);
+          m_zmp_LF(2) = -H_lf.translation()(2);
         }
         else
           m_zmp_LF.setZero();
