@@ -78,17 +78,17 @@ namespace dynamicgraph {
         void resetIntegral();
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_IN(jointsVelocities, ml::Vector);
-        DECLARE_SIGNAL_IN(qRef,             ml::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            ml::Vector);
-        DECLARE_SIGNAL_IN(Kp,               ml::Vector);  /// joint proportional gains
-        DECLARE_SIGNAL_IN(Kd,               ml::Vector);  /// joint derivative gains
-        DECLARE_SIGNAL_IN(Ki,               ml::Vector);  /// joint integral gains
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(jointsVelocities, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(qRef,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(Kp,               dynamicgraph::Vector);  /// joint proportional gains
+        DECLARE_SIGNAL_IN(Kd,               dynamicgraph::Vector);  /// joint derivative gains
+        DECLARE_SIGNAL_IN(Ki,               dynamicgraph::Vector);  /// joint integral gains
 
-        DECLARE_SIGNAL_OUT(pwmDes,      ml::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
+        DECLARE_SIGNAL_OUT(pwmDes,      dynamicgraph::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
         // DEBUG SIGNALS
-        DECLARE_SIGNAL_OUT(qError,      ml::Vector);  /// qRef-q
+        DECLARE_SIGNAL_OUT(qError,      dynamicgraph::Vector);  /// qRef-q
 
 
         /* --- COMMANDS --- */

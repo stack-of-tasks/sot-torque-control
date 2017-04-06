@@ -67,20 +67,20 @@ namespace dynamicgraph {
         void init(const double& dt);
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_OUT(q,               ml::Vector);
-        DECLARE_SIGNAL_OUT(dq,              ml::Vector);
-        DECLARE_SIGNAL_OUT(ddq,             ml::Vector);
-        DECLARE_SIGNAL(fRightFoot, OUT,     ml::Vector);
-        DECLARE_SIGNAL(fLeftFoot,  OUT,     ml::Vector);
-        DECLARE_SIGNAL(fRightHand, OUT,     ml::Vector);
-        DECLARE_SIGNAL(fLeftHand,  OUT,     ml::Vector);
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(q,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(dq,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(ddq,             dynamicgraph::Vector);
+        DECLARE_SIGNAL(fRightFoot, OUT,     dynamicgraph::Vector);
+        DECLARE_SIGNAL(fLeftFoot,  OUT,     dynamicgraph::Vector);
+        DECLARE_SIGNAL(fRightHand, OUT,     dynamicgraph::Vector);
+        DECLARE_SIGNAL(fLeftHand,  OUT,     dynamicgraph::Vector);
 
       protected:
-        DECLARE_SIGNAL_OUT_FUNCTION(fRightFoot, ml::Vector);
-        DECLARE_SIGNAL_OUT_FUNCTION(fLeftFoot,  ml::Vector);
-        DECLARE_SIGNAL_OUT_FUNCTION(fRightHand, ml::Vector);
-        DECLARE_SIGNAL_OUT_FUNCTION(fLeftHand,  ml::Vector);
+        DECLARE_SIGNAL_OUT_FUNCTION(fRightFoot, dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT_FUNCTION(fLeftFoot,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT_FUNCTION(fLeftHand,  dynamicgraph::Vector);
 
       public:
 
@@ -126,7 +126,7 @@ namespace dynamicgraph {
          * @param fFinal The 6d force corresponding to the max amplitude of the sinusoid [N/Nm].
          * @param time The time to go from 0 to fFinal [sec].
          */
-//        void startForceSinusoid(const std::string& forceName, const ml::Vector& fFinal, const double& time);
+//        void startForceSinusoid(const std::string& forceName, const dynamicgraph::Vector& fFinal, const double& time);
         void startForceSinusoid(const std::string& forceName, const int& axis, const double& fFinal, const double& time);
 
         /** Start a linear-chirp trajectory, that is a sinusoidal trajectory with frequency
@@ -199,7 +199,7 @@ namespace dynamicgraph {
         std::vector<MinimumJerkTrajectoryGenerator*> m_minJerkTrajGen_force;
         std::vector<LinearChirpTrajectoryGenerator*> m_linChirpTrajGen_force;
 
-        bool generateReferenceForceSignal(const std::string& forceName, int fid, ml::Vector& s, int iter);
+        bool generateReferenceForceSignal(const std::string& forceName, int fid, dynamicgraph::Vector& s, int iter);
 
         bool convertJointNameToJointId(const std::string& name, unsigned int& id);
         bool convertForceNameToForceId(const std::string& name, unsigned int& id);

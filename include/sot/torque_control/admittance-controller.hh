@@ -78,28 +78,28 @@ namespace dynamicgraph {
         void init(const double& dt);
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_IN(jointsVelocities, ml::Vector);
-        DECLARE_SIGNAL_IN(Kd,               ml::Vector);
-        DECLARE_SIGNAL_IN(Kf,               ml::Vector);
-        DECLARE_SIGNAL_IN(fRightFootRef,    ml::Vector); /// 6d reference force
-        DECLARE_SIGNAL_IN(fLeftFootRef,     ml::Vector); /// 6d reference force
-        DECLARE_SIGNAL_IN(fRightHandRef,    ml::Vector); /// 6d reference force
-        DECLARE_SIGNAL_IN(fLeftHandRef,     ml::Vector); /// 6d reference force
-        DECLARE_SIGNAL_IN(fRightFoot,       ml::Vector); /// 6d estimated force
-        DECLARE_SIGNAL_IN(fLeftFoot,        ml::Vector); /// 6d estimated force
-        DECLARE_SIGNAL_IN(fRightHand,       ml::Vector); /// 6d estimated force
-        DECLARE_SIGNAL_IN(fLeftHand,        ml::Vector); /// 6d estimated force
-        DECLARE_SIGNAL_IN(controlledJoints, ml::Vector); /// mask with 1 for controlled joints, 0 otherwise
-        DECLARE_SIGNAL_IN(damping,          ml::Vector); /// damping factors used for the 4 end-effectors
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(jointsVelocities, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(Kd,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(Kf,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(fRightFootRef,    dynamicgraph::Vector); /// 6d reference force
+        DECLARE_SIGNAL_IN(fLeftFootRef,     dynamicgraph::Vector); /// 6d reference force
+        DECLARE_SIGNAL_IN(fRightHandRef,    dynamicgraph::Vector); /// 6d reference force
+        DECLARE_SIGNAL_IN(fLeftHandRef,     dynamicgraph::Vector); /// 6d reference force
+        DECLARE_SIGNAL_IN(fRightFoot,       dynamicgraph::Vector); /// 6d estimated force
+        DECLARE_SIGNAL_IN(fLeftFoot,        dynamicgraph::Vector); /// 6d estimated force
+        DECLARE_SIGNAL_IN(fRightHand,       dynamicgraph::Vector); /// 6d estimated force
+        DECLARE_SIGNAL_IN(fLeftHand,        dynamicgraph::Vector); /// 6d estimated force
+        DECLARE_SIGNAL_IN(controlledJoints, dynamicgraph::Vector); /// mask with 1 for controlled joints, 0 otherwise
+        DECLARE_SIGNAL_IN(damping,          dynamicgraph::Vector); /// damping factors used for the 4 end-effectors
 
-        DECLARE_SIGNAL_OUT(qDes,              ml::Vector);  /// integral of dqDes
+        DECLARE_SIGNAL_OUT(qDes,              dynamicgraph::Vector);  /// integral of dqDes
         // DEBUG SIGNALS
-        DECLARE_SIGNAL_OUT(dqDes,             ml::Vector);  /// dqDes = J^+ * Kf * (fRef-f)
-        DECLARE_SIGNAL_OUT(fRightFootError,   ml::Vector);  /// fRef-f
-        DECLARE_SIGNAL_OUT(fLeftFootError,    ml::Vector);  /// fRef-f
-        DECLARE_SIGNAL_OUT(fRightHandError,   ml::Vector);  /// fRef-f
-        DECLARE_SIGNAL_OUT(fLeftHandError,    ml::Vector);  /// fRef-f
+        DECLARE_SIGNAL_OUT(dqDes,             dynamicgraph::Vector);  /// dqDes = J^+ * Kf * (fRef-f)
+        DECLARE_SIGNAL_OUT(fRightFootError,   dynamicgraph::Vector);  /// fRef-f
+        DECLARE_SIGNAL_OUT(fLeftFootError,    dynamicgraph::Vector);  /// fRef-f
+        DECLARE_SIGNAL_OUT(fRightHandError,   dynamicgraph::Vector);  /// fRef-f
+        DECLARE_SIGNAL_OUT(fLeftHandError,    dynamicgraph::Vector);  /// fRef-f
 
 
         /* --- COMMANDS --- */
