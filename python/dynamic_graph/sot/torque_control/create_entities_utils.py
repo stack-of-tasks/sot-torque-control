@@ -295,7 +295,7 @@ def create_ros_topics(robot=None, estimator=None, torque_ctrl=None, traj_gen=Non
         create_topic(ros, robot.device.currents,        'currents');
 #        create_topic(ros, robot.device.forceRARM,       'forceRARM');
 #        create_topic(ros, robot.device.forceLARM,       'forceLARM');
-        robot.device.after.addDownsampledSignal('rosImport.trigger',1);
+        robot.device.after.addDownsampledSignal('rosPublish.trigger',1);
 
     if(estimator!=None):
         create_topic(ros, estimator.jointsVelocities,               'jointsVelocities');
