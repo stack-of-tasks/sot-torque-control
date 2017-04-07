@@ -1,4 +1,4 @@
-/*
+k/*
  * Copyright 2017, Andrea Del Prete, LAAS-CNRS
  *
  * This file is part of sot-torque-control.
@@ -219,21 +219,7 @@ namespace dynamicgraph
         const VectorN& rotor_inertias = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios = m_gear_ratiosSIN(0);
 
-
-	//TODO: Remove asserts
-        assert(contactPoints.rows()==3 && contactPoints.cols()==4);
-
-        assert(contactNormal.size()==3);
-        assert(kp_contact.size()==6);
-        assert(kd_contact.size()==6);
-        assert(kp_com.size()==3);
-        assert(kd_com.size()==3);
-        assert(kp_posture.size()==N_JOINTS);
-        assert(kd_posture.size()==N_JOINTS);
-        assert(rotor_inertias.size()==N_JOINTS);
-        assert(gear_ratios.size()==N_JOINTS);
-
-        const double & w_com = m_w_comSIN(0);
+	const double & w_com = m_w_comSIN(0);
         const double & w_posture = m_w_postureSIN(0);
 //        const double & w_base_orientation = m_w_base_orientationSIN(0);
 //        const double & w_torques = m_w_torquesSIN(0);
@@ -357,37 +343,21 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
-        assert(q_sot.size()==N_JOINTS+6);
         const VectorN6& v_sot = m_vSIN(iter);
-        assert(v_sot.size()==N_JOINTS+6);
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
-        assert(x_com_ref.size()==3);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
-        assert(dx_com_ref.size()==3);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
-        assert(ddx_com_ref.size()==3);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-        assert(q_ref.size()==N_JOINTS);
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==N_JOINTS);
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-        assert(ddq_ref.size()==N_JOINTS);
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
-        assert(kp_contact.size()==6);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
-        assert(kd_contact.size()==6);
         const Vector3& kp_com = m_kp_comSIN(iter);
-        assert(kp_com.size()==3);
         const Vector3& kd_com = m_kd_comSIN(iter);
-        assert(kd_com.size()==3);
         const VectorN& kp_posture = m_kp_postureSIN(iter);
-        assert(kp_posture.size()==N_JOINTS);
         const VectorN& kd_posture = m_kd_postureSIN(iter);
-        assert(kd_posture.size()==N_JOINTS);
         const VectorN& kp_pos = m_kp_posSIN(iter);
-        assert(kp_pos.size()==N_JOINTS);
         const VectorN& kd_pos = m_kd_posSIN(iter);
-        assert(kd_pos.size()==N_JOINTS);
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
