@@ -139,7 +139,11 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(zmp_des_right_foot_local,  dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des_left_foot_local,   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_right_foot,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_left_foot,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(com,                       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(com_vel,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(base_orientation,          dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_pos,             dynamicgraph::Vector);
@@ -179,13 +183,18 @@ namespace dynamicgraph {
         pininvdyn::trajectories::TrajectorySample       m_sampleCom;
         pininvdyn::trajectories::TrajectorySample       m_samplePosture;
 
-        pininvdyn::math::Vector  m_dv_sot;
-        pininvdyn::math::Vector  m_f;         /// force coefficients (24d)
-        pininvdyn::math::Vector6 m_f_RF;      /// 6d wrench right foot
-        pininvdyn::math::Vector6 m_f_LF;      /// 6d wrench left foot
-        pininvdyn::math::Vector3 m_zmp_LF;    /// 3d zmp left foot
-        pininvdyn::math::Vector3 m_zmp_RF;    /// 3d zmp left foot
-        pininvdyn::math::Vector3 m_zmp;       /// 3d global zmp
+        pininvdyn::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
+        pininvdyn::math::Vector  m_f;                   /// desired force coefficients (24d)
+        pininvdyn::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
+        pininvdyn::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
+        pininvdyn::math::Vector3 m_zmp_des_LF;          /// 3d desired zmp left foot
+        pininvdyn::math::Vector3 m_zmp_des_RF;          /// 3d desired zmp left foot
+        pininvdyn::math::Vector3 m_zmp_des_LF_local;    /// 3d desired zmp left foot expressed in local frame
+        pininvdyn::math::Vector3 m_zmp_des_RF_local;    /// 3d desired zmp left foot expressed in local frame
+        pininvdyn::math::Vector3 m_zmp_des;             /// 3d desired global zmp
+        pininvdyn::math::Vector3 m_zmp_LF;              /// 3d zmp left foot
+        pininvdyn::math::Vector3 m_zmp_RF;              /// 3d zmp left foot
+        pininvdyn::math::Vector3 m_zmp;                 /// 3d global zmp
         pininvdyn::math::Vector  m_tau_sot;
         pininvdyn::math::Vector  m_q_urdf;
         pininvdyn::math::Vector  m_v_urdf;

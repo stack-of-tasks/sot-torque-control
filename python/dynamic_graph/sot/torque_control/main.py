@@ -7,9 +7,11 @@
 from dynamic_graph.sot.torque_control.create_entities_utils import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import *
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
+from time import sleep
 
 ''' Main function to call before starting the graph. '''
-def main_pre_start(robot,dt=0.001,delay=0.01, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
+def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
+    dt = robot.timeStep;
     robot.device.setControlInputType('position');
     traj_gen        = create_trajectory_generator(robot.device, dt);
     com_traj_gen    = create_com_traj_gen(dt);
@@ -27,6 +29,16 @@ def main_pre_start(robot,dt=0.001,delay=0.01, urdfFileName='/opt/openrobots/shar
     
     estimator.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
+    if(startSoT):
+        print "Gonna start SoT";
+        sleep(1.0);
+        start_sot();
+
+        if(go_half_sitting):
+            print "Gonna go to half sitting";
+            sleep(1.0);
+            go_to_position(traj_gen, robot.halfSitting[6:], 10.0);
+
     return Bunch(estimator=estimator, torque_ctrl=torque_ctrl, traj_gen=traj_gen, com_traj_gen=com_traj_gen, ctrl_manager=ctrl_manager, inv_dyn=inv_dyn, pos_ctrl=pos_ctrl, ff_locator=ff_locator, flex_est=flex_est, floatingBase=floatingBase);
 
     
