@@ -101,7 +101,11 @@ namespace dynamicgraph
                            << m_zmp_des_right_foot_localSOUT \
                            << m_zmp_des_left_foot_localSOUT \
                            << m_zmp_desSOUT \
+                           << m_zmp_right_footSOUT \
+                           << m_zmp_left_footSOUT \
+                           << m_zmpSOUT \
                            << m_comSOUT \
+                           << m_com_velSOUT \
                            << m_base_orientationSOUT \
                            << m_right_foot_posSOUT \
                            << m_left_foot_posSOUT \
@@ -174,8 +178,15 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_left_foot_local,    ml::Vector, m_f_des_left_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des,                    ml::Vector, m_zmp_des_left_footSOUT<<
                                                                           m_zmp_des_right_footSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(zmp_right_foot,             ml::Vector, m_wrench_right_footSIN)
+            ,CONSTRUCT_SIGNAL_OUT(zmp_left_foot,              ml::Vector, m_wrench_left_footSIN)
+            ,CONSTRUCT_SIGNAL_OUT(zmp,                        ml::Vector, m_wrench_left_footSIN<<
+                                                                          m_wrench_right_footSIN<<
+                                                                          m_zmp_left_footSOUT<<
+                                                                          m_zmp_right_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(dv_des,                     ml::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com,                        ml::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(com_vel,                    ml::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           ml::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              ml::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             ml::Vector, m_tau_desSOUT)
@@ -188,6 +199,11 @@ namespace dynamicgraph
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
+        m_zmp_des_RF.setZero();
+        m_zmp_des_LF.setZero();
+        m_zmp_des_RF_local.setZero();
+        m_zmp_des_LF_local.setZero();
+        m_zmp_des.setZero();
         m_zmp_RF.setZero();
         m_zmp_LF.setZero();
         m_zmp.setZero();
@@ -522,14 +538,15 @@ namespace dynamicgraph
         m_f_des_right_footSOUT(iter);
         if(fabs(m_f_RF(2)>1.0))
         {
-          m_zmp_RF(0) = -m_f_RF(4) / m_f_RF(2);
-          m_zmp_RF(1) =  m_f_RF(3) / m_f_RF(2);
+          m_zmp_des_RF_local(0) = -m_f_RF(4) / m_f_RF(2);
+          m_zmp_des_RF_local(1) =  m_f_RF(3) / m_f_RF(2);
+          m_zmp_des_RF_local(2) = 0.0;
         }
         else
-          m_zmp_RF.setZero();
+          m_zmp_des_RF_local.setZero();
 
-        s(0) = m_zmp_RF(0);
-        s(1) = m_zmp_RF(1);
+        s(0) = m_zmp_des_RF_local(0);
+        s(1) = m_zmp_des_RF_local(1);
         return s;
       }
 
@@ -545,14 +562,15 @@ namespace dynamicgraph
         m_f_des_left_footSOUT(iter);
         if(fabs(m_f_LF(2)>1.0))
         {
-          m_zmp_LF(0) = -m_f_LF(4) / m_f_LF(2);
-          m_zmp_LF(1) =  m_f_LF(3) / m_f_LF(2);
+          m_zmp_des_LF_local(0) = -m_f_LF(4) / m_f_LF(2);
+          m_zmp_des_LF_local(1) =  m_f_LF(3) / m_f_LF(2);
+          m_zmp_des_LF_local(2) = 0.0;
         }
         else
-          m_zmp_LF.setZero();
+          m_zmp_des_LF_local.setZero();
 
-        s(0) = m_zmp_LF(0);
-        s(1) = m_zmp_LF(1);
+        s(0) = m_zmp_des_LF_local(0);
+        s(1) = m_zmp_des_LF_local(1);
         return s;
       }
 
@@ -570,16 +588,16 @@ namespace dynamicgraph
                                           m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
         if(fabs(m_f_RF(2)>1.0))
         {
-          m_zmp_RF(0) = -m_f_RF(4) / m_f_RF(2);
-          m_zmp_RF(1) =  m_f_RF(3) / m_f_RF(2);
-          m_zmp_RF(2) = -H_rf.translation()(2);
+          m_zmp_des_RF(0) = -m_f_RF(4) / m_f_RF(2);
+          m_zmp_des_RF(1) =  m_f_RF(3) / m_f_RF(2);
+          m_zmp_des_RF(2) = -H_rf.translation()(2);
         }
         else
-          m_zmp_RF.setZero();
+          m_zmp_des_RF.setZero();
 
-        m_zmp_RF = H_rf.act(m_zmp_RF);
-        s(0) = m_zmp_RF(0);
-        s(1) = m_zmp_RF(1);
+        m_zmp_des_RF = H_rf.act(m_zmp_des_RF);
+        s(0) = m_zmp_des_RF(0);
+        s(1) = m_zmp_des_RF(1);
         return s;
       }
 
@@ -597,16 +615,16 @@ namespace dynamicgraph
                                           m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
         if(fabs(m_f_LF(2)>1.0))
         {
-          m_zmp_LF(0) = -m_f_LF(4) / m_f_LF(2);
-          m_zmp_LF(1) =  m_f_LF(3) / m_f_LF(2);
-          m_zmp_LF(2) = -H_lf.translation()(2);
+          m_zmp_des_LF(0) = -m_f_LF(4) / m_f_LF(2);
+          m_zmp_des_LF(1) =  m_f_LF(3) / m_f_LF(2);
+          m_zmp_des_LF(2) = -H_lf.translation()(2);
         }
         else
-          m_zmp_LF.setZero();
+          m_zmp_des_LF.setZero();
 
-        m_zmp_LF = H_lf.act(m_zmp_LF);
-        s(0) = m_zmp_LF(0);
-        s(1) = m_zmp_LF(1);
+        m_zmp_des_LF = H_lf.act(m_zmp_des_LF);
+        s(0) = m_zmp_des_LF(0);
+        s(1) = m_zmp_des_LF(1);
         return s;
       }
 
@@ -622,7 +640,84 @@ namespace dynamicgraph
         m_zmp_des_left_footSOUT(iter);
         m_zmp_des_right_footSOUT(iter);
 
-        m_zmp = (m_f_RF(2)*m_zmp_RF + m_f_LF(2)*m_zmp_LF) / (m_f_LF(2)+m_f_RF(2));
+        m_zmp_des = (m_f_RF(2)*m_zmp_des_RF + m_f_LF(2)*m_zmp_des_LF) / (m_f_LF(2)+m_f_RF(2));
+        s(0) = m_zmp_des(0);
+        s(1) = m_zmp_des(1);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(zmp_right_foot,ml::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_right_foot before initialization!");
+          return s;
+        }
+        if(s.size()!=2)
+          s.resize(2);
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(f, m_wrench_right_footSIN(iter));
+        assert(f.size()==6);
+        se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+                                          m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
+        if(fabs(f(2)>1.0))
+        {
+          m_zmp_RF(0) = -f(4) / f(2);
+          m_zmp_RF(1) =  f(3) / f(2);
+          m_zmp_RF(2) = -H_rf.translation()(2);
+        }
+        else
+          m_zmp_RF.setZero();
+
+        m_zmp_RF = H_rf.act(m_zmp_RF);
+        s(0) = m_zmp_RF(0);
+        s(1) = m_zmp_RF(1);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(zmp_left_foot,ml::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_left_foot before initialization!");
+          return s;
+        }
+        if(s.size()!=2)
+          s.resize(2);
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(f, m_wrench_left_footSIN(iter));
+        assert(f.size()==6);
+        se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+                                          m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
+        if(fabs(f(2)>1.0))
+        {
+          m_zmp_LF(0) = -f(4) / f(2);
+          m_zmp_LF(1) =  f(3) / f(2);
+          m_zmp_LF(2) = -H_lf.translation()(2);
+        }
+        else
+          m_zmp_LF.setZero();
+
+        m_zmp_LF = H_lf.act(m_zmp_LF);
+        s(0) = m_zmp_LF(0);
+        s(1) = m_zmp_LF(1);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(zmp, ml::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal zmp before initialization!");
+          return s;
+        }
+        if(s.size()!=2)
+          s.resize(2);
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(f_LF, m_wrench_left_footSIN(iter));
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(f_RF, m_wrench_right_footSIN(iter));
+        m_zmp_left_footSOUT(iter);
+        m_zmp_right_footSOUT(iter);
+
+        if(f_LF(2)+f_RF(2) > 1.0)
+          m_zmp = (f_RF(2)*m_zmp_RF + f_LF(2)*m_zmp_LF) / (f_LF(2)+f_RF(2));
         s(0) = m_zmp(0);
         s(1) = m_zmp(1);
         return s;
@@ -640,6 +735,20 @@ namespace dynamicgraph
           s.resize(3);
         const Vector3 & com = m_robot->com(m_invDyn->data());
         EIGEN_VECTOR_TO_VECTOR(com, s);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(com_vel,ml::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal com_vel before initialization!");
+          return s;
+        }
+        if(s.size()!=3)
+          s.resize(3);
+        const Vector3 & com_vel = m_robot->com_vel(m_invDyn->data());
+        EIGEN_VECTOR_TO_VECTOR(com_vel, s);
         return s;
       }
       

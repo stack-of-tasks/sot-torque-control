@@ -159,19 +159,19 @@ def create_balance_controller(device, floatingBase, estimator, torque_ctrl, traj
         plug(ff_locator.base6dFromFoot_encoders, ctrl.q);
         plug(ff_locator.v, ctrl.v);
 
-    plug(traj_gen.q,                        ctrl.posture_ref_pos);
-    plug(traj_gen.dq,                       ctrl.posture_ref_vel);
-    plug(traj_gen.ddq,                      ctrl.posture_ref_acc);
-#    plug(estimator.contactWrenchRightSole,  ctrl.wrench_right_foot);
-#    plug(estimator.contactWrenchLeftSole,   ctrl.wrench_left_foot);
+    plug(estimator.contactWrenchRightSole,  ctrl.wrench_right_foot);
+    plug(estimator.contactWrenchLeftSole,   ctrl.wrench_left_foot);
     plug(ctrl.tau_des,                      torque_ctrl.jointsTorquesDesired);
     plug(ctrl.tau_des,                      estimator.tauDes);
 
-    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
+    plug(traj_gen.q,                        ctrl.posture_ref_pos);
+    plug(traj_gen.dq,                       ctrl.posture_ref_vel);
+    plug(traj_gen.ddq,                      ctrl.posture_ref_acc);
     plug(com_traj_gen.x,                    ctrl.com_ref_pos);
     plug(com_traj_gen.dx,                   ctrl.com_ref_vel);
     plug(com_traj_gen.ddx,                  ctrl.com_ref_acc);
 
+    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
     ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
     ctrl.gear_ratios.value = conf.GEAR_RATIOS;
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
@@ -237,6 +237,7 @@ def create_ctrl_manager(device, torque_ctrl, pos_ctrl, inv_dyn, estimator, dt=0.
     plug(torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
     plug(estimator.jointsTorques,            ctrl_manager.tau);
     ctrl_manager.max_tau.value = NJ*(CTRL_MANAGER_TAU_MAX,);
+    ctrl_manager.max_current.value = NJ*(CTRL_MANAGER_CURRENT_MAX,);
     ctrl_manager.percentageDriverDeadZoneCompensation.value = NJ*(PERCENTAGE_DRIVER_DEAD_ZONE_COMPENSATION,);
     ctrl_manager.signWindowsFilterSize.value = NJ*(SIGN_WINDOW_FILTER_SIZE,);
     ctrl_manager.bemfFactor.value = NJ*(0.0,);
@@ -279,9 +280,12 @@ def create_admittance_ctrl(device, estimator, ctrl_manager, traj_gen, dt=0.001):
     admit_ctrl.init(dt);
     return admit_ctrl;
 
-def create_topic(ros_import, signal, name, data_type='vector'):
+def create_topic(ros_import, signal, name, data_type='vector', sleep_time=0.1):
     ros_import.add(data_type, name+'_ros', name);
     plug(signal, ros_import.signal(name+'_ros'));
+    from time import sleep
+    sleep(sleep_time);
+    
 
 def create_ros_topics(robot=None, estimator=None, torque_ctrl=None, traj_gen=None, ctrl_manager=None, inv_dyn=None, adm_ctrl=None, ff_locator=None, floatingBase=None):
     from dynamic_graph.ros import RosPublish
