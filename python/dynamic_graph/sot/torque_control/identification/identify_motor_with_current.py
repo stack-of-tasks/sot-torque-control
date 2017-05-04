@@ -4,15 +4,14 @@ from scipy import ndimage
 import numpy as np
 import sys
 from IPython import embed
-from plot_utils import plot3d
-from plot_utils import plot_x_vs_y
-from plot_utils import saveCurrentFigure
-import plot_utils
+from dynamic_graph.sot.torque_control.utils.plot_utils import plot3d
+from dynamic_graph.sot.torque_control.utils.plot_utils import plot_x_vs_y
+from dynamic_graph.sot.torque_control.utils.plot_utils import saveCurrentFigure
+import dynamic_graph.sot.torque_control.utils.plot_utils as plot_utils
 import matplotlib.pyplot as plt
 from motor_model import Motor_model
 from scipy.cluster.vq import kmeans
-import hrp2_motors_parameters
-
+import dynamic_graph.sot.torque_control.hrp2.motors_parameters
 
 '''
 motor model :
@@ -109,17 +108,17 @@ INVERT_CURRENT = False
 #~ JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
 #~ JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
 #~ JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
-#~ JOINT_NAME = 'lk';  # 9 ok
+JOINT_NAME = 'lk';  # 9 ok
 #~ JOINT_NAME = 'lap'; # 10 ok
 #~ JOINT_NAME = 'lar'; # 11 ok
 
 #~ IDENTIFICATION_MODE='static'
-#~ IDENTIFICATION_MODE='vel'
+IDENTIFICATION_MODE='vel'
 #~ IDENTIFICATION_MODE='acc'
 
-IDENTIFICATION_MODE='low_level'
-JOINT_NAME = 'rk'
-data_folder='../../results/20161114_153220_rk_vel/'
+#~ IDENTIFICATION_MODE='low_level'
+#~ JOINT_NAME = 'rk'
+#~ data_folder='../../results/20161114_153220_rk_vel/'
 #~ data_folder='../../results/20161114_151812_rhp_vel/'
 #~ data_folder='../../results/20170203_164133_com_sin_z_001/'
 #Compare Model Vs Measurment
@@ -127,63 +126,64 @@ data_folder='../../results/20161114_153220_rk_vel/'
 #~ JOINT_NAME = 'rhp'
 #~ data_folder='../../results/20170203_164133_com_sin_z_001/'
 #~ data_folder= '../../results/20161114_152706_rk_acc/' ; INVERT_CURRENT = True
+result_dir = '../../../../../../../results/'
 if (IDENTIFICATION_MODE != 'test_model') :
     Nvel = 10
     if(JOINT_NAME == 'rhy' ):
         INVERT_CURRENT = True
         Nvel = 9
-        data_folder_static = '../../results/20161114_135332_rhy_static/';
-        data_folder_vel    = '../../results/20161114_143152_rhy_vel/';
-        data_folder_acc    = '../../results/20161114_142351_rhy_acc/';
+        data_folder_static = result_dir+'20161114_135332_rhy_static/';
+        data_folder_vel    = result_dir+'20161114_143152_rhy_vel/';
+        data_folder_acc    = result_dir+'20161114_142351_rhy_acc/';
     if(JOINT_NAME == 'rhr' ):
         INVERT_CURRENT = True
         Nvel = 10
-        data_folder_static = '../../results/20161114_144232_rhr_static/';
-        data_folder_vel    = '../../results/20161114_150356_rhr_vel/';
-        data_folder_acc    = '../../results/20161114_145456_rhr_acc/';
+        data_folder_static = result_dir+'20161114_144232_rhr_static/';
+        data_folder_vel    = result_dir+'20161114_150356_rhr_vel/';
+        data_folder_acc    = result_dir+'20161114_145456_rhr_acc/';
     if(JOINT_NAME == 'rhp' ):
-        data_folder_static = '../../results/20161114_150722_rhp_static/';
-        data_folder_vel    = '../../results/20161114_151812_rhp_vel/';
-        data_folder_acc    = '../../results/20161114_151259_rhp_acc/';
+        data_folder_static = result_dir+'20161114_150722_rhp_static/';
+        data_folder_vel    = result_dir+'20161114_151812_rhp_vel/';
+        data_folder_acc    = result_dir+'20161114_151259_rhp_acc/';
     if(JOINT_NAME == 'rk' ):
         INVERT_CURRENT = True
-        data_folder_static = '../../results/20161114_152140_rk_static/';
-        data_folder_vel    = '../../results/20161114_153220_rk_vel/';
-        data_folder_acc    = '../../results/20161114_152706_rk_acc/';
+        data_folder_static = result_dir+'20161114_152140_rk_static/';
+        data_folder_vel    = result_dir+'20161114_153220_rk_vel/';
+        data_folder_acc    = result_dir+'20161114_152706_rk_acc/';
     if(JOINT_NAME == 'rap' ):
         INVERT_CURRENT = True
-        data_folder_static = '../../results/20161114_153739_rap_static/';
-        data_folder_vel    = '../../results/20161114_154559_rap_vel/';
-        data_folder_acc    = '../../results/20161114_154316_rap_acc/';
+        data_folder_static = result_dir+'20161114_153739_rap_static/';
+        data_folder_vel    = result_dir+'20161114_154559_rap_vel/';
+        data_folder_acc    = result_dir+'20161114_154316_rap_acc/';
     if(JOINT_NAME == 'rar' ):
-        data_folder_static = '../../results/20161114_154945_rar_static/';
-        data_folder_vel    = '../../results/20161114_160038_rar_vel/';
-        data_folder_acc    = '../../results/20161114_155545_rar_acc/';
+        data_folder_static = result_dir+'20161114_154945_rar_static/';
+        data_folder_vel    = result_dir+'20161114_160038_rar_vel/';
+        data_folder_acc    = result_dir+'20161114_155545_rar_acc/';
 
     if(JOINT_NAME == 'lhy' ):
-        data_folder_static = '../../results/20170113_144220_lhy_static/';
-        data_folder_vel    = '../../results//';
-        data_folder_acc    = '../../results/20170113_144710_lhy_const_acc/';
+        data_folder_static = result_dir+'20170113_144220_lhy_static/';
+        data_folder_vel    = result_dir+'/';
+        data_folder_acc    = result_dir+'20170113_144710_lhy_const_acc/';
     if(JOINT_NAME == 'lhr' ):
-        data_folder_static = '../../results/20170113_145227_lhr_static/';
-        data_folder_vel    = '../../results/20170113_150215_lhr_const_vel/';
-        data_folder_acc    = '../../results/20170113_145826_lhr_const_acc/';
+        data_folder_static = result_dir+'20170113_145227_lhr_static/';
+        data_folder_vel    = result_dir+'20170113_150215_lhr_const_vel/';
+        data_folder_acc    = result_dir+'20170113_145826_lhr_const_acc/';
     if(JOINT_NAME == 'lhp' ):
-        data_folder_static = '../../results/20170113_150628_lhp_static/';
-        data_folder_vel    = '../../results/20170113_151433_lhp_const_vel/';
-        data_folder_acc    = '../../results/20170113_151103_lhp_const_acc/';
+        data_folder_static = result_dir+'20170113_150628_lhp_static/';
+        data_folder_vel    = result_dir+'20170113_151433_lhp_const_vel/';
+        data_folder_acc    = result_dir+'20170113_151103_lhp_const_acc/';
     if(JOINT_NAME == 'lk' ):
-        data_folder_static = '../../results/20170113_151748_lk_static/';
-        data_folder_vel    = '../../results/20170113_152924_lk_const_vel/';
-        data_folder_acc    = '../../results/20170113_152606_lk_const_acc/';
+        data_folder_static = result_dir+'20170113_151748_lk_static/';
+        data_folder_vel    = result_dir+'20170113_152924_lk_const_vel/';
+        data_folder_acc    = result_dir+'20170113_152606_lk_const_acc/';
     if(JOINT_NAME == 'lap' ):
-        data_folder_static = '../../results/20170113_154007_lap_static/';
-        data_folder_vel    = '../../results/20170113_154834_lap_const_vel/';
-        data_folder_acc    = '../../results/20170113_154303_lap_const_acc/';
+        data_folder_static = result_dir+'20170113_154007_lap_static/';
+        data_folder_vel    = result_dir+'20170113_154834_lap_const_vel/';
+        data_folder_acc    = result_dir+'20170113_154303_lap_const_acc/';
     if(JOINT_NAME == 'lar' ):
-        data_folder_static = '../../results/20170113_155150_lar_static/';
-        data_folder_vel    = '../../results/20170113_160057_lar_const_vel/';
-        data_folder_acc    = '../../results/20170113_155706_lar_const_acc/';
+        data_folder_static = result_dir+'20170113_155150_lar_static/';
+        data_folder_vel    = result_dir+'20170113_160057_lar_const_vel/';
+        data_folder_acc    = result_dir+'20170113_155706_lar_const_acc/';
 
 if (IDENTIFICATION_MODE=='static') : data_folder = data_folder_static
 if (IDENTIFICATION_MODE=='vel')    : data_folder = data_folder_vel
@@ -446,46 +446,47 @@ if(IDENTIFICATION_MODE=='static'):
         plt.plot(q_const); plt.ylabel('q_const')
         
     # plot dead zone effect ********************************************
-    plt.figure()
-    plt.plot(current)
-    plt.plot(ctrl/102.4)
     
-    
-    plt.figure()
-    y = current
-    y_label = r'$i(t)$'
-    x = ctrl/102.4 - current
-    x_label =r'$ctrl(t)-i(t)$'
-    plt.ylabel(y_label)
-    plt.xlabel(x_label)    
-    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
-    plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
-    
-    plt.figure()
-    y = ctrl/102.4
-    y_label = r'$ctrl(t)$'
-    x = ctrl/102.4 - current
-    x_label =r'$ctrl(t)-i(t)$'
-    plt.ylabel(y_label)
-    plt.xlabel(x_label)    
-    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
-    plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
-    
-    plt.figure()
-    y = ctrl/102.4
-    y_label = r'$ctrl(t)$'
-    x = current
-    x_label =r'$i(t)$'
-    plt.ylabel(y_label)
-    plt.xlabel(x_label)    
-    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    plt.plot([-3,3],[-3,3]);  
-    
-    
-    plt.show()
-    embed()
+    #~ plt.figure()
+    #~ plt.plot(current)
+    #~ plt.plot(ctrl/102.4)
+    #~ 
+    #~ 
+    #~ plt.figure()
+    #~ y = current
+    #~ y_label = r'$i(t)$'
+    #~ x = ctrl/102.4 - current
+    #~ x_label =r'$ctrl(t)-i(t)$'
+    #~ plt.ylabel(y_label)
+    #~ plt.xlabel(x_label)    
+    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    #~ plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
+    #~ plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
+    #~ 
+    #~ plt.figure()
+    #~ y = ctrl/102.4
+    #~ y_label = r'$ctrl(t)$'
+    #~ x = ctrl/102.4 - current
+    #~ x_label =r'$ctrl(t)-i(t)$'
+    #~ plt.ylabel(y_label)
+    #~ plt.xlabel(x_label)    
+    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    #~ plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
+    #~ plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
+    #~ 
+    #~ plt.figure()
+    #~ y = ctrl/102.4
+    #~ y_label = r'$ctrl(t)$'
+    #~ x = current
+    #~ x_label =r'$i(t)$'
+    #~ plt.ylabel(y_label)
+    #~ plt.xlabel(x_label)    
+    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    #~ plt.plot([-3,3],[-3,3]);  
+    #~ 
+    #~ 
+    #~ plt.show()
+    #~ embed()
     #~ y = a. x   +  b
     #~ i = Kt.tau + Kf
     #~ 

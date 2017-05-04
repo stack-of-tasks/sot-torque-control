@@ -13,7 +13,7 @@ PLOT_SENSOR_DATA = False;
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
 from load_hrpsys_log import load_hrpsys_log_astate
 import numpy as np
-import plot_utils as plut
+import dynamic_graph.sot.torque_control.utils.plot_utils as plut
 import matplotlib.pyplot as plt
 if USE_ROBOT_VIEWER:
     import robotviewer  # start robotviewer from bash with 'robotviewer -sXML-RPC'.
