@@ -19,7 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <pininvdyn/utils/stop-watch.hpp>
+#include <pininvdyn/utils/statistics.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -294,8 +295,10 @@ namespace dynamicgraph
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
 
-          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG,
+          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
                                                       "solver-eiquadprog");
+//          m_hqpSolver = Solver_HQP_base::getNewSolverFixedSize<60,18,40>(SOLVER_HQP_EIQUADPROG_RT,
+//                                                                         "eiquadprog");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
         } 
         catch (const std::exception& e) 
@@ -464,6 +467,9 @@ namespace dynamicgraph
           s.resize(0);
           return s;
         }
+
+        getStatistics().store("active inequalities", sol.activeSet.size());
+        getStatistics().store("solver iterations", sol.iterations);
 
         velocity_urdf_to_sot(sol.x.head(m_robot->nv()), m_dv_sot);
         m_f = sol.x.tail(24);
@@ -805,6 +811,7 @@ namespace dynamicgraph
         try
         {
           getProfiler().report_all(3, os);
+          getStatistics().report_all(1, os);
         }
         catch (ExceptionSignal e) {}
       }
