@@ -40,6 +40,9 @@ using std::map;
 using std::string;
 using std::ostringstream;
 
+//#define START_PROFILER(name) getProfiler().start(name)
+//#define STOP_PROFILER(name) getProfiler().stop(name)
+
 Stopwatch& getProfiler()
 {
   static Stopwatch s(REAL_TIME);   // alternatives are CPU_TIME and REAL_TIME
@@ -203,7 +206,7 @@ void Stopwatch::report_all(int precision, std::ostream& output)
 {
   if (!active) return;
   
-  output<< "\n*** PROFILING RESULTS [ms] (min - avg - max - lastTime - nSamples) ***\n";
+  output<< "\n*** PROFILING RESULTS [ms] (min - avg - max - lastTime - nSamples - totalTime) ***\n";
   map<string, PerformanceData>::iterator it;
   for (it = records_of->begin(); it != records_of->end(); ++it) {
     report(it->first, precision, output);
@@ -266,11 +269,8 @@ void Stopwatch::report(string perf_name, int precision, std::ostream& output)
          << (perf_info.last_time*1e3) << "\t";
   output << std::fixed << std::setprecision(precision)
          << perf_info.stops << std::endl;
-
-  //	ostringstream stops;
-  //	stops << perf_info.stops;
-  //	output << "  *  Stops " << stops.str() << std::endl;
-  //	output << std::endl;
+  output << std::fixed << std::setprecision(precision)
+         << perf_info.total_time*1e3 << std::endl;
 }
 
 long double Stopwatch::get_time_so_far(string perf_name) 
