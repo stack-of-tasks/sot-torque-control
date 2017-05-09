@@ -296,9 +296,9 @@ namespace dynamicgraph
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
 
           m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
-                                                      "solver-eiquadprog");
-//          m_hqpSolver = Solver_HQP_base::getNewSolverFixedSize<60,18,40>(SOLVER_HQP_EIQUADPROG_RT,
-//                                                                         "eiquadprog");
+                                                      "eiquadprog-fast");
+          m_hqpSolver_60_36_40 = Solver_HQP_base::getNewSolverFixedSize<60,36,40>(SOLVER_HQP_EIQUADPROG_RT,
+                                                                                  "eiquadprog-rt");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
         } 
         catch (const std::exception& e) 
@@ -456,7 +456,10 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
-        const HqpOutput & sol = m_hqpSolver->solve(hqpData);
+        Solver_HQP_base * solver = m_hqpSolver;
+        if(m_invDyn->nVar()==60 && m_invDyn->nEq()==36 && m_invDyn->nIn()==40)
+          solver = m_hqpSolver_60_36_40;
+        const HqpOutput & sol = solver->solve(hqpData);
         getProfiler().stop(PROFILE_HQP_SOLUTION);
 
         if(sol.status!=HQP_STATUS_OPTIMAL)
@@ -812,6 +815,7 @@ namespace dynamicgraph
         {
           getProfiler().report_all(3, os);
           getStatistics().report_all(1, os);
+          os<<"QP size: nVar "<<m_invDyn->nVar()<<" nEq "<<m_invDyn->nEq()<<" nIn "<<m_invDyn->nIn()<<"\n";
         }
         catch (ExceptionSignal e) {}
       }
