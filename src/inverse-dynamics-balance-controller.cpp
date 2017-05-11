@@ -197,6 +197,7 @@ namespace dynamicgraph
             ,m_t(0.0)
             ,m_firstTime(true)
             ,m_timeLast(0)
+            ,m_contactState(DOUBLE_SUPPORT)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -215,6 +216,34 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
                                                     "URDF file path (string)")));
+
+        addCommand("removeRightFootContact",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeRightFootContact,
+                                    docCommandVoid1("Remove the contact at the right foot.",
+                                                    "Transition time in seconds (double)")));
+
+        addCommand("removeLeftFootContact",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeLeftFootContact,
+                                    docCommandVoid1("Remove the contact at the left foot.",
+                                                    "Transition time in seconds (double)")));
+      }
+
+      void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime)
+      {
+        if(m_contactState == DOUBLE_SUPPORT)
+        {
+          m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
+          m_contactState = LEFT_SUPPORT;
+        }
+      }
+
+      void InverseDynamicsBalanceController::removeLeftFootContact(const double& transitionTime)
+      {
+        if(m_contactState == DOUBLE_SUPPORT)
+        {
+          m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
+          m_contactState = RIGHT_SUPPORT;
+        }
       }
 
       void InverseDynamicsBalanceController::init(const double& dt, const std::string& urdfFile)
@@ -311,7 +340,7 @@ namespace dynamicgraph
       }
 
       /* ------------------------------------------------------------------- */
-      /* --- SIGNALS --------ontact_normal----------------------------------------------- */
+      /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, ml::Vector)
@@ -475,7 +504,10 @@ namespace dynamicgraph
         getStatistics().store("solver iterations", sol.iterations);
 
         velocity_urdf_to_sot(sol.x.head(m_robot->nv()), m_dv_sot);
-        m_f = sol.x.tail(24);
+        if(m_contactState == DOUBLE_SUPPORT)
+          m_f = sol.x.tail(24);
+        else
+          m_f = sol.x.tail(12);
         joints_urdf_to_sot(m_invDyn->computeActuatorForces(sol), m_tau_sot);
 
         m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail<N_JOINTS>()) +
@@ -512,6 +544,12 @@ namespace dynamicgraph
         if(s.size()!=6)
           s.resize(6);
         m_tau_desSOUT(iter);
+        if(m_contactState == LEFT_SUPPORT)
+        {
+          s.setZero();
+          return s;
+        }
+
         const Eigen::MatrixXd & T = m_contactRF->getForceGeneratorMatrix();
         m_f_RF = T*m_f.head<12>();
         EIGEN_VECTOR_TO_VECTOR(m_f_RF, s);
@@ -528,6 +566,12 @@ namespace dynamicgraph
         if(s.size()!=6)
           s.resize(6);
         m_tau_desSOUT(iter);
+        if(m_contactState == RIGHT_SUPPORT)
+        {
+          s.setZero();
+          return s;
+        }
+
         const Eigen::MatrixXd & T = m_contactLF->getForceGeneratorMatrix();
         m_f_LF = T*m_f.tail<12>();
         EIGEN_VECTOR_TO_VECTOR(m_f_LF, s);

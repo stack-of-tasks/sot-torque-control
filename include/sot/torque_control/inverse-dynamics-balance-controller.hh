@@ -77,6 +77,8 @@ namespace dynamicgraph {
         InverseDynamicsBalanceController( const std::string & name );
 
         void init(const double& dt, const std::string& urdfFile);
+        void removeRightFootContact(const double& transitionTime);
+        void removeLeftFootContact(const double& transitionTime);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(com_ref_pos,                ml::Vector);
@@ -169,6 +171,14 @@ namespace dynamicgraph {
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_enabled;          /// True if controler is enabled
         bool              m_firstTime;        /// True at the first iteration of the controller
+
+        enum ContactState
+        {
+          DOUBLE_SUPPORT = 0,
+          LEFT_SUPPORT = 1,
+          RIGHT_SUPPORT = 2
+        };
+        ContactState      m_contactState;
 
         /// pininvdyn
         pininvdyn::RobotWrapper *                       m_robot;
