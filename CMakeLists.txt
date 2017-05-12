@@ -107,8 +107,8 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
   include/sot/torque_control/utils/quad-estimator.hh
-  include/sot/torque_control/utils/Stdafx.hh
-  include/sot/torque_control/utils/stop-watch.hh
+#  include/sot/torque_control/utils/Stdafx.hh
+#  include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
   include/sot/torque_control/utils/metapod-helper.hh
   )
@@ -123,7 +123,7 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/lin-estimator.cpp
     src/poly-estimator.cpp
     src/quad-estimator.cpp
-    src/stop-watch.cpp
+#    src/stop-watch.cpp
     hrp2-torque-control/src/hrp2-common.cpp
     src/motor-model.cpp
 )
