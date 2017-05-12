@@ -9,6 +9,7 @@ from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueE
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
 from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTrajectoryGenerator
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
+from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.inverse_dynamics_controller import InverseDynamicsController
 from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
@@ -31,7 +32,7 @@ def create_free_flyer_locator(ent, urdf):
     ff_locator = FreeFlyerLocator("ffLocator");
     plug(ent.device.robotState,           ff_locator.base6d_encoders);
     plug(ent.estimator.jointsVelocities,  ff_locator.joint_velocities);
-    plug(ff_locator.base6dFromFoot_encoders, dynamic.position);
+    plug(ff_locator.base6dFromFoot_encoders, ent.dynamic.position);
     ff_locator.init(urdf);
     return ff_locator;
     
@@ -41,10 +42,10 @@ def create_flex_estimator(robot, dt=0.001):
     flex_est.setOn(False);
     flex_est.interface.setExternalContactPresence(False);
     flex_est.interface.enabledContacts_lf_rf_lh_rh.value=(1,1,0,0);
-    plug(ent.ff_locator.v, flex_est.leftFootVelocity.sin2);
-    plug(ent.ff_locator.v, flex_est.rightFootVelocity.sin2);
-    plug(ent.ff_locator.v, flex_est.inputVel.sin2);
-    plug(ent.ff_locator.v, flex_est.DCom.sin2);
+    plug(robot.ff_locator.v, flex_est.leftFootVelocity.sin2);
+    plug(robot.ff_locator.v, flex_est.rightFootVelocity.sin2);
+    plug(robot.ff_locator.v, flex_est.inputVel.sin2);
+    plug(robot.ff_locator.v, flex_est.DCom.sin2);
     return flex_est;
     
 def create_floatingBase(ent):
@@ -65,8 +66,12 @@ def create_position_controller(ent, dt=0.001):
     posCtrl.Kd.value = tuple(kd_pos);
     posCtrl.Ki.value = tuple(ki_pos);
     posCtrl.dqRef.value = NJ*(0.0,);
-    plug(ent.device.robotState,             posCtrl.base6d_encoders);    
-    plug(ent.device.jointsVelocities,    posCtrl.jointsVelocities);
+    plug(ent.device.robotState,             posCtrl.base6d_encoders);  
+    try:  # this works only in simulation
+        plug(ent.device.jointsVelocities,    posCtrl.jointsVelocities);
+    except:
+        plug(ent.estimator.jointsVelocities, posCtrl.jointsVelocities);
+        pass;
     plug(posCtrl.pwmDes,                ent.device.control);
     try:
         plug(ent.traj_gen.q,       posCtrl.qRef);
@@ -167,15 +172,15 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     plug(ctrl.tau_des,                          ent.torque_ctrl.jointsTorquesDesired);
     plug(ctrl.tau_des,                          ent.estimator.tauDes);
 
-    plug(ctrl.right_foot_pos,   ent.rf_traj_gen.initial_value);
-    plug(rf_traj_gen.x,         ctrl.rf_ref_pos);
-    plug(rf_traj_gen.dx,        ctrl.rf_ref_vel);
-    plug(rf_traj_gen.ddx,       ctrl.rf_ref_acc);
+    plug(ctrl.right_foot_pos,       ent.rf_traj_gen.initial_value);
+    plug(ent.rf_traj_gen.x,         ctrl.rf_ref_pos);
+    plug(ent.rf_traj_gen.dx,        ctrl.rf_ref_vel);
+    plug(ent.rf_traj_gen.ddx,       ctrl.rf_ref_acc);
 
-    plug(ctrl.left_foot_pos,    ent.lf_traj_gen.initial_value);
-    plug(lf_traj_gen.x,         ctrl.lf_ref_pos);
-    plug(lf_traj_gen.dx,        ctrl.lf_ref_vel);
-    plug(lf_traj_gen.ddx,       ctrl.lf_ref_acc);
+    plug(ctrl.left_foot_pos,        ent.lf_traj_gen.initial_value);
+    plug(ent.lf_traj_gen.x,         ctrl.lf_ref_pos);
+    plug(ent.lf_traj_gen.dx,        ctrl.lf_ref_vel);
+    plug(ent.lf_traj_gen.ddx,       ctrl.lf_ref_acc);
     
     plug(ent.traj_gen.q,                        ctrl.posture_ref_pos);
     plug(ent.traj_gen.dq,                       ctrl.posture_ref_vel);
