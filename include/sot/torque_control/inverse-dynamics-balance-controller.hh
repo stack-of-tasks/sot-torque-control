@@ -196,6 +196,7 @@ namespace dynamicgraph {
         pininvdyn::RobotWrapper *                       m_robot;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_40;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_20;
         pininvdyn::InverseDynamicsFormulationAccForce * m_invDyn;
         pininvdyn::contacts::Contact6d *                m_contactRF;
         pininvdyn::contacts::Contact6d *                m_contactLF;
