@@ -595,6 +595,8 @@ namespace dynamicgraph
 
         getStatistics().store("active inequalities", sol.activeSet.size());
         getStatistics().store("solver iterations", sol.iterations);
+        if(ddx_com_ref.norm()>1e-3)
+          getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
         velocity_urdf_to_sot(sol.x.head(m_robot->nv()), m_dv_sot);
         if(m_contactState == DOUBLE_SUPPORT)
