@@ -20,6 +20,14 @@ from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
+def create_imu_filter(ent, dt):
+    from dynamic_graph.sot.torque_control.madgwickahrs import MadgwickAHRS
+    imu_filter = MadgwickAHRS('imu_filter');
+    imu_filter.init(dt);
+    plug(ent.device.accelerometer, imu_filter.accelerometer);
+    plug(ent.device.gyrometer,     imu_filter.gyroscope);
+    return imu_filter;
+
 def create_com_traj_gen(dt=0.001):
     com_traj_gen = NdTrajectoryGenerator("com_traj_gen");
     import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
