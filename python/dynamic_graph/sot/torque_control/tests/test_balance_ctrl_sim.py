@@ -10,6 +10,7 @@ from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.create_entities_utils import NJ
 from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
 #from dynamic_graph.sot.torque_control.hrp2_device_torque_ctrl import HRP2DeviceTorqueCtrl
+from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.core.robot_simu import RobotSimu
 from dynamic_graph.sot.torque_control.create_entities_utils import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import *
@@ -179,6 +180,7 @@ def create_graph(dt=0.001, delay=0.01):
     traj_gen = JointTrajectoryGenerator("jtg");
     plug(device.state,             traj_gen.base6d_encoders);
     traj_gen.init(dt);
+        
 #    estimator       = create_estimator(device, dt, delay, traj_gen);
 #    torque_ctrl     = create_torque_controller(device, estimator);
 #    pos_ctrl        = create_position_controller(device, estimator, dt, traj_gen);
@@ -197,6 +199,26 @@ def create_graph(dt=0.001, delay=0.01):
     ctrl.com_ref_pos.value = to_tuple(robot.com(q0));
     ctrl.com_ref_vel.value = 3*(0.0,);
     ctrl.com_ref_acc.value = 3*(0.0,);
+    
+    rf_traj_gen = SE3TrajectoryGenerator("tg_rf");
+#    M = robot.position(q0, robot.model.getJointId(conf.RIGHT_FOOT_FRAME_NAME));
+#    rf_traj_gen.initial_value.value = to_tuple(M.translation) + to_tuple(M.rotation.reshape(9));
+    plug(ctrl.right_foot_pos, rf_traj_gen.initial_value);
+    rf_traj_gen.init(dt);
+    
+    lf_traj_gen = SE3TrajectoryGenerator("tg_lf");
+#    M = robot.position(q0, robot.model.getJointId(conf.LEFT_FOOT_FRAME_NAME));
+#    lf_traj_gen.initial_value.value = to_tuple(M.translation) + to_tuple(M.rotation.reshape(9));
+    plug(ctrl.left_foot_pos, lf_traj_gen.initial_value);
+    lf_traj_gen.init(dt);
+    
+    plug(rf_traj_gen.x,   ctrl.rf_ref_pos);
+    plug(rf_traj_gen.dx,  ctrl.rf_ref_vel);
+    plug(rf_traj_gen.ddx, ctrl.rf_ref_acc);
+
+    plug(lf_traj_gen.x,   ctrl.lf_ref_pos);
+    plug(lf_traj_gen.dx,  ctrl.lf_ref_vel);
+    plug(lf_traj_gen.ddx, ctrl.lf_ref_acc);
 
     ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
     ctrl.gear_ratios.value = conf.GEAR_RATIOS;
@@ -209,12 +231,15 @@ def create_graph(dt=0.001, delay=0.01):
     ctrl.kd_com.value = 3*(conf.kd_com,);
     ctrl.kp_constraints.value = 6*(conf.kp_constr,);
     ctrl.kd_constraints.value = 6*(conf.kd_constr,);
+    ctrl.kp_feet.value = 6*(conf.kp_feet,);
+    ctrl.kd_feet.value = 6*(conf.kd_feet,);
     ctrl.kp_posture.value = 30*(conf.kp_posture,);
     ctrl.kd_posture.value = 30*(conf.kd_posture,);
     ctrl.kp_pos.value = 30*(0*conf.kp_pos,);
     ctrl.kd_pos.value = 30*(0*conf.kd_pos,);
 
     ctrl.w_com.value = conf.w_com;
+    ctrl.w_feet.value = conf.w_feet;
     ctrl.w_forces.value = conf.w_forces;
     ctrl.w_posture.value = conf.w_posture;
     ctrl.w_base_orientation.value = conf.w_base_orientation;

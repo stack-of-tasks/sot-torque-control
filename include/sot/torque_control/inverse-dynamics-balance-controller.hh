@@ -84,6 +84,12 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(com_ref_pos,                ml::Vector);
         DECLARE_SIGNAL_IN(com_ref_vel,                ml::Vector);
         DECLARE_SIGNAL_IN(com_ref_acc,                ml::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_pos,                 ml::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_vel,                 ml::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_acc,                 ml::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_pos,                 ml::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_vel,                 ml::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_acc,                 ml::Vector);
         DECLARE_SIGNAL_IN(posture_ref_pos,            ml::Vector);
         DECLARE_SIGNAL_IN(posture_ref_vel,            ml::Vector);
         DECLARE_SIGNAL_IN(posture_ref_acc,            ml::Vector);
@@ -97,12 +103,15 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(kd_constraints,             ml::Vector);
         DECLARE_SIGNAL_IN(kp_com,                     ml::Vector);
         DECLARE_SIGNAL_IN(kd_com,                     ml::Vector);
+        DECLARE_SIGNAL_IN(kp_feet,                    ml::Vector);
+        DECLARE_SIGNAL_IN(kd_feet,                    ml::Vector);
         DECLARE_SIGNAL_IN(kp_posture,                 ml::Vector);
         DECLARE_SIGNAL_IN(kd_posture,                 ml::Vector);
         DECLARE_SIGNAL_IN(kp_pos,                     ml::Vector);
         DECLARE_SIGNAL_IN(kd_pos,                     ml::Vector);
 
         DECLARE_SIGNAL_IN(w_com,                      double);
+        DECLARE_SIGNAL_IN(w_feet,                     double);
         DECLARE_SIGNAL_IN(w_posture,                  double);
         DECLARE_SIGNAL_IN(w_base_orientation,         double);
         DECLARE_SIGNAL_IN(w_torques,                  double);
@@ -180,6 +189,9 @@ namespace dynamicgraph {
         };
         ContactState      m_contactState;
 
+        int m_frame_id_rf;  /// frame id of right foot
+        int m_frame_id_lf;  /// frame id of left foot
+
         /// pininvdyn
         pininvdyn::RobotWrapper *                       m_robot;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
@@ -188,10 +200,14 @@ namespace dynamicgraph {
         pininvdyn::contacts::Contact6d *                m_contactRF;
         pininvdyn::contacts::Contact6d *                m_contactLF;
         pininvdyn::tasks::TaskComEquality *             m_taskCom;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskRF;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskLF;
         pininvdyn::tasks::TaskJointPosture *            m_taskPosture;
         pininvdyn::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
         pininvdyn::trajectories::TrajectorySample       m_sampleCom;
+        pininvdyn::trajectories::TrajectorySample       m_sampleRF;
+        pininvdyn::trajectories::TrajectorySample       m_sampleLF;
         pininvdyn::trajectories::TrajectorySample       m_samplePosture;
 
         pininvdyn::math::Vector  m_dv_sot;              /// desired accelerations (sot order)

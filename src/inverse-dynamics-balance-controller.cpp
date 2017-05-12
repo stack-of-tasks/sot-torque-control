@@ -52,6 +52,12 @@ namespace dynamicgraph
 #define INPUT_SIGNALS         m_com_ref_posSIN \
                            << m_com_ref_velSIN \
                            << m_com_ref_accSIN \
+                           << m_rf_ref_posSIN \
+                           << m_rf_ref_velSIN \
+                           << m_rf_ref_accSIN \
+                           << m_lf_ref_posSIN \
+                           << m_lf_ref_velSIN \
+                           << m_lf_ref_accSIN \
                            << m_posture_ref_posSIN \
                            << m_posture_ref_velSIN \
                            << m_posture_ref_accSIN \
@@ -64,11 +70,14 @@ namespace dynamicgraph
                            << m_kd_constraintsSIN \
                            << m_kp_comSIN \
                            << m_kd_comSIN \
+                           << m_kp_feetSIN \
+                           << m_kd_feetSIN \
                            << m_kp_postureSIN \
                            << m_kd_postureSIN \
                            << m_kp_posSIN \
                            << m_kd_posSIN \
                            << m_w_comSIN \
+                           << m_w_feetSIN \
                            << m_w_postureSIN \
                            << m_w_base_orientationSIN \
                            << m_w_torquesSIN \
@@ -129,6 +138,12 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(com_ref_pos,                 ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(com_ref_vel,                 ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(com_ref_acc,                 ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(rf_ref_pos,                  ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(rf_ref_vel,                  ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(rf_ref_acc,                  ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lf_ref_pos,                  ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lf_ref_vel,                  ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lf_ref_acc,                  ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_pos,             ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_vel,             ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_acc,             ml::Vector)
@@ -141,11 +156,14 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(kd_constraints,              ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_com,                      ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_com,                      ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(kp_feet,                     ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(kd_feet,                     ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_posture,                  ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_posture,                  ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_pos,                      ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_pos,                      ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(w_com,                       double)
+            ,CONSTRUCT_SIGNAL_IN(w_feet,                      double)
             ,CONSTRUCT_SIGNAL_IN(w_posture,                   double)
             ,CONSTRUCT_SIGNAL_IN(w_base_orientation,          double)
             ,CONSTRUCT_SIGNAL_IN(w_torques,                   double)
@@ -233,6 +251,8 @@ namespace dynamicgraph
         if(m_contactState == DOUBLE_SUPPORT)
         {
           m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
+          const double & w_feet = m_w_feetSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskRF, w_feet, 1);
           m_contactState = LEFT_SUPPORT;
         }
       }
@@ -242,6 +262,8 @@ namespace dynamicgraph
         if(m_contactState == DOUBLE_SUPPORT)
         {
           m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
+          const double & w_feet = m_w_feetSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
           m_contactState = RIGHT_SUPPORT;
         }
       }
@@ -264,6 +286,10 @@ namespace dynamicgraph
         assert(kp_com.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_com, m_kd_comSIN(0));
         assert(kd_com.size()==3);
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_feet, m_kp_feetSIN(0));
+        assert(kp_feet.size()==6);
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_feet, m_kd_feetSIN(0));
+        assert(kd_feet.size()==6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_posture, m_kp_postureSIN(0));
         assert(kp_posture.size()==N_JOINTS);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_posture, m_kd_postureSIN(0));
@@ -316,6 +342,14 @@ namespace dynamicgraph
           m_taskCom->Kd(kd_com);
           m_invDyn->addMotionTask(*m_taskCom, w_com, 1);
 
+          m_taskRF = new TaskSE3Equality("task-rf", *m_robot, RIGHT_FOOT_FRAME_NAME);
+          m_taskRF->Kp(kp_feet);
+          m_taskRF->Kd(kd_feet);
+
+          m_taskLF = new TaskSE3Equality("task-lf", *m_robot, LEFT_FOOT_FRAME_NAME);
+          m_taskLF->Kp(kp_feet);
+          m_taskLF->Kd(kd_feet);
+
           m_taskPosture = new TaskJointPosture("task-posture", *m_robot);
           m_taskPosture->Kp(kp_posture);
           m_taskPosture->Kd(kd_posture);
@@ -323,6 +357,9 @@ namespace dynamicgraph
 
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
+
+          m_frame_id_rf = m_robot->model().getFrameId(RIGHT_FOOT_FRAME_NAME);
+          m_frame_id_lf = m_robot->model().getFrameId(LEFT_FOOT_FRAME_NAME);
 
           m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
                                                       "eiquadprog-fast");
@@ -397,23 +434,27 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
+        m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(q_sot, m_qSIN(iter));
         assert(q_sot.size()==N_JOINTS+6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(v_sot, m_vSIN(iter));
         assert(v_sot.size()==N_JOINTS+6);
+
         EIGEN_CONST_VECTOR_FROM_SIGNAL(x_com_ref,   m_com_ref_posSIN(iter));
         assert(x_com_ref.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(dx_com_ref,  m_com_ref_velSIN(iter));
         assert(dx_com_ref.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(ddx_com_ref, m_com_ref_accSIN(iter));
         assert(ddx_com_ref.size()==3);
+
         EIGEN_CONST_VECTOR_FROM_SIGNAL(q_ref,   m_posture_ref_posSIN(iter));
         assert(q_ref.size()==N_JOINTS);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_ref,  m_posture_ref_velSIN(iter));
         assert(dq_ref.size()==N_JOINTS);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_ref, m_posture_ref_accSIN(iter));
         assert(ddq_ref.size()==N_JOINTS);
+
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_contact, m_kp_constraintsSIN(iter));
         assert(kp_contact.size()==6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_contact, m_kd_constraintsSIN(iter));
@@ -430,6 +471,45 @@ namespace dynamicgraph
         assert(kp_pos.size()==N_JOINTS);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_pos, m_kd_posSIN(iter));
         assert(kd_pos.size()==N_JOINTS);
+		
+        if(m_contactState == LEFT_SUPPORT)
+        {
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(x_rf_ref,   m_rf_ref_posSIN(iter));
+          assert(x_rf_ref.size()==12);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(dx_rf_ref,  m_rf_ref_velSIN(iter));
+          assert(dx_rf_ref.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(ddx_rf_ref, m_rf_ref_accSIN(iter));
+          assert(ddx_rf_ref.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_feet, m_kp_feetSIN(iter));
+          assert(kp_feet.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_feet, m_kd_feetSIN(iter));
+          assert(kd_feet.size()==6);
+          m_sampleRF.pos = x_rf_ref;
+          m_sampleRF.vel = dx_rf_ref;
+          m_sampleRF.acc = ddx_rf_ref;
+          m_taskRF->setReference(m_sampleRF);
+          m_taskRF->Kp(kp_feet);
+          m_taskRF->Kd(kd_feet);
+        }
+        else if(m_contactState==RIGHT_SUPPORT)
+        {
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(x_lf_ref,   m_lf_ref_posSIN(iter));
+          assert(x_lf_ref.size()==12);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(dx_lf_ref,  m_lf_ref_velSIN(iter));
+          assert(dx_lf_ref.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(ddx_lf_ref, m_lf_ref_accSIN(iter));
+          assert(ddx_lf_ref.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_feet, m_kp_feetSIN(iter));
+          assert(kp_feet.size()==6);
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_feet, m_kd_feetSIN(iter));
+          assert(kd_feet.size()==6);
+          m_sampleLF.pos = x_lf_ref;
+          m_sampleLF.vel = dx_lf_ref;
+          m_sampleLF.acc = ddx_lf_ref;
+		  m_taskLF->setReference(m_sampleLF);
+          m_taskLF->Kp(kp_feet);
+          m_taskLF->Kd(kd_feet);
+        }
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
@@ -439,17 +519,17 @@ namespace dynamicgraph
         m_sampleCom.pos = x_com_ref;
         m_sampleCom.vel = dx_com_ref;
         m_sampleCom.acc = ddx_com_ref;
+        m_taskCom->setReference(m_sampleCom);
+        m_taskCom->Kp(kp_com);
+        m_taskCom->Kd(kd_com);
+		
         joints_sot_to_urdf(q_ref, m_samplePosture.pos);
         joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
         joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
-
-        m_taskCom->setReference(m_sampleCom);
         m_taskPosture->setReference(m_samplePosture);
-
-        m_taskCom->Kp(kp_com);
-        m_taskCom->Kd(kd_com);
         m_taskPosture->Kp(kp_posture);
         m_taskPosture->Kd(kd_posture);
+		
         m_contactLF->Kp(kp_contact);
         m_contactLF->Kd(kd_contact);
         m_contactRF->Kp(kp_contact);
@@ -487,7 +567,13 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_HQP_SOLUTION);
         Solver_HQP_base * solver = m_hqpSolver;
         if(m_invDyn->nVar()==60 && m_invDyn->nEq()==36 && m_invDyn->nIn()==40)
+		{
           solver = m_hqpSolver_60_36_40;
+	      getStatistics().store("fixed time solver", 1.0);
+		}
+		else
+		  getStatistics().store("fixed time solver", 0.0);
+
         const HqpOutput & sol = solver->solve(hqpData);
         getProfiler().stop(PROFILE_HQP_SOLUTION);
 
@@ -826,9 +912,12 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_pos before initialization!");
           return s;
         }
-        /*
-         * Code
-         */
+//        m_tau_desSOUT(iter);
+        se3::SE3 oMi;
+        Eigen::Matrix<double, 12, 1> x;
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
+        se3ToVector(oMi, x);
+        EIGEN_VECTOR_TO_VECTOR(x, s);
         return s;
       }
       
@@ -839,9 +928,12 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_pos before initialization!");
           return s;
         }
-        /*
-         * Code
-         */
+//        m_tau_desSOUT(iter);
+        se3::SE3 oMi;
+        Eigen::Matrix<double, 12, 1> x;
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
+        se3ToVector(oMi, x);
+        EIGEN_VECTOR_TO_VECTOR(x, s);
         return s;
       }
 
