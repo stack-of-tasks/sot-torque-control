@@ -13,21 +13,26 @@ from time import sleep
 def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
     dt = robot.timeStep;
     robot.device.setControlInputType('position');
-    traj_gen        = create_trajectory_generator(robot.device, dt);
-    com_traj_gen    = create_com_traj_gen(dt);
-    estimator       = create_estimator(robot.device, dt, delay, traj_gen);
-
-    ff_locator      = create_free_flyer_locator(robot.device, estimator, urdfFileName, robot.dynamic);
-    flex_est        = create_flex_estimator(robot, ff_locator, dt);
-    floatingBase    = create_floatingBase(flex_est, ff_locator);
-
-    pos_ctrl        = create_position_controller(robot.device, estimator, dt, traj_gen);
-    torque_ctrl     = create_torque_controller(robot.device, estimator);    
-#    inv_dyn         = create_inverse_dynamics(robot.device, estimator, torque_ctrl, traj_gen, dt);    
-    inv_dyn         = create_balance_controller(robot.device, floatingBase, estimator, torque_ctrl, traj_gen, com_traj_gen, urdfFileName, dt);    
-    ctrl_manager    = create_ctrl_manager(robot.device, torque_ctrl, pos_ctrl, inv_dyn, estimator, dt);
     
-    estimator.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.traj_gen        = create_trajectory_generator(robot.device, dt);
+    robot.com_traj_gen    = create_com_traj_gen(dt);
+    robot.rf_traj_gen     = SE3TrajectoryGenerator("tg_rf");
+    robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
+    robot.rf_traj_gen.init(dt);
+    robot.lf_traj_gen.init(dt);
+    robot.estimator       = create_estimator(robot, dt, delay);
+
+    robot.ff_locator      = create_free_flyer_locator(robot, urdfFileName);
+    robot.flex_est        = create_flex_estimator(robot, dt);
+    robot.floatingBase    = create_floatingBase(robot);
+
+    robot.pos_ctrl        = create_position_controller(robot, dt);
+    robot.torque_ctrl     = create_torque_controller(robot);
+#    inv_dyn         = create_inverse_dynamics(robot, dt);    
+    robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
+    robot.ctrl_manager    = create_ctrl_manager(robot, dt);
+    
+    robot.estimator.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";
@@ -37,13 +42,13 @@ def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfF
         if(go_half_sitting):
             print "Gonna go to half sitting";
             sleep(1.0);
-            go_to_position(traj_gen, robot.halfSitting[6:], 10.0);
+            go_to_position(robot.traj_gen, robot.halfSitting[6:], 10.0);
 
-    return Bunch(estimator=estimator, torque_ctrl=torque_ctrl, traj_gen=traj_gen, com_traj_gen=com_traj_gen, ctrl_manager=ctrl_manager, inv_dyn=inv_dyn, pos_ctrl=pos_ctrl, ff_locator=ff_locator, flex_est=flex_est, floatingBase=floatingBase);
+    return robot;
 
     
 ''' Main function to call after having started the graph. '''
-def main_post_start(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl, ff_locator, floatingBase):
-    ros = create_ros_topics(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl, ff_locator, floatingBase);
+def main_post_start(robot):
+    ros = create_ros_topics(robot);
     return ros;
 

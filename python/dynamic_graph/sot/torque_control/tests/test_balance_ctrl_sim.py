@@ -41,6 +41,17 @@ def config_sot_to_urdf(q):
     qUrdf[25:31,0] = q[12:18,0]; # lleg
     qUrdf[31:,0]   = q[6:12,0]; # rleg
     return qUrdf;
+    
+def joints_sot_to_urdf(q):
+    # GEPETTO VIEWER Free flyer 0-6, CHEST HEAD 7-10, LARM 11-17, RARM 18-24, LLEG 25-30, RLEG 31-36
+    # ROBOT VIEWER # Free flyer0-5, RLEG 6-11, LLEG 12-17, CHEST HEAD 18-21, RARM 22-28, LARM 29-35
+    qUrdf = mat_zeros(30);
+    qUrdf[:4,0]  = q[12:16,0]; # chest-head
+    qUrdf[4:11,0] = q[23:,0]; # larm
+    qUrdf[11:18,0] = q[16:23,0]; # rarm
+    qUrdf[18:24,0] = q[6:12,0]; # lleg
+    qUrdf[24:,0]   = q[:6,0]; # rleg
+    return qUrdf;
 
 def create_device(q=None):
     device = RobotSimu("device");
@@ -180,6 +191,10 @@ def create_graph(dt=0.001, delay=0.01):
     traj_gen = JointTrajectoryGenerator("jtg");
     plug(device.state,             traj_gen.base6d_encoders);
     traj_gen.init(dt);
+    
+    com_traj_gen = NdTrajectoryGenerator("com_traj_gen");
+    com_traj_gen.initial_value.value = to_tuple(robot.com(q0));
+    com_traj_gen.init(dt,3);
         
 #    estimator       = create_estimator(device, dt, delay, traj_gen);
 #    torque_ctrl     = create_torque_controller(device, estimator);
@@ -196,19 +211,16 @@ def create_graph(dt=0.001, delay=0.01):
 #    plug(ctrl.tau_des,                      torque_ctrl.jointsTorquesDesired);
 #    plug(ctrl.tau_des,                      estimator.tauDes);
 
-    ctrl.com_ref_pos.value = to_tuple(robot.com(q0));
-    ctrl.com_ref_vel.value = 3*(0.0,);
-    ctrl.com_ref_acc.value = 3*(0.0,);
+    plug(com_traj_gen.x,   ctrl.com_ref_pos);
+    plug(com_traj_gen.dx,  ctrl.com_ref_vel);
+    plug(com_traj_gen.ddx, ctrl.com_ref_acc);
+#    plug(ctrl.com, com_traj_gen.initial_value);
     
     rf_traj_gen = SE3TrajectoryGenerator("tg_rf");
-#    M = robot.position(q0, robot.model.getJointId(conf.RIGHT_FOOT_FRAME_NAME));
-#    rf_traj_gen.initial_value.value = to_tuple(M.translation) + to_tuple(M.rotation.reshape(9));
     plug(ctrl.right_foot_pos, rf_traj_gen.initial_value);
     rf_traj_gen.init(dt);
     
     lf_traj_gen = SE3TrajectoryGenerator("tg_lf");
-#    M = robot.position(q0, robot.model.getJointId(conf.LEFT_FOOT_FRAME_NAME));
-#    lf_traj_gen.initial_value.value = to_tuple(M.translation) + to_tuple(M.rotation.reshape(9));
     plug(ctrl.left_foot_pos, lf_traj_gen.initial_value);
     lf_traj_gen.init(dt);
     
@@ -253,7 +265,8 @@ def create_graph(dt=0.001, delay=0.01):
     plug(device.velocity,       ctrl.v);
     plug(ctrl.dv_des,           device.control);
     return Bunch(simulator=simulator, device=device, ctrl=ctrl, ff_locator=ff_locator, 
-                 traj_gen=traj_gen);
+                 traj_gen=traj_gen, rf_traj_gen=rf_traj_gen, lf_traj_gen=lf_traj_gen,
+                 com_traj_gen=com_traj_gen);
     
 def zmp_test(dt=0.001, delay=0.01):
     COM_DES_1 = (0.012, 0.1, 0.81);
@@ -283,6 +296,7 @@ def zmp_test(dt=0.001, delay=0.01):
         ent.ff_locator.v.recompute(i);
 
         ent.device.increment(dt);
+        
         
         if(i==1500):
             ent.ctrl.com_ref_pos.value = COM_DES_2;
@@ -341,15 +355,21 @@ def zmp_test(dt=0.001, delay=0.01):
     return ent;
 
 def one_foot_balance_test(dt=0.001, delay=0.01):
-    COM_DES_1 = (0.012, 0.10, 0.81);
+    COM_DES_1 = (0.012, 0.09, 0.9);
+    T_LIFT = 1.8;
+    T_TOUCH_DOWN = T_LIFT+1.0;
     ent = create_graph(dt, delay);
     robot = ent.simulator.r;
     
-    ent.ctrl.com_ref_pos.value = COM_DES_1;
+#    ent.ctrl.com_ref_pos.value = COM_DES_1;
+    ent.com_traj_gen.move(0, COM_DES_1[0], T_LIFT);
+    ent.com_traj_gen.move(1, COM_DES_1[1], T_LIFT);
+    ent.com_traj_gen.move(2, COM_DES_1[2], T_LIFT);
 
     t = 0.0;
     x_rf = robot.framePosition(robot.model.getFrameId('RLEG_JOINT5')).translation;
     x_lf = robot.framePosition(robot.model.getFrameId('LLEG_JOINT5')).translation;
+    tauMax = mat_zeros(NJ);
 
     for i in range(conf.MAX_TEST_DURATION):
         start = time.time();
@@ -358,11 +378,23 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
 
         ent.device.increment(dt);
         
-        if(i==1500):
-            print "Remove right foot contact";
-            ent.ctrl.removeRightFootContact(1.0);
+        tau = np.matrix(ent.ctrl.tau_des.value).T;
+        for j in range(NJ):
+            if(abs(tau[j]) > tauMax[j]):
+                tauMax[j] = abs(tau[j]);
+        
+        if(abs(t-T_LIFT)<0.5*dt):
+            print "Remove right foot contact and lift foot";
+            ent.ctrl.removeRightFootContact(1.0); 
+            ent.ctrl.right_foot_pos.recompute(i);
+            M_rf = ent.ctrl.right_foot_pos.value;
+            ent.rf_traj_gen.move(2, M_rf[2]+0.1, 1.0);
             
-        if(i%50==0):
+        if(abs(t-T_TOUCH_DOWN)<0.5*dt):
+            print "Move foot down"
+            ent.rf_traj_gen.move(2, M_rf[2], 1.0);
+            
+        if(abs(t%0.05)<dt):
             q = np.matrix(ent.device.state.value).T;
             q_urdf = config_sot_to_urdf(q);
             ent.simulator.viewer.updateRobotConfig(q_urdf);
@@ -377,17 +409,17 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
                                                   
             ent.ctrl.com.recompute(i);
             com = np.matrix(ent.ctrl.com.value).T
-            com[2,0] = 0.0;
-            ent.simulator.updateComPositionInViewer(com);
         
-            ent.ctrl.com.recompute(i);
-            com = np.matrix(ent.ctrl.com.value).T
             v = np.matrix(ent.device.velocity.value).T;
             dv = np.matrix(ent.ctrl.dv_des.value).T;
             print "t=%.3f dv=%.1f v=%.1f com=" % (t, norm(dv), norm(v)), com.T, 
+            print "com_ref", np.array(ent.com_traj_gen.x.value),
             print "f_rf %.1f"%f_rf[2,0].T, "f_lf %.1f"%f_lf[2,0].T;
             
-        if(i==2):
+            com[2,0] = 0.0;
+            ent.simulator.updateComPositionInViewer(com);
+            
+        if(i==1):
             ent.ctrl_manager = ControlManager("ctrl_man");
             ent.ctrl_manager.resetProfiler();
         t += dt;
@@ -395,11 +427,15 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
         if(start-stop<dt):
             sleep(dt-start+stop);
     
+    tauMax = joints_sot_to_urdf(tauMax);
+    print "max torques requested at each joint:\n", tauMax.T;
+    print "tauMax - tau =\n", robot.model.effortLimit[6:,0].T - tauMax.T;
     return ent;
     
 if __name__=='__main__':
     np.set_printoptions(precision=3, suppress=True);
 #    ent = zmp_test();
-    ent = one_foot_balance_test(0.001);
+    ent = one_foot_balance_test(conf.dt);
+    print ent.ctrl;
     pass;
     
