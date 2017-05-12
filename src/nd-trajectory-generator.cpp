@@ -178,12 +178,13 @@ namespace dynamicgraph
             const ml::Vector& initial_value = m_initial_valueSIN(iter);
             if(initial_value.size()!=m_n)
             {
-              SEND_ERROR_STREAM_MSG("Unexpected size of input signal initial_value");
+              SEND_MSG("Unexpected size of input signal initial_value: "+toString(initial_value.size()),
+                       MSG_TYPE_ERROR);
               getProfiler().stop(PROFILE_ND_POSITION_DESIRED_COMPUTATION);
               return s;
             }
             for(unsigned int i=0; i<m_n; i++)
-              m_noTrajGen[i]->set_initial_point(initial_value(i));
+              m_currentTrajGen[i]->set_initial_point(initial_value(i));
             m_firstIter = false;
           }
           else if(iter == m_iterLast)

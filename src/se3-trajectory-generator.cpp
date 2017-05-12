@@ -179,7 +179,7 @@ namespace dynamicgraph
               return s;
             }
             for(unsigned int i=0; i<m_np; i++)
-              m_noTrajGen[i]->set_initial_point(initial_value(i));
+              m_currentTrajGen[i]->set_initial_point(initial_value(i));
             m_firstIter = false;
           }
           else if(iter == m_iterLast)
