@@ -114,8 +114,10 @@ namespace dynamicgraph
           return s;
         }
 
-        const VectorN6& q= m_base6d_encodersSIN(iter);     //n+6
-        const VectorN& dq= m_joint_velocitiesSIN(iter);
+        const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+        const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         joints_sot_to_urdf(q.tail<N_JOINTS>(), m_q_pin.tail<N_JOINTS>());
@@ -142,8 +144,9 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
-          const VectorN6& q= m_base6d_encodersSIN(iter);     //n+6
-
+          const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+          assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+                    
           /* Compute kinematic and return q with freeflyer */
           const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
           const se3::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
@@ -205,7 +208,8 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
-          const VectorN& dq= m_joint_velocitiesSIN(iter);
+          const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
+          assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model.frames[m_left_foot_id];
