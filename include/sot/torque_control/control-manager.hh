@@ -39,11 +39,15 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
 
+
+#include <pinocchio/multibody/model.hpp>
+#include <pinocchio/parsers/urdf.hpp>
+
+#include <pininvdyn/robot-wrapper.hpp>
 
 namespace dynamicgraph {
   namespace sot {
@@ -88,9 +92,9 @@ namespace dynamicgraph {
 
       public:
         /* --- CONSTRUCTOR ---- */
-        ControlManager( const std::string & name );
+        ControlManager( const std::string & name);
 
-        void init(const double& dt);
+        void init(const double& dt, const std::string &urdfFile);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<ml::Vector,int>*> m_ctrlInputsSIN;
@@ -120,6 +124,7 @@ namespace dynamicgraph {
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
         void resetProfiler();
+	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -133,6 +138,8 @@ namespace dynamicgraph {
         }
 
       protected:
+	std::size_t m_nJoints;      /// Number of joints
+        pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
         double  m_maxCurrent;       /// control limit in Ampers

@@ -38,16 +38,11 @@ ENDIF(UNIX)
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
   joint-torque-controller
-  force-torque-estimator
   joint-trajectory-generator
   nd-trajectory-generator
-  inverse-dynamics-controller
   inverse-dynamics-balance-controller
   position-controller
-  admittance-controller
   control-manager
-  hrp2-device-pos-ctrl
-  #hrp2-device-torque-ctrl
   free-flyer-locator
   )
 

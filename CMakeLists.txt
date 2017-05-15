@@ -57,48 +57,19 @@ ADD_REQUIRED_DEPENDENCY("sot-core")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("PinInvDyn")
 
-# METAPOD configuration
-ADD_REQUIRED_DEPENDENCY("metapod >= 1.0.7")
-SET(robot_name "robot_hrp2_14")
-SET(lib_robot_name "metapod_hrp2_14")
-#SET(METAPODFROMURDF_EXECUTABLE $ENV{ROS_WORKSPACE}/install/bin/metapodfromurdf)
-#SET(dir_robot ${PROJECT_BINARY_DIR}/include/metapod/models/hrp2_14)
-SET(robot_name_sources
-  hrp2-torque-control/include/metapod/models/hrp2_14/config.hh
-  hrp2-torque-control/include/metapod/models/hrp2_14/hrp2_14.hh
-  hrp2-torque-control/src/hrp2_14.cc
-  )
-#SET(data_robot_dir ${PROJECT_SOURCE_DIR}/share/metapod/data/hrp2_14)
-#SET(config_file_robot  ${data_robot_dir}/hrp2_14.config)
-#SET(license_file_robot ${data_robot_dir}/hrp2_14_license_file.txt)
-#SET(urdf_file_robot $ENV{ROS_WORKSPACE}/stacks/hrp2/hrp2_14_description/urdf/hrp2_14_reduced_no_fixed.urdf)
-#message (STATUS ${METAPODFROMURDF_EXECUTABLE} " --name " hrp2_14 " --libname " ${lib_robot_name} " --directory " ${dir_robot} " --config-file " ${config_file_robot} " --license-file " ${license_file_robot} " " ${urdf_file_robot})
-include_directories(hrp2-torque-control/include)
-ADD_LIBRARY(${lib_robot_name} SHARED ${robot_name_sources})
-# Install the generated files
-INSTALL(FILES ${robot_name_sources} DESTINATION include/metapod/models/hrp2_14)
-INSTALL(TARGETS ${lib_robot_name} DESTINATION lib)
-# END of METAPOD configuration
 
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
-
 SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/joint-torque-controller.hh
-  include/sot/torque_control/force-torque-estimator.hh
   include/sot/torque_control/motor-model.hh
   include/sot/torque_control/joint-trajectory-generator.hh
   include/sot/torque_control/nd-trajectory-generator.hh
   include/sot/torque_control/free-flyer-locator.hh
-  include/sot/torque_control/inverse-dynamics-controller.hh
   include/sot/torque_control/inverse-dynamics-balance-controller.hh
   include/sot/torque_control/position-controller.hh
-  include/sot/torque_control/admittance-controller.hh
   include/sot/torque_control/control-manager.hh
-  hrp2-torque-control/include/sot/torque_control/hrp2-common.hh
-  include/sot/torque_control/hrp2-device-pos-ctrl.hh
-  #include/sot/torque_control/hrp2-device-torque-ctrl.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
   include/sot/torque_control/utils/logger.hh
@@ -109,7 +80,6 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/Stdafx.hh
   include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
-  include/sot/torque_control/utils/metapod-helper.hh
   )
 
 #INSTALL(FILES ${${LIBRARY_NAME}_HEADERS}
@@ -123,7 +93,6 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/poly-estimator.cpp
     src/quad-estimator.cpp
     src/stop-watch.cpp
-    hrp2-torque-control/src/hrp2-common.cpp
     src/motor-model.cpp
 )
 
@@ -140,11 +109,9 @@ PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} jrl-mal)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} metapod)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} PinInvDyn)
 
-TARGET_LINK_LIBRARIES(${LIBRARY_NAME} metapod_hrp2_14)
 
 IF(UNIX)
   TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${CMAKE_DL_LIBS})
