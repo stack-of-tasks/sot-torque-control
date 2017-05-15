@@ -19,7 +19,7 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/metapod-helper.hh>
+//#include <sot/torque_control/utils/metapod-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
 namespace dynamicgraph
