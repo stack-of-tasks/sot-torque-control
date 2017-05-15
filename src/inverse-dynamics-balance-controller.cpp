@@ -19,7 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <pininvdyn/utils/stop-watch.hpp>
+#include <pininvdyn/utils/statistics.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -42,74 +43,83 @@ namespace dynamicgraph
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
-//Size to be aligned                "-------------------------------------------------------"
+      //Size to be aligned                "-------------------------------------------------------"
 #define PROFILE_TAU_DES_COMPUTATION "InverseDynamicsBalanceController: desired tau"
 #define PROFILE_HQP_SOLUTION        "InverseDynamicsBalanceController: HQP"
 #define PROFILE_PREPARE_INV_DYN     "InverseDynamicsBalanceController: prepare inv-dyn"
 #define PROFILE_READ_INPUT_SIGNALS  "InverseDynamicsBalanceController: read input signals"
 
 #define INPUT_SIGNALS         m_com_ref_posSIN \
-                           << m_com_ref_velSIN \
-                           << m_com_ref_accSIN \
-                           << m_posture_ref_posSIN \
-                           << m_posture_ref_velSIN \
-                           << m_posture_ref_accSIN \
-                           << m_base_orientation_ref_posSIN \
-                           << m_base_orientation_ref_velSIN \
-                           << m_base_orientation_ref_accSIN \
-                           << m_kp_base_orientationSIN \
-                           << m_kd_base_orientationSIN \
-                           << m_kp_constraintsSIN \
-                           << m_kd_constraintsSIN \
-                           << m_kp_comSIN \
-                           << m_kd_comSIN \
-                           << m_kp_postureSIN \
-                           << m_kd_postureSIN \
-                           << m_kp_posSIN \
-                           << m_kd_posSIN \
-                           << m_w_comSIN \
-                           << m_w_postureSIN \
-                           << m_w_base_orientationSIN \
-                           << m_w_torquesSIN \
-                           << m_w_forcesSIN \
-                           << m_weight_contact_forcesSIN \
-                           << m_muSIN \
-                           << m_contact_pointsSIN \
-                           << m_contact_normalSIN \
-                           << m_f_minSIN \
-                           << m_rotor_inertiasSIN \
-                           << m_gear_ratiosSIN \
-                           << m_tau_maxSIN \
-                           << m_q_minSIN \
-                           << m_q_maxSIN \
-                           << m_dq_maxSIN \
-                           << m_ddq_maxSIN \
-                           << m_dt_joint_pos_limitsSIN \
-                           << m_tau_estimatedSIN \
-                           << m_qSIN \
-                           << m_vSIN \
-                           << m_wrench_baseSIN \
-                           << m_wrench_left_footSIN  \
-                           << m_wrench_right_footSIN  \
-                           << m_active_jointsSIN
+  << m_com_ref_velSIN \
+  << m_com_ref_accSIN \
+  << m_rf_ref_posSIN \
+  << m_rf_ref_velSIN \
+  << m_rf_ref_accSIN \
+  << m_lf_ref_posSIN \
+  << m_lf_ref_velSIN \
+  << m_lf_ref_accSIN \
+  << m_posture_ref_posSIN \
+  << m_posture_ref_velSIN \
+  << m_posture_ref_accSIN \
+  << m_base_orientation_ref_posSIN \
+  << m_base_orientation_ref_velSIN \
+  << m_base_orientation_ref_accSIN \
+  << m_kp_base_orientationSIN \
+  << m_kd_base_orientationSIN \
+  << m_kp_constraintsSIN \
+  << m_kd_constraintsSIN \
+  << m_kp_comSIN \
+  << m_kd_comSIN \
+  << m_kp_feetSIN \
+  << m_kd_feetSIN \
+  << m_kp_postureSIN \
+  << m_kd_postureSIN \
+  << m_kp_posSIN \
+  << m_kd_posSIN \
+  << m_w_comSIN \
+  << m_w_feetSIN \
+  << m_w_postureSIN \
+  << m_w_base_orientationSIN \
+  << m_w_torquesSIN \
+  << m_w_forcesSIN \
+  << m_weight_contact_forcesSIN \
+  << m_muSIN \
+  << m_contact_pointsSIN \
+  << m_contact_normalSIN \
+  << m_f_minSIN \
+  << m_rotor_inertiasSIN \
+  << m_gear_ratiosSIN \
+  << m_tau_maxSIN \
+  << m_q_minSIN \
+  << m_q_maxSIN \
+  << m_dq_maxSIN \
+  << m_ddq_maxSIN \
+  << m_dt_joint_pos_limitsSIN \
+  << m_tau_estimatedSIN \
+  << m_qSIN \
+  << m_vSIN \
+  << m_wrench_baseSIN \
+  << m_wrench_left_footSIN  \
+  << m_wrench_right_footSIN  \
+  << m_active_jointsSIN
 
 #define OUTPUT_SIGNALS        m_tau_desSOUT \
-                           << m_f_des_right_footSOUT \
-                           << m_f_des_left_footSOUT \
-                           << m_zmp_des_right_footSOUT \
-                           << m_zmp_des_left_footSOUT \
-                           << m_zmp_des_right_foot_localSOUT \
-                           << m_zmp_des_left_foot_localSOUT \
-                           << m_zmp_desSOUT \
-                           << m_zmp_right_footSOUT \
-                           << m_zmp_left_footSOUT \
-                           << m_zmpSOUT \
-                           << m_comSOUT \
-                           << m_com_velSOUT \
-                           << m_base_orientationSOUT \
-                           << m_right_foot_posSOUT \
-                           << m_left_foot_posSOUT \
-                           << m_dv_desSOUT
+  << m_f_des_right_footSOUT \
+  << m_f_des_left_footSOUT \
+  << m_zmp_des_right_footSOUT \
+  << m_zmp_des_left_footSOUT \
+  << m_zmp_des_right_foot_localSOUT \
+  << m_zmp_des_left_foot_localSOUT \
+  << m_zmp_desSOUT \
+  << m_zmp_right_footSOUT \
+  << m_zmp_left_footSOUT \
+  << m_zmpSOUT \
+  << m_comSOUT \
+  << m_com_velSOUT \
+  << m_base_orientationSOUT \
+  << m_right_foot_posSOUT \
+  << m_left_foot_posSOUT \
+  << m_dv_desSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -130,6 +140,12 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(com_ref_pos,                 dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(com_ref_vel,                 dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(com_ref_acc,                 dynamicgraph::Vector)
+	        ,CONSTRUCT_SIGNAL_IN(rf_ref_pos,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(rf_ref_vel,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(rf_ref_acc,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(lf_ref_pos,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(lf_ref_vel,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(lf_ref_acc,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_pos,             dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_vel,             dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_acc,             dynamicgraph::Vector)
@@ -142,11 +158,14 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(kd_constraints,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_com,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_com,                      dynamicgraph::Vector)
+	        ,CONSTRUCT_SIGNAL_IN(kp_feet,                     dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(kd_feet,                     dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_posture,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_posture,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_pos,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_pos,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(w_com,                       double)
+     		,CONSTRUCT_SIGNAL_IN(w_feet,                      double)
             ,CONSTRUCT_SIGNAL_IN(w_posture,                   double)
             ,CONSTRUCT_SIGNAL_IN(w_base_orientation,          double)
             ,CONSTRUCT_SIGNAL_IN(w_torques,                   double)
@@ -199,6 +218,7 @@ namespace dynamicgraph
             ,m_t(0.0)
             ,m_firstTime(true)
             ,m_timeLast(0)
+	        ,m_contactState(DOUBLE_SUPPORT)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -217,6 +237,38 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
                                                     "URDF file path (string)")));
+
+        addCommand("removeRightFootContact",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeRightFootContact,
+                                    docCommandVoid1("Remove the contact at the right foot.",
+                                                    "Transition time in seconds (double)")));
+
+        addCommand("removeLeftFootContact",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeLeftFootContact,
+                                    docCommandVoid1("Remove the contact at the left foot.",
+                                                    "Transition time in seconds (double)")));
+      }
+
+      void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime)
+      {
+        if(m_contactState == DOUBLE_SUPPORT)
+        {
+          m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
+          const double & w_feet = m_w_feetSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskRF, w_feet, 1);
+          m_contactState = LEFT_SUPPORT;
+        }
+      }
+
+      void InverseDynamicsBalanceController::removeLeftFootContact(const double& transitionTime)
+      {
+        if(m_contactState == DOUBLE_SUPPORT)
+        {
+          m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
+          const double & w_feet = m_w_feetSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
+          m_contactState = RIGHT_SUPPORT;
+        }
       }
 
       void InverseDynamicsBalanceController::init(const double& dt, const std::string& urdfFile)
@@ -233,6 +285,8 @@ namespace dynamicgraph
         const Eigen::Vector6d& kd_contact = m_kd_constraintsSIN(0);
         const Eigen::Vector3d& kp_com = m_kp_comSIN(0);
         const Eigen::Vector3d& kd_com = m_kd_comSIN(0);
+        const Eigen::Vector6d& kp_feet = m_kp_feetSIN(0);
+        const Eigen::Vector6d& kd_feet = m_kd_feetSIN(0);
         const VectorN& kp_posture = m_kp_postureSIN(0);
         const VectorN& kd_posture = m_kd_postureSIN(0);
         const VectorN& rotor_inertias = m_rotor_inertiasSIN(0);
@@ -247,6 +301,8 @@ namespace dynamicgraph
         assert(kd_contact.size()==6);
         assert(kp_com.size()==3);
         assert(kd_com.size()==3);
+        assert(kp_feet.size()==6);
+        assert(kd_feet.size()==6);
         assert(kp_posture.size()==N_JOINTS);
         assert(kd_posture.size()==N_JOINTS);
         assert(rotor_inertias.size()==N_JOINTS);
@@ -254,13 +310,13 @@ namespace dynamicgraph
 
         const double & w_com = m_w_comSIN(0);
         const double & w_posture = m_w_postureSIN(0);
-//        const double & w_base_orientation = m_w_base_orientationSIN(0);
-//        const double & w_torques = m_w_torquesSIN(0);
+        //        const double & w_base_orientation = m_w_base_orientationSIN(0);
+        //        const double & w_torques = m_w_torquesSIN(0);
         const double & w_forces = m_w_forcesSIN(0);
         const double & mu = m_muSIN(0);
         const double & fMin = m_f_minSIN(0);
 
-        try 
+        try
         {
           vector<string> package_dirs;
           m_robot = new RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
@@ -273,7 +329,7 @@ namespace dynamicgraph
           m_f.setZero(24);
           m_q_urdf.setZero(m_robot->nq());
           m_v_urdf.setZero(m_robot->nv());
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
           m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
           m_contactRF = new Contact6d("contact_rfoot", *m_robot, RIGHT_FOOT_FRAME_NAME,
@@ -295,6 +351,14 @@ namespace dynamicgraph
           m_taskCom->Kd(kd_com);
           m_invDyn->addMotionTask(*m_taskCom, w_com, 1);
 
+          m_taskRF = new TaskSE3Equality("task-rf", *m_robot, RIGHT_FOOT_FRAME_NAME);
+          m_taskRF->Kp(kp_feet);
+          m_taskRF->Kd(kd_feet);
+
+          m_taskLF = new TaskSE3Equality("task-lf", *m_robot, LEFT_FOOT_FRAME_NAME);
+          m_taskLF->Kp(kp_feet);
+          m_taskLF->Kd(kd_feet);
+
           m_taskPosture = new TaskJointPosture("task-posture", *m_robot);
           m_taskPosture->Kp(kp_posture);
           m_taskPosture->Kd(kd_posture);
@@ -303,12 +367,20 @@ namespace dynamicgraph
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
 
-          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG,
-                                                      "solver-eiquadprog");
+          m_frame_id_rf = m_robot->model().getFrameId(RIGHT_FOOT_FRAME_NAME);
+          m_frame_id_lf = m_robot->model().getFrameId(LEFT_FOOT_FRAME_NAME);
+
+          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
+                                                      "eiquadprog-fast");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
-        } 
-        catch (const std::exception& e) 
-        { 
+          m_hqpSolver_60_36_40 = Solver_HQP_base::getNewSolverFixedSize<60,36,40>(SOLVER_HQP_EIQUADPROG_RT,
+                                                                                  "eiquadprog-rt-60-36-40");
+          m_hqpSolver_48_30_20 = Solver_HQP_base::getNewSolverFixedSize<48,30,20>(SOLVER_HQP_EIQUADPROG_RT,
+                                                                                  "eiquadprog-rt-48-30-20");
+
+        }
+        catch (const std::exception& e)
+        {
           std::cout << e.what();
           return SEND_MSG("Init failed: Could load URDF :" + urdfFile, MSG_TYPE_ERROR);
         }
@@ -317,7 +389,7 @@ namespace dynamicgraph
       }
 
       /* ------------------------------------------------------------------- */
-      /* --- SIGNALS --------ontact_normal----------------------------------------------- */
+      /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
@@ -330,30 +402,31 @@ namespace dynamicgraph
         {
           if (active_joints_sot.any())
           {
-              /* from all OFF to some ON */
-              m_enabled = true ;
-              s = active_joints_sot;
-              Eigen::VectorXd active_joints_urdf(N_JOINTS);
-              joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
+            /* from all OFF to some ON */
+            m_enabled = true ;
 
-              m_taskBlockedJoints = new TaskJointPosture("task-posture", *m_robot);
-              Eigen::VectorXd blocked_joints(N_JOINTS);
-              for(unsigned int i=0; i<N_JOINTS; i++)
-                if(active_joints_urdf(i)==0.0)
-                  blocked_joints(i) = 1.0;
-                else
-                  blocked_joints(i) = 0.0;
-              SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
-              m_taskBlockedJoints->mask(blocked_joints);
-              TrajectorySample ref_zero(N_JOINTS);
-              m_taskBlockedJoints->setReference(ref_zero);
-              m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
+              s = active_joints_sot;
+            Eigen::VectorXd active_joints_urdf(N_JOINTS);
+            joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
+
+            m_taskBlockedJoints = new TaskJointPosture("task-posture", *m_robot);
+            Eigen::VectorXd blocked_joints(N_JOINTS);
+            for(unsigned int i=0; i<N_JOINTS; i++)
+              if(active_joints_urdf(i)==0.0)
+                blocked_joints(i) = 1.0;
+              else
+                blocked_joints(i) = 0.0;
+            SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
+            m_taskBlockedJoints->mask(blocked_joints);
+            TrajectorySample ref_zero(N_JOINTS);
+            m_taskBlockedJoints->setReference(ref_zero);
+            m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
           }
         }
         else if (!active_joints_sot.any())
         {
-            /* from some ON to all OFF */
-            m_enabled = false ;
+          /* from some ON to all OFF */
+          m_enabled = false ;
         }
         if (m_enabled == false)
           for(int i=0; i<N_JOINTS; i++)
@@ -374,6 +447,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
+        m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
         assert(q_sot.size()==N_JOINTS+6);
@@ -407,6 +481,45 @@ namespace dynamicgraph
         assert(kp_pos.size()==N_JOINTS);
         const VectorN& kd_pos = m_kd_posSIN(iter);
         assert(kd_pos.size()==N_JOINTS);
+
+        if(m_contactState == LEFT_SUPPORT)
+        {
+  		  const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
+          assert(x_rf_ref.size()==12);
+	      const Vector6& dx_rf_ref =  m_rf_ref_velSIN(iter);
+          assert(dx_rf_ref.size()==6);
+          const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
+          assert(ddx_rf_ref.size()==6);
+          const Vector6& kp_feet = m_kp_feetSIN(iter);
+          assert(kp_feet.size()==6);
+          const Vector6& kd_feet = m_kd_feetSIN(iter);
+          assert(kd_feet.size()==6);
+          m_sampleRF.pos = x_rf_ref;
+          m_sampleRF.vel = dx_rf_ref;
+          m_sampleRF.acc = ddx_rf_ref;
+          m_taskRF->setReference(m_sampleRF);
+          m_taskRF->Kp(kp_feet);
+          m_taskRF->Kd(kd_feet);
+        }
+        else if(m_contactState==RIGHT_SUPPORT)
+        {
+          const Eigen::Matrix<double,12,1>& x_lf_ref = m_lf_ref_posSIN(iter);
+          assert(x_lf_ref.size()==12);
+          const Vector6& dx_lf_ref = m_lf_ref_velSIN(iter);
+          assert(dx_lf_ref.size()==6);
+          const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
+          assert(ddx_lf_ref.size()==6);
+          const Vector6& kp_feet = m_kp_feetSIN(iter);
+          assert(kp_feet.size()==6);
+          const Vector6& kd_feet = m_kd_feetSIN(iter);
+          assert(kd_feet.size()==6);
+          m_sampleLF.pos = x_lf_ref;
+          m_sampleLF.vel = dx_lf_ref;
+          m_sampleLF.acc = ddx_lf_ref;
+          m_taskLF->setReference(m_sampleLF);
+          m_taskLF->Kp(kp_feet);
+          m_taskLF->Kd(kd_feet);
+        }
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
@@ -416,15 +529,14 @@ namespace dynamicgraph
         m_sampleCom.pos = x_com_ref;
         m_sampleCom.vel = dx_com_ref;
         m_sampleCom.acc = ddx_com_ref;
+        m_taskCom->setReference(m_sampleCom);
+        m_taskCom->Kp(kp_com);
+        m_taskCom->Kd(kd_com);
+
         joints_sot_to_urdf(q_ref, m_samplePosture.pos);
         joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
         joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
-
-        m_taskCom->setReference(m_sampleCom);
         m_taskPosture->setReference(m_samplePosture);
-
-        m_taskCom->Kp(kp_com);
-        m_taskCom->Kd(kd_com);
         m_taskPosture->Kp(kp_posture);
         m_taskPosture->Kd(kd_posture);
         m_contactLF->Kp(kp_contact);
@@ -436,7 +548,7 @@ namespace dynamicgraph
         {
           m_firstTime = false;
           m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
-//          m_robot->computeAllTerms(m_invDyn->data(), q, v);
+          //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
           se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                             m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
           m_contactLF->setReference(H_lf);
@@ -462,20 +574,41 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
-        const HqpOutput & sol = m_hqpSolver->solve(hqpData);
+        Solver_HQP_base * solver = m_hqpSolver;
+        if(m_invDyn->nVar()==60 && m_invDyn->nEq()==36 && m_invDyn->nIn()==40)
+        {
+          solver = m_hqpSolver_60_36_40;
+          getStatistics().store("solver fixed size 60_36_40", 1.0);
+        }
+        else if(m_invDyn->nVar()==48 && m_invDyn->nEq()==30 && m_invDyn->nIn()==20)
+        {
+          solver = m_hqpSolver_48_30_20;
+          getStatistics().store("solver fixed size 48_30_20", 1.0);
+        }
+        else
+          getStatistics().store("solver dynamic size", 1.0);
+
+        const HqpOutput & sol = solver->solve(hqpData);
         getProfiler().stop(PROFILE_HQP_SOLUTION);
 
         if(sol.status!=HQP_STATUS_OPTIMAL)
         {
           SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: "+toString(sol.status));
-          SEND_MSG("HQP solver failed to find a solution: "+toString(sol.status), MSG_TYPE_ERROR);
-          SEND_MSG(hqpDataToString(hqpData, false), MSG_TYPE_DEBUG);
+          SEND_DEBUG_STREAM_MSG(hqpDataToString(hqpData, false));
           s.resize(0);
           return s;
         }
 
+        getStatistics().store("active inequalities", sol.activeSet.size());
+        getStatistics().store("solver iterations", sol.iterations);
+        if(ddx_com_ref.norm()>1e-3)
+          getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
+
         velocity_urdf_to_sot(sol.x.head(m_robot->nv()), m_dv_sot);
-        m_f = sol.x.tail(24);
+        if(m_contactState == DOUBLE_SUPPORT)
+          m_f = sol.x.tail(24);
+        else
+          m_f = sol.x.tail(12);
         joints_urdf_to_sot(m_invDyn->computeActuatorForces(sol), m_tau_sot);
 
         m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail<N_JOINTS>()) +
@@ -498,7 +631,7 @@ namespace dynamicgraph
         if(s.size()!=m_robot->nv())
           s.resize(m_robot->nv());
         m_tau_desSOUT(iter);
-	s = m_dv_sot;
+		s = m_dv_sot;
         return s;
       }
 
@@ -512,9 +645,15 @@ namespace dynamicgraph
         if(s.size()!=6)
           s.resize(6);
         m_tau_desSOUT(iter);
+        if(m_contactState == LEFT_SUPPORT)
+        {
+          s.setZero();
+          return s;
+        }
+
         const Eigen::MatrixXd & T = m_contactRF->getForceGeneratorMatrix();
         m_f_RF = T*m_f.head<12>();
-	s = m_f_RF;
+		s = m_f_RF;
         return s;
       }
 
@@ -528,9 +667,15 @@ namespace dynamicgraph
         if(s.size()!=6)
           s.resize(6);
         m_tau_desSOUT(iter);
+        if(m_contactState == RIGHT_SUPPORT)
+        {
+          s.setZero();
+          return s;
+        }
+
         const Eigen::MatrixXd & T = m_contactLF->getForceGeneratorMatrix();
         m_f_LF = T*m_f.tail<12>();
-	s = m_f_LF;
+		s = m_f_LF;
         return s;
       }
 
@@ -554,7 +699,7 @@ namespace dynamicgraph
         else
           m_zmp_des_RF_local.setZero();
 
-	s = m_zmp_des_RF_local.head<2>();
+		s = m_zmp_des_RF_local.head<2>();
         return s;
       }
 
@@ -577,7 +722,7 @@ namespace dynamicgraph
         else
           m_zmp_des_LF_local.setZero();
 
-	s = m_zmp_des_LF_local.head<2>();
+		s = m_zmp_des_LF_local.head<2>();
         return s;
       }
 
@@ -603,7 +748,7 @@ namespace dynamicgraph
           m_zmp_des_RF.setZero();
 
         m_zmp_des_RF = H_rf.act(m_zmp_des_RF);
-	s = m_zmp_des_RF.head<2>();
+		s = m_zmp_des_RF.head<2>();
         return s;
       }
 
@@ -629,7 +774,7 @@ namespace dynamicgraph
           m_zmp_des_LF.setZero();
 
         m_zmp_des_LF = H_lf.act(m_zmp_des_LF);
-	s = m_zmp_des_LF.head<2>();
+		s = m_zmp_des_LF.head<2>();
         return s;
       }
 
@@ -660,6 +805,7 @@ namespace dynamicgraph
         if(s.size()!=2)
           s.resize(2);
         const Vector6& f = m_wrench_right_footSIN(iter);
+        assert(f.size()==6);
         se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
         if(fabs(f(2)>1.0))
@@ -772,9 +918,11 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_pos before initialization!");
           return s;
         }
-        /*
-         * Code
-         */
+        //        m_tau_desSOUT(iter);
+        se3::SE3 oMi;
+	    s.resize(12);
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
+        se3ToVector(oMi, s);
         return s;
       }
       
@@ -785,9 +933,11 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_pos before initialization!");
           return s;
         }
-        /*
-         * Code
-         */
+        //        m_tau_desSOUT(iter);
+        se3::SE3 oMi;
+	    s.resize(12);
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
+        se3ToVector(oMi, s);
         return s;
       }
 
@@ -804,18 +954,20 @@ namespace dynamicgraph
         try
         {
           getProfiler().report_all(3, os);
+          getStatistics().report_all(1, os);
+          os<<"QP size: nVar "<<m_invDyn->nVar()<<" nEq "<<m_invDyn->nEq()<<" nIn "<<m_invDyn->nIn()<<"\n";
         }
         catch (ExceptionSignal e) {}
       }
 
       void InverseDynamicsBalanceController::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
+                                                         std::istringstream& cmdArgs,
+                                                         std::ostream& os )
       {
         if( cmdLine == "help" )
         {
           os << "InverseDynamicsBalanceController:\n"
-              << "\t -." << std::endl;
+             << "\t -." << std::endl;
           Entity::commandLine(cmdLine, cmdArgs, os);
         }
         else

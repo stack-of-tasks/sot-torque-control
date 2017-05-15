@@ -198,4 +198,4 @@ namespace dynamicgraph {
 
 
 
-#endif // #ifndef __sot_torque_control_trajectory_generators_H__
+#endif // #ifndef __sot_torque_control_logger_H__

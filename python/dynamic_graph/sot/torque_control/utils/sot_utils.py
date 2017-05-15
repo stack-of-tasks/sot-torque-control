@@ -105,9 +105,10 @@ def smoothly_set_signal_to_zero(sig):
     
 def smoothly_set_signal(sig, final_value, duration=5.0, steps=500, prints = 10):
     v = np.array(sig.value);
+    vf = np.array(final_value)
     for i in range(steps+1):
         alpha = 1.0*i/steps
-        sig.value = tuple(v*alpha);
+        sig.value = tuple(vf*alpha+(1-alpha)*v);
         sleep(1.0*duration/steps);
         if (i%(steps/prints)==0):
             print 'smoothly setting signal... %(number)02d%%' % {"number": 100.*alpha} 

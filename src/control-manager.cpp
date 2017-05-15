@@ -19,7 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <pininvdyn/utils/stop-watch.hpp>
+#include <pininvdyn/utils/statistics.hpp>
 
 namespace dynamicgraph
 {
@@ -441,6 +442,7 @@ namespace dynamicgraph
       void ControlManager::resetProfiler()
       {
         getProfiler().reset_all();
+        getStatistics().reset_all();
       }
 
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */

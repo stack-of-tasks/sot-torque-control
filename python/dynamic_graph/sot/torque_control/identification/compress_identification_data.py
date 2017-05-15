@@ -7,8 +7,9 @@ q.shape"""
 from IPython import embed
 import numpy as np
 import matplotlib.pyplot as plt
-from plot_utils import *
+from dynamic_graph.sot.torque_control.utils.plot_utils import *
 from compute_estimates_from_sensors import compute_estimates_from_sensors
+
 
 DATA_SET = 1;
 FOLDER_ID = 1;
@@ -24,23 +25,23 @@ USE_FT_SENSORS = True
 JOINT_ID = np.array(range(12)); ''' IDs of the joints to save '''
 if(DATA_SET==1):
     if(FOLDER_ID==1):
-        data_folder = '../../results/20160923_165916_Joint2_id_Kt/';
+        data_folder = '../../../../../../../results/20160923_165916_Joint2_id_Kt/';
         JOINT_ID = np.array([2]);
     elif(FOLDER_ID==2):
-        data_folder = '../../results/20160923_170659_Joint2_id_Kv/';
+        data_folder = '../../../../../../../results/20160923_170659_Joint2_id_Kv/';
         JOINT_ID = np.array([2]);
     elif(FOLDER_ID==3):
-        data_folder = '../../results/20160923_173001_Joint2_id_Ka/';
+        data_folder = '../../../../../../../results/20160923_173001_Joint2_id_Ka/';
         JOINT_ID = np.array([2]);
 if(DATA_SET==2):
     if(FOLDER_ID==1):
         #~ data_folder = '../../results/20160720_132041_rsp_torque_id/';
         #~ data_folder = '../../results/20160720_132429_rsp_torque_id/';
-        data_folder = '../../results/20160720_143905_rsp_torque_id_noGravity/';
+        data_folder = '../../../../../../../results/results/20160720_143905_rsp_torque_id_noGravity/';
         JOINT_ID = np.array([16]);
     elif(FOLDER_ID==2):
-        data_folder = '../../results/20160720_134957_rsp_friction_id_ext/';
-        #~ data_folder = '../../results/20160722_144631_rsp_const_vel/';
+        data_folder = '../../../../../../../results/results/20160720_134957_rsp_friction_id_ext/';
+        #~ data_folder = '../../../../../../../results/results/20160722_144631_rsp_const_vel/';
         JOINT_ID = np.array([16]);
     elif(FOLDER_ID==3):
         data_folder = '../../rien/';

@@ -8,7 +8,8 @@ q.shape"""
 from IPython import embed
 import numpy as np
 import matplotlib.pyplot as plt
-from plot_utils import *
+#from plot_utils import *
+from dynamic_graph.sot.torque_control.utils.plot_utils import *
 try:
     from compute_estimates_from_sensors import compute_estimates_from_sensors
 except ImportError:

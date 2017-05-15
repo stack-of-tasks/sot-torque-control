@@ -77,11 +77,19 @@ namespace dynamicgraph {
         InverseDynamicsBalanceController( const std::string & name );
 
         void init(const double& dt, const std::string& urdfFile);
+        void removeRightFootContact(const double& transitionTime);
+        void removeLeftFootContact(const double& transitionTime);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(com_ref_pos,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(com_ref_vel,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(com_ref_acc,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_acc,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_acc,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_vel,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_acc,            dynamicgraph::Vector);
@@ -95,12 +103,15 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(kd_constraints,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_com,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_com,                     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_feet,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_feet,                    dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_posture,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_posture,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_pos,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_pos,                     dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(w_com,                      double);
+        DECLARE_SIGNAL_IN(w_feet,                     double);
         DECLARE_SIGNAL_IN(w_posture,                  double);
         DECLARE_SIGNAL_IN(w_base_orientation,         double);
         DECLARE_SIGNAL_IN(w_torques,                  double);
@@ -170,17 +181,34 @@ namespace dynamicgraph {
         bool              m_enabled;          /// True if controler is enabled
         bool              m_firstTime;        /// True at the first iteration of the controller
 
+        enum ContactState
+        {
+          DOUBLE_SUPPORT = 0,
+          LEFT_SUPPORT = 1,
+          RIGHT_SUPPORT = 2
+        };
+        ContactState      m_contactState;
+
+        int m_frame_id_rf;  /// frame id of right foot
+        int m_frame_id_lf;  /// frame id of left foot
+
         /// pininvdyn
         pininvdyn::RobotWrapper *                       m_robot;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_40;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_20;
         pininvdyn::InverseDynamicsFormulationAccForce * m_invDyn;
         pininvdyn::contacts::Contact6d *                m_contactRF;
         pininvdyn::contacts::Contact6d *                m_contactLF;
         pininvdyn::tasks::TaskComEquality *             m_taskCom;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskRF;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskLF;
         pininvdyn::tasks::TaskJointPosture *            m_taskPosture;
         pininvdyn::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
         pininvdyn::trajectories::TrajectorySample       m_sampleCom;
+        pininvdyn::trajectories::TrajectorySample       m_sampleRF;
+        pininvdyn::trajectories::TrajectorySample       m_sampleLF;
         pininvdyn::trajectories::TrajectorySample       m_samplePosture;
 
         pininvdyn::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
