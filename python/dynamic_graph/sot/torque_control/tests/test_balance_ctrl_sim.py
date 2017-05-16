@@ -237,6 +237,7 @@ def create_graph(dt=0.001, delay=0.01):
     ctrl.contact_normal.value = (0.0, 0.0, 1.0);
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
+    ctrl.f_max.value = conf.fMax;
     ctrl.mu.value = conf.mu[0];
     ctrl.weight_contact_forces.value = (1e2, 1e2, 1e0, 1e3, 1e3, 1e3);
     ctrl.kp_com.value = 3*(conf.kp_com,);
@@ -355,9 +356,11 @@ def zmp_test(dt=0.001, delay=0.01):
     return ent;
 
 def one_foot_balance_test(dt=0.001, delay=0.01):
-    COM_DES_1 = (0.012, 0.09, 0.9);
-    T_LIFT = 1.8;
-    T_TOUCH_DOWN = T_LIFT+1.0;
+    COM_DES_1 = (0.012, 0.09, 0.85);
+    T_CONTACT_TRANSITION = 1.8;
+    CONTACT_TRANSITION_DURATION = 0.5;
+    T_LIFT = T_CONTACT_TRANSITION + CONTACT_TRANSITION_DURATION;
+    T_MOVE_DOWN = T_LIFT+1.0;
     ent = create_graph(dt, delay);
     robot = ent.simulator.r;
     
@@ -383,14 +386,17 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
             if(abs(tau[j]) > tauMax[j]):
                 tauMax[j] = abs(tau[j]);
         
-        if(abs(t-T_LIFT)<0.5*dt):
-            print "Remove right foot contact and lift foot";
-            ent.ctrl.removeRightFootContact(1.0); 
+        if(abs(t-T_CONTACT_TRANSITION)<0.5*dt):
+            print "Remove right foot contact";
+            ent.ctrl.removeRightFootContact(CONTACT_TRANSITION_DURATION); 
+            
+        if(abs(t-T_LIFT) < 0.5*dt):
+            print "Lift foot"
             ent.ctrl.right_foot_pos.recompute(i);
             M_rf = ent.ctrl.right_foot_pos.value;
-            ent.rf_traj_gen.move(2, M_rf[2]+0.1, 1.0);
+            ent.rf_traj_gen.move(2, M_rf[2]+0.1, T_MOVE_DOWN-T_LIFT-dt);
             
-        if(abs(t-T_TOUCH_DOWN)<0.5*dt):
+        if(abs(t-T_MOVE_DOWN)<0.5*dt):
             print "Move foot down"
             ent.rf_traj_gen.move(2, M_rf[2], 1.0);
             
