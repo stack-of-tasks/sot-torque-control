@@ -14,20 +14,20 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __sot_torque_control_ForceTorqueEstimator_H__
-#define __sot_torque_control_ForceTorqueEstimator_H__
+#ifndef __sot_torque_control_VelAccEstimator_H__
+#define __sot_torque_control_VelAccEstimator_H__
 /* --------------------------------------------------------------------- */
 /* --- API ------------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
 #if defined (WIN32)
-#  if defined (force_torque_estimator_EXPORTS)
-#    define SOTFORCETORQUEESTIMATOR_EXPORT __declspec(dllexport)
+#  if defined (vel_acc_estimator_EXPORTS)
+#    define SOTVELACCESTIMATOR_EXPORT __declspec(dllexport)
 #  else
-#    define SOTFORCETORQUEESTIMATOR_EXPORT __declspec(dllimport)
+#    define SOTVELACCESTIMATOR_EXPORT __declspec(dllimport)
 #  endif
 #else
-#  define SOTFORCETORQUEESTIMATOR_EXPORT
+#  define SOTVELACCESTIMATOR_EXPORT
 #endif
 
 //#define VP_DEBUG 1        /// enable debug output
@@ -85,7 +85,7 @@ namespace dynamicgraph {
         * Create the entity, plug all the input signals, call the init method
         * specifying the control-loop time step and the desired delay introduced
         * by the estimation (at least 1.5 times the time step). For instance:
-        *   estimator = ForceTorqueEstimator("estimator");
+        *   estimator = VelAccEstimator("estimator");
         *   plug(device.robotState,     estimator.base6d_encoders);
         *   plug(device.accelerometer,  estimator.accelerometer);
         *   plug(device.gyrometer,      estimator.gyroscope);
@@ -153,50 +153,20 @@ namespace dynamicgraph {
         * of the contacts. This procedure estimates at the same time the contact
         * forces and the joint torques.
         */
-      class SOTFORCETORQUEESTIMATOR_EXPORT ForceTorqueEstimator
+      class SOTVELACCESTIMATOR_EXPORT VelAccEstimator
           :public ::dynamicgraph::Entity
       {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(estimatedTorsoAngularVelocity, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(estimatedTorsoAcceleration, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftFoot,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightFoot,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftHand,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightHand,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ddqRef,           dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(currentMeasure,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(saturationCurrent,dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(wCurrentTrust,    dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_n, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_p, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_n, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_p, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(tauDes, dynamicgraph::Vector);  // desired joint torques
-        
-        DECLARE_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector); /// debug signal
-
-        DECLARE_SIGNAL_OUT(baseAcceleration,        dynamicgraph::Vector);  // 6d
-        DECLARE_SIGNAL_OUT(baseAngularVelocity,     dynamicgraph::Vector);  // 3d
-        DECLARE_SIGNAL_OUT(contactWrenchLeftFoot,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightFoot,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchLeftSole,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightSole,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchLeftHand,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightHand,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchBody,       dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(currentFiltered,         dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorques,           dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorquesFromMotorModel,    dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorquesFromInertiaModel,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(dynamicsError,  dynamicgraph::Vector); // error between desired torques and estimated (n+6)
+        DECLARE_SIGNAL_IN(accelerometer,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gyroscope,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsPositions,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsVelocities,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsAccelerations,     dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector);  // 6d
+        DECLARE_SIGNAL_OUT(torsoAngularVelocity,    dynamicgraph::Vector);  // 3d
 
         /// The following inner signals are used because this entity has some output signals
         /// whose related quantities are computed at the same time by the same algorithm
@@ -206,38 +176,17 @@ namespace dynamicgraph {
         /// on this inner signal, which is the one triggering the computations.
         /// Inner signals are not exposed, so that nobody can access them.
 
-        /// This signal contains the joints' torques and all the 5 contact wrenches
+        /// This signal contains the estimated joints positions, velocities and accelerations.
         DECLARE_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector);
-        DECLARE_SIGNAL_INNER(torques_wrenches,      dynamicgraph::Vector);
-        /// This signal contains the joints' torques estimated from motor model and current measurment
-        DECLARE_SIGNAL_INNER(torquesFromMotorModel, dynamicgraph::Vector);
+        /// This signal contains the estimated base angular velocity and lin/ang accelerations.
+        DECLARE_SIGNAL_INNER(w_dv_torso,            dynamicgraph::Vector);
         
       protected:
       
-        MotorModel motorModel;
-      
-        /// index ordering the 5 estimated contact wrenches inside the
-        /// inner signal torques_wrenches
-        static const int m_INDEX_WRENCH_LEFT_HAND   = 0;
-        static const int m_INDEX_WRENCH_RIGHT_HAND  = 1;
-        static const int m_INDEX_WRENCH_LEFT_FOOT   = 2;
-        static const int m_INDEX_WRENCH_RIGHT_FOOT  = 3;
-        static const int m_INDEX_WRENCH_BODY        = 4;
-
-        /// number of samples collected to compute the offset of the force/torque sensors
-        static const int N_SAMPLE_FT_SENS_OFFSET = 100;
-
         double m_dt;              /// timestep of the controller
         double m_delayEncoders;   /// delay introduced by the estimation of joints pos/vel/acc
-        double m_delayFTsens;     /// delay introduced by the filtering of the F/T sensors
-        double m_delayCurrent;    /// delay introduced by the filtering of the motor current measure
-
-        bool m_is_first_iter;     /// true at the first iteration, false after
-        bool m_useRefJointsAcc;   /// if true it uses the reference (rather than estimated) joints acc to estimate torques and ext forces
-        bool m_useRefJointsVel;   /// if true it uses the reference (rather than estimated) joints vel to estimate torques and ext forces
-        bool m_useRawEncoders;    /// if true it uses the raw encoders data (rather than the filtered values) to estimate torques and ext forces
-        bool m_useFTsensors;      /// if true it uses the F/T sensors to estimate the joints torques
-        bool m_computeFTsensorOffsets;  /// if true at the first iteration it computes the F/T sensor offsets
+        double m_delayAcc;        /// delay introduced by the filtering of the accelerometer
+        double m_delayGyro;       /// delay introduced by the filtering of the gyroscope
 
         /// std::vector to use with the filters
         /// All the variables whose name contains 'filter' are outputs of the filters
@@ -245,107 +194,46 @@ namespace dynamicgraph {
         std::vector<double> m_dq_filter_std;   /// joints velocities
         std::vector<double> m_q_filter_std;    /// joints positions
         std::vector<double> m_q_std;           /// joints positions
-        std::vector<double> m_ftSens_LH_std, m_ftSens_LH_filter_std;  /// force/torque sensor left hand
-        std::vector<double> m_ftSens_RH_std, m_ftSens_RH_filter_std;  /// force/torque sensor right hand
-        std::vector<double> m_ftSens_LF_std, m_ftSens_LF_filter_std;  /// force/torque sensor left foot
-        std::vector<double> m_ftSens_RF_std, m_ftSens_RF_filter_std;  /// force/torque sensor right foot
-        std::vector<double> m_currentMeasure_std, m_currentMeasure_filter_std;  /// motor current measure
-        std::vector<double> m_saturationCurrent_std;   /// motor current sensor saturation
-        std::vector<double> m_wCurrentTrust_std;       /// torque estimation mixing weight
-        std::vector<double> m_motorParameterKt_p_std;  /// motor parameter Kt when dq>0
-        std::vector<double> m_motorParameterKt_n_std;  /// motor parameter Kt when dq<0
-        std::vector<double> m_motorParameterKf_p_std;  /// motor parameter Kf when dq>0
-        std::vector<double> m_motorParameterKf_n_std;  /// motor parameter Kf when dq<0
-        std::vector<double> m_motorParameterKv_p_std;  /// motor parameter Kv when dq>0
-        std::vector<double> m_motorParameterKv_n_std;  /// motor parameter Kv when dq<0
-        std::vector<double> m_motorParameterKa_p_std;  /// motor parameter Ka when dq>0
-        std::vector<double> m_motorParameterKa_n_std;  /// motor parameter Ka when dq<0
+        std::vector<double> m_dv_IMU_std, m_dv_IMU_filter_std;/// IMU lin acceleration
+        std::vector<double> m_w_IMU_std, m_w_IMU_filter_std;  /// IMU angular vel
+        std::vector<double> m_dw_IMU_filter_std;              /// IMU angular acc
+
+        /// spatial velocity and acceleration of the torso
+        metapod::Spatial::MotionTpl<double> m_v_torso;
+        metapod::Spatial::MotionTpl<double> m_dv_torso;
 
         /// polynomial-fitting filters
         PolyEstimator* m_encodersFilter;
         PolyEstimator* m_accelerometerFilter;
-        PolyEstimator* m_ftSensLeftFootFilter;
-        PolyEstimator* m_ftSensRightFootFilter;
-        PolyEstimator* m_ftSensLeftHandFilter;
-        PolyEstimator* m_ftSensRightHandFilter;
-        PolyEstimator* m_currentMeasureFilter;
-        
-
-        /// force/torque sensors' offsets taken at the initialization
-        Eigen::VectorXd m_ftSensLeftHand_offset;
-        Eigen::VectorXd m_ftSensRightHand_offset;
-        Eigen::VectorXd m_ftSensLeftFoot_offset;
-        Eigen::VectorXd m_ftSensRightFoot_offset;
-        Eigen::VectorXd m_FTsensorOffsets;
+        PolyEstimator* m_gyroscopeFilter;
 
         // *************************** Metapod ******************************
         typedef metapod::hrp2_14<double> Hrp2_14;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::r_ankle>::type      RightFootNode;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::l_ankle>::type      LeftFootNode;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::r_wrist>::type      RightHandNode;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::l_wrist>::type      LeftHandNode;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::torso>::type        TorsoNode;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::CHEST_LINK0>::type  ChestLink0Node;
-        typedef metapod::Nodes<Hrp2_14, Hrp2_14::BODY>::type         BodyNode;
         typedef metapod::Spatial::TransformT<double, metapod::Spatial::RotationMatrixIdentityTpl<double> > TransformNoRot;
-        typedef metapod::Spatial::TransformT<double, metapod::Spatial::RotationMatrixAboutZTpl<double> > TransformRotZ;
 
+        /// Transformation from IMU's frame to torso's frame
+        TransformNoRot m_torso_X_imu;
 
-        /// nodes corresponding to the four end-effectors
-        RightFootNode&  m_node_right_foot;
-        LeftFootNode&   m_node_left_foot;
-        RightHandNode&  m_node_right_hand;
-        LeftHandNode&   m_node_left_hand;
-        TorsoNode&      m_node_torso;
-        ChestLink0Node& m_node_chest_link0;
-        BodyNode&       m_node_body;
-
-        /// Transformation from force/torque sensors frame to hosting link frame
-        TransformNoRot m_RF_X_ftSens;
-        TransformNoRot m_LF_X_ftSens;
-        TransformRotZ m_RH_X_ftSens;
-        TransformRotZ m_LH_X_ftSens;
-        /// Transformation from foot frame to sole frame
-        TransformNoRot m_sole_X_RF;
-        TransformNoRot m_sole_X_LF;
-
-        /// robot geometric/inertial data
-        Hrp2_14 m_robot;
-        Hrp2_14::confVector m_q, m_dq, m_ddq;
-        Hrp2_14::confVector m_torques;
-
-        boost::circular_buffer<dynamicgraph::Vector> m_tauDesBuffer;
-        boost::circular_buffer<dynamicgraph::Vector> m_tauBuffer;
-        double m_delayTauDes;
-        
       public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /** --- CONSTRUCTOR ---- */
-        ForceTorqueEstimator( const std::string & name );
+        VelAccEstimator( const std::string & name );
 
-        /** Initialize the ForceTorqueEstimator.
+        /** Initialize the VelAccEstimator.
          * @param timestep Period (in seconds) after which the sensors' data are updated.
          * @param delayEncoders Delay (in seconds) introduced by the estimation of joints pos/vel/acc.
-         *                        This should be a multiple of timestep.
-         * @param delayFTsens Delay (in seconds) introduced by the low-pass filtering of the F/T sensors.
          *                        This should be a multiple of timestep.
          * @param delayAcc Delay (in seconds) introduced by the low-pass filtering of the accelerometer.
          *                        This should be a multiple of timestep.
          * @param delayGyro Delay (in seconds) introduced by the low-pass filtering of the gyroscope.
          *                        This should be a multiple of timestep.
-         * @param delayCurrent Delay (in seconds) introduced by the low-pass filtering of the current sensors.
-         *                        This should be a multiple of timestep.
-         * @param computeForceSensorsOffsets If true it computes the offset on the F/T sensors at the beginning.
          * @note The estimationDelay is half of the length of the window used for the
          * polynomial fitting. The larger the delay, the smoother the estimations.
          */
-        void init(const double &timestep, const double& delayEncoders, const double& delayFTsens,
-                  const double& delayCurrent, const bool &computeForceSensorsOffsets);
+        void init(const double &timestep, const double &delayEncoders,
+                  const double& delayAcc, const double& delayGyro);
 
-        void setFTsensorOffsets(const dynamicgraph::Vector& offsets);
-        void recomputeFTsensorOffsets();
-        
       protected:
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
@@ -355,7 +243,7 @@ namespace dynamicgraph {
       public: /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
 
-      }; // class ForceTorqueEstimator
+      }; // class VelAccEstimator
 
     } // namespace torque_control
   } // namespace sot
@@ -363,4 +251,4 @@ namespace dynamicgraph {
 
 
 
-#endif // #ifndef __sot_torque_control_ForceTorqueEstimator_H__
+#endif // #ifndef __sot_torque_control_VelAccEstimator_H__

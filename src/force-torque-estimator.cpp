@@ -36,17 +36,14 @@ namespace dynamicgraph
                                 << m_motorParameterKv_pSIN << m_motorParameterKv_nSIN \
                                 << m_motorParameterKa_pSIN << m_motorParameterKa_nSIN
 
-#define ALL_INPUT_SIGNALS m_base6d_encodersSIN << m_accelerometerSIN << m_gyroscopeSIN \
+#define ALL_INPUT_SIGNALS m_base6d_encodersSIN \
+                          << m_estimatedTorsoAngularVelocitySIN \
+                          << m_estimatedTorsoAccelerationSIN \
                           << m_ddqRefSIN << m_dqRefSIN << m_currentMeasureSIN \
                           << m_saturationCurrentSIN << m_wCurrentTrustSIN << m_tauDesSIN \
                           << FORCE_TORQUE_SENSORS_SIGNALS << MOTOR_PARAMETER_SIGNALS
 
-#define KINEMATIC_OUTPUT_SIGNALS \
-                          m_jointsPositionsSOUT << m_jointsVelocitiesSOUT \
-                           << m_jointsAccelerationsSOUT << m_torsoAccelerationSOUT \
-                           << m_torsoAngularVelocitySOUT
-
-#define ALL_OUTPUT_SIGNALS KINEMATIC_OUTPUT_SIGNALS << m_contactWrenchLeftFootSOUT \
+#define ALL_OUTPUT_SIGNALS m_contactWrenchLeftFootSOUT                  \
                            << m_contactWrenchRightFootSOUT << m_contactWrenchLeftHandSOUT \
                            << m_contactWrenchRightSoleSOUT << m_contactWrenchLeftSoleSOUT \
                            << m_contactWrenchRightHandSOUT << m_contactWrenchBodySOUT \
@@ -87,8 +84,8 @@ namespace dynamicgraph
       ForceTorqueEstimator( const std::string & name )
         : Entity(name),
         CONSTRUCT_SIGNAL_IN(base6d_encoders,   dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_IN(accelerometer,    dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_IN(gyroscope,        dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(estimatedTorsoAngularVelocity, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(estimatedTorsoAcceleration, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(ftSensLeftFoot,   dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(ftSensRightFoot,  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(ftSensLeftHand,   dynamicgraph::Vector)
@@ -109,11 +106,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(tauDes, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector, m_torques_wrenchesSINNER)
         ,CONSTRUCT_SIGNAL_OUT(currentFiltered,         dynamicgraph::Vector, m_currentMeasureSIN)
-        ,CONSTRUCT_SIGNAL_OUT(jointsPositions,         dynamicgraph::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsVelocities,        dynamicgraph::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsAccelerations,     dynamicgraph::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector, m_w_dv_torsoSINNER)    // 6d
-        ,CONSTRUCT_SIGNAL_OUT(torsoAngularVelocity,    dynamicgraph::Vector, m_w_dv_torsoSINNER)    // 3d
+
         ,CONSTRUCT_SIGNAL_OUT(baseAcceleration,        dynamicgraph::Vector, m_torques_wrenchesSINNER)    // 6d
         ,CONSTRUCT_SIGNAL_OUT(baseAngularVelocity,     dynamicgraph::Vector, m_torques_wrenchesSINNER)    // 3d
         ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftFoot,   dynamicgraph::Vector, m_torques_wrenchesSINNER)
@@ -129,19 +122,16 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(dynamicsError, dynamicgraph::Vector, m_contactWrenchBodySOUT <<
                                                          m_jointsTorquesSOUT <<
                                                          m_tauDesSIN)
-
-        ,CONSTRUCT_SIGNAL_INNER(torques_wrenches,      dynamicgraph::Vector, FORCE_TORQUE_SENSORS_SIGNALS
-                                                                <<KINEMATIC_OUTPUT_SIGNALS
+        ,CONSTRUCT_SIGNAL_INNER(q_dq_ddq,            dynamicgraph::Vector, m_base6d_encodersSIN)
+        ,CONSTRUCT_SIGNAL_INNER(torques_wrenches, dynamicgraph::Vector, FORCE_TORQUE_SENSORS_SIGNALS
+                                                                << m_estimatedTorsoAngularVelocitySIN
+                                                                << m_estimatedTorsoAccelerationSIN
+                                                                <<m_q_dq_ddqSINNER
                                                                 <<m_ddqRefSIN
-                                                                <<m_dqRefSIN
-                                                                <<m_base6d_encodersSIN)
-                                                                
+                                                                <<m_dqRefSIN)
         ,CONSTRUCT_SIGNAL_INNER(torquesFromMotorModel, dynamicgraph::Vector, MOTOR_PARAMETER_SIGNALS
-                                                                   << m_jointsVelocitiesSOUT 
-                                                                   << m_jointsAccelerationsSOUT
+                                                                   << m_q_dq_ddqSINNER
                                                                    << m_currentFilteredSOUT)
-        ,CONSTRUCT_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector, m_base6d_encodersSIN)
-        ,CONSTRUCT_SIGNAL_INNER(w_dv_torso,            dynamicgraph::Vector, m_accelerometerSIN<<m_gyroscopeSIN)
 
         ,m_node_right_foot(boost::fusion::at_c<Hrp2_14::r_ankle>(m_robot.nodes))
         ,m_node_left_foot(boost::fusion::at_c<Hrp2_14::l_ankle>(m_robot.nodes))
@@ -163,18 +153,9 @@ namespace dynamicgraph
         addCommand("getTimestep",
                    makeDirectGetter(*this,&m_dt,
                                     docDirectGetter("Control timestep [s ]","double")));
-        addCommand("getDelayEnc",
-                   makeDirectGetter(*this,&m_delayEncoders,
-                                    docDirectGetter("Delay introduced by the estimation of joints pos/vel/acc [s]","double")));
         addCommand("getDelayFTsens",
                    makeDirectGetter(*this,&m_delayFTsens,
                                     docDirectGetter("Delay introduced by the filtering of the F/T sensors [s]","double")));
-        addCommand("getDelayAcc",
-                   makeDirectGetter(*this,&m_delayAcc,
-                                    docDirectGetter("Delay introduced by the filtering of the accelerometer [s]","double")));
-        addCommand("getDelayGyro",
-                   makeDirectGetter(*this,&m_delayGyro,
-                                    docDirectGetter("Delay introduced by the filtering of the gyroscope [s]","double")));
         addCommand("getDelayCurrent",
                    makeDirectGetter(*this,&m_delayCurrent,
                                     docDirectGetter("Delay introduced by the filtering of the motor current measure [s]","double")));
@@ -226,13 +207,11 @@ namespace dynamicgraph
                                     docDirectSetter("delay (in s) to introduce in tauDes for computing dynamicsError",
                                                     "float")));
 
-        addCommand("init", makeCommandVoid7(*this, &ForceTorqueEstimator::init,
-                              docCommandVoid7("Initialize the estimator.",
+        addCommand("init", makeCommandVoid5(*this, &ForceTorqueEstimator::init,
+                              docCommandVoid5("Initialize the estimator.",
                                               "Control timestep [s].",
                                               "Estimation delay for joints pos/vel/acc [s].",
                                               "Estimation delay for F/T sensors [s].",
-                                              "Estimation delay for accelerometer [s].",
-                                              "Estimation delay for gyroscope [s].",
                                               "Estimation delay for motor current [s].",
                                               "If true the offset of the force sensors is computed.")));
       }
@@ -241,36 +220,26 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void ForceTorqueEstimator::init(const double &timestep, const double& delayEncoders,
-                                      const double& delayFTsens, const double& delayAcc, const double& delayGyro, const double& delayCurrent,
+      void ForceTorqueEstimator::init(const double &timestep, 
+                                      const double& delayEncoders, const double& delayFTsens,
+                                      const double& delayCurrent,
                                       const bool &computeForceSensorsOffsets)
       {
         assert(timestep>0.0 && "Timestep should be > 0");
         assert(delayEncoders>=1.5*timestep && "Estimation delay for encoders should be >= 1.5*timestep");
         assert(delayFTsens>=timestep && "Estimation delay for F/T sensors should be >= timestep");
-        assert(delayAcc>=timestep && "Estimation delay for accelerometer should be >= timestep");
-        assert(delayGyro>=timestep && "Estimation delay for gyroscope should be >= timestep");
         assert(delayCurrent>=timestep && "Estimation delay for motor current should be >= timestep");
         m_dt = timestep;
         m_delayEncoders = delayEncoders;
         m_delayFTsens   = delayFTsens;
-        m_delayAcc      = delayAcc;
-        m_delayGyro     = delayGyro;
         m_delayCurrent  = delayCurrent;
         m_computeFTsensorOffsets = computeForceSensorsOffsets;
         int winSizeEnc     = (int)(2*delayEncoders/m_dt);
         int winSizeFT      = (int)(2*delayFTsens/m_dt);
-        int winSizeAcc     = (int)(2*delayAcc/m_dt);
-        int winSizeGyro    = (int)(2*delayGyro/m_dt);
         int winSizeCur     = (int)(2*delayCurrent/m_dt);
         assert(winSizeEnc>=3 && "Estimation-window's length for encoders should be >= 3");
         assert(winSizeFT>=2 && "Estimation-window's length for F/T sensors should be >= 2");
-        assert(winSizeAcc>=2 && "Estimation-window's length for accelerometer should be >= 2");
-        assert(winSizeGyro>=2 && "Estimation-window's length for gyroscope should be >= 2");
-
         m_encodersFilter         = new QuadEstimator(winSizeEnc, N_JOINTS, m_dt);
-        m_accelerometerFilter    = new LinEstimator(winSizeAcc, 3, m_dt);
-        m_gyroscopeFilter        = new LinEstimator(winSizeGyro, 3, m_dt);
         m_ftSensLeftFootFilter   = new LinEstimator(winSizeFT, 6, m_dt);
         m_ftSensRightFootFilter  = new LinEstimator(winSizeFT, 6, m_dt);
         m_ftSensLeftHandFilter   = new LinEstimator(winSizeFT, 6, m_dt);
@@ -297,11 +266,6 @@ namespace dynamicgraph
         m_motorParameterKv_n_std.resize(N_JOINTS);
         m_motorParameterKa_p_std.resize(N_JOINTS);
         m_motorParameterKa_n_std.resize(N_JOINTS);
-        m_dv_IMU_std.resize(3);
-        m_dv_IMU_filter_std.resize(3);
-        m_w_IMU_std.resize(3);
-        m_w_IMU_filter_std.resize(3);
-        m_dw_IMU_filter_std.resize(3);
         m_ftSens_LH_std.resize(6);
         m_ftSens_LH_filter_std.resize(6);
         m_ftSens_RH_std.resize(6);
@@ -322,7 +286,6 @@ namespace dynamicgraph
         // we need to set q and dq to 0 during initialization
         m_q.setZero();
         m_dq.setZero();
-        m_v_torso.v(Vector3d::Zero());
 
         // compute transformations from force/torque-sensor frames to hosting-link frame
         // The second argument of the Transform constructor has to be the position
@@ -338,8 +301,6 @@ namespace dynamicgraph
         // compute transformation from foot frame to sole frame
         m_sole_X_RF = TransformNoRot(eye, CMap3d(RIGHT_FOOT_SOLE_XYZ));
         m_sole_X_LF = TransformNoRot(eye, CMap3d(LEFT_FOOT_SOLE_XYZ));
-        // compute transformation from IMU's frame to torso's frame
-        m_torso_X_imu = TransformNoRot(eye, -CMap3d(IMU_XYZ));
       }
 
       void ForceTorqueEstimator::setFTsensorOffsets(const dynamicgraph::Vector& offsets)
@@ -360,69 +321,6 @@ namespace dynamicgraph
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
-
-      /** Estimate the joints' positions, velocities and accelerations. */
-      DEFINE_SIGNAL_INNER_FUNCTION(q_dq_ddq, dynamicgraph::Vector)
-      {
-        sotDEBUG(15)<<"Compute q_dq_ddq inner signal "<<iter<<endl;
-
-        // read encoders and copy in std vector
-        const dynamicgraph::Vector& base_q = m_base6d_encodersSIN(iter);
-        COPY_SHIFTED_VECTOR_TO_ARRAY(base_q, m_q_std, 6);
-
-
-        // estimate joints' pos, vel and acc
-        m_encodersFilter->estimate(m_q_filter_std, m_q_std);
-        m_encodersFilter->getEstimateDerivative(m_dq_filter_std, 1);
-        m_encodersFilter->getEstimateDerivative(m_ddq_filter_std, 2);
-
-        // copy data in signal vector
-        if(s.size()!=3*N_JOINTS)
-          s.resize(3*N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = m_q_filter_std[i];
-        for(int i=0; i<N_JOINTS; i++)
-          s(i+N_JOINTS) = m_dq_filter_std[i];
-        for(int i=0; i<N_JOINTS; i++)
-          s(i+2*N_JOINTS) = m_ddq_filter_std[i];
-
-        return s;
-      }
-
-
-      /** Estimate the torso's angular velocity. and linear/angular acceleration. */
-      DEFINE_SIGNAL_INNER_FUNCTION(w_dv_torso, dynamicgraph::Vector)
-      {
-//        SEND_MSG("Compute w_dv_torso inner signal "+toString(iter), MSG_TYPE_DEBUG);
-        // read accelerometer and gyroscope and copy in std vector
-        COPY_VECTOR_TO_ARRAY(m_accelerometerSIN(iter), m_dv_IMU_std);
-        COPY_VECTOR_TO_ARRAY(m_gyroscopeSIN(iter),     m_w_IMU_std);
-
-        // estimate lin/ang acceleration and ang vel
-        m_accelerometerFilter->estimate(m_dv_IMU_filter_std, m_dv_IMU_std);
-        m_gyroscopeFilter->estimate(m_w_IMU_filter_std, m_w_IMU_std);
-        m_gyroscopeFilter->getEstimateDerivative(m_dw_IMU_filter_std, 1);
-
-        // map data from IMU's frame to torso's frame
-        EIGEN_VECTOR_FROM_STD_VECTOR(dv_IMU_eig, m_dv_IMU_filter_std);
-        EIGEN_VECTOR_FROM_STD_VECTOR(w_IMU_eig, m_w_IMU_filter_std);
-        EIGEN_VECTOR_FROM_STD_VECTOR(dw_IMU_eig, m_dw_IMU_filter_std);
-        m_v_torso.w(w_IMU_eig);
-        m_dv_torso.v(dv_IMU_eig);
-        m_dv_torso.w(dw_IMU_eig);
-        m_v_torso  = m_torso_X_imu.apply(m_v_torso);
-        m_dv_torso = m_torso_X_imu.apply(m_dv_torso);
-
-        // copy data in signal vector
-        if(s.size()!=9)
-          s.resize(9);
-	//TODO: MOVE METAPOD VECTORS TO PINOCCHIO
-	s.segment<3>(0) = m_v_torso.w();
-	s.segment<3>(3) = m_dv_torso.v();
-	s.segment<3>(6) = m_dv_torso.w();
-        return s;
-      }
-
 
       /** Estimate the joints' torques from the motor model and current measurment */
       DEFINE_SIGNAL_INNER_FUNCTION(torquesFromMotorModel, dynamicgraph::Vector)
@@ -459,6 +357,36 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_JOINTS_TORQUES_MOTOR_COMPUTATION);
         return s;
       }
+
+      /** Estimate the joints' positions, velocities and accelerations. */
+      DEFINE_SIGNAL_INNER_FUNCTION(q_dq_ddq, dynamicgraph::Vector)
+      {
+        sotDEBUG(15)<<"Compute q_dq_ddq inner signal "<<iter<<std::endl;
+
+        // read encoders and copy in std vector
+        const dynamicgraph::Vector& base_q = m_base6d_encodersSIN(iter);
+        COPY_SHIFTED_VECTOR_TO_ARRAY(base_q, m_q_std, 6);
+
+
+        // estimate joints' pos, vel and acc
+        m_encodersFilter->estimate(m_q_filter_std, m_q_std);
+        m_encodersFilter->getEstimateDerivative(m_dq_filter_std, 1);
+        m_encodersFilter->getEstimateDerivative(m_ddq_filter_std, 2);
+
+        // copy data in signal vector
+        if(s.size()!=3*N_JOINTS)
+          s.resize(3*N_JOINTS);
+        for(int i=0; i<N_JOINTS; i++)
+          s(i) = m_q_filter_std[i];
+        for(int i=0; i<N_JOINTS; i++)
+          s(i+N_JOINTS) = m_dq_filter_std[i];
+        for(int i=0; i<N_JOINTS; i++)
+          s(i+2*N_JOINTS) = m_ddq_filter_std[i];
+
+        return s;
+      }
+
+
       /** Estimate the joints' torques and the 5 contact wrenches (feet, hand and body). */
       DEFINE_SIGNAL_INNER_FUNCTION(torques_wrenches, dynamicgraph::Vector)
       {
@@ -468,8 +396,8 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_JOINTS_TORQUES_INERTIAL_COMPUTATION);
         {
           // map data from mal to eigen vectors
-          const Eigen::VectorXd& w_torso_eig =  m_torsoAngularVelocitySOUT(iter);
-          const Eigen::VectorXd& dv_torso_eig = m_torsoAccelerationSOUT(iter);
+          const Eigen::VectorXd& w_torso_eig =  m_estimatedTorsoAngularVelocitySIN(iter);
+          const Eigen::VectorXd& dv_torso_eig =  m_estimatedTorsoAccelerationSIN(iter);
 
           /// COMPUTE BASE ANGULAR VELOCITY AND ACCELERATION FROM IMU MEASUREMENTS
           if(m_useRawEncoders)
@@ -479,8 +407,8 @@ namespace dynamicgraph
           }
           else
           {
-            const Eigen::VectorXd& q_eig =    m_jointsPositionsSOUT(iter);
-            m_q.tail<N_JOINTS>()    = q_eig;
+            const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+            m_q.tail<N_JOINTS>() = q_dq_ddq.head<N_JOINTS>();
           }
 
           if(m_useRefJointsVel)
@@ -490,8 +418,8 @@ namespace dynamicgraph
           }
           else
           {
-            const Eigen::VectorXd& dq_eig =       m_jointsVelocitiesSOUT(iter);
-            m_dq.tail<N_JOINTS>()   = dq_eig;
+            const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+            m_dq.tail<N_JOINTS>()   = q_dq_ddq.segment<N_JOINTS>(N_JOINTS);
           }
 
           // compute homogeneous transformations (iX0 and sXp)
@@ -521,8 +449,8 @@ namespace dynamicgraph
           }
           else
           {
-            const Eigen::VectorXd& ddq_eig =  m_jointsAccelerationsSOUT(iter);
-            m_ddq.tail<N_JOINTS>()  = ddq_eig;
+            const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+            m_ddq.tail<N_JOINTS>()  = q_dq_ddq.segment<N_JOINTS>(2*N_JOINTS);
           }
           Vector1d ddqi = m_ddq.segment<1>(m_node_torso.q_idx);
           update_kinematics_backward<Hrp2_14, Hrp2_14::torso, Hrp2_14::CHEST_LINK0>::run(m_robot, ddqi);
@@ -751,16 +679,6 @@ namespace dynamicgraph
 	return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsPositions, dynamicgraph::Vector)
-      {
-        sotDEBUG(15)<<"Compute jointsPositions output signal "<<iter<<endl;
-
-        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s.head<N_JOINTS>() = q_dq_ddq.head<N_JOINTS>();
-        return s;
-      }
 
       DEFINE_SIGNAL_OUT_FUNCTION(currentFiltered, dynamicgraph::Vector) 
       {
@@ -776,51 +694,6 @@ namespace dynamicgraph
 	
         for(int i=0; i<N_JOINTS; i++)
           s(i) = m_currentMeasure_filter_std[i];
-        return s;
-      }
-
-
-
-
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsVelocities, dynamicgraph::Vector)
-      {
-//        sotDEBUG(15)<<"Compute jointsVelocities output signal "<<iter<<endl;
-
-        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
-        if(s.size()!=N_JOINTS)
-	  s.resize(N_JOINTS);
-	s = q_dq_ddq.segment<N_JOINTS>(N_JOINTS);
-        return s;
-      }
-
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsAccelerations, dynamicgraph::Vector)
-      {
-        sotDEBUG(15)<<"Compute jointsAccelerations output signal "<<iter<<endl;
-
-        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s = q_dq_ddq.segment<N_JOINTS>(2*N_JOINTS);
-        return s;
-      }
-
-      DEFINE_SIGNAL_OUT_FUNCTION(torsoAngularVelocity, dynamicgraph::Vector)
-      {
-//        SEND_MSG("Compute torsoAngularVelocity output signal "+toString(iter), MSG_TYPE_DEBUG);
-        const dynamicgraph::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
-        if(s.size()!=3)
-          s.resize(3);
-	s = w_dw_base.head<3>();
-        return s;
-      }
-
-      DEFINE_SIGNAL_OUT_FUNCTION(torsoAcceleration, dynamicgraph::Vector)
-      {
-//        SEND_MSG("Compute torsoAcceleration output signal "+toString(iter), MSG_TYPE_DEBUG);
-        const dynamicgraph::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
-        if(s.size()!=6)
-          s.resize(6);
-	s = w_dw_base.segment<6>(3);
         return s;
       }
 
