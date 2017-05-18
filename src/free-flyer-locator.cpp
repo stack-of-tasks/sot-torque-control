@@ -71,27 +71,36 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid1(*this, &FreeFlyerLocator::init,
-                                    docCommandVoid1("Initialize the entity.",
-                                                    "URDF file path (string)")));
+                   makeCommandVoid3(*this, &FreeFlyerLocator::init,
+                                    docCommandVoid3("Initialize the entity.",
+                                                    "URDF file path (string)",
+						    "Left Foot Frame Name (string)",
+						    "Right Foot Frame Name (string)")));
+
       }
 
-      void FreeFlyerLocator::init(const std::string& urdfFile)
+      void FreeFlyerLocator::init(const std::string& urdfFile,
+				  const std::string & leftFootFrameName,
+				  const std::string & rightFootFrameName)
       {
         try 
         {
+	  m_Left_Foot_Frame_Name = leftFootFrameName;
+	  m_Right_Foot_Frame_Name = rightFootFrameName;
+
           se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
-          assert(m_model.nq == N_JOINTS+7);
-          assert(m_model.nv == N_JOINTS+6);
-          assert(m_model.existFrame(LEFT_FOOT_FRAME_NAME));
-          assert(m_model.existFrame(RIGHT_FOOT_FRAME_NAME));
-          m_left_foot_id = m_model.getFrameId(LEFT_FOOT_FRAME_NAME);
-          m_right_foot_id = m_model.getFrameId(RIGHT_FOOT_FRAME_NAME);
+	  m_nbJoints = m_model.nq - 7;
+
+          assert(m_model.nv == m_nbJoints+6);
+          assert(m_model.existFrame(m_Left_Foot_Frame_Name));
+          assert(m_model.existFrame(m_Right_Foot_Frame_Name));
+          m_left_foot_id = m_model.getFrameId(m_Left_Foot_Frame_Name);
+          m_right_foot_id = m_model.getFrameId(m_Right_Foot_Frame_Name);
           m_q_pin.setZero(m_model.nq);
           m_q_pin[6]= 1.; // for quaternion
-          m_q_sot.setZero(N_JOINTS+6);
-          m_v_pin.setZero(N_JOINTS+6);
-          m_v_sot.setZero(N_JOINTS+6);
+          m_q_sot.setZero(m_nbJoints+6);
+          m_v_pin.setZero(m_nbJoints+6);
+          m_v_sot.setZero(m_nbJoints+6);
         } 
         catch (const std::exception& e) 
         { 
@@ -114,14 +123,14 @@ namespace dynamicgraph
           return s;
         }
 
-        const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-        const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
-        assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
+        assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
+        assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
-        joints_sot_to_urdf(q.tail<N_JOINTS>(), m_q_pin.tail<N_JOINTS>());
-        joints_sot_to_urdf(dq, m_v_pin.tail<N_JOINTS>());
+        joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
+        joints_sot_to_urdf(dq, m_v_pin.tail(m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
         se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
@@ -137,15 +146,15 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_nbJoints+6)
+          s.resize(m_nbJoints+6);
         
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
-          const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-          assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
+          assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
                     
           /* Compute kinematic and return q with freeflyer */
           const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
@@ -157,10 +166,10 @@ namespace dynamicgraph
           // due to distance from ankle to ground
           Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&RIGHT_FOOT_SOLE_XYZ[0]);
 
-          m_q_sot.tail<N_JOINTS>() = q.tail<N_JOINTS>();
+          m_q_sot.tail(m_nbJoints) = q.tail(m_nbJoints);
           base_se3_to_sot(m_Mff.translation()-righ_foot_sole_xyz,
                           m_Mff.rotation(),
-                          m_q_sot.head<6>());
+                          m_q_sot.head(6));
 
           s = m_q_sot;
         }
@@ -201,15 +210,15 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_nbJoints+6)
+          s.resize(m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
-          const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
+          EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
+          assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model.frames[m_left_foot_id];
@@ -221,7 +230,7 @@ namespace dynamicgraph
           const Vector6 v_rf = m_data->oMf[m_right_foot_id].act(v_rf_local).toVector();
 
           m_v_sot.head<6>() = - 0.5*(v_lf + v_rf);
-          m_v_sot.tail<N_JOINTS>() = dq;
+          m_v_sot.tail(m_nbJoints) = dq;
 
           s = m_v_sot;
         }
