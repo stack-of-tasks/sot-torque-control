@@ -78,36 +78,36 @@ namespace dynamicgraph {
         void resetForceIntegral();
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_IN(jointsVelocities, ml::Vector);
-        DECLARE_SIGNAL_IN(baseAngularVelocity, ml::Vector);
-        DECLARE_SIGNAL_IN(baseAcceleration, ml::Vector);
-        DECLARE_SIGNAL_IN(qRef,             ml::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            ml::Vector);
-        DECLARE_SIGNAL_IN(ddqRef,           ml::Vector);
-        DECLARE_SIGNAL_IN(Kp,               ml::Vector);  /// joint proportional gains
-        DECLARE_SIGNAL_IN(Kd,               ml::Vector);  /// joint derivative gains
-        DECLARE_SIGNAL_IN(Kf,               ml::Vector);  /// force proportional gains
-        DECLARE_SIGNAL_IN(Ki,               ml::Vector);  /// force integral gains
-        DECLARE_SIGNAL_IN(fRightFootRef,    ml::Vector); /// right sole 6d reference force
-        DECLARE_SIGNAL_IN(fLeftFootRef,     ml::Vector); /// left sole 6d reference force
-        DECLARE_SIGNAL_IN(fRightHandRef,    ml::Vector); /// right gripper 6d reference force
-        DECLARE_SIGNAL_IN(fLeftHandRef,     ml::Vector); /// left gripper 6d reference force
-        DECLARE_SIGNAL_IN(fRightFoot,       ml::Vector); /// right sole 6d estimated force
-        DECLARE_SIGNAL_IN(fLeftFoot,        ml::Vector); /// left sole 6d estimated force
-        DECLARE_SIGNAL_IN(fRightHand,       ml::Vector); /// right gripper 6d estimated force
-        DECLARE_SIGNAL_IN(fLeftHand,        ml::Vector); /// left gripper 6d estimated force
-        DECLARE_SIGNAL_IN(controlledJoints, ml::Vector); /// mask with 1 for controlled joints, 0 otherwise
-        DECLARE_SIGNAL_IN(dynamicsError,    ml::Vector); /// estimated error of the robot dynamic model (n+6)
-        DECLARE_SIGNAL_IN(dynamicsErrorGain,ml::Vector); /// gain multiplying the dynamics error (n+6)
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(jointsVelocities, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(baseAngularVelocity, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(baseAcceleration, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(qRef,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ddqRef,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(Kp,               dynamicgraph::Vector);  /// joint proportional gains
+        DECLARE_SIGNAL_IN(Kd,               dynamicgraph::Vector);  /// joint derivative gains
+        DECLARE_SIGNAL_IN(Kf,               dynamicgraph::Vector);  /// force proportional gains
+        DECLARE_SIGNAL_IN(Ki,               dynamicgraph::Vector);  /// force integral gains
+        DECLARE_SIGNAL_IN(fRightFootRef,    dynamicgraph::Vector); /// right sole 6d reference force
+        DECLARE_SIGNAL_IN(fLeftFootRef,     dynamicgraph::Vector); /// left sole 6d reference force
+        DECLARE_SIGNAL_IN(fRightHandRef,    dynamicgraph::Vector); /// right gripper 6d reference force
+        DECLARE_SIGNAL_IN(fLeftHandRef,     dynamicgraph::Vector); /// left gripper 6d reference force
+        DECLARE_SIGNAL_IN(fRightFoot,       dynamicgraph::Vector); /// right sole 6d estimated force
+        DECLARE_SIGNAL_IN(fLeftFoot,        dynamicgraph::Vector); /// left sole 6d estimated force
+        DECLARE_SIGNAL_IN(fRightHand,       dynamicgraph::Vector); /// right gripper 6d estimated force
+        DECLARE_SIGNAL_IN(fLeftHand,        dynamicgraph::Vector); /// left gripper 6d estimated force
+        DECLARE_SIGNAL_IN(controlledJoints, dynamicgraph::Vector); /// mask with 1 for controlled joints, 0 otherwise
+        DECLARE_SIGNAL_IN(dynamicsError,    dynamicgraph::Vector); /// estimated error of the robot dynamic model (n+6)
+        DECLARE_SIGNAL_IN(dynamicsErrorGain,dynamicgraph::Vector); /// gain multiplying the dynamics error (n+6)
 
-        DECLARE_SIGNAL_OUT(tauDes,      ml::Vector);  /// M*ddqRef + h - J^T*(fRef+Kf*e_f) + Kp*e_q + Kd*de_q
+        DECLARE_SIGNAL_OUT(tauDes,      dynamicgraph::Vector);  /// M*ddqRef + h - J^T*(fRef+Kf*e_f) + Kp*e_q + Kd*de_q
         // DEBUG SIGNALS
-        DECLARE_SIGNAL_OUT(tauFF,       ml::Vector);  /// M*ddqRef + h - J^T*fRef
-        DECLARE_SIGNAL_OUT(tauFB,       ml::Vector);  /// Kp*(qRef-q) + Kd*(dqRef-dq) - J^T*Kf*e_f
-        DECLARE_SIGNAL_OUT(tauFB2,      ml::Vector);  /// same thing but computed differently (just for debug)
-        DECLARE_SIGNAL_OUT(ddqDes,      ml::Vector);  /// ddqRef + Kp*(qRef-q) + Kd*(dqRef-dq)
-        DECLARE_SIGNAL_OUT(qError,      ml::Vector);  /// qRef-q
+        DECLARE_SIGNAL_OUT(tauFF,       dynamicgraph::Vector);  /// M*ddqRef + h - J^T*fRef
+        DECLARE_SIGNAL_OUT(tauFB,       dynamicgraph::Vector);  /// Kp*(qRef-q) + Kd*(dqRef-dq) - J^T*Kf*e_f
+        DECLARE_SIGNAL_OUT(tauFB2,      dynamicgraph::Vector);  /// same thing but computed differently (just for debug)
+        DECLARE_SIGNAL_OUT(ddqDes,      dynamicgraph::Vector);  /// ddqRef + Kp*(qRef-q) + Kd*(dqRef-dq)
+        DECLARE_SIGNAL_OUT(qError,      dynamicgraph::Vector);  /// qRef-q
 
 
         /* --- COMMANDS --- */

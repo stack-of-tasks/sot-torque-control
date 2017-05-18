@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,Thomas Flayols, LAAS-CNRS
+ * Copyright 2017, Andrea Del Prete, LAAS-CNRS
  *
  * This file is part of sot-torque-control.
  * sot-torque-control is free software: you can redistribute it and/or
@@ -14,21 +14,21 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __sot_torque_control_nd_trajectory_generator_H__
-#define __sot_torque_control_nd_trajectory_generator_H__
+#ifndef __sot_torque_control_se3_trajectory_generator_H__
+#define __sot_torque_control_se3_trajectory_generator_H__
 
 /* --------------------------------------------------------------------- */
 /* --- API ------------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
 #if defined (WIN32)
-#  if defined (nd_position_controller_EXPORTS)
-#    define SOTNDTRAJECTORYGENERATOR_EXPORT __declspec(dllexport)
+#  if defined (se3_position_controller_EXPORTS)
+#    define SOTSE3TRAJECTORYGENERATOR_EXPORT __declspec(dllexport)
 #  else
-#    define SOTNDTRAJECTORYGENERATOR_EXPORT __declspec(dllimport)
+#    define SOTSE3TRAJECTORYGENERATOR_EXPORT __declspec(dllimport)
 #  endif
 #else
-#  define SOTNDTRAJECTORYGENERATOR_EXPORT
+#  define SOTSE3TRAJECTORYGENERATOR_EXPORT
 #endif
 
 
@@ -54,17 +54,17 @@ namespace dynamicgraph {
       /* --- CLASS ----------------------------------------------------------- */
       /* --------------------------------------------------------------------- */
 
-      class SOTNDTRAJECTORYGENERATOR_EXPORT NdTrajectoryGenerator
+      class SOTSE3TRAJECTORYGENERATOR_EXPORT SE3TrajectoryGenerator
 	:public::dynamicgraph::Entity
       {
-        typedef NdTrajectoryGenerator EntityClassName;
+        typedef SE3TrajectoryGenerator EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
         
       public: 
         /* --- CONSTRUCTOR ---- */
-        NdTrajectoryGenerator( const std::string & name );
+        SE3TrajectoryGenerator( const std::string & name );
 
-        void init(const double& dt, const unsigned int& n);
+        void init(const double& dt);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(initial_value,  dynamicgraph::Vector);
@@ -137,28 +137,29 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[NdTrajectoryGenerator-"+name+"] "+msg, t, file, line);
+          getLogger().sendMsg("[SE3TrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
         
       protected:
-        enum JTG_Status
+        enum TG_Status
         {
-          JTG_STOP,
-          JTG_SINUSOID,
-          JTG_MIN_JERK,
-          JTG_LIN_CHIRP,
-          JTG_TRIANGLE,
-          JTG_CONST_ACC,
-          JTG_TEXT_FILE
+          TG_STOP,
+          TG_SINUSOID,
+          TG_MIN_JERK,
+          TG_LIN_CHIRP,
+          TG_TRIANGLE,
+          TG_CONST_ACC,
+          TG_TEXT_FILE
         };
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
-        unsigned int      m_n;                /// size of ouput vector
+        unsigned int      m_np;               /// size of position vector
+        unsigned int      m_nv;               /// size of velocity vector
         unsigned int      m_iterLast;         /// last iter index
 
-        std::vector<JTG_Status> m_status;     /// status of the component
+        std::vector<TG_Status> m_status;     /// status of the component
         std::vector<AbstractTrajectoryGenerator*>    m_currentTrajGen;
         std::vector<NoTrajectoryGenerator*>          m_noTrajGen;
         std::vector<MinimumJerkTrajectoryGenerator*> m_minJerkTrajGen;
@@ -168,7 +169,7 @@ namespace dynamicgraph {
         std::vector<ConstantAccelerationTrajectoryGenerator*>    m_constAccTrajGen;
         TextFileTrajectoryGenerator*                 m_textFileTrajGen;
 
-      }; // class NdTrajectoryGenerator
+      }; // class SE3TrajectoryGenerator
       
     }    // namespace torque_control
   }      // namespace sot

@@ -159,49 +159,49 @@ namespace dynamicgraph {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_IN(accelerometer,    ml::Vector);
-        DECLARE_SIGNAL_IN(gyroscope,        ml::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftFoot,   ml::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightFoot,  ml::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftHand,   ml::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightHand,  ml::Vector);
-        DECLARE_SIGNAL_IN(ddqRef,           ml::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            ml::Vector);
-        DECLARE_SIGNAL_IN(currentMeasure,   ml::Vector);
-        DECLARE_SIGNAL_IN(saturationCurrent,ml::Vector);
-        DECLARE_SIGNAL_IN(wCurrentTrust,    ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_n, ml::Vector);
-        DECLARE_SIGNAL_IN(tauDes, ml::Vector);  // desired joint torques
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(accelerometer,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gyroscope,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensLeftFoot,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensRightFoot,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensLeftHand,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensRightHand,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ddqRef,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(currentMeasure,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(saturationCurrent,dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(wCurrentTrust,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKf_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKv_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKv_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKa_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(tauDes, dynamicgraph::Vector);  // desired joint torques
         
-        DECLARE_SIGNAL_OUT(ftSensRightFootPrediction,  ml::Vector); /// debug signal
+        DECLARE_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector); /// debug signal
 
-        DECLARE_SIGNAL_OUT(jointsPositions,         ml::Vector);
-        DECLARE_SIGNAL_OUT(jointsVelocities,        ml::Vector);
-        DECLARE_SIGNAL_OUT(jointsAccelerations,     ml::Vector);
-        DECLARE_SIGNAL_OUT(torsoAcceleration,       ml::Vector);  // 6d
-        DECLARE_SIGNAL_OUT(torsoAngularVelocity,    ml::Vector);  // 3d
-        DECLARE_SIGNAL_OUT(baseAcceleration,        ml::Vector);  // 6d
-        DECLARE_SIGNAL_OUT(baseAngularVelocity,     ml::Vector);  // 3d
-        DECLARE_SIGNAL_OUT(contactWrenchLeftFoot,   ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightFoot,  ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchLeftSole,   ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightSole,  ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchLeftHand,   ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchRightHand,  ml::Vector);
-        DECLARE_SIGNAL_OUT(contactWrenchBody,       ml::Vector);
-        DECLARE_SIGNAL_OUT(currentFiltered,         ml::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorques,           ml::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorquesFromMotorModel,    ml::Vector);
-        DECLARE_SIGNAL_OUT(jointsTorquesFromInertiaModel,  ml::Vector);
-        DECLARE_SIGNAL_OUT(dynamicsError,  ml::Vector); // error between desired torques and estimated (n+6)
+        DECLARE_SIGNAL_OUT(jointsPositions,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsVelocities,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsAccelerations,     dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector);  // 6d
+        DECLARE_SIGNAL_OUT(torsoAngularVelocity,    dynamicgraph::Vector);  // 3d
+        DECLARE_SIGNAL_OUT(baseAcceleration,        dynamicgraph::Vector);  // 6d
+        DECLARE_SIGNAL_OUT(baseAngularVelocity,     dynamicgraph::Vector);  // 3d
+        DECLARE_SIGNAL_OUT(contactWrenchLeftFoot,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchRightFoot,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchLeftSole,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchRightSole,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchLeftHand,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchRightHand,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(contactWrenchBody,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(currentFiltered,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsTorques,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsTorquesFromMotorModel,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(jointsTorquesFromInertiaModel,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(dynamicsError,  dynamicgraph::Vector); // error between desired torques and estimated (n+6)
 
         /// The following inner signals are used because this entity has some output signals
         /// whose related quantities are computed at the same time by the same algorithm
@@ -212,13 +212,13 @@ namespace dynamicgraph {
         /// Inner signals are not exposed, so that nobody can access them.
 
         /// This signal contains the joints' torques and all the 5 contact wrenches
-        DECLARE_SIGNAL_INNER(torques_wrenches,      ml::Vector);
+        DECLARE_SIGNAL_INNER(torques_wrenches,      dynamicgraph::Vector);
         /// This signal contains the joints' torques estimated from motor model and current measurment
-        DECLARE_SIGNAL_INNER(torquesFromMotorModel, ml::Vector);
+        DECLARE_SIGNAL_INNER(torquesFromMotorModel, dynamicgraph::Vector);
         /// This signal contains the estimated joints positions, velocities and accelerations.
-        DECLARE_SIGNAL_INNER(q_dq_ddq,              ml::Vector);
+        DECLARE_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector);
         /// This signal contains the estimated base angular velocity and lin/ang accelerations.
-        DECLARE_SIGNAL_INNER(w_dv_torso,            ml::Vector);
+        DECLARE_SIGNAL_INNER(w_dv_torso,            dynamicgraph::Vector);
         
       protected:
       
@@ -294,7 +294,7 @@ namespace dynamicgraph {
         Eigen::VectorXd m_ftSensRightHand_offset;
         Eigen::VectorXd m_ftSensLeftFoot_offset;
         Eigen::VectorXd m_ftSensRightFoot_offset;
-        maal::boost::Vector m_FTsensorOffsets;
+        Eigen::VectorXd m_FTsensorOffsets;
 
         // *************************** Metapod ******************************
         typedef metapod::hrp2_14<double> Hrp2_14;
@@ -334,8 +334,8 @@ namespace dynamicgraph {
         Hrp2_14::confVector m_q, m_dq, m_ddq;
         Hrp2_14::confVector m_torques;
 
-        boost::circular_buffer<ml::Vector> m_tauDesBuffer;
-        boost::circular_buffer<ml::Vector> m_tauBuffer;
+        boost::circular_buffer<dynamicgraph::Vector> m_tauDesBuffer;
+        boost::circular_buffer<dynamicgraph::Vector> m_tauBuffer;
         double m_delayTauDes;
         
       public:
@@ -365,7 +365,7 @@ namespace dynamicgraph {
                   const double& delayGyro,const double& delayCurrent,
                   const bool &computeForceSensorsOffsets);
 
-        void setFTsensorOffsets(const ml::Vector& offsets);
+        void setFTsensorOffsets(const dynamicgraph::Vector& offsets);
         void recomputeFTsensorOffsets();
         
       protected:

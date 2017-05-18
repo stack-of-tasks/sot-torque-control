@@ -28,9 +28,9 @@ namespace dynamicgraph
   {
     namespace torque_control
     {
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
       using namespace metapod;
 //Size to be aligned                "-------------------------------------------------------"
@@ -47,6 +47,8 @@ namespace dynamicgraph
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef PositionController EntityClassName;
+      typedef Eigen::Matrix<double,N_JOINTS,1>                     VectorN;
+      typedef Eigen::Matrix<double,N_JOINTS+6,1>                   VectorN6;
 
       /* --- DG FACTORY ---------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(PositionController,
@@ -58,15 +60,15 @@ namespace dynamicgraph
       PositionController::
           PositionController(const std::string& name)
             : Entity(name)
-            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,     ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(jointsVelocities,    ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(qRef,                ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(dqRef,               ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Kp,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Kd,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Ki,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(pwmDes,             ml::Vector, INPUT_SIGNALS)
-            ,CONSTRUCT_SIGNAL_OUT(qError,             ml::Vector, m_base6d_encodersSIN <<
+            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,     dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(jointsVelocities,    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(qRef,                dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dqRef,               dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Kp,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Kd,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Ki,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_OUT(pwmDes,             dynamicgraph::Vector, INPUT_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(qError,             dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                   m_qRefSIN)
             ,m_initSucceeded(false)
       {
@@ -120,7 +122,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwmDes,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwmDes,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -130,12 +132,12 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_PWM_DES_COMPUTATION);
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(Kp,          m_KpSIN(iter)); // n
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(Kd,          m_KdSIN(iter)); // n
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));     // n
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(dqRef,       m_dqRefSIN(iter));  // n
+          const VectorN& Kp =        m_KpSIN(iter); // n
+          const VectorN& Kd =        m_KdSIN(iter); // n
+          const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
+          const VectorN& dq =        m_jointsVelocitiesSIN(iter);     // n
+          const VectorN& qRef =      m_qRefSIN(iter);   // n
+          const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
           assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
           assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
@@ -146,14 +148,16 @@ namespace dynamicgraph
 
           m_pwmDes = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
 
-          EIGEN_VECTOR_TO_VECTOR(m_pwmDes,s);
+	if(s.size()!=N_JOINTS)
+          s.resize(N_JOINTS);
+	s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
 
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(qError,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(qError,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -161,15 +165,14 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
+        const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
+        const VectorN& qRef =      m_qRefSIN(iter);   // n
         assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
         assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        for(unsigned int i=0; i<N_JOINTS; i++)
-          s(i)= qRef[i]-q(6+i);
+	s = qRef - q.tail<N_JOINTS>();
 
         return s;
       }

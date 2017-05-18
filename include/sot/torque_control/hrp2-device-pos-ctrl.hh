@@ -23,7 +23,7 @@
 #include <dynamic-graph/linear-algebra.h>
 #include <sot/core/device.hh>
 #include <sot/core/abstract-sot-external-interface.hh>
-#include <sot/core/matrix-rotation.hh>
+//#include <sot/core/matrix-geometry.hh>
 
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/hrp2-common.hh>
@@ -43,7 +43,7 @@
 
 #include <Eigen/Cholesky>
 
-namespace dgsot=dynamicgraph::sot;
+namespace dynamicgraphsot=dynamicgraph::sot;
 
 namespace dynamicgraph
 {
@@ -76,7 +76,7 @@ namespace torque_control
   * and move it in the specific subclasses.
   */
 class HRP2DevicePosCtrl: public
-        dgsot::Device
+        dynamicgraphsot::Device
 {
 public:
 
@@ -106,38 +106,38 @@ protected:
     double timestep_;
 
     /// proportional gains
-    dynamicgraph::SignalPtr <ml::Vector, int> kpSIN_;
+    dynamicgraph::SignalPtr <dynamicgraph::Vector, int> kpSIN_;
     /// derivative gains
-    dynamicgraph::SignalPtr <ml::Vector, int> kdSIN_;
+    dynamicgraph::SignalPtr <dynamicgraph::Vector, int> kdSIN_;
     /// input force sensor values
-    dynamicgraph::SignalPtr <ml::Vector, int>* forcesSIN_[4];
+    dynamicgraph::SignalPtr <dynamicgraph::Vector, int>* forcesSIN_[4];
 
     /// Accelerations measured by accelerometers
-    dynamicgraph::Signal <ml::Vector, int> accelerometerSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> accelerometerSOUT_;
     /// Rotation velocity measured by gyrometers
-    dynamicgraph::Signal <ml::Vector, int> gyrometerSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> gyrometerSOUT_;
     /// base 6d pose + joints' angles measured by encoders
-    dynamicgraph::Signal <ml::Vector, int> robotStateSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> robotStateSOUT_;
     /// joints' velocities computed by the integrator
-    dynamicgraph::Signal <ml::Vector, int> jointsVelocitiesSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> jointsVelocitiesSOUT_;
     /// joints' accelerations computed by the integrator
-    dynamicgraph::Signal <ml::Vector, int> jointsAccelerationsSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> jointsAccelerationsSOUT_;
     /// motor currents
-    dynamicgraph::Signal <ml::Vector, int> currentSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> currentSOUT_;
     /// proportional and derivative position-control gains
-    dynamicgraph::Signal <ml::Vector, int> p_gainsSOUT_;
-    dynamicgraph::Signal <ml::Vector, int> d_gainsSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> p_gainsSOUT_;
+    dynamicgraph::Signal <dynamicgraph::Vector, int> d_gainsSOUT_;
 
     /// Intermediate variables to avoid allocation during control
-    ml::Vector accelerometer_;
-    ml::Vector gyrometer_;
+    dynamicgraph::Vector accelerometer_;
+    dynamicgraph::Vector gyrometer_;
 
-    ml::Vector base6d_encoders_;      /// base 6d pose + joints' angles
-    ml::Vector jointsVelocities_;     /// joints' velocities
-    ml::Vector jointsAccelerations_;  /// joints' accelerations
+    dynamicgraph::Vector base6d_encoders_;      /// base 6d pose + joints' angles
+    dynamicgraph::Vector jointsVelocities_;     /// joints' velocities
+    dynamicgraph::Vector jointsAccelerations_;  /// joints' accelerations
 
-    ml::Vector wrenches_[4];
-    ml::Vector temp6_;
+    dynamicgraph::Vector wrenches_[4];
+    dynamicgraph::Vector temp6_;
 
     /// robot geometric/inertial data
     typedef metapod::hrp2_14<double> Hrp2_14;

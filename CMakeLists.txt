@@ -50,10 +50,9 @@ SEARCH_FOR_BOOST()
 
 SEARCH_FOR_EIGEN()
 
-ADD_REQUIRED_DEPENDENCY("jrl-mal >= 1.8.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 1.0.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph-python")
-ADD_REQUIRED_DEPENDENCY("sot-core")
+ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 3.0.0")
+ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >=3.0.0")
+ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("PinInvDyn")
 
@@ -90,6 +89,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/motor-model.hh
   include/sot/torque_control/joint-trajectory-generator.hh
   include/sot/torque_control/nd-trajectory-generator.hh
+  include/sot/torque_control/se3-trajectory-generator.hh
   include/sot/torque_control/free-flyer-locator.hh
   include/sot/torque_control/inverse-dynamics-controller.hh
   include/sot/torque_control/inverse-dynamics-balance-controller.hh
@@ -106,8 +106,8 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
   include/sot/torque_control/utils/quad-estimator.hh
-  include/sot/torque_control/utils/Stdafx.hh
-  include/sot/torque_control/utils/stop-watch.hh
+#  include/sot/torque_control/utils/Stdafx.hh
+#  include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
   include/sot/torque_control/utils/metapod-helper.hh
   )
@@ -122,7 +122,7 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/lin-estimator.cpp
     src/poly-estimator.cpp
     src/quad-estimator.cpp
-    src/stop-watch.cpp
+#    src/stop-watch.cpp
     hrp2-torque-control/src/hrp2-common.cpp
     src/motor-model.cpp
 )
@@ -136,7 +136,6 @@ SET_TARGET_PROPERTIES(${LIBRARY_NAME}
   SOVERSION ${PROJECT_VERSION}
   INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} jrl-mal)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)

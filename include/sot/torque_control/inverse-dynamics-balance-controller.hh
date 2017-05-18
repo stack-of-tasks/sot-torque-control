@@ -77,79 +77,91 @@ namespace dynamicgraph {
         InverseDynamicsBalanceController( const std::string & name );
 
         void init(const double& dt, const std::string& urdfFile);
+        void removeRightFootContact(const double& transitionTime);
+        void removeLeftFootContact(const double& transitionTime);
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(com_ref_pos,                ml::Vector);
-        DECLARE_SIGNAL_IN(com_ref_vel,                ml::Vector);
-        DECLARE_SIGNAL_IN(com_ref_acc,                ml::Vector);
-        DECLARE_SIGNAL_IN(posture_ref_pos,            ml::Vector);
-        DECLARE_SIGNAL_IN(posture_ref_vel,            ml::Vector);
-        DECLARE_SIGNAL_IN(posture_ref_acc,            ml::Vector);
-        DECLARE_SIGNAL_IN(base_orientation_ref_pos,   ml::Vector);
-        DECLARE_SIGNAL_IN(base_orientation_ref_vel,   ml::Vector);
-        DECLARE_SIGNAL_IN(base_orientation_ref_acc,   ml::Vector);
+        DECLARE_SIGNAL_IN(com_ref_pos,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(com_ref_vel,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(com_ref_acc,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_acc,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lf_ref_acc,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(posture_ref_pos,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(posture_ref_vel,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(posture_ref_acc,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(base_orientation_ref_pos,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(base_orientation_ref_vel,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(base_orientation_ref_acc,   dynamicgraph::Vector);
 
-        DECLARE_SIGNAL_IN(kp_base_orientation,        ml::Vector);
-        DECLARE_SIGNAL_IN(kd_base_orientation,        ml::Vector);
-        DECLARE_SIGNAL_IN(kp_constraints,             ml::Vector);
-        DECLARE_SIGNAL_IN(kd_constraints,             ml::Vector);
-        DECLARE_SIGNAL_IN(kp_com,                     ml::Vector);
-        DECLARE_SIGNAL_IN(kd_com,                     ml::Vector);
-        DECLARE_SIGNAL_IN(kp_posture,                 ml::Vector);
-        DECLARE_SIGNAL_IN(kd_posture,                 ml::Vector);
-        DECLARE_SIGNAL_IN(kp_pos,                     ml::Vector);
-        DECLARE_SIGNAL_IN(kd_pos,                     ml::Vector);
+        DECLARE_SIGNAL_IN(kp_base_orientation,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_base_orientation,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_constraints,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_constraints,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_com,                     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_com,                     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_feet,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_feet,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_posture,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_posture,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_pos,                     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_pos,                     dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(w_com,                      double);
+        DECLARE_SIGNAL_IN(w_feet,                     double);
         DECLARE_SIGNAL_IN(w_posture,                  double);
         DECLARE_SIGNAL_IN(w_base_orientation,         double);
         DECLARE_SIGNAL_IN(w_torques,                  double);
         DECLARE_SIGNAL_IN(w_forces,                   double);
-        DECLARE_SIGNAL_IN(weight_contact_forces,      ml::Vector);
+        DECLARE_SIGNAL_IN(weight_contact_forces,      dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(mu,                         double);
-        DECLARE_SIGNAL_IN(contact_points,             ml::Matrix);
-        DECLARE_SIGNAL_IN(contact_normal,             ml::Vector);
+        DECLARE_SIGNAL_IN(contact_points,             dynamicgraph::Matrix);
+        DECLARE_SIGNAL_IN(contact_normal,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(f_min,                      double);
+        DECLARE_SIGNAL_IN(f_max,                      double);
 
-        DECLARE_SIGNAL_IN(rotor_inertias,             ml::Vector);
-        DECLARE_SIGNAL_IN(gear_ratios,                ml::Vector);
-        DECLARE_SIGNAL_IN(tau_max,                    ml::Vector);
-        DECLARE_SIGNAL_IN(q_min,                      ml::Vector);
-        DECLARE_SIGNAL_IN(q_max,                      ml::Vector);
-        DECLARE_SIGNAL_IN(dq_max,                     ml::Vector);
-        DECLARE_SIGNAL_IN(ddq_max,                    ml::Vector);
-        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double    );
+        DECLARE_SIGNAL_IN(rotor_inertias,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gear_ratios,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(tau_max,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(q_min,                      dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(q_max,                      dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dq_max,                     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ddq_max,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double);
 
-        DECLARE_SIGNAL_IN(tau_estimated,              ml::Vector);
-        DECLARE_SIGNAL_IN(q,                          ml::Vector);
-        DECLARE_SIGNAL_IN(v,                          ml::Vector);
-        DECLARE_SIGNAL_IN(wrench_base,                ml::Vector);
-        DECLARE_SIGNAL_IN(wrench_left_foot,           ml::Vector);
-        DECLARE_SIGNAL_IN(wrench_right_foot,          ml::Vector);
+        DECLARE_SIGNAL_IN(tau_estimated,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(q,                          dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(v,                          dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(wrench_base,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(wrench_left_foot,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(wrench_right_foot,          dynamicgraph::Vector);
 
-        DECLARE_SIGNAL_IN(active_joints,              ml::Vector); /// mask with 1 for controlled joints, 0 otherwise
+        DECLARE_SIGNAL_IN(active_joints,              dynamicgraph::Vector); /// mask with 1 for controlled joints, 0 otherwise
         
-        DECLARE_SIGNAL_OUT(tau_des,                   ml::Vector);
-        DECLARE_SIGNAL_OUT(dv_des,                    ml::Vector);
-        DECLARE_SIGNAL_OUT(f_des_right_foot,          ml::Vector);
-        DECLARE_SIGNAL_OUT(f_des_left_foot,           ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_des_right_foot,        ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_des_left_foot,         ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_des_right_foot_local,  ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_des_left_foot_local,   ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_des,                   ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_right_foot,            ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp_left_foot,             ml::Vector);
-        DECLARE_SIGNAL_OUT(zmp,                       ml::Vector);
-        DECLARE_SIGNAL_OUT(com,                       ml::Vector);
-        DECLARE_SIGNAL_OUT(com_vel,                   ml::Vector);
-        DECLARE_SIGNAL_OUT(base_orientation,          ml::Vector);
-        DECLARE_SIGNAL_OUT(right_foot_pos,            ml::Vector);
-        DECLARE_SIGNAL_OUT(left_foot_pos,             ml::Vector);
+        DECLARE_SIGNAL_OUT(tau_des,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(dv_des,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(f_des_right_foot,          dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(f_des_left_foot,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_des_right_foot,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_des_left_foot,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_des_right_foot_local,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_des_left_foot_local,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_des,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_right_foot,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_left_foot,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp,                       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(com,                       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(com_vel,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(base_orientation,          dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_foot_pos,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_foot_pos,             dynamicgraph::Vector);
         
         /// This signal copies active_joints only if it changes from a all false or to an all false value
-        DECLARE_SIGNAL_INNER(active_joints_checked, ml::Vector);
+        DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
         
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
@@ -170,17 +182,37 @@ namespace dynamicgraph {
         bool              m_enabled;          /// True if controler is enabled
         bool              m_firstTime;        /// True at the first iteration of the controller
 
+        enum ContactState
+        {
+          DOUBLE_SUPPORT = 0,
+          LEFT_SUPPORT = 1,
+          LEFT_SUPPORT_TRANSITION = 2,  // transition towards left support
+          RIGHT_SUPPORT = 3,
+          RIGHT_SUPPORT_TRANSITION = 4
+        };
+        ContactState      m_contactState;
+        double            m_contactTransitionTime;  /// end time of the current contact transition (if any)
+
+        int m_frame_id_rf;  /// frame id of right foot
+        int m_frame_id_lf;  /// frame id of left foot
+
         /// pininvdyn
         pininvdyn::RobotWrapper *                       m_robot;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_34;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_17;
         pininvdyn::InverseDynamicsFormulationAccForce * m_invDyn;
         pininvdyn::contacts::Contact6d *                m_contactRF;
         pininvdyn::contacts::Contact6d *                m_contactLF;
         pininvdyn::tasks::TaskComEquality *             m_taskCom;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskRF;
+        pininvdyn::tasks::TaskSE3Equality *             m_taskLF;
         pininvdyn::tasks::TaskJointPosture *            m_taskPosture;
         pininvdyn::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
         pininvdyn::trajectories::TrajectorySample       m_sampleCom;
+        pininvdyn::trajectories::TrajectorySample       m_sampleRF;
+        pininvdyn::trajectories::TrajectorySample       m_sampleLF;
         pininvdyn::trajectories::TrajectorySample       m_samplePosture;
 
         pininvdyn::math::Vector  m_dv_sot;              /// desired accelerations (sot order)

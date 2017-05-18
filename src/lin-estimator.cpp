@@ -209,7 +209,7 @@ void LinEstimator::estimate(std::vector<double>& esteem,
   unsigned int idx;
   double x;
   // Cycle all the elements in the vector
-  for (unsigned int i = 0; i < dim_; ++i)
+  for (int i = 0; i < dim_; ++i)
   {
     c0_[i]=0.0; c1_[i]=0.0;
     // Retrieve the data in the window
@@ -233,17 +233,17 @@ void LinEstimator::getEstimateDerivative(std::vector<double>& estimateDerivative
   switch(order)
   {
     case 0:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c1_[i]*tmed_ + c0_[i];
       return;
 
     case 1:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c1_[i];
       return;
 
     default:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = 0.0;
   }
 }

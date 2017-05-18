@@ -34,7 +34,7 @@ const double HRP2DevicePosCtrl::FORCE_SENSOR_NOISE_STD_DEV = 1e-10;
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(HRP2DevicePosCtrl,"HRP2DevicePosCtrl");
 
 HRP2DevicePosCtrl::HRP2DevicePosCtrl(std::string RobotName):
-    dgsot::Device(RobotName),
+    dynamicgraphsot::Device(RobotName),
     timestep_(TIMESTEP_DEFAULT),
     kpSIN_(NULL,"HRP2DevicePosCtrl(" + RobotName + ")::input(vector)::kp"),
     kdSIN_(NULL,"HRP2DevicePosCtrl(" + RobotName + ")::input(vector)::kd"),
@@ -51,10 +51,10 @@ HRP2DevicePosCtrl::HRP2DevicePosCtrl(std::string RobotName):
     normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
     normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_)
 {
-    forcesSIN_[0] = new SignalPtr<ml::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceRLEG");
-    forcesSIN_[1] = new SignalPtr<ml::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceLLEG");
-    forcesSIN_[2] = new SignalPtr<ml::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceRARM");
-    forcesSIN_[3] = new SignalPtr<ml::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceLARM");
+    forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceRLEG");
+    forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceLLEG");
+    forcesSIN_[2] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceRARM");
+    forcesSIN_[3] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "HRP2DevicePosCtrl::input(vector6)::inputForceLARM");
     signalRegistration(kpSIN_<<kdSIN_<<
                        accelerometerSOUT_<<gyrometerSOUT_<<
                        robotStateSOUT_<<jointsVelocitiesSOUT_<<jointsAccelerationsSOUT_<<
@@ -62,7 +62,7 @@ HRP2DevicePosCtrl::HRP2DevicePosCtrl(std::string RobotName):
                        currentSOUT_ << p_gainsSOUT_ << d_gainsSOUT_);
 
     // initialize gyrometer and accelerometer
-    ml::Vector data(3); data.setZero();
+    dynamicgraph::Vector data(3); data.setZero();
     gyrometerSOUT_.setConstant(data);
     data(2) = 9.81;
     accelerometerSOUT_.setConstant(data);
@@ -116,9 +116,9 @@ void HRP2DevicePosCtrl::setStateSize(const unsigned int& size)
 
 void HRP2DevicePosCtrl::integrate( const double & dt )
 {
-    const ml::Vector & qDes = controlSIN.accessCopy();
-    const ml::Vector & kp   = kpSIN_.accessCopy();
-    const ml::Vector & kd   = kdSIN_.accessCopy();
+    const dynamicgraph::Vector & qDes = controlSIN.accessCopy();
+    const dynamicgraph::Vector & kp   = kpSIN_.accessCopy();
+    const dynamicgraph::Vector & kd   = kdSIN_.accessCopy();
 
     // compute PD control law to get joints' torques
     for(unsigned int i=0; i<state_.size()-6; ++i)
@@ -197,9 +197,9 @@ void HRP2DevicePosCtrl::integrate( const double & dt )
 
 //void HRP2DevicePosCtrl::integrate( const double & dt )
 //{
-//    const ml::Vector & qDes = controlSIN.accessCopy();
-//    const ml::Vector & kp   = kpSIN_.accessCopy();
-//    const ml::Vector & kd   = kdSIN_.accessCopy();
+//    const dynamicgraph::Vector & qDes = controlSIN.accessCopy();
+//    const dynamicgraph::Vector & kp   = kpSIN_.accessCopy();
+//    const dynamicgraph::Vector & kd   = kdSIN_.accessCopy();
 
 //    double dts2 = 0.5*dt*dt;
 //    for(unsigned int i=0; i<state_.size()-6; ++i)
