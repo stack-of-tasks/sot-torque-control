@@ -78,7 +78,9 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         FreeFlyerLocator( const std::string & name );
 
-        void init(const std::string& urdfFile);
+        void init(const std::string& urdfFile,
+		  const std::string & leftFootFrameName,
+		  const std::string & rightFootFrameName);
 
         void resetIntegral();
 
@@ -101,7 +103,7 @@ namespace dynamicgraph {
         {
           getLogger().sendMsg("[FreeFlyerLocator-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         se3::Model        m_model;            /// Pinocchio robot model
@@ -115,6 +117,10 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
+
+	std::string m_Left_Foot_Frame_Name;
+	std::string m_Right_Foot_Frame_Name;
+	unsigned int m_nbJoints;
 
       }; // class FreeFlyerLocator
       
