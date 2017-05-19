@@ -124,7 +124,7 @@ namespace dynamicgraph {
 	std::string m_Left_Foot_Frame_Name;
 	std::string m_Right_Foot_Frame_Name;
 	unsigned int m_nbJoints;
-
+	double m_Right_Foot_Sole_XYZ[3];
       }; // class FreeFlyerLocator
       
     }    // namespace torque_control
