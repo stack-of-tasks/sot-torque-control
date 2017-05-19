@@ -19,7 +19,7 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+//#include <sot/torque_control/utils/stop-watch.hh>
 
 #include <boost/test/unit_test.hpp>
 
@@ -234,31 +234,36 @@ namespace dynamicgraph
         assert(kp_com.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_com, m_kd_comSIN(0));
         assert(kd_com.size()==3);
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_posture, m_kp_postureSIN(0));
-        assert(kp_posture.size()==N_JOINTS);
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_posture, m_kd_postureSIN(0));
-        assert(kd_posture.size()==N_JOINTS);
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(rotor_inertias, m_rotor_inertiasSIN(0));
-        assert(rotor_inertias.size()==N_JOINTS);
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(gear_ratios, m_gear_ratiosSIN(0));
-        assert(gear_ratios.size()==N_JOINTS);
 
-        const double & w_com = m_w_comSIN(0);
-        const double & w_posture = m_w_postureSIN(0);
-//        const double & w_base_orientation = m_w_base_orientationSIN(0);
-//        const double & w_torques = m_w_torquesSIN(0);
-        const double & w_forces = m_w_forcesSIN(0);
-        const double & mu = m_muSIN(0);
-        const double & fMin = m_f_minSIN(0);
 
         try 
         {
           vector<string> package_dirs;
           m_robot = new RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+
+          assert(m_robot->nv()>=6);
+	  m_nbJoints = m_robot->nv()-6;
+
+	  EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_posture, m_kp_postureSIN(0));
+	  assert(kp_posture.size()==m_nbJoints);
+	  EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_posture, m_kd_postureSIN(0));
+	  assert(kd_posture.size()==m_nbJoints);
+	  EIGEN_CONST_VECTOR_FROM_SIGNAL(rotor_inertias, m_rotor_inertiasSIN(0));
+	  assert(rotor_inertias.size()==m_nbJoints);
+	  EIGEN_CONST_VECTOR_FROM_SIGNAL(gear_ratios, m_gear_ratiosSIN(0));
+	  assert(gear_ratios.size()==m_nbJoints);
+
           m_robot->rotor_inertias(rotor_inertias);
           m_robot->gear_ratios(gear_ratios);
 
-          assert(m_robot->nv()-6==N_JOINTS);
+	  const double & w_com = m_w_comSIN(0);
+	  const double & w_posture = m_w_postureSIN(0);
+	  //        const double & w_base_orientation = m_w_base_orientationSIN(0);
+	  //        const double & w_torques = m_w_torquesSIN(0);
+	  const double & w_forces = m_w_forcesSIN(0);
+	  const double & mu = m_muSIN(0);
+	  const double & fMin = m_f_minSIN(0);
+
           m_dv_sot.setZero(m_robot->nv());
           m_tau_sot.setZero(m_robot->nv()-6);
           m_f.setZero(24);
@@ -313,8 +318,8 @@ namespace dynamicgraph
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, ml::Vector)
       {
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=m_nbJoints)
+          s.resize(m_nbJoints);
 
         EIGEN_CONST_VECTOR_FROM_SIGNAL(active_joints_sot, m_active_jointsSIN(iter));
         if (m_enabled == false)
@@ -324,19 +329,19 @@ namespace dynamicgraph
               /* from all OFF to some ON */
               m_enabled = true ;
               EIGEN_VECTOR_TO_VECTOR(active_joints_sot, s);
-              Eigen::VectorXd active_joints_urdf(N_JOINTS);
+              Eigen::VectorXd active_joints_urdf(m_nbJoints);
               joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
 
               m_taskBlockedJoints = new TaskJointPosture("task-posture", *m_robot);
-              Eigen::VectorXd blocked_joints(N_JOINTS);
-              for(unsigned int i=0; i<N_JOINTS; i++)
+              Eigen::VectorXd blocked_joints(m_nbJoints);
+              for(unsigned int i=0; i<m_nbJoints; i++)
                 if(active_joints_urdf(i)==0.0)
                   blocked_joints(i) = 1.0;
                 else
                   blocked_joints(i) = 0.0;
               SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
               m_taskBlockedJoints->mask(blocked_joints);
-              TrajectorySample ref_zero(N_JOINTS);
+              TrajectorySample ref_zero(m_nbJoints);
               m_taskBlockedJoints->setReference(ref_zero);
               m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
           }
@@ -347,7 +352,7 @@ namespace dynamicgraph
             m_enabled = false ;
         }
         if (m_enabled == false)
-          for(int i=0; i<N_JOINTS; i++)
+          for(int i=0; i<m_nbJoints; i++)
             s(i)=false;
         return s;
       }
@@ -359,17 +364,17 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=m_nbJoints)
+          s.resize(m_nbJoints);
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
         m_active_joints_checkedSINNER(iter);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(q_sot, m_qSIN(iter));
-        assert(q_sot.size()==N_JOINTS+6);
+        assert(q_sot.size()==m_nbJoints+6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(v_sot, m_vSIN(iter));
-        assert(v_sot.size()==N_JOINTS+6);
+        assert(v_sot.size()==m_nbJoints+6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(x_com_ref,   m_com_ref_posSIN(iter));
         assert(x_com_ref.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(dx_com_ref,  m_com_ref_velSIN(iter));
@@ -377,11 +382,11 @@ namespace dynamicgraph
         EIGEN_CONST_VECTOR_FROM_SIGNAL(ddx_com_ref, m_com_ref_accSIN(iter));
         assert(ddx_com_ref.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(q_ref,   m_posture_ref_posSIN(iter));
-        assert(q_ref.size()==N_JOINTS);
+        assert(q_ref.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_ref,  m_posture_ref_velSIN(iter));
-        assert(dq_ref.size()==N_JOINTS);
+        assert(dq_ref.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_ref, m_posture_ref_accSIN(iter));
-        assert(ddq_ref.size()==N_JOINTS);
+        assert(ddq_ref.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_contact, m_kp_constraintsSIN(iter));
         assert(kp_contact.size()==6);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_contact, m_kd_constraintsSIN(iter));
@@ -391,13 +396,13 @@ namespace dynamicgraph
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_com, m_kd_comSIN(iter));
         assert(kd_com.size()==3);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_posture, m_kp_postureSIN(iter));
-        assert(kp_posture.size()==N_JOINTS);
+        assert(kp_posture.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_posture, m_kd_postureSIN(iter));
-        assert(kd_posture.size()==N_JOINTS);
+        assert(kd_posture.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kp_pos, m_kp_posSIN(iter));
-        assert(kp_pos.size()==N_JOINTS);
+        assert(kp_pos.size()==m_nbJoints);
         EIGEN_CONST_VECTOR_FROM_SIGNAL(kd_pos, m_kd_posSIN(iter));
-        assert(kd_pos.size()==N_JOINTS);
+        assert(kd_pos.size()==m_nbJoints);
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
@@ -469,8 +474,8 @@ namespace dynamicgraph
         m_f = sol.x.tail(24);
         joints_urdf_to_sot(m_invDyn->computeActuatorForces(sol), m_tau_sot);
 
-        m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail<N_JOINTS>()) +
-                     kd_pos.cwiseProduct(dq_ref-v_sot.tail<N_JOINTS>());
+        m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail(m_nbJoints)) +
+                     kd_pos.cwiseProduct(dq_ref-v_sot.tail(m_nbJoints));
 
         getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
         m_t += m_dt;

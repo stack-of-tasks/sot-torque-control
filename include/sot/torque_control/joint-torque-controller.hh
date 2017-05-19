@@ -40,10 +40,8 @@
 /* HELPER */
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/metapod-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 
 /*Motor model*/
 #include <sot/torque_control/motor-model.hh>

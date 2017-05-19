@@ -88,7 +88,7 @@ namespace dynamicgraph
 
           se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
 	  m_nbJoints = m_model.nq - 7;
-
+	  
           assert(m_model.nv == m_nbJoints+6);
           assert(m_model.existFrame(m_Left_Foot_Frame_Name));
           assert(m_model.existFrame(m_Right_Foot_Frame_Name));
@@ -162,7 +162,7 @@ namespace dynamicgraph
           m_Mff = se3::SE3(se3::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
 
           // due to distance from ankle to ground
-          Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&RIGHT_FOOT_SOLE_XYZ[0]);
+          Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_Right_Foot_Sole_XYZ[0]);
 
           m_q_sot.tail(m_nbJoints) = q.tail(m_nbJoints);
           base_se3_to_sot(m_Mff.translation()-righ_foot_sole_xyz,
@@ -194,7 +194,7 @@ namespace dynamicgraph
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();
 
         // due to distance from ankle to ground
-        Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&RIGHT_FOOT_SOLE_XYZ[0]);
+        Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_Right_Foot_Sole_XYZ[0]);
         freeflyer.head<3>() -= righ_foot_sole_xyz;
 
         EIGEN_VECTOR_TO_VECTOR(freeflyer,s);
