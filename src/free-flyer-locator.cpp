@@ -74,7 +74,11 @@ namespace dynamicgraph
                                                     "URDF file path (string)",
 						    "Left Foot Frame Name (string)",
 						    "Right Foot Frame Name (string)")));
-
+	
+	addCommand("setJointsUrdfToSot",
+		   makeCommandVoid1(*this, &FreeFlyerLocator::setJoints,
+                                    docCommandVoid1("Map Joints From URDF to SoT.",
+                                                    "Vector of integer for mapping")));
       }
 
       void FreeFlyerLocator::init(const std::string& urdfFile,
@@ -109,6 +113,15 @@ namespace dynamicgraph
         m_initSucceeded = true;
       }
 
+      void FreeFlyerLocator::setJoints(const dg::Vector & urdf_to_sot)
+      {
+	std::vector<unsigned int> lvec;
+	lvec.resize(urdf_to_sot.size());
+	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
+	  lvec[idx] = (unsigned int) urdf_to_sot[idx];
+	//m_from_urdf_to_sot.set_urdf_to_sot(lvec);
+      }
+
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
@@ -127,8 +140,8 @@ namespace dynamicgraph
         assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
-        joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
-        joints_sot_to_urdf(dq, m_v_pin.tail(m_nbJoints));
+        m_from_urdf_to_sot.joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
+        m_from_urdf_to_sot.joints_sot_to_urdf(dq, m_v_pin.tail(m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
         se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);

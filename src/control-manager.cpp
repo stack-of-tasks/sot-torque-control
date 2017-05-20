@@ -446,7 +446,7 @@ namespace dynamicgraph
         if(jointName=="all")
         {
           stringstream ss;
-          for(int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_nJoints; i++)
             ss<<m_robot->model().getJointName(i)<<" "<<m_jointCtrlModes_current[i]<<"; ";
           SEND_MSG(ss.str(),MSG_TYPE_INFO);
           return;
@@ -478,11 +478,11 @@ namespace dynamicgraph
           for(unsigned int j=0; j<m_nJoints; j++)
           {
             cm(j) = 0;
-            if(m_jointCtrlModes_current[j].id == i)
+            if((unsigned int)m_jointCtrlModes_current[j].id == i)
               cm(j) = 1;
 
             // during the transition between two ctrl modes they both result active
-            if(m_jointCtrlModesCountDown[j]>0 && m_jointCtrlModes_previous[j].id == i)
+            if(m_jointCtrlModesCountDown[j]>0 && (unsigned int)m_jointCtrlModes_previous[j].id == i)
                 cm(j) = 1;
           }
           m_jointsCtrlModesSOUT[i]->setConstant(cm);
