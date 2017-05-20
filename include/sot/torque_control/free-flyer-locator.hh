@@ -36,6 +36,8 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <dynamic-graph/linear-algebra.h>
+#include <sot/torque_control/common.hh>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
@@ -82,6 +84,8 @@ namespace dynamicgraph {
 		  const std::string & leftFootFrameName,
 		  const std::string & rightFootFrameName);
 
+	/// Set the mapping between urdf and sot.
+	void setJoints(const dynamicgraph::Vector &);
         void resetIntegral();
 
         /* --- SIGNALS --- */
@@ -108,14 +112,15 @@ namespace dynamicgraph {
         }
 
       protected:
+        
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data 
         se3::SE3          m_Mff;               /// SE3 Transform from center of feet to base
         se3::SE3          m_w_M_lf;
         se3::SE3          m_w_M_rf;
-        unsigned int      m_right_foot_id;
-        unsigned int      m_left_foot_id;
+        long unsigned int      m_right_foot_id;
+        long unsigned int      m_left_foot_id;
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
@@ -125,6 +130,7 @@ namespace dynamicgraph {
 	std::string m_Right_Foot_Frame_Name;
 	unsigned int m_nbJoints;
 	double m_Right_Foot_Sole_XYZ[3];
+	FromURDFToSoT m_from_urdf_to_sot;
       }; // class FreeFlyerLocator
       
     }    // namespace torque_control

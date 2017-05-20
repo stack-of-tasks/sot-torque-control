@@ -96,6 +96,7 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/quad-estimator.cpp
     src/stop-watch.cpp
     src/motor-model.cpp
+    src/common.cpp
 )
 
 SET(${LIBRARY_NAME}_PYTHON_FILES python/*.py)
@@ -145,13 +146,6 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
-INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/__init__.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/motors_parameters.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/hrp2)
-
 ADD_SUBDIRECTORY(src)
 
 SETUP_PROJECT_FINALIZE()
