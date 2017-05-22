@@ -119,8 +119,12 @@ namespace dynamicgraph
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
 
 	addCommand("setDefaultMaxCurrent",
-		   makeCommandVoid1(*this,&ControlManager::setDefaultMaxCurrent,
+		   makeDirectSetter(*this,&m_maxCurrent,
 				    docCommandVoid0("Set the default max current")));
+
+	addCommand("getDefaultMaxCurrent",
+		   makeDirectGetter(*this,&m_maxCurrent,
+				    docCommandVoid0("Get the default max current")));
 
       }
 
