@@ -28,10 +28,12 @@ namespace dynamicgraph
       namespace dg = ::dynamicgraph;
       using namespace dg;
       using namespace dg::command;
+ 
 
       void FromURDFToSoT::
       set_urdf_to_sot(const std::vector<unsigned int> &urdf_to_sot)
       {
+	m_nbJoints = urdf_to_sot.size();
 	m_urdf_to_sot.resize(urdf_to_sot.size());
 	m_dgv_urdf_to_sot.resize(urdf_to_sot.size());
 	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
@@ -44,6 +46,7 @@ namespace dynamicgraph
       void FromURDFToSoT::
       set_urdf_to_sot(const dg::Vector &urdf_to_sot)
       {
+	m_nbJoints = urdf_to_sot.size();
 	m_urdf_to_sot.resize(urdf_to_sot.size());
 	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
 	  {
@@ -55,6 +58,11 @@ namespace dynamicgraph
       bool FromURDFToSoT::
       joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot)
       {
+	if (m_nbJoints==0)
+	  {
+	    SEND_MSG("set_urdf_to_sot should be called", MSG_TYPE_ERROR);
+	    return false;
+	  }
 	assert(q_urdf.size()==m_nbJoints);
 	assert(q_sot.size()==m_nbJoints);
 	
@@ -68,6 +76,12 @@ namespace dynamicgraph
       {
 	assert(q_urdf.size()==m_nbJoints);
 	assert(q_sot.size()==m_nbJoints);
+
+	if (m_nbJoints==0)
+	  {
+	    SEND_MSG("set_urdf_to_sot should be called", MSG_TYPE_ERROR);
+	    return false;
+	  }
 	
 	for(unsigned int idx=0;idx<m_nbJoints;idx++)
 	  q_urdf[idx]=q_sot[m_urdf_to_sot[idx]];	

@@ -42,7 +42,7 @@
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
-
+#include <sot/torque_control/utils/logger.hh>
 namespace dg = ::dynamicgraph;
 using namespace dg;
 
@@ -55,7 +55,7 @@ namespace dynamicgraph {
       {
       protected:
 	std::vector<unsigned int> m_urdf_to_sot;
-	unsigned int m_nbJoints;
+        long unsigned int m_nbJoints;
 	
       public:
 	dynamicgraph::Vector m_dgv_urdf_to_sot;
@@ -66,6 +66,13 @@ namespace dynamicgraph {
 	bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
 
 	bool joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
+
+	void sendMsg(const std::string& msg, 
+		     MsgType t=MSG_TYPE_INFO, 
+		     const char* file="", int line=0)
+	{
+          getLogger().sendMsg("[FromURDFToSoT] "+msg, t, file, line);
+	}
 
       }; // struct FromURDFToSoT
 
