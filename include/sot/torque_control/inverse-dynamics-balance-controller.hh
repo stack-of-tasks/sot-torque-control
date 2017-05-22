@@ -39,6 +39,7 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -199,8 +200,10 @@ namespace dynamicgraph {
         pininvdyn::math::Vector  m_v_urdf;
 
         unsigned int m_timeLast;
-	
 	unsigned int m_nbJoints;
+	FromURDFToSoT m_from_urdf_to_sot;
+	dynamicgraph::Vector m_urdf_to_sot;
+
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control
   }      // namespace sot

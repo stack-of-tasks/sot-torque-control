@@ -80,7 +80,7 @@ namespace dynamicgraph
                                     docCommandVoid1("Map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
 	addCommand("getJointsUrdfToSot",
-		   makeDirectGetter(*this, &m_urdf_to_sot,
+		   makeDirectGetter(*this, &m_from_urdf_to_sot.m_dgv_urdf_to_sot,
                                     docDirectSetter("Display map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
 
@@ -120,17 +120,7 @@ namespace dynamicgraph
 
       void FreeFlyerLocator::setJoints(const dg::Vector & urdf_to_sot)
       {
-	m_urdf_to_sot.resize(urdf_to_sot.size());
-	std::vector<unsigned int> lvec;
-	lvec.resize(urdf_to_sot.size());
-	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
-	  {
-	    lvec[idx] = (unsigned int) urdf_to_sot[idx];
-	    m_urdf_to_sot[idx] = urdf_to_sot[idx];
-	    std::cout << lvec[idx] << " " ;
-	  }
-	std::cout << std::endl;
-	m_from_urdf_to_sot.set_urdf_to_sot(lvec);
+	m_from_urdf_to_sot.set_urdf_to_sot(urdf_to_sot);
 
       }
 

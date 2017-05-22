@@ -33,8 +33,23 @@ namespace dynamicgraph
       set_urdf_to_sot(const std::vector<unsigned int> &urdf_to_sot)
       {
 	m_urdf_to_sot.resize(urdf_to_sot.size());
+	m_dgv_urdf_to_sot.resize(urdf_to_sot.size());
 	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
-	  m_urdf_to_sot[idx] = urdf_to_sot[idx];
+	  {
+	    m_urdf_to_sot[idx] = urdf_to_sot[idx];
+	    m_dgv_urdf_to_sot[idx] = urdf_to_sot[idx];
+	  }
+      }
+      
+      void FromURDFToSoT::
+      set_urdf_to_sot(const dg::Vector &urdf_to_sot)
+      {
+	m_urdf_to_sot.resize(urdf_to_sot.size());
+	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
+	  {
+	    m_urdf_to_sot[idx] = (unsigned int)urdf_to_sot[idx];
+	  }
+	m_dgv_urdf_to_sot = urdf_to_sot;
       }
       
       bool FromURDFToSoT::

@@ -36,12 +36,15 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-
+#include <dynamic-graph/linear-algebra.h>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
+
+namespace dg = ::dynamicgraph;
+using namespace dg;
 
 
 namespace dynamicgraph {
@@ -55,7 +58,10 @@ namespace dynamicgraph {
 	unsigned int m_nbJoints;
 	
       public:
+	dynamicgraph::Vector m_dgv_urdf_to_sot;
+
 	void set_urdf_to_sot(const std::vector<unsigned int> &urdf_to_sot);
+	void set_urdf_to_sot(const dg::Vector &urdf_to_sot);
 	
 	bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
 
