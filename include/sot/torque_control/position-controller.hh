@@ -43,15 +43,6 @@
 #include <initializer_list>
 #include "boost/assign.hpp"
 
-/* Metapod */
-#include <metapod/models/hrp2_14/hrp2_14.hh>
-#include <metapod/algos/rnea.hh>
-#include <metapod/algos/jac.hh>
-#include <metapod/tools/jcalc.hh>
-#include <metapod/tools/bcalc.hh>
-#include <metapod/tools/print.hh>
-#include <metapod/tools/initconf.hh>
-
 namespace dynamicgraph {
   namespace sot {
     namespace torque_control {
@@ -72,7 +63,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         PositionController( const std::string & name );
 
-        void init(const double& dt);
+        void init(const double& dt,const double &nJoints);
 
         void resetIntegral();
 
@@ -103,6 +94,7 @@ namespace dynamicgraph {
         }
         
       protected:
+	unsigned int m_nJoints;
         Eigen::VectorXd   m_pwmDes;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         double            m_dt;               /// control loop time period
