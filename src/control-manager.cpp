@@ -136,7 +136,7 @@ namespace dynamicgraph
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
 	vector<string> package_dirs;
-	m_robot = new RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+	m_robot = new pininvdyn::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
 
 	m_nJoints = m_robot->nv()-6;
 
@@ -168,9 +168,9 @@ namespace dynamicgraph
           getProfiler().stop(PROFILE_DYNAMIC_GRAPH_PERIOD);
         getProfiler().start(PROFILE_DYNAMIC_GRAPH_PERIOD);
 
-        const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
+        //const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
 
-        if(s.size()!=m_nJoints)
+        if(s.size()!=(Eigen::VectorXd::Index) m_nJoints)
           s.resize(m_nJoints);
 
         getProfiler().start(PROFILE_PWM_DESIRED_COMPUTATION);
@@ -218,21 +218,21 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-        const ml::Vector& pwmDes          = m_pwmDesSOUT(iter);
-        const ml::Vector& tau_max         = m_max_tauSIN(iter);
-        const ml::Vector& tau             = m_tauSIN(iter);
-        const ml::Vector& tau_predicted   = m_tau_predictedSIN(iter);
-        const ml::Vector& dq              = m_dqSIN(iter);
-        const ml::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
-        const ml::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
-        const ml::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+        // const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
+        const dynamicgraph::Vector& pwmDes          = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
+        const dynamicgraph::Vector& tau             = m_tauSIN(iter);
+        const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
+        const dynamicgraph::Vector& dq              = m_dqSIN(iter);
+        const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
+        const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
+        const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+
         if(s.size()!=m_nJoints)
           s.resize(m_nJoints);
         
         if(!m_emergency_stop_triggered)
         {
-          int cm_id;
           stringstream ss;
           if(m_emergencyStopSIN.isPlugged())
           {
@@ -324,8 +324,9 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
       {
-        const ml::Vector& pwmDes = m_pwmDesSOUT(iter);
-        if(s.size()!=m_nJoints)
+        const dynamicgraph::Vector& pwmDes = m_pwmDesSOUT(iter);
+        if(s.size()!=(Eigen::VectorXd::Index)m_nJoints)
+
           s.resize(m_nJoints);
         for(unsigned int i=0; i<m_nJoints; i++)
 
@@ -382,7 +383,7 @@ namespace dynamicgraph
         m_ctrlModes.push_back(name);
 
         // register the new signals and add the new signal dependecy
-        unsigned int i = m_ctrlModes.size()-1;
+	Eigen::VectorXd::Index i = m_ctrlModes.size()-1;
         m_pwmDesSOUT.addDependency(*m_ctrlInputsSIN[i]);
         Entity::signalRegistration(*m_ctrlInputsSIN[i]);
         Entity::signalRegistration(*m_jointsCtrlModesSOUT[i]);
@@ -516,12 +517,12 @@ namespace dynamicgraph
       bool ControlManager::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        int jid = m_robot->model().getJointId(name);
+	se3::Model::JointIndex jid = m_robot->model().getJointId(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist: "+name, MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(unsigned it=0; it< m_nJoints;it++)
+          for(se3::Model::JointIndex it=0; it< m_nJoints;it++)
             ss<< m_robot->model().getJointName(it) <<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;

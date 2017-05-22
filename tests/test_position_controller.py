@@ -6,8 +6,13 @@ from numpy import matrix, identity, zeros, eye, array, pi, ndarray
 pc = PositionController("pc_test")
 
 q=zeros(36)
+dq=zeros(30)
 
-pc.base6d_encoders.value=[36](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-# Mapping with urdf to sot
+# Setting the robot configuration
+pc.base6d_encoders.value=q
+# Setting the robot velocities
+pc.jointsVelocities.value=dq
+
+# Initializing the entity.
 pc.init(0.005,36)
 

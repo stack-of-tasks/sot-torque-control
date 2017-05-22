@@ -138,7 +138,7 @@ namespace dynamicgraph {
         }
 
       protected:
-	std::size_t m_nJoints;      /// Number of joints
+	Eigen::VectorXd::Index m_nJoints;      /// Number of joints
         pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
