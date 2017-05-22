@@ -155,6 +155,8 @@ namespace dynamicgraph {
         std::vector<CtrlMode>     m_jointCtrlModes_previous;  /// previous control mode of the joints
         std::vector<int>          m_jointCtrlModesCountDown;  /// counters used for the transition between two ctrl modes
 
+        std::vector<bool>         m_currentWarningZone;      /// true if desired current > 0.8*maxCurrent
+
         bool convertStringToCtrlMode(const std::string& name, CtrlMode& cm);
         bool convertJointNameToJointId(const std::string& name, unsigned int& id);
         bool isJointInRange(unsigned int id, double q);
