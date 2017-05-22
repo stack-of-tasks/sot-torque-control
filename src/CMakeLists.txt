@@ -37,9 +37,12 @@ ENDIF(UNIX)
 
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
-#  joint-torque-controller
-#  joint-trajectory-generator
-#  nd-trajectory-generator
+  joint-torque-controller
+  force-torque-estimator
+  joint-trajectory-generator
+  nd-trajectory-generator
+  se3-trajectory-generator
+  inverse-dynamics-controller
   inverse-dynamics-balance-controller
   position-controller
   control-manager
@@ -90,9 +93,9 @@ FOREACH(plugin ${plugins})
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME} dl pthread)
   ENDIF(UNIX AND NOT APPLE)
 
-  PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} jrl-mal)
   PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
   PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
+  PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
 
   # build python submodule
   # (replace minus with underscore to make Python happy)

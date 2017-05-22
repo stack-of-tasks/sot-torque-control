@@ -89,12 +89,15 @@ namespace dynamicgraph {
         void resetIntegral();
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,            ml::Vector);
-        DECLARE_SIGNAL_IN(joint_velocities,           ml::Vector);
-        DECLARE_SIGNAL_INNER(kinematics_computations, ml::Vector);
-        DECLARE_SIGNAL_OUT(freeflyer_aa,              ml::Vector);  /// freeflyer position with angle axis format
-        DECLARE_SIGNAL_OUT(base6dFromFoot_encoders,   ml::Vector);  /// base6d_encoders with base6d in RPY
-        DECLARE_SIGNAL_OUT(v,                         ml::Vector);  /// n+6 robot velocities
+        DECLARE_SIGNAL_IN(base6d_encoders,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(joint_velocities,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
+	/// freeflyer position with angle axis format
+        DECLARE_SIGNAL_OUT(freeflyer_aa,              dynamicgraph::Vector);
+	/// base6d_encoders with base6d in RPY
+        DECLARE_SIGNAL_OUT(base6dFromFoot_encoders,   dynamicgraph::Vector);
+	/// n+6 robot velocities
+        DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  
 
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */

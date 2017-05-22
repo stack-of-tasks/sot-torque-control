@@ -97,23 +97,23 @@ namespace dynamicgraph {
         void init(const double& dt, const std::string &urdfFile);
 
         /* --- SIGNALS --- */
-        std::vector<dynamicgraph::SignalPtr<ml::Vector,int>*> m_ctrlInputsSIN;
-        std::vector<dynamicgraph::Signal<ml::Vector,int>*> m_jointsCtrlModesSOUT;
+        std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
+        std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*> m_jointsCtrlModesSOUT;
 
-        DECLARE_SIGNAL_IN(base6d_encoders,                       ml::Vector);
-        DECLARE_SIGNAL_IN(dq,                                    ml::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
-        DECLARE_SIGNAL_IN(bemfFactor,                            ml::Vector);  /// Link betwin velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
-        DECLARE_SIGNAL_IN(tau,                                   ml::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
-        DECLARE_SIGNAL_IN(tau_predicted,                         ml::Vector);  /// predicted joint torques (using motor model)
-        DECLARE_SIGNAL_IN(max_current,                           ml::Vector);  /// max current allowed before stopping the controller (in Ampers)
-        DECLARE_SIGNAL_IN(max_tau,                               ml::Vector);  /// max torque allowed before stopping the controller
-        DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  ml::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
-        DECLARE_SIGNAL_IN(signWindowsFilterSize,                 ml::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
+        DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
+        DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link betwin velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
+        DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
+        DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
+        DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
+        DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
+        DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
+        DECLARE_SIGNAL_IN(signWindowsFilterSize,                 dynamicgraph::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
         DECLARE_SIGNAL_IN(emergencyStop,                         bool      );  /// emergency stop input. If true, control is set to zero forever 
-        DECLARE_SIGNAL_OUT(pwmDes,                               ml::Vector);
-        DECLARE_SIGNAL_OUT(pwmDesSafe,                           ml::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
-        DECLARE_SIGNAL_OUT(signOfControlFiltered,                ml::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
-        DECLARE_SIGNAL_OUT(signOfControl,                        ml::Vector);  /// sign of control without filtered (indicating what would be the dead zone compensation applyed if no filtering on sign)
+        DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
+        DECLARE_SIGNAL_OUT(signOfControlFiltered,                dynamicgraph::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
+        DECLARE_SIGNAL_OUT(signOfControl,                        dynamicgraph::Vector);  /// sign of control without filtered (indicating what would be the dead zone compensation applyed if no filtering on sign)
 
 
 

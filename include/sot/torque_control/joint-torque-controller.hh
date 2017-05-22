@@ -80,98 +80,98 @@ namespace dynamicgraph {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,        ml::Vector);      /// base position  + joints positions
-        DECLARE_SIGNAL_IN(pwm,                    ml::Vector);      /// pwm commanded to the motors (used for debug only)
-        DECLARE_SIGNAL_IN(jointsVelocities,       ml::Vector);      /// dq
-        DECLARE_SIGNAL_IN(jointsAccelerations,    ml::Vector);      /// ddq
-        DECLARE_SIGNAL_IN(jointsTorques,          ml::Vector);      /// estimated joints torques tau
-        DECLARE_SIGNAL_IN(jointsTorquesDesired,   ml::Vector);      /// desired joints torques tauDes
-        DECLARE_SIGNAL_IN(measuredCurrent,        ml::Vector);      /// measured current in amps
-        DECLARE_SIGNAL_IN(KpTorque,               ml::Vector);      /// proportional gain for torque feedback controller
-        DECLARE_SIGNAL_IN(KiTorque,               ml::Vector);      /// integral gain for torque feedback controller
-        DECLARE_SIGNAL_IN(KpCurrent,              ml::Vector);      /// proportional gain for current feedback controller
-        DECLARE_SIGNAL_IN(KiCurrent,              ml::Vector);      /// integral gain for current feedback controller
+        DECLARE_SIGNAL_IN(base6d_encoders,        dynamicgraph::Vector);      /// base position  + joints positions
+        DECLARE_SIGNAL_IN(pwm,                    dynamicgraph::Vector);      /// pwm commanded to the motors (used for debug only)
+        DECLARE_SIGNAL_IN(jointsVelocities,       dynamicgraph::Vector);      /// dq
+        DECLARE_SIGNAL_IN(jointsAccelerations,    dynamicgraph::Vector);      /// ddq
+        DECLARE_SIGNAL_IN(jointsTorques,          dynamicgraph::Vector);      /// estimated joints torques tau
+        DECLARE_SIGNAL_IN(jointsTorquesDesired,   dynamicgraph::Vector);      /// desired joints torques tauDes
+        DECLARE_SIGNAL_IN(measuredCurrent,        dynamicgraph::Vector);      /// measured current in amps
+        DECLARE_SIGNAL_IN(KpTorque,               dynamicgraph::Vector);      /// proportional gain for torque feedback controller
+        DECLARE_SIGNAL_IN(KiTorque,               dynamicgraph::Vector);      /// integral gain for torque feedback controller
+        DECLARE_SIGNAL_IN(KpCurrent,              dynamicgraph::Vector);      /// proportional gain for current feedback controller
+        DECLARE_SIGNAL_IN(KiCurrent,              dynamicgraph::Vector);      /// integral gain for current feedback controller
  
-//        DECLARE_SIGNAL_IN(dq_threshold,           ml::Vector);      /// velocity sign threshold
-//        DECLARE_SIGNAL_IN(ddq_threshold,          ml::Vector);      /// acceleration sign threshold
-//        DECLARE_SIGNAL_IN(activeJoints,           ml::Vector);      /// mask with 1 for (torque) controlled joints and 0 for position controlled joints
+//        DECLARE_SIGNAL_IN(dq_threshold,           dynamicgraph::Vector);      /// velocity sign threshold
+//        DECLARE_SIGNAL_IN(ddq_threshold,          dynamicgraph::Vector);      /// acceleration sign threshold
+//        DECLARE_SIGNAL_IN(activeJoints,           dynamicgraph::Vector);      /// mask with 1 for (torque) controlled joints and 0 for position controlled joints
 
         /// parameters for the linear model
-        DECLARE_SIGNAL_IN(k_tau,                ml::Vector); //to be del
-        DECLARE_SIGNAL_IN(k_v,                  ml::Vector); //to be del
-        DECLARE_SIGNAL_IN(frictionCompensationPercentage, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKt_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKf_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKv_n, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_p, ml::Vector);
-        DECLARE_SIGNAL_IN(motorParameterKa_n, ml::Vector);
-        DECLARE_SIGNAL_IN(polySignDq,         ml::Vector);
+        DECLARE_SIGNAL_IN(k_tau,                dynamicgraph::Vector); //to be del
+        DECLARE_SIGNAL_IN(k_v,                  dynamicgraph::Vector); //to be del
+        DECLARE_SIGNAL_IN(frictionCompensationPercentage, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKf_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKv_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKv_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKa_p, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(polySignDq,         dynamicgraph::Vector);
         /// input from inverse dynamics controller for computing
         /// monitoring signals deltaQ_ff, deltaQ_fb
-        DECLARE_SIGNAL_IN(tauFF,                ml::Vector);
-        DECLARE_SIGNAL_IN(tauFB,                ml::Vector);
+        DECLARE_SIGNAL_IN(tauFF,                dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(tauFB,                dynamicgraph::Vector);
 
         // Parameters of the piece-wise linear function f, which
         // describes the relationship between joints torques tau and
         // position error deltaQ
-//        DECLARE_SIGNAL_IN(f_k1p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_k2p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_k3p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_k1n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_k2n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_k3n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q1p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q2p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q3p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q1n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q2n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_q3n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(f_tau1p,              ml::Vector);
-//        DECLARE_SIGNAL_IN(f_tau2p,              ml::Vector);
-//        DECLARE_SIGNAL_IN(f_tau1n,              ml::Vector);
-//        DECLARE_SIGNAL_IN(f_tau2n,              ml::Vector);
+//        DECLARE_SIGNAL_IN(f_k1p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_k2p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_k3p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_k1n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_k2n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_k3n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q1p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q2p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q3p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q1n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q2n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_q3n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_tau1p,              dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_tau2p,              dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_tau1n,              dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(f_tau2n,              dynamicgraph::Vector);
 
         // Parameters of the piece-wise linear function g, which
         // describes the relationship between joints velocities dq and
         // position error deltaQ
-//        DECLARE_SIGNAL_IN(g_k1p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_k2p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_k3p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_k1n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_k2n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_k3n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q1p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q2p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q3p,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q1n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q2n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_q3n,                ml::Vector);
-//        DECLARE_SIGNAL_IN(g_dq1p,               ml::Vector);
-//        DECLARE_SIGNAL_IN(g_dq2p,               ml::Vector);
-//        DECLARE_SIGNAL_IN(g_dq1n,               ml::Vector);
-//        DECLARE_SIGNAL_IN(g_dq2n,               ml::Vector);
+//        DECLARE_SIGNAL_IN(g_k1p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_k2p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_k3p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_k1n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_k2n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_k3n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q1p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q2p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q3p,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q1n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q2n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_q3n,                dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_dq1p,               dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_dq2p,               dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_dq1n,               dynamicgraph::Vector);
+//        DECLARE_SIGNAL_IN(g_dq2n,               dynamicgraph::Vector);
 
-        DECLARE_SIGNAL_OUT(desiredCurrent,  ml::Vector);  /// Desired current 
-        DECLARE_SIGNAL_OUT(controlCurrent,  ml::Vector);  /// current command to send to the motor drivers
+        DECLARE_SIGNAL_OUT(desiredCurrent,  dynamicgraph::Vector);  /// Desired current 
+        DECLARE_SIGNAL_OUT(controlCurrent,  dynamicgraph::Vector);  /// current command to send to the motor drivers
 
         /// Signals for monitoring the behavior of the entity
-        DECLARE_SIGNAL_OUT(predictedJointsTorques,  ml::Vector);  /// k_tau^{-1}*(delta_q - k_v*dq)
-        DECLARE_SIGNAL_OUT(predictedPwm,            ml::Vector);  /// k_tau*tau + k_v*dq
-        DECLARE_SIGNAL_OUT(pwm,                     ml::Vector);  /// pwm, just for comparison with predictedPwm
-        DECLARE_SIGNAL_OUT(predictedPwm_tau,        ml::Vector);  /// k_tau*tau
+        DECLARE_SIGNAL_OUT(predictedJointsTorques,  dynamicgraph::Vector);  /// k_tau^{-1}*(delta_q - k_v*dq)
+        DECLARE_SIGNAL_OUT(predictedPwm,            dynamicgraph::Vector);  /// k_tau*tau + k_v*dq
+        DECLARE_SIGNAL_OUT(pwm,                     dynamicgraph::Vector);  /// pwm, just for comparison with predictedPwm
+        DECLARE_SIGNAL_OUT(predictedPwm_tau,        dynamicgraph::Vector);  /// k_tau*tau
 /// pwm = k_tau*(tauFF+tauFB + kp*(tauFF+tauFB-tauEst)) + k_v*dq
 /// pwm = k_tau*(tauFF+tauFB + kp*(M*ddqRef+h-JT*fRef + Ks*e_q+Kd*de_q-JT*Kf*e_f - M*ddqRef-h+JT*f)) + k_v*dq
 /// pwm = k_tau*(tauFF+tauFB + kp*(-JT*e_f + tauFB)) + k_v*dq
 /// pwm = k_tau*tauFF + k_tau*(tauFB +k_p*tauFB - kp*JT*e_f) + k_v*dq
 /// pwm = k_tau*tauFF + k_tau*(tauFB +k_p*(tauDes - tau)) + k_v*dq
-        DECLARE_SIGNAL_OUT(pwm_ff,               ml::Vector);  /// k_tau*tauFF,                       part of pwm due to tauFF
-        DECLARE_SIGNAL_OUT(pwm_fb,               ml::Vector);  /// k_tau*(tauFB +k_p*(tauDes - tau)), part of pwm due to tauFB
-        DECLARE_SIGNAL_OUT(pwm_friction,         ml::Vector);  /// k_v*dq,                            part of pwm due to friction compensation
-        DECLARE_SIGNAL_OUT(smoothSignDq,         ml::Vector); /// smooth approximation of sign(dq)
-//        DECLARE_SIGNAL_OUT(smoothSignDdq,           ml::Vector);  /// smooth approximation of sign(ddq)
+        DECLARE_SIGNAL_OUT(pwm_ff,               dynamicgraph::Vector);  /// k_tau*tauFF,                       part of pwm due to tauFF
+        DECLARE_SIGNAL_OUT(pwm_fb,               dynamicgraph::Vector);  /// k_tau*(tauFB +k_p*(tauDes - tau)), part of pwm due to tauFB
+        DECLARE_SIGNAL_OUT(pwm_friction,         dynamicgraph::Vector);  /// k_v*dq,                            part of pwm due to friction compensation
+        DECLARE_SIGNAL_OUT(smoothSignDq,         dynamicgraph::Vector); /// smooth approximation of sign(dq)
+//        DECLARE_SIGNAL_OUT(smoothSignDdq,           dynamicgraph::Vector);  /// smooth approximation of sign(ddq)
 
       protected:
         MotorModel motorModel;
@@ -185,7 +185,7 @@ namespace dynamicgraph {
         Eigen::VectorXd m_tauErrIntegral; /// integral of the torque error
         Eigen::VectorXd m_currentErrIntegral; /// integral of the current error
         Eigen::VectorXd m_qDes_for_position_controlled_joints;
-        std::vector<bool> m_activeJoints;
+        Eigen::Array<int, N_JOINTS, 1> m_activeJoints;
         std::string m_activeJointsString;
 
 //        void compute_f(const Eigen::VectorXd &tau, Eigen::const_SigVectorXd &dq, Eigen::const_SigVectorXd &dq_thr, int iter, Eigen::VectorXd &f);

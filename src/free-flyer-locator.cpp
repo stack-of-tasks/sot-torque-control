@@ -29,13 +29,15 @@ namespace dynamicgraph
   {
     namespace torque_control
     {
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
       using namespace se3;
 
       typedef Eigen::Vector6d Vector6;
+      typedef Eigen::Matrix<double,N_JOINTS,1> VectorN;
+      typedef Eigen::Matrix<double,N_JOINTS+6,1> VectorN6;
 
 #define PROFILE_FREE_FLYER_COMPUTATION          "Free-flyer position computation"
 #define PROFILE_FREE_FLYER_VELOCITY_COMPUTATION "Free-flyer velocity computation"
@@ -57,12 +59,12 @@ namespace dynamicgraph
       FreeFlyerLocator::
           FreeFlyerLocator(const std::string& name)
             : Entity(name)
-            ,CONSTRUCT_SIGNAL_IN( base6d_encoders,            ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN( joint_velocities,           ml::Vector)
-            ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  ml::Vector, INPUT_SIGNALS)
-            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    ml::Vector, m_kinematics_computationsSINNER)
-            ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               ml::Vector, m_base6dFromFoot_encodersSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(v,                          ml::Vector, m_kinematics_computationsSINNER)
+            ,CONSTRUCT_SIGNAL_IN( base6d_encoders,            dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN( joint_velocities,           dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, INPUT_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
+            ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,m_initSucceeded(false)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -129,7 +131,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_INNER_FUNCTION(kinematics_computations, ml::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(kinematics_computations, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -137,10 +139,10 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
-        assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
-        assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
+        const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+        const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         m_from_urdf_to_sot.joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
@@ -153,7 +155,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(base6dFromFoot_encoders,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(base6dFromFoot_encoders,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -167,8 +169,8 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
-          assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+          assert(q.size()==m_nJoints+6     && "Unexpected size of signal base6d_encoder");
                     
           /* Compute kinematic and return q with freeflyer */
           const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
@@ -185,14 +187,14 @@ namespace dynamicgraph
                           m_Mff.rotation(),
                           m_q_sot.head(6));
 
-          EIGEN_VECTOR_TO_VECTOR(m_q_sot, s);
+          s = m_q_sot;
         }
         getProfiler().stop(PROFILE_FREE_FLYER_COMPUTATION);
 
         return s;
       }
       
-      DEFINE_SIGNAL_OUT_FUNCTION(freeflyer_aa,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(freeflyer_aa,dynamicgraph::Vector)
       {
         m_base6dFromFoot_encodersSOUT(iter);
         if(!m_initSucceeded)
@@ -213,11 +215,11 @@ namespace dynamicgraph
         Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_Right_Foot_Sole_XYZ[0]);
         freeflyer.head<3>() -= righ_foot_sole_xyz;
 
-        EIGEN_VECTOR_TO_VECTOR(freeflyer,s);
+        s = freeflyer;
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(v,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(v,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -231,7 +233,7 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
+          const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
           assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
@@ -246,7 +248,7 @@ namespace dynamicgraph
           m_v_sot.head<6>() = - 0.5*(v_lf + v_rf);
           m_v_sot.tail(m_nbJoints) = dq;
 
-          EIGEN_VECTOR_TO_VECTOR(m_v_sot, s);
+          s = m_v_sot;
         }
         getProfiler().stop(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
 

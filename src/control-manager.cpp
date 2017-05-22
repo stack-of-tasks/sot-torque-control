@@ -19,7 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <pininvdyn/utils/stop-watch.hpp>
+#include <pininvdyn/utils/statistics.hpp>
 
 namespace dynamicgraph
 {
@@ -27,13 +28,12 @@ namespace dynamicgraph
   {
     namespace torque_control
     {
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
-      using namespace dg::sot::torque_control;
+      using namespace dynamicgraph::sot::torque_control;
 
-      using namespace pininvdyn;
 //Size to be aligned                          "-------------------------------------------------------"
 #define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
@@ -56,21 +56,20 @@ namespace dynamicgraph
       ControlManager::
       ControlManager(const std::string& name)
             : Entity(name)
-	    ,m_nJoints(30)
-            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(dq,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(bemfFactor,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(tau,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(tau_predicted,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(max_current,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(max_tau,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(emergencyStop, ml::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(pwmDes,               ml::Vector, m_base6d_encodersSIN)
-            ,CONSTRUCT_SIGNAL_OUT(signOfControl,        ml::Vector, m_pwmDesSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,ml::Vector, m_pwmDesSafeSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,ml::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
+            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(emergencyStop, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
+            ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
             ,m_initSucceeded(false)
             ,m_emergency_stop_triggered(false)
             ,m_maxCurrent(5)
@@ -152,7 +151,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwmDes,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwmDes,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -166,7 +165,7 @@ namespace dynamicgraph
           getProfiler().stop(PROFILE_DYNAMIC_GRAPH_PERIOD);
         getProfiler().start(PROFILE_DYNAMIC_GRAPH_PERIOD);
 
-        const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
+        const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
 
         if(s.size()!=m_nJoints)
           s.resize(m_nJoints);
@@ -181,13 +180,13 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_nJoints; i++)
           {
             cm_id = m_jointCtrlModes_current[i].id;
-            const ml::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
+            const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
             if(m_jointCtrlModesCountDown[i]==0)
               s(i) = ctrl(i);
             else
             {
               cm_id_prev = m_jointCtrlModes_previous[i].id;
-              const ml::Vector& ctrl_prev = (*m_ctrlInputsSIN[cm_id_prev])(iter);
+              const dynamicgraph::Vector& ctrl_prev = (*m_ctrlInputsSIN[cm_id_prev])(iter);
               double alpha = m_jointCtrlModesCountDown[i]/CTRL_MODE_TRANSITION_TIME_STEP;
 //              SEND_MSG("Joint "+toString(i)+" changing ctrl mode from "+toString(cm_id_prev)+
 //                       " to "+toString(cm_id)+" alpha="+toString(alpha),MSG_TYPE_DEBUG);
@@ -208,7 +207,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwmDesSafe,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwmDesSafe,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -216,17 +215,18 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-        const ml::Vector& pwmDes          = m_pwmDesSOUT(iter);
-        const ml::Vector& tau_max         = m_max_tauSIN(iter);
-        const ml::Vector& tau             = m_tauSIN(iter);
-        const ml::Vector& tau_predicted   = m_tau_predictedSIN(iter);
-        const ml::Vector& dq              = m_dqSIN(iter);
-        const ml::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
-        const ml::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
-        const ml::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+        const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
+        const dynamicgraph::Vector& pwmDes          = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
+        const dynamicgraph::Vector& tau             = m_tauSIN(iter);
+        const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
+        const dynamicgraph::Vector& dq              = m_dqSIN(iter);
+        const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
+        const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
+        const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
         if(s.size()!=m_nJoints)
           s.resize(m_nJoints);
+
         
         if(!m_emergency_stop_triggered)
         {
@@ -315,14 +315,14 @@ namespace dynamicgraph
         }
 
         if(m_emergency_stop_triggered)
-          for(unsigned int i=0; i<m_nJoints; i++)
-            s(i) = 0.0;
+	  s.setZero();
+
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
       {
-        const ml::Vector& pwmDes = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& pwmDes = m_pwmDesSOUT(iter);
         if(s.size()!=m_nJoints)
           s.resize(m_nJoints);
         for(unsigned int i=0; i<m_nJoints; i++)
@@ -337,9 +337,9 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(signOfControlFiltered,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(signOfControlFiltered,dynamicgraph::Vector)
       {
-        const ml::Vector& pwmDesSafe = m_pwmDesSafeSOUT(iter);
+        const dynamicgraph::Vector& pwmDesSafe = m_pwmDesSafeSOUT(iter);
         if(s.size()!=m_nJoints)
           s.resize(m_nJoints);
         for(unsigned int i=0; i<m_nJoints; i++)
@@ -366,13 +366,13 @@ namespace dynamicgraph
             return SEND_MSG("It already exists a control mode with name "+name, MSG_TYPE_ERROR);
 
         // create a new input signal to read the new control
-        m_ctrlInputsSIN.push_back(new SignalPtr<ml::Vector, int>(NULL,
-           getClassName()+"("+getName()+")::input(ml::Vector)::ctrl_"+name));
+        m_ctrlInputsSIN.push_back(new SignalPtr<dynamicgraph::Vector, int>(NULL,
+           getClassName()+"("+getName()+")::input(dynamicgraph::Vector)::ctrl_"+name));
 
         // create a new output signal to specify which joints are controlled with the new
         // control mode
-        m_jointsCtrlModesSOUT.push_back(new Signal<ml::Vector, int>(
-           getClassName()+"("+getName()+")::output(ml::Vector)::joints_ctrl_mode_"+name));
+        m_jointsCtrlModesSOUT.push_back(new Signal<dynamicgraph::Vector, int>(
+           getClassName()+"("+getName()+")::output(dynamicgraph::Vector)::joints_ctrl_mode_"+name));
 
         // add the new control mode to the list of available control modes
         m_ctrlModes.push_back(name);
@@ -465,6 +465,7 @@ namespace dynamicgraph
       void ControlManager::resetProfiler()
       {
         getProfiler().reset_all();
+        getStatistics().reset_all();
       }
 
       void ControlManager::setDefaultMaxCurrent( const double & lDefaultMaxCurrent)
@@ -476,7 +477,7 @@ namespace dynamicgraph
 
       void ControlManager::updateJointCtrlModesOutputSignal()
       {
-        ml::Vector cm(m_nJoints);
+        dynamicgraph::Vector cm(m_nJoints);
         for(unsigned int i=0; i<m_jointsCtrlModesSOUT.size(); i++)
         {
           for(unsigned int j=0; j<m_nJoints; j++)
