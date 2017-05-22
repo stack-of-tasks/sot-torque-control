@@ -43,7 +43,6 @@ namespace dynamicgraph
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
-      //Size to be aligned                "-------------------------------------------------------"
 #define PROFILE_TAU_DES_COMPUTATION "InverseDynamicsBalanceController: desired tau"
 #define PROFILE_HQP_SOLUTION        "InverseDynamicsBalanceController: HQP"
 #define PROFILE_PREPARE_INV_DYN     "InverseDynamicsBalanceController: prepare inv-dyn"

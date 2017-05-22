@@ -33,7 +33,7 @@ namespace dynamicgraph
       using namespace dg::command;
       using namespace std;
       using namespace metapod;
-//Size to be aligned                "-------------------------------------------------------"
+
 #define PROFILE_TAU_DES_COMPUTATION "InverseDynamicsController: Desired torques computation "
 #define PROFILE_DDQ_DES_COMPUTATION "InverseDynamicsController: Desired ddq computation     "
 
