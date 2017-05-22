@@ -128,6 +128,7 @@ namespace dynamicgraph {
 	unsigned int m_nbJoints;
 	double m_Right_Foot_Sole_XYZ[3];
 	FromURDFToSoT m_from_urdf_to_sot;
+	dynamicgraph::Vector m_urdf_to_sot;
       }; // class FreeFlyerLocator
       
     }    // namespace torque_control
