@@ -18,8 +18,10 @@ ffl.init("/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf","
 
 # TODO : Set the value of the encoders.
 
-q=( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0)
+q=zeros(36)
+dq=zeros(30)
 ffl.base6d_encoders.value = q
+ffl.joint_velocities.value = dq
 ffl.freeflyer_aa.recompute(100)
 
 
