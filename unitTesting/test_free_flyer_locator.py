@@ -20,6 +20,6 @@ ffl.init("/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf","
 
 q=( 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0)
 ffl.base6d_encoders.value = q
-#ffl.freeflyer_aa.recompute(100)
+ffl.freeflyer_aa.recompute(100)
 
 

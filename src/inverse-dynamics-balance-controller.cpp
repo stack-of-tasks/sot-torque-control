@@ -331,10 +331,10 @@ namespace dynamicgraph
         assert(kd_com.size()==3);
         assert(kp_feet.size()==6);
         assert(kd_feet.size()==6);
-        assert(kp_posture.size()==m_nJoints);
-        assert(kd_posture.size()==m_nJoints);
-        assert(rotor_inertias.size()==m_nJoints);
-        assert(gear_ratios.size()==m_nJoints);
+        assert(kp_posture.size()==m_nbJoints);
+        assert(kd_posture.size()==m_nbJoints);
+        assert(rotor_inertias.size()==m_nbJoints);
+        assert(gear_ratios.size()==m_nbJoints);
 
         const double & w_com = m_w_comSIN(0);
         const double & w_posture = m_w_postureSIN(0);
@@ -516,7 +516,7 @@ namespace dynamicgraph
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
         assert(q_ref.size()==m_nbJoints);
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==m_NbJoints);
+        assert(dq_ref.size()==m_nbJoints);
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
         assert(ddq_ref.size()==m_nbJoints);
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
