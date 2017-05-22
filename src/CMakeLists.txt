@@ -40,8 +40,8 @@ SET(plugins
 #  joint-torque-controller
 #  force-torque-estimator
 #  joint-trajectory-generator
-#  nd-trajectory-generator
-#  se3-trajectory-generator
+  nd-trajectory-generator
+  se3-trajectory-generator
   inverse-dynamics-balance-controller
   position-controller
   control-manager

@@ -29,7 +29,7 @@ cm.tau.value = tau
 cm.tau_predicted.value = tau_predicted
 
 # Init should be called before addCtrlMode because the size of state vector must be known.
-cm.init(0.005,"/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf")
+cm.init(0.005,"/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf",5.0)
 
 ## Specify control mode ##
 # Add position mode

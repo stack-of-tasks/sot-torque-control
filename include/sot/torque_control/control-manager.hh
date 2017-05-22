@@ -94,7 +94,14 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         ControlManager( const std::string & name);
 
-        void init(const double& dt, const std::string &urdfFile);
+	/// Initialize
+	/// @param dt: control interval
+	/// @param urdfFile: path to the URDF model of the robot
+	/// @param maxCurrent: default maximum current for each motor. 
+	/// The recommended way is to use the signal max_current.
+        void init(const double& dt, 
+		  const std::string &urdfFile,
+		  const double & maxCurrent);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
