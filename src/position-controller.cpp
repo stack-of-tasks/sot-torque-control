@@ -32,7 +32,6 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
-      using namespace metapod;
 //Size to be aligned                "-------------------------------------------------------"
 #define PROFILE_PWM_DES_COMPUTATION "PositionController: desired pwm computation            "
 
@@ -74,15 +73,17 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid1(*this, &PositionController::init,
-                                    docCommandVoid1("Initialize the entity.",
-                                                    "Time period in seconds (double)")));
+                   makeCommandVoid2(*this, &PositionController::init,
+                                    docCommandVoid2("Initialize the entity.",
+                                                    "Time period in seconds (double)",
+						    "Size of the state vector (double)")));
         addCommand("resetIntegral",
                    makeCommandVoid0(*this, &PositionController::resetIntegral,
                                     docCommandVoid0("Reset the integral.")));
       }
 
-      void PositionController::init(const double& dt)
+      void PositionController::init(const double& dt,
+				    const double& nJoints)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
@@ -101,8 +102,9 @@ namespace dynamicgraph
         if(!m_KiSIN.isPlugged())
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
+	m_nJoints = nJoints;
         m_dt = dt;
-        m_pwmDes.setZero(N_JOINTS);
+        m_pwmDes.setZero(m_nJoints);
         m_q.setZero();
         m_dq.setZero();
 
@@ -113,7 +115,7 @@ namespace dynamicgraph
 
       void PositionController::resetIntegral()
       {
-        m_e_integral.setZero(N_JOINTS);
+        m_e_integral.setZero(m_nJoints);
       }
 
       /* ------------------------------------------------------------------- */
@@ -137,14 +139,14 @@ namespace dynamicgraph
           EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
           EIGEN_CONST_VECTOR_FROM_SIGNAL(dqRef,       m_dqRefSIN(iter));  // n
 
-          assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
-          assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
-          assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
-          assert(Kp.size()==N_JOINTS      && "Unexpected size of signal Kd");
-          assert(Kd.size()==N_JOINTS      && "Unexpected size of signal Kd");
+          assert(q.size()==m_nJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==m_nJoints      && "Unexpected size of signal dq");
+          assert(qRef.size()==m_nJoints    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==m_nJoints   && "Unexpected size of signal dqRef");
+          assert(Kp.size()==m_nJoints      && "Unexpected size of signal Kd");
+          assert(Kd.size()==m_nJoints      && "Unexpected size of signal Kd");
 
-          m_pwmDes = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
+          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_nJoints)) + Kd.cwiseProduct(dqRef-dq);
 
           EIGEN_VECTOR_TO_VECTOR(m_pwmDes,s);
         }
@@ -163,12 +165,12 @@ namespace dynamicgraph
 
         EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
         EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
-        assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
+        assert(q.size()==m_nJoints+6     && "Unexpected size of signal base6d_encoder");
+        assert(qRef.size()==m_nJoints    && "Unexpected size of signal qRef");
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(unsigned int i=0; i<N_JOINTS; i++)
+        if(s.size()!=m_nJoints)
+          s.resize(m_nJoints);
+        for(unsigned int i=0; i<m_nJoints; i++)
           s(i)= qRef[i]-q(6+i);
 
         return s;

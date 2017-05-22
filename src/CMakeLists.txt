@@ -41,7 +41,7 @@ SET(plugins
 #  joint-trajectory-generator
 #  nd-trajectory-generator
 #  inverse-dynamics-balance-controller
-#  position-controller
+  position-controller
   control-manager
   free-flyer-locator
   )
