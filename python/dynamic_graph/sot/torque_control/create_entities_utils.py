@@ -6,7 +6,7 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
-from dynamic_graph.sot.torque_control.vel_acc_estimator import VelAccEstimator
+from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference as VelAccEstimator
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
 from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTrajectoryGenerator
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
@@ -40,7 +40,7 @@ def create_free_flyer_locator(ent, urdf):
     from dynamic_graph.sot.torque_control.free_flyer_locator import FreeFlyerLocator
     ff_locator = FreeFlyerLocator("ffLocator");
     plug(ent.device.robotState,           ff_locator.base6d_encoders);
-    plug(ent.estimator_kin.jointsVelocities,  ff_locator.joint_velocities);
+    plug(ent.estimator_kin.dx,  ff_locator.joint_velocities);
     plug(ff_locator.base6dFromFoot_encoders, ent.dynamic.position);
     ff_locator.init(urdf);
     return ff_locator;
@@ -79,7 +79,7 @@ def create_position_controller(ent, dt=0.001):
     try:  # this works only in simulation
         plug(ent.device.jointsVelocities,    posCtrl.jointsVelocities);
     except:
-        plug(ent.estimator_kin.jointsVelocities, posCtrl.jointsVelocities);
+        plug(ent.estimator_kin.dx, posCtrl.jointsVelocities);
         pass;
     plug(posCtrl.pwmDes,                ent.device.control);
     try:
@@ -100,17 +100,18 @@ def create_estimators(ent, dt, delay):
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
     plug(ent.device.robotState,     estimator_ft.base6d_encoders);
-    plug(ent.device.robotState,     estimator_kin.base6d_encoders);
-    plug(ent.device.accelerometer,  estimator_kin.accelerometer);
-    plug(ent.device.gyrometer,      estimator_kin.gyroscope);
+    plug(ent.device.robotState,     estimator_kin.x);
+    plug(ent.device.accelerometer,  estimator_ft.accelerometer);
+    plug(ent.device.gyrometer,      estimator_ft.gyroscope);
     plug(ent.device.forceRLEG,      estimator_ft.ftSensRightFoot);
     plug(ent.device.forceLLEG,      estimator_ft.ftSensLeftFoot);
     plug(ent.device.forceRARM,      estimator_ft.ftSensRightHand);
     plug(ent.device.forceLARM,      estimator_ft.ftSensLeftHand);
     plug(ent.device.currents,       estimator_ft.currentMeasure);
 
-    plug(estimator_kin.torsoAngularVelocity, estimator_ft.estimatedTorsoAngularVelocity);
-    plug(estimator_kin.torsoAcceleration, estimator_ft.estimatedTorsoAcceleration);
+    plug(estimator_kin.x_filtered, estimator_ft.q_filtered);
+    plug(estimator_kin.dx,         estimator_ft.dq_filtered);
+    plug(estimator_kin.ddx,        estimator_ft.ddq_filtered);
     try:
         plug(ent.traj_gen.dq,       estimator_ft.dqRef);
         plug(ent.traj_gen.ddq,      estimator_ft.ddqRef);
@@ -127,17 +128,17 @@ def create_estimators(ent, dt, delay):
     estimator_ft.motorParameterKa_p.value  = tuple(Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(Ka_n)
 
-    estimator_ft.init(dt,delay,delay,delay,True);
-    estimator_kin.init(dt,delay,delay,delay);
+    estimator_ft.init(dt,delay,delay,delay,delay,True);
+    estimator_kin.init(dt,delay);
     
     return (estimator_ft, estimator_kin);
         
 def create_torque_controller(ent, dt=0.001):
     torque_ctrl = JointTorqueController("jtc");
     plug(ent.device.robotState,             torque_ctrl.base6d_encoders);
-    plug(ent.estimator_kin.jointsVelocities,    torque_ctrl.jointsVelocities);
-    plug(ent.estimator_kin.jointsAccelerations, torque_ctrl.jointsAccelerations);
-    plug(ent.estimator_kin.jointsTorques,       torque_ctrl.jointsTorques);
+    plug(ent.estimator_kin.dx,    torque_ctrl.jointsVelocities);
+    plug(ent.estimator_kin.ddx, torque_ctrl.jointsAccelerations);
+    plug(ent.estimator_ft.jointsTorques,       torque_ctrl.jointsTorques);
     plug(ent.estimator_ft.currentFiltered,      torque_ctrl.measuredCurrent);
     torque_ctrl.jointsTorquesDesired.value = NJ*(0.0,);
     torque_ctrl.KpTorque.value = tuple(k_p_torque);
@@ -175,7 +176,7 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
         ent.v = Stack_of_vector('v');
         plug(ent.floatingBase.soutVel, ent.v.sin1);
         ent.v.selec1(0,6);
-        plug(ent.estimator_kin.jointsVelocities,    ent.v.sin2);
+        plug(ent.estimator_kin.dx,    ent.v.sin2);
         ent.v.selec2(6,NJ+6);
         plug(ent.v.sout,                        ctrl.v);
     except:
@@ -238,7 +239,7 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
 def create_inverse_dynamics(ent, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
     plug(ent.device.robotState,             inv_dyn_ctrl.base6d_encoders);
-    plug(ent.estimator_kin.jointsVelocities,    inv_dyn_ctrl.jointsVelocities);
+    plug(ent.estimator_kin.dx,    inv_dyn_ctrl.jointsVelocities);
     plug(ent.traj_gen.q,                    inv_dyn_ctrl.qRef);
     plug(ent.traj_gen.dq,                   inv_dyn_ctrl.dqRef);
     plug(ent.traj_gen.ddq,                  inv_dyn_ctrl.ddqRef);
@@ -283,7 +284,7 @@ def create_ctrl_manager(ent, dt=0.001):
     plug(ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
     ctrl_manager.addCtrlMode("pos");
     ctrl_manager.addCtrlMode("torque");    
-    plug(ent.estimator_kin.jointsVelocities,    ctrl_manager.dq);
+    plug(ent.estimator_kin.dx,    ctrl_manager.dq);
     plug(ent.torque_ctrl.controlCurrent,    ctrl_manager.ctrl_torque);
     plug(ent.pos_ctrl.pwmDes,               ctrl_manager.ctrl_pos);
     plug(ctrl_manager.joints_ctrl_mode_torque,  ent.inv_dyn.active_joints);
@@ -294,7 +295,7 @@ def create_ctrl_manager(ent, dt=0.001):
 def create_admittance_ctrl(ent, dt=0.001):
     admit_ctrl = AdmittanceController("adm_ctrl");
     plug(ent.device.robotState,             admit_ctrl.base6d_encoders);
-    plug(ent.estimator_kin.jointsVelocities,    admit_ctrl.jointsVelocities);
+    plug(ent.estimator_kin.dx,    admit_ctrl.jointsVelocities);
     plug(ent.estimator_ft.contactWrenchRightSole,   admit_ctrl.fRightFoot);
     plug(ent.estimator_ft.contactWrenchLeftSole,    admit_ctrl.fLeftFoot);
     plug(ent.estimator_ft.contactWrenchRightHand,   admit_ctrl.fRightHand);
@@ -341,7 +342,7 @@ def create_ros_topics(ent):
         pass;
     
     try:
-        create_topic(ros, ent.estimator_kin.jointsVelocities,               'jointsVelocities');
+        create_topic(ros, ent.estimator_kin.dx,               'jointsVelocities');
         create_topic(ros, ent.estimator_ft.contactWrenchLeftSole,          'contactWrenchLeftSole');
         create_topic(ros, ent.estimator_ft.contactWrenchRightSole,         'contactWrenchRightSole');
         create_topic(ros, ent.estimator_ft.jointsTorques,                  'jointsTorques');
@@ -421,16 +422,16 @@ def create_tracer(device, traj_gen=None, estimator_ft=None, estimator_kin=None,
         
     with open('/tmp/dg_info.dat', 'a') as f:
         if(estimator_ft!=None):
-            f.write('Estimator F/T sensors delay: {0}\n'.format(ent.estimator.getDelayFTsens()));
-            f.write('Estimator use reference velocities: {0}\n'.format(ent.estimator.getUseRefJointVel()));
-            f.write('Estimator use reference accelerations: {0}\n'.format(ent.estimator.getUseRefJointAcc()));
-            f.write('Estimator use raw encoders: {0}\n'.format(ent.estimator.getUseRawEncoders()));
-            f.write('Estimator use f/t sensors: {0}\n'.format(ent.estimator.getUseFTsensors()));
-            f.write('Estimator f/t sensor offsets: {0}\n'.format(ent.estimator.getFTsensorOffsets()));
+            f.write('Estimator F/T sensors delay: {0}\n'.format(ent.estimator_ft.getDelayFTsens()));
+            f.write('Estimator use reference velocities: {0}\n'.format(ent.estimator_ft.getUseRefJointVel()));
+            f.write('Estimator use reference accelerations: {0}\n'.format(ent.estimator_ft.getUseRefJointAcc()));
+            f.write('Estimator accelerometer delay: {0}\n'.format(ent.estimator_ft.getDelayAcc()));
+            f.write('Estimator gyroscope delay: {0}\n'.format(ent.estimator_ft.getDelayGyro()));
+            f.write('Estimator use raw encoders: {0}\n'.format(ent.estimator_ft.getUseRawEncoders()));
+            f.write('Estimator use f/t sensors: {0}\n'.format(ent.estimator_ft.getUseFTsensors()));
+            f.write('Estimator f/t sensor offsets: {0}\n'.format(ent.estimator_ft.getFTsensorOffsets()));
         if(estimator_kin!=None):
-            f.write('Estimator encoder delay: {0}\n'.format(ent.estimator.getDelayEnc()));
-            f.write('Estimator accelerometer delay: {0}\n'.format(ent.estimator.getDelayAcc()));
-            f.write('Estimator gyroscope delay: {0}\n'.format(ent.estimator.getDelayGyro()));
+            f.write('Estimator encoder delay: {0}\n'.format(ent.estimator_kin.getDelay()));
         if(inv_dyn!=None):
             f.write('Inv dyn Ks: {0}\n'.format(inv_dyn.Kp.value));
             f.write('Inv dyn Kd: {0}\n'.format(inv_dyn.Kd.value));

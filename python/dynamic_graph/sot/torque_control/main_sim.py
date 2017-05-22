@@ -77,19 +77,19 @@ def test_vel_acc_estimator(device, estimator_ft, estimator_kin, dt=0.001, estima
             ddq_real = rad2deg*device.jointsAccelerations.value[j];
             if(i>estimationDelay):
                 print "\nTime %.3f) q est VS real = (%.2f, %.2f), dq est VS real (%.2f, %.2f) ddq est VS real (%.2f, %.2f)" % (i*dt, \
-                    rad2deg*estimator_kin.jointsPositions.value[j], q_real, \
-                    rad2deg*estimator_kin.jointsVelocities.value[j], dq_real, \
-                    rad2deg*estimator_kin.jointsAccelerations.value[j], ddq_real);
+                    rad2deg*estimator_kin.x_filtered.value[j], q_real, \
+                    rad2deg*estimator_kin.dx.value[j], dq_real, \
+                    rad2deg*estimator_kin.ddx.value[j], ddq_real);
                 print "Torque %f" % (estimator_ft.jointsTorques.value[j]);
                 
                 if(abs(ddq_real)<1e-2):
                     ddq_real = 1e-2;
                 if(q_real!=0.0):
-                    err_q   += abs((rad2deg*estimator_kin.jointsPositions.value[j]     - q_real)/q_real);
+                    err_q   += abs((rad2deg*estimator_kin.x_filtered.value[j]     - q_real)/q_real);
                 if(dq_real!=0.0):
-                    err_dq  += abs((rad2deg*estimator_kin.jointsVelocities.value[j]    - dq_real)/dq_real);
+                    err_dq  += abs((rad2deg*estimator_kin.dx.value[j]    - dq_real)/dq_real);
                 if(ddq_real!=0.0):
-                    err_ddq += abs((rad2deg*estimator_kin.jointsAccelerations.value[j] - ddq_real)/ddq_real);
+                    err_ddq += abs((rad2deg*estimator_kin.ddx.value[j] - ddq_real)/ddq_real);
                 count   += 1;
     
     print "*************************************************************************************************\n";

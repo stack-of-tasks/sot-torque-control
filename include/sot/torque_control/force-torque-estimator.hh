@@ -159,18 +159,21 @@ namespace dynamicgraph {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(estimatedTorsoAngularVelocity, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(estimatedTorsoAcceleration, dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftFoot,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightFoot,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensLeftHand,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ftSensRightHand,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ddqRef,           dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(currentMeasure,   dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(saturationCurrent,dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(wCurrentTrust,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(base6d_encoders,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(q_filtered,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dq_filtered,         dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ddq_filtered,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(accelerometer,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gyroscope,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensLeftFoot,     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensRightFoot,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensLeftHand,     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ftSensRightHand,    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(ddqRef,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dqRef,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(currentMeasure,     dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(saturationCurrent,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(wCurrentTrust,      dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector);
@@ -181,8 +184,9 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(tauDes, dynamicgraph::Vector);  // desired joint torques
         
-        DECLARE_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector); /// debug signal
-
+        DECLARE_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector); // debug signal
+        DECLARE_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector);    // 6d
+        DECLARE_SIGNAL_OUT(torsoAngularVelocity, dynamicgraph::Vector);    // 3d
         DECLARE_SIGNAL_OUT(baseAcceleration,        dynamicgraph::Vector);  // 6d
         DECLARE_SIGNAL_OUT(baseAngularVelocity,     dynamicgraph::Vector);  // 3d
         DECLARE_SIGNAL_OUT(contactWrenchLeftFoot,   dynamicgraph::Vector);
@@ -207,7 +211,7 @@ namespace dynamicgraph {
         /// Inner signals are not exposed, so that nobody can access them.
 
         /// This signal contains the joints' torques and all the 5 contact wrenches
-        DECLARE_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_INNER(w_dv_torso,          dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(torques_wrenches,      dynamicgraph::Vector);
         /// This signal contains the joints' torques estimated from motor model and current measurment
         DECLARE_SIGNAL_INNER(torquesFromMotorModel, dynamicgraph::Vector);
@@ -228,7 +232,8 @@ namespace dynamicgraph {
         static const int N_SAMPLE_FT_SENS_OFFSET = 100;
 
         double m_dt;              /// timestep of the controller
-        double m_delayEncoders;   /// delay introduced by the estimation of joints pos/vel/acc
+        double m_delayAcc;        /// delay introduced by the filtering of the accelerometer
+        double m_delayGyro;       /// delay introduced by the filtering of the gyroscope
         double m_delayFTsens;     /// delay introduced by the filtering of the F/T sensors
         double m_delayCurrent;    /// delay introduced by the filtering of the motor current measure
 
@@ -241,10 +246,14 @@ namespace dynamicgraph {
 
         /// std::vector to use with the filters
         /// All the variables whose name contains 'filter' are outputs of the filters
-        std::vector<double> m_ddq_filter_std;  /// joints accelerations
-        std::vector<double> m_dq_filter_std;   /// joints velocities
-        std::vector<double> m_q_filter_std;    /// joints positions
-        std::vector<double> m_q_std;           /// joints positions
+        std::vector<double> m_dv_IMU_std, m_dv_IMU_filter_std;/// IMU lin acceleration
+        std::vector<double> m_w_IMU_std, m_w_IMU_filter_std;  /// IMU angular vel
+        std::vector<double> m_dw_IMU_filter_std;              /// IMU angular acc
+
+        /// spatial velocity and acceleration of the torso
+        metapod::Spatial::MotionTpl<double> m_v_torso;
+        metapod::Spatial::MotionTpl<double> m_dv_torso;
+
         std::vector<double> m_ftSens_LH_std, m_ftSens_LH_filter_std;  /// force/torque sensor left hand
         std::vector<double> m_ftSens_RH_std, m_ftSens_RH_filter_std;  /// force/torque sensor right hand
         std::vector<double> m_ftSens_LF_std, m_ftSens_LF_filter_std;  /// force/torque sensor left foot
@@ -264,6 +273,7 @@ namespace dynamicgraph {
         /// polynomial-fitting filters
         PolyEstimator* m_encodersFilter;
         PolyEstimator* m_accelerometerFilter;
+        PolyEstimator* m_gyroscopeFilter;
         PolyEstimator* m_ftSensLeftFootFilter;
         PolyEstimator* m_ftSensRightFootFilter;
         PolyEstimator* m_ftSensLeftHandFilter;
@@ -279,6 +289,8 @@ namespace dynamicgraph {
         Eigen::VectorXd m_FTsensorOffsets;
 
         // *************************** Metapod ******************************
+        // *************************** Metapod ******************************
+
         typedef metapod::hrp2_14<double> Hrp2_14;
         typedef metapod::Nodes<Hrp2_14, Hrp2_14::r_ankle>::type      RightFootNode;
         typedef metapod::Nodes<Hrp2_14, Hrp2_14::l_ankle>::type      LeftFootNode;
@@ -290,6 +302,8 @@ namespace dynamicgraph {
         typedef metapod::Spatial::TransformT<double, metapod::Spatial::RotationMatrixIdentityTpl<double> > TransformNoRot;
         typedef metapod::Spatial::TransformT<double, metapod::Spatial::RotationMatrixAboutZTpl<double> > TransformRotZ;
 
+        /// Transformation from IMU's frame to torso's frame
+        TransformNoRot m_torso_X_imu;
 
         /// nodes corresponding to the four end-effectors
         RightFootNode&  m_node_right_foot;
@@ -326,8 +340,6 @@ namespace dynamicgraph {
 
         /** Initialize the ForceTorqueEstimator.
          * @param timestep Period (in seconds) after which the sensors' data are updated.
-         * @param delayEncoders Delay (in seconds) introduced by the estimation of joints pos/vel/acc.
-         *                        This should be a multiple of timestep.
          * @param delayFTsens Delay (in seconds) introduced by the low-pass filtering of the F/T sensors.
          *                        This should be a multiple of timestep.
          * @param delayAcc Delay (in seconds) introduced by the low-pass filtering of the accelerometer.
@@ -340,8 +352,9 @@ namespace dynamicgraph {
          * @note The estimationDelay is half of the length of the window used for the
          * polynomial fitting. The larger the delay, the smoother the estimations.
          */
-        void init(const double &timestep, const double& delayEncoders, const double& delayFTsens,
-                  const double& delayCurrent, const bool &computeForceSensorsOffsets);
+        void init(const double &timestep, const double& delayAcc, const double& delayGyro,
+                  const double& delayFTsens,  const double& delayCurrent,
+                  const bool &computeForceSensorsOffsets);
 
         void setFTsensorOffsets(const dynamicgraph::Vector& offsets);
         void recomputeFTsensorOffsets();

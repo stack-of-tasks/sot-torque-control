@@ -14,20 +14,20 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __sot_torque_control_VelAccEstimator_H__
-#define __sot_torque_control_VelAccEstimator_H__
+#ifndef __sot_torque_control_NumericalDifference_H__
+#define __sot_torque_control_NumericalDifference_H__
 /* --------------------------------------------------------------------- */
 /* --- API ------------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
 #if defined (WIN32)
-#  if defined (vel_acc_estimator_EXPORTS)
-#    define SOTVELACCESTIMATOR_EXPORT __declspec(dllexport)
+#  if defined (numerical_difference_EXPORTS)
+#    define SOTNUMERICALDIFFERENCE_EXPORT __declspec(dllexport)
 #  else
-#    define SOTVELACCESTIMATOR_EXPORT __declspec(dllimport)
+#    define SOTNUMERICALDIFFERENCE_EXPORT __declspec(dllimport)
 #  endif
 #else
-#  define SOTVELACCESTIMATOR_EXPORT
+#  define SOTNUMERICALDIFFERENCE_EXPORT
 #endif
 
 //#define VP_DEBUG 1        /// enable debug output
@@ -85,7 +85,7 @@ namespace dynamicgraph {
         * Create the entity, plug all the input signals, call the init method
         * specifying the control-loop time step and the desired delay introduced
         * by the estimation (at least 1.5 times the time step). For instance:
-        *   estimator = VelAccEstimator("estimator");
+        *   estimator = NumericalDifference("estimator");
         *   plug(device.robotState,     estimator.base6d_encoders);
         *   plug(device.accelerometer,  estimator.accelerometer);
         *   plug(device.gyrometer,      estimator.gyroscope);
@@ -153,20 +153,16 @@ namespace dynamicgraph {
         * of the contacts. This procedure estimates at the same time the contact
         * forces and the joint torques.
         */
-      class SOTVELACCESTIMATOR_EXPORT VelAccEstimator
+      class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference
           :public ::dynamicgraph::Entity
       {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(accelerometer,    dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(gyroscope,        dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsPositions,         dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsVelocities,        dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointsAccelerations,     dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector);  // 6d
-        DECLARE_SIGNAL_OUT(torsoAngularVelocity,    dynamicgraph::Vector);  // 3d
+        DECLARE_SIGNAL_IN(x,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(x_filtered,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(dx,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(ddx,              dynamicgraph::Vector);
 
         /// The following inner signals are used because this entity has some output signals
         /// whose related quantities are computed at the same time by the same algorithm
@@ -177,52 +173,33 @@ namespace dynamicgraph {
         /// Inner signals are not exposed, so that nobody can access them.
 
         /// This signal contains the estimated joints positions, velocities and accelerations.
-        DECLARE_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector);
-        /// This signal contains the estimated base angular velocity and lin/ang accelerations.
-        DECLARE_SIGNAL_INNER(w_dv_torso,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_INNER(x_dx_ddx,              dynamicgraph::Vector);
         
       protected:
       
         double m_dt;              /// timestep of the controller
-        double m_delayEncoders;   /// delay introduced by the estimation of joints pos/vel/acc
-        double m_delayAcc;        /// delay introduced by the filtering of the accelerometer
-        double m_delayGyro;       /// delay introduced by the filtering of the gyroscope
+        double m_delay;   /// delay introduced by the estimation of joints pos/vel/acc
 
         /// std::vector to use with the filters
         /// All the variables whose name contains 'filter' are outputs of the filters
-        std::vector<double> m_ddq_filter_std;  /// joints accelerations
-        std::vector<double> m_dq_filter_std;   /// joints velocities
-        std::vector<double> m_q_filter_std;    /// joints positions
-        std::vector<double> m_q_std;           /// joints positions
-        std::vector<double> m_dv_IMU_std, m_dv_IMU_filter_std;/// IMU lin acceleration
-        std::vector<double> m_w_IMU_std, m_w_IMU_filter_std;  /// IMU angular vel
-        std::vector<double> m_dw_IMU_filter_std;              /// IMU angular acc
+        std::vector<double> m_ddx_filter_std;  /// joints accelerations
+        std::vector<double> m_dx_filter_std;   /// joints velocities
+        std::vector<double> m_x_filter_std;    /// joints positions
+        std::vector<double> m_x_std;           /// joints positions
 
-        /// spatial velocity and acceleration of the torso
-        metapod::Spatial::MotionTpl<double> m_v_torso;
-        metapod::Spatial::MotionTpl<double> m_dv_torso;
 
         /// polynomial-fitting filters
-        PolyEstimator* m_encodersFilter;
-        PolyEstimator* m_accelerometerFilter;
-        PolyEstimator* m_gyroscopeFilter;
-
-        // *************************** Metapod ******************************
-        typedef metapod::hrp2_14<double> Hrp2_14;
-        typedef metapod::Spatial::TransformT<double, metapod::Spatial::RotationMatrixIdentityTpl<double> > TransformNoRot;
-
-        /// Transformation from IMU's frame to torso's frame
-        TransformNoRot m_torso_X_imu;
+        PolyEstimator* m_filter;
 
       public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /** --- CONSTRUCTOR ---- */
-        VelAccEstimator( const std::string & name );
+        NumericalDifference( const std::string & name );
 
-        /** Initialize the VelAccEstimator.
+        /** Initialize the NumericalDifference.
          * @param timestep Period (in seconds) after which the sensors' data are updated.
-         * @param delayEncoders Delay (in seconds) introduced by the estimation of joints pos/vel/acc.
+         * @param delay    Delay (in seconds) introduced by the estimation of joints pos/vel/acc.
          *                        This should be a multiple of timestep.
          * @param delayAcc Delay (in seconds) introduced by the low-pass filtering of the accelerometer.
          *                        This should be a multiple of timestep.
@@ -231,8 +208,7 @@ namespace dynamicgraph {
          * @note The estimationDelay is half of the length of the window used for the
          * polynomial fitting. The larger the delay, the smoother the estimations.
          */
-        void init(const double &timestep, const double &delayEncoders,
-                  const double& delayAcc, const double& delayGyro);
+        void init(const double &timestep, const double &delay);
 
       protected:
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
@@ -243,7 +219,7 @@ namespace dynamicgraph {
       public: /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
 
-      }; // class VelAccEstimator
+      }; // class NumericalDifference
 
     } // namespace torque_control
   } // namespace sot
@@ -251,4 +227,4 @@ namespace dynamicgraph {
 
 
 
-#endif // #ifndef __sot_torque_control_VelAccEstimator_H__
+#endif // #ifndef __sot_torque_control_NumericalDifference_H__
