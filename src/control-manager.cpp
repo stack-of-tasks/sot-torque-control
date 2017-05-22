@@ -75,7 +75,6 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,ml::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
             ,m_initSucceeded(false)
             ,m_emergency_stop_triggered(false)
-            ,m_maxCurrent(5)
             ,m_is_first_iter(true)
 	    ,m_nJoints(0)										   
       {
@@ -84,10 +83,11 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid2(*this, &ControlManager::init,
-                                    docCommandVoid2("Initialize the entity.",
+                   makeCommandVoid3(*this, &ControlManager::init,
+                                    docCommandVoid3("Initialize the entity.",
                                                     "Time period in seconds (double)",
-						    "URDF file path (string)")));
+						    "URDF file path (string)",
+						    "Max current (double)")));
         
         addCommand("addCtrlMode",
                    makeCommandVoid1(*this, &ControlManager::addCtrlMode,
@@ -123,10 +123,15 @@ namespace dynamicgraph
 
       }
 
-      void ControlManager::init(const double& dt, const std::string &urdfFile)
+      void ControlManager::init(const double& dt, 
+				const std::string &urdfFile,
+				const double & lmax_current)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
+
+	m_maxCurrent = lmax_current;
+
         m_dt = dt;
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
