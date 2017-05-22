@@ -37,12 +37,11 @@ ENDIF(UNIX)
 
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
-  joint-torque-controller
-  force-torque-estimator
-  joint-trajectory-generator
-  nd-trajectory-generator
-  se3-trajectory-generator
-  inverse-dynamics-controller
+#  joint-torque-controller
+#  force-torque-estimator
+#  joint-trajectory-generator
+#  nd-trajectory-generator
+#  se3-trajectory-generator
   inverse-dynamics-balance-controller
   position-controller
   control-manager

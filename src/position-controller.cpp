@@ -46,8 +46,8 @@ namespace dynamicgraph
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef PositionController EntityClassName;
-      typedef Eigen::Matrix<double,N_JOINTS,1>                     VectorN;
-      typedef Eigen::Matrix<double,N_JOINTS+6,1>                   VectorN6;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN6;
 
       /* --- DG FACTORY ---------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(PositionController,
@@ -104,11 +104,11 @@ namespace dynamicgraph
         if(!m_KiSIN.isPlugged())
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
-	m_nJoints = nJoints;
+	m_nJoints = (Eigen::VectorXd::Index)nJoints;
         m_dt = dt;
         m_pwmDes.setZero(m_nJoints);
-        m_q.setZero();
-        m_dq.setZero();
+        m_q.setZero(m_nJoints+6);
+        m_dq.setZero(m_nJoints);
 
         resetIntegral();
 
@@ -150,8 +150,8 @@ namespace dynamicgraph
 
           m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_nJoints)) + Kd.cwiseProduct(dqRef-dq);
 
-	if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+	if(s.size()!=m_nJoints)
+          s.resize(m_nJoints);
 	s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);

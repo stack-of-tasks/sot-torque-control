@@ -174,7 +174,7 @@ namespace dynamicgraph {
         {
           getLogger().sendMsg("[InverseDynamicsBalanceController-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         double            m_dt;               /// control loop time period
         double            m_t;
@@ -235,6 +235,8 @@ namespace dynamicgraph {
 	unsigned int m_nbJoints;
 	FromURDFToSoT m_from_urdf_to_sot;
 	dynamicgraph::Vector m_urdf_to_sot;
+	std::string m_Left_Foot_Frame_Name;
+	std::string m_Right_Foot_Frame_Name;
 
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control

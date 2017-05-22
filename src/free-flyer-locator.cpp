@@ -36,8 +36,6 @@ namespace dynamicgraph
       using namespace se3;
 
       typedef Eigen::Vector6d Vector6;
-      typedef Eigen::Matrix<double,N_JOINTS,1> VectorN;
-      typedef Eigen::Matrix<double,N_JOINTS+6,1> VectorN6;
 
 #define PROFILE_FREE_FLYER_COMPUTATION          "Free-flyer position computation"
 #define PROFILE_FREE_FLYER_VELOCITY_COMPUTATION "Free-flyer velocity computation"
