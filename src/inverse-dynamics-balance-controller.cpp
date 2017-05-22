@@ -577,6 +577,7 @@ namespace dynamicgraph
         m_contactRF->Kp(kp_contact);
         m_contactRF->Kd(kd_contact);
 
+        // during contact transitions these values are overwritten in computeProblemData
         m_contactLF->setMaxNormalForce(fMaxLF);
         m_contactRF->setMaxNormalForce(fMaxRF);
 

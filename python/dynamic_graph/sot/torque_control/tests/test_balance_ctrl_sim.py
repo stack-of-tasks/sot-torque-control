@@ -237,7 +237,8 @@ def create_graph(dt=0.001, delay=0.01):
     ctrl.contact_normal.value = (0.0, 0.0, 1.0);
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
-    ctrl.f_max.value = conf.fMax;
+    ctrl.f_max_right_foot.value = conf.fMax;
+    ctrl.f_max_left_foot.value = conf.fMax;
     ctrl.mu.value = conf.mu[0];
     ctrl.weight_contact_forces.value = (1e2, 1e2, 1e0, 1e3, 1e3, 1e3);
     ctrl.kp_com.value = 3*(conf.kp_com,);
@@ -439,7 +440,7 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
     return ent;
     
 if __name__=='__main__':
-    np.set_printoptions(precision=3, suppress=True);
+    np.set_printoptions(precision=2, suppress=True);
 #    ent = zmp_test();
     ent = one_foot_balance_test(conf.dt);
     print ent.ctrl;
