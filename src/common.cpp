@@ -55,8 +55,8 @@ namespace dynamicgraph
       bool FromURDFToSoT::
       joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot)
       {
-	assert(q_urdf.size()==N_JOINTS);
-	assert(q_sot.size()==N_JOINTS);
+	assert(q_urdf.size()==m_nbJoints);
+	assert(q_sot.size()==m_nbJoints);
 	
 	for(unsigned int idx=0;idx<m_nbJoints;idx++)
 	  q_sot[m_urdf_to_sot[idx]]=q_urdf[idx];	
@@ -66,8 +66,8 @@ namespace dynamicgraph
       bool FromURDFToSoT::
       joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf)
       {
-	assert(q_urdf.size()==N_JOINTS);
-	assert(q_sot.size()==N_JOINTS);
+	assert(q_urdf.size()==m_nbJoints);
+	assert(q_sot.size()==m_nbJoints);
 	
 	for(unsigned int idx=0;idx<m_nbJoints;idx++)
 	  q_urdf[idx]=q_sot[m_urdf_to_sot[idx]];	

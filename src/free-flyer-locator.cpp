@@ -137,9 +137,9 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
+        const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+        const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
         assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
         assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
@@ -167,7 +167,8 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(q, m_base6d_encodersSIN(iter));     //n+6
+          const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
+
           assert(q.size()==m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
                     
           /* Compute kinematic and return q with freeflyer */

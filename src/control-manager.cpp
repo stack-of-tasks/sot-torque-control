@@ -77,6 +77,7 @@ namespace dynamicgraph
             ,m_emergency_stop_triggered(false)
             ,m_maxCurrent(5)
             ,m_is_first_iter(true)
+	    ,m_nJoints(0)										   
       {
 
         Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
@@ -381,7 +382,6 @@ namespace dynamicgraph
         m_pwmDesSOUT.addDependency(*m_ctrlInputsSIN[i]);
         Entity::signalRegistration(*m_ctrlInputsSIN[i]);
         Entity::signalRegistration(*m_jointsCtrlModesSOUT[i]);
-
         updateJointCtrlModesOutputSignal();
       }
 
@@ -476,7 +476,14 @@ namespace dynamicgraph
 
       void ControlManager::updateJointCtrlModesOutputSignal()
       {
-        ml::Vector cm(m_nJoints);
+	if (m_nJoints==0)
+	  {
+	    SEND_MSG("You should call init first. The size of the vector is unknown.", MSG_TYPE_ERROR);
+	    return;
+	  }
+
+        dynamicgraph::Vector cm(m_nJoints);
+
         for(unsigned int i=0; i<m_jointsCtrlModesSOUT.size(); i++)
         {
           for(unsigned int j=0; j<m_nJoints; j++)
