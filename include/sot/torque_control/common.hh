@@ -50,21 +50,48 @@ using namespace dg;
 namespace dynamicgraph {
   namespace sot {
     namespace torque_control {
+
+      struct JointLimits
+      {
+        double upper;
+        double lower;
+
+        JointLimits():
+          upper(0.0),
+          lower(0.0)
+        {}
+
+        JointLimits(double l, double u):
+          upper(u),
+          lower(l)
+        {}
+      };
       
       struct FromURDFToSoT
       {
 	typedef Eigen::VectorXd::Index Index;
       protected:
+
+	/// Map from the urdf index to the SoT index.
 	std::vector<Index> m_urdf_to_sot;
+	
+	/// Nb of Dofs for the robot.
         long unsigned int m_nbJoints;
+
+	/// Map from the name to the id.
 	std::map<std::string,Index> m_name_to_id;
+
 	/// The map between id and name
 	std::map<Index,std::string> m_id_to_name;
+
+	/// The joint limits map.
+	std::map<Index,JointLimits> m_limits_map;
 
 	/// This method creates the map between id and name.
 	/// It is called each time a new link between id and name is inserted 
 	/// (i.e. when set_name_to_id is called).
 	void create_id_to_name_map();
+
 
       public:
 	dynamicgraph::Vector m_dgv_urdf_to_sot;
@@ -79,16 +106,32 @@ namespace dynamicgraph {
          * If the specified joint is not found it returns "Joint name not found";
          * @param id Id of the joint to find.
          * @return The name of the specified joint, "Joint name not found" if not found. */
+	
+	/// Get the joint name from its index
         const std::string & get_name_from_id(Index id);
 
+	/// Set relation between the name and the SoT id
 	void set_name_to_id(const std::string &jointName,
 			    const double & jointId);
+
+	/// Set the map between urdf index and sot index
 	void set_urdf_to_sot(const std::vector<Index> &urdf_to_sot);
 	void set_urdf_to_sot(const dg::Vector &urdf_to_sot);
 	
+	/// Set the limits (lq,uq) for joint idx
+	void set_joint_limits_for_id(const double &idx,
+				     const double &lq,
+				     const double &uq);
+
 	bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
 
 	bool joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
+	
+	/** Given a joint id it finds the associated joint limits.
+         * If the specified joint is not found it returns JointLimits(0,0).
+         * @param id Id of the joint to find.
+         * @return The limits of the specified joint, JointLimits(0,0) if not found. */
+        const JointLimits & get_limits_from_id(Index id);
 
 	void sendMsg(const std::string& msg, 
 		     MsgType t=MSG_TYPE_INFO, 

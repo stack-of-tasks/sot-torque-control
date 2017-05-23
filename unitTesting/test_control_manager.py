@@ -32,6 +32,10 @@ cm.tau_predicted.value = tau_predicted
 for key in mapJointNameToID:
     cm.setNameToId(key,mapJointNameToID[key])
 
+for key in mapJointLimits:
+    cm.setJointLimitsToId(key,mapJointNameToID[key][0],mapJointNameToID[key][1])
+
+
 cm.setDefaultMaxCurrent(-10.0)
 cm.setDefaultMaxCurrent(maxCurrent)
 cm.getDefaultMaxCurrent()

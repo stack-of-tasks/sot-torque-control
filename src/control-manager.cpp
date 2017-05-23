@@ -128,6 +128,13 @@ namespace dynamicgraph
 						    "(string) joint name",
 						    "(double) joint id")));
 
+	addCommand("setJointLimitsToId",
+		   makeCommandVoid3(*this,&ControlManager::setJointLimitsToId,
+				    docCommandVoid3("Set the joint limits for a given joint ID",
+						    "(double) joint id",
+						    "(double) lower limit",
+						    "(double) uppper limit")));
+
       }
 
       void ControlManager::init(const double& dt, 

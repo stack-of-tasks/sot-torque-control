@@ -134,6 +134,8 @@ namespace dynamicgraph {
         void resetProfiler();
 	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
 	void setNameToId(const std::string& jointName, const double & jointId);
+	void setJointLimitsToId(const double &jointId, 
+				const double &lq, const double &uq);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
