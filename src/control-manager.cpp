@@ -563,13 +563,15 @@ namespace dynamicgraph
 
       bool ControlManager::isJointInRange(unsigned int id, double q)
       {
-	double jl= m_robot->model().lowerPositionLimit[id];
+	const JointLimits & JL = m_from_urdf_to_sot.get_limits_from_id((FromURDFToSoT::Index)id);
+
+	double jl= JL.lower;
         if(q<jl)
         {
           SEND_MSG("Desired joint angle "+toString(q)+" is smaller than lower limit: "+toString(jl),MSG_TYPE_ERROR);
           return false;
         }
-	double ju = m_robot->model().upperPositionLimit[id];
+	double ju = JL.upper;
         if(q>ju)
         {
           SEND_MSG("Desired joint angle "+toString(q)+" is larger than upper limit: "+toString(ju),MSG_TYPE_ERROR);
