@@ -40,6 +40,7 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <map>
 #include <initializer_list>
+#include <iomanip>      // std::setprecision
 #include "boost/assign.hpp"
 
 
@@ -117,7 +118,7 @@ namespace dynamicgraph {
       {
         std::stringstream ss;
         for(int i=0; i<v.size()-1; i++)
-          ss<<v[i]<<separator;
+          ss<<std::fixed<<std::setprecision(3)<<v[i]<<separator;
         ss<<v[v.size()-1];
         return ss.str();
       }
