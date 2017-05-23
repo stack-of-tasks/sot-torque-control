@@ -53,14 +53,37 @@ namespace dynamicgraph {
       
       struct FromURDFToSoT
       {
+	typedef Eigen::VectorXd::Index Index;
       protected:
-	std::vector<unsigned int> m_urdf_to_sot;
+	std::vector<Index> m_urdf_to_sot;
         long unsigned int m_nbJoints;
-	
+	std::map<std::string,Index> m_name_to_id;
+	/// The map between id and name
+	std::map<Index,std::string> m_id_to_name;
+
+	/// This method creates the map between id and name.
+	/// It is called each time a new link between id and name is inserted 
+	/// (i.e. when set_name_to_id is called).
+	void create_id_to_name_map();
+
       public:
 	dynamicgraph::Vector m_dgv_urdf_to_sot;
 
-	void set_urdf_to_sot(const std::vector<unsigned int> &urdf_to_sot);
+        /** Given a joint name it finds the associated joint id.
+         * If the specified joint name is not found it returns -1;
+         * @param name Name of the joint to find.
+         * @return The id of the specified joint, -1 if not found. */
+	const Index get_id_from_name(const std::string &name);
+
+	/** Given a joint id it finds the associated joint name.
+         * If the specified joint is not found it returns "Joint name not found";
+         * @param id Id of the joint to find.
+         * @return The name of the specified joint, "Joint name not found" if not found. */
+        const std::string & get_name_from_id(Index id);
+
+	void set_name_to_id(const std::string &jointName,
+			    const double & jointId);
+	void set_urdf_to_sot(const std::vector<Index> &urdf_to_sot);
 	void set_urdf_to_sot(const dg::Vector &urdf_to_sot);
 	
 	bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
