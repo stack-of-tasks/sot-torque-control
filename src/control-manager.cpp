@@ -121,6 +121,12 @@ namespace dynamicgraph
 		   makeDirectGetter(*this,&m_maxCurrent,
 				    docCommandVoid0("Get the default max current")));
 
+	addCommand("setNameToId",
+		   makeCommandVoid2(*this,&ControlManager::setNameToId,
+				    docCommandVoid2("Set map for a name to an Id",
+						    "(string) joint name",
+						    "(double) joint id")));
+
       }
 
       void ControlManager::init(const double& dt, 
@@ -282,7 +288,7 @@ namespace dynamicgraph
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Estimated torque "+toString(tau(i))+" > max torque "+toString(tau_max(i))+
-                       " for joint "+ m_robot->model().getJointName(i), MSG_TYPE_ERROR);
+                       " for joint "+ m_from_urdf_to_sot.get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
@@ -292,7 +298,7 @@ namespace dynamicgraph
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Predicted torque "+toString(tau_predicted(i))+" > max torque "+toString(tau_max(i))+
-                       " for joint "+m_robot->model().getJointName(i), MSG_TYPE_ERROR);
+                       " for joint "+m_from_urdf_to_sot.get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
@@ -307,7 +313,7 @@ namespace dynamicgraph
                 (fabs(s(i))      > m_maxCurrent * FROM_CURRENT_TO_12_BIT_CTRL) )
             {
               m_emergency_stop_triggered = true;
-              SEND_MSG("Joint "+m_robot->model().getJointName(i)+" desired current is too large: "+
+              SEND_MSG("Joint "+m_from_urdf_to_sot.get_name_from_id(i)+" desired current is too large: "+
                        toString(pwmDes(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
@@ -444,7 +450,7 @@ namespace dynamicgraph
           }
         }
         else
-          SEND_MSG("Cannot change control mode of joint "+m_robot->model().getJointName(jid)+
+          SEND_MSG("Cannot change control mode of joint "+m_from_urdf_to_sot.get_name_from_id(jid)+
                    " because either it has already the specified ctrl mode or its previous"+
                    " ctrl mode transition has not terminated yet", MSG_TYPE_ERROR);
       }
@@ -455,7 +461,8 @@ namespace dynamicgraph
         {
           stringstream ss;
           for(unsigned int i=0; i<m_nJoints; i++)
-            ss<<m_robot->model().getJointName(i)<<" "<<m_jointCtrlModes_current[i]<<"; ";
+            ss<<m_from_urdf_to_sot.get_name_from_id(i) <<" "
+	      <<m_jointCtrlModes_current[i]<<"; ";
           SEND_MSG(ss.str(),MSG_TYPE_INFO);
           return;
         }
@@ -475,6 +482,12 @@ namespace dynamicgraph
       void ControlManager::setDefaultMaxCurrent( const double & lDefaultMaxCurrent)
       {
 	m_maxCurrent = lDefaultMaxCurrent;
+      }
+
+      void ControlManager::setNameToId(const std::string &jointName,
+				      const double & jointId)
+      {
+	m_from_urdf_to_sot.set_name_to_id(jointName,jointId);
       }
 
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
@@ -523,13 +536,13 @@ namespace dynamicgraph
       bool ControlManager::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-	se3::Model::JointIndex jid = m_robot->model().getJointId(name);
+	se3::Model::JointIndex jid = m_from_urdf_to_sot.get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist: "+name, MSG_TYPE_ERROR);
           std::stringstream ss;
           for(se3::Model::JointIndex it=0; it< m_nJoints;it++)
-            ss<< m_robot->model().getJointName(it) <<", ";
+            ss<< m_from_urdf_to_sot.get_name_from_id(it) <<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
         }

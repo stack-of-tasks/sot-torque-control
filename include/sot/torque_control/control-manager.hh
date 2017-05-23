@@ -39,6 +39,7 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -132,6 +133,7 @@ namespace dynamicgraph {
         void setCtrlMode(const int jid, const CtrlMode& cm);
         void resetProfiler();
 	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
+	void setNameToId(const std::string& jointName, const double & jointId);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -145,6 +147,7 @@ namespace dynamicgraph {
         }
 
       protected:
+	FromURDFToSoT m_from_urdf_to_sot;
 	Eigen::VectorXd::Index m_nJoints;      /// Number of joints
         pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized

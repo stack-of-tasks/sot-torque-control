@@ -29,14 +29,51 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
  
+      
+      void FromURDFToSoT::
+      set_name_to_id(const std::string &jointName,
+		  const double &jointId)
+      {
+	m_name_to_id[jointName] = (Index)jointId;
+	create_id_to_name_map();
+      }
 
       void FromURDFToSoT::
-      set_urdf_to_sot(const std::vector<unsigned int> &urdf_to_sot)
+      create_id_to_name_map()
+      {
+	std::map<std::string, Index>::const_iterator it;
+	for(it = m_name_to_id.begin(); it != m_name_to_id.end(); it++)
+	  m_id_to_name[it->second] = it->first;
+      }
+
+      const FromURDFToSoT::Index FromURDFToSoT::
+      get_id_from_name(const std::string &name)
+      {
+	std::map<std::string,Index>::const_iterator it = 
+	  m_name_to_id.find(name);
+	if (it==m_name_to_id.end())
+	  return -1;
+	return it->second;
+      }
+      
+      const std::string & FromURDFToSoT::
+      get_name_from_id(FromURDFToSoT::Index id)
+        {
+          std::map<FromURDFToSoT::Index,std::string>::const_iterator iter = 
+	    m_id_to_name.find(id);
+          if(iter==m_id_to_name.end())
+            return "Joint name not found";
+          return iter->second;
+        }
+      
+      void FromURDFToSoT::
+      set_urdf_to_sot(const std::vector<Index> &urdf_to_sot)
       {
 	m_nbJoints = urdf_to_sot.size();
 	m_urdf_to_sot.resize(urdf_to_sot.size());
 	m_dgv_urdf_to_sot.resize(urdf_to_sot.size());
-	for(unsigned int idx=0;idx<urdf_to_sot.size();idx++)
+	for(std::size_t idx=0;
+	    idx<urdf_to_sot.size();idx++)
 	  {
 	    m_urdf_to_sot[idx] = urdf_to_sot[idx];
 	    m_dgv_urdf_to_sot[idx] = urdf_to_sot[idx];
