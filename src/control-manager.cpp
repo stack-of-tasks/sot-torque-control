@@ -111,8 +111,9 @@ namespace dynamicgraph
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
 
 	addCommand("setDefaultMaxCurrent",
-		   makeDirectSetter(*this,&m_maxCurrent,
-				    docCommandVoid0("Set the default max current")));
+		   makeCommandVoid1(*this,&ControlManager::setDefaultMaxCurrent,
+				    docCommandVoid1("Set the default max current",
+						    "(double) max current >0")));
 
 	addCommand("getDefaultMaxCurrent",
 		   makeDirectGetter(*this,&m_maxCurrent,
@@ -475,7 +476,10 @@ namespace dynamicgraph
 
       void ControlManager::setDefaultMaxCurrent( const double & lDefaultMaxCurrent)
       {
-	m_maxCurrent = lDefaultMaxCurrent;
+	if (lDefaultMaxCurrent>=0.0)
+	  m_maxCurrent = lDefaultMaxCurrent;
+	else
+	  SEND_MSG("Max current should be positive",MSG_TYPE_ERROR);
       }
 
       void ControlManager::setNameToId(const std::string &jointName,

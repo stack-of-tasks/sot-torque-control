@@ -32,7 +32,11 @@ cm.tau_predicted.value = tau_predicted
 for key in mapJointNameToID:
     cm.setNameToId(key,mapJointNameToID[key])
 
-# Init should be called before addCtrlMode because the size of state vector must be known.
+cm.setDefaultMaxCurrent(-10.0)
+cm.setDefaultMaxCurrent(maxCurrent)
+cm.getDefaultMaxCurrent()
+# Init should be called before addCtrlMode 
+# because the size of state vector must be known.
 cm.init(controlDT,testRobotPath,maxCurrent)
 
 ## Specify control mode ##
@@ -44,8 +48,6 @@ cm.addCtrlMode("torque")
 cm.ctrl_torque.value = currentDes
 cm.ctrl_pos.value = pwmDes
 cm.setCtrlMode("all","pos")
-
-
 
 cm.pwmDes.recompute(10)
 cm.pwmDes.value
