@@ -144,7 +144,8 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+  python/dynamic_graph/sot/torque_control/tests/robot_data_test.py
+  DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
 ADD_SUBDIRECTORY(src)
 
