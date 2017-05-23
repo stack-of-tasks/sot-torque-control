@@ -1,6 +1,6 @@
 from dynamic_graph.sot.core.matrix_util import matrixToTuple, vectorToTuple,rotate, matrixToRPY
 from dynamic_graph.sot.torque_control.control_manager import *
-from dynamic_graph.sot.torque_control.tests.robot_data_test import testRobotPath,controlDT,maxCurrent,mapJointNameToID
+from dynamic_graph.sot.torque_control.tests.robot_data_test import testRobotPath,controlDT,maxCurrent,mapJointNameToID, mapJointLimits
 from numpy import matrix, identity, zeros, eye, array, pi, ndarray, ones
 
 # Instanciate the free flyer
@@ -33,7 +33,7 @@ for key in mapJointNameToID:
     cm.setNameToId(key,mapJointNameToID[key])
 
 for key in mapJointLimits:
-    cm.setJointLimitsToId(key,mapJointNameToID[key][0],mapJointNameToID[key][1])
+    cm.setJointLimitsToId(key,mapJointLimits[key][0],mapJointLimits[key][1])
 
 
 cm.setDefaultMaxCurrent(-10.0)

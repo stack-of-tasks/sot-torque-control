@@ -495,6 +495,13 @@ namespace dynamicgraph
 	m_from_urdf_to_sot.set_name_to_id(jointName,jointId);
       }
 
+      void ControlManager::setJointLimitsToId( const double &jointId,
+					       const double &lq,
+					       const double &uq)
+      {
+	m_from_urdf_to_sot.set_joint_limits_for_id((FromURDFToSoT::Index)jointId,lq,uq);
+      }
+
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
 
       void ControlManager::updateJointCtrlModesOutputSignal()
