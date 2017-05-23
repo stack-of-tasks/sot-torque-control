@@ -102,6 +102,7 @@ SET(${LIBRARY_NAME}_HEADERS
   #include/sot/torque_control/hrp2-device-torque-ctrl.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
+  include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
