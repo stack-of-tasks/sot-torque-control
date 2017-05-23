@@ -29,7 +29,24 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
  
+      void FromURDFToSoT::
+      set_joint_limits_for_id( const double &idx,
+			       const double &lq,
+			       const double &uq)
+      {
+	m_limits_map[idx] = JointLimits(lq,uq);
+      }
       
+      const JointLimits & FromURDFToSoT::
+      get_limits_from_id(Index id)
+        {
+          std::map<Index,JointLimits>::const_iterator 
+	    iter = m_limits_map.find(id);
+          if(iter==m_limits_map.end())
+            return JointLimits(0.0,0.0);
+          return iter->second;
+        }
+
       void FromURDFToSoT::
       set_name_to_id(const std::string &jointName,
 		  const double &jointId)
