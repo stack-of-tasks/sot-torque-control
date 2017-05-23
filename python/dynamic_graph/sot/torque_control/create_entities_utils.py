@@ -20,6 +20,14 @@ from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
+def create_imu_filter(ent, dt):
+    from dynamic_graph.sot.torque_control.madgwickahrs import MadgwickAHRS
+    imu_filter = MadgwickAHRS('imu_filter');
+    imu_filter.init(dt);
+    plug(ent.device.accelerometer, imu_filter.accelerometer);
+    plug(ent.device.gyrometer,     imu_filter.gyroscope);
+    return imu_filter;
+
 def create_com_traj_gen(dt=0.001):
     com_traj_gen = NdTrajectoryGenerator("com_traj_gen");
     import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
@@ -195,6 +203,8 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
+    ctrl.f_max_right_foot.value = conf.fMax;
+    ctrl.f_max_left_foot.value = conf.fMax;
     ctrl.mu.value = conf.mu[0];
     ctrl.weight_contact_forces.value = (1e2, 1e2, 1e0, 1e3, 1e3, 1e3);
     ctrl.kp_com.value = 3*(conf.kp_com,);
@@ -326,8 +336,8 @@ def create_ros_topics(ent):
     
     try:
         create_topic(ros, ent.estimator.jointsVelocities,               'jointsVelocities');
-        create_topic(ros, ent.estimator.contactWrenchLeftSole,          'contactWrenchLeftSole');
-        create_topic(ros, ent.estimator.contactWrenchRightSole,         'contactWrenchRightSole');
+        create_topic(ros, ent.estimator.contactWrenchLeftSole,          'f_LeftSole');
+        create_topic(ros, ent.estimator.contactWrenchRightSole,         'f_RightSole');
         create_topic(ros, ent.estimator.jointsTorques,                  'jointsTorques');
 #        create_topic(ros, ent.estimator.jointsTorquesFromInertiaModel,  'jointsTorquesFromInertiaModel');
 #        create_topic(ros, ent.estimator.jointsTorquesFromMotorModel,    'jointsTorquesFromMotorModel');

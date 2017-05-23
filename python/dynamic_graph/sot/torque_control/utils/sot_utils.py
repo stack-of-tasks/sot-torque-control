@@ -114,6 +114,18 @@ def smoothly_set_signal(sig, final_value, duration=5.0, steps=500, prints = 10):
             print 'smoothly setting signal... %(number)02d%%' % {"number": 100.*alpha} 
     print 'Signal set';
     sig.value = tuple(final_value);
+
+def smoothly_set_signal_scalar(sig, final_value, duration=5.0, steps=500, prints = 10):
+    v = sig.value;
+    vf = final_value;
+    for i in range(steps+1):
+        alpha = 1.0*i/steps
+        sig.value = vf*alpha+(1-alpha)*v;
+        sleep(1.0*duration/steps);
+        if (i%(steps/prints)==0):
+            print 'smoothly setting signal... %(number)02d%%' % {"number": 100.*alpha}
+    print 'Signal set';
+    sig.value = final_value;
     
 def monitor_tracking_error(sig, sigRef, dt, time):
     N = int(time/dt);

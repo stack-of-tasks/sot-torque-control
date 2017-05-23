@@ -122,6 +122,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(contact_points,             ml::Matrix);
         DECLARE_SIGNAL_IN(contact_normal,             ml::Vector);
         DECLARE_SIGNAL_IN(f_min,                      double);
+        DECLARE_SIGNAL_IN(f_max_right_foot,           double);
+        DECLARE_SIGNAL_IN(f_max_left_foot,            double);
 
         DECLARE_SIGNAL_IN(rotor_inertias,             ml::Vector);
         DECLARE_SIGNAL_IN(gear_ratios,                ml::Vector);
@@ -171,7 +173,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[InverseDynamicsBalanceController-"+name+"] "+msg, t, file, line);
+          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
         }
         
       protected:
@@ -185,9 +187,12 @@ namespace dynamicgraph {
         {
           DOUBLE_SUPPORT = 0,
           LEFT_SUPPORT = 1,
-          RIGHT_SUPPORT = 2
+          LEFT_SUPPORT_TRANSITION = 2,  // transition towards left support
+          RIGHT_SUPPORT = 3,
+          RIGHT_SUPPORT_TRANSITION = 4
         };
         ContactState      m_contactState;
+        double            m_contactTransitionTime;  /// end time of the current contact transition (if any)
 
         int m_frame_id_rf;  /// frame id of right foot
         int m_frame_id_lf;  /// frame id of left foot
@@ -195,8 +200,8 @@ namespace dynamicgraph {
         /// pininvdyn
         pininvdyn::RobotWrapper *                       m_robot;
         pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
-        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_40;
-        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_20;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_34;
+        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_17;
         pininvdyn::InverseDynamicsFormulationAccForce * m_invDyn;
         pininvdyn::contacts::Contact6d *                m_contactRF;
         pininvdyn::contacts::Contact6d *                m_contactLF;
