@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, Andrea Del Prete, LAAS-CNRS
+ * Copyright 2014-2017, Andrea Del Prete, Rohan Budhiraja LAAS-CNRS
  *
  * This file is part of sot-torque-control.
  * sot-dyninv is free software: you can redistribute it and/or
@@ -66,9 +66,13 @@ namespace dynamicgraph
         addCommand("getDelay",
                    makeDirectGetter(*this,&m_delay,
                                     docDirectGetter("Delay in the estimation of signal x","double")));
-        addCommand("init", makeCommandVoid2(*this, &NumericalDifference::init,
-                              docCommandVoid2("Initialize the estimator.",
+        addCommand("getXSize",
+                   makeDirectGetter(*this,&x_size,
+                                    docDirectGetter("Size of the x signal","int")));
+        addCommand("init", makeCommandVoid3(*this, &NumericalDifference::init,
+                              docCommandVoid3("Initialize the estimator.",
                                               "Control timestep [s].",
+                                              "Size of the input signal x",
                                               "Estimation delay for signal x")));
       }
 
@@ -76,50 +80,52 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void NumericalDifference::init(const double &timestep, const double& delay)
+      void NumericalDifference::init(const double &timestep, const int& xSize,
+                                     const double& delay)
       {
         assert(timestep>0.0 && "Timestep should be > 0");
         assert(delay>=1.5*timestep && "Estimation delay should be >= 1.5*timestep");
         m_dt = timestep;
         m_delay = delay;
+        x_size = xSize;
         int winSizeEnc     = (int)(2*delay/m_dt);
         assert(winSizeEnc>=3 && "Estimation-window's length should be >= 3");
 
-        m_filter         = new QuadEstimator(winSizeEnc, N_JOINTS, m_dt);
+        m_filter         = new QuadEstimator(winSizeEnc, x_size, m_dt);
 
-        m_ddx_filter_std.resize(N_JOINTS);
-        m_dx_filter_std.resize(N_JOINTS);
-        m_x_filter_std.resize(N_JOINTS);
-        m_x_std.resize(N_JOINTS);
+        m_ddx_filter_std.resize(x_size);
+        m_dx_filter_std.resize(x_size);
+        m_x_filter_std.resize(x_size);
+        m_x_std.resize(x_size);
       }
 
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
 
-      /** Estimate the joints' positions, velocities and accelerations. */
+      /** Signal Filtering and Differentiation. */
       DEFINE_SIGNAL_INNER_FUNCTION(x_dx_ddx, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute x_dx_ddx inner signal "<<iter<<std::endl;
 
         // read encoders and copy in std vector
         const dynamicgraph::Vector& base_x = m_xSIN(iter);
-        COPY_SHIFTED_VECTOR_TO_ARRAY(base_x, m_x_std, 6);
+        COPY_VECTOR_TO_ARRAY(base_x, m_x_std);
 
-        // estimate joints' pos, vel and acc
+        // Signal Filters
         m_filter->estimate(m_x_filter_std, m_x_std);
         m_filter->getEstimateDerivative(m_dx_filter_std, 1);
         m_filter->getEstimateDerivative(m_ddx_filter_std, 2);
 
         // copy data in signal vector
-        if(s.size()!=3*N_JOINTS)
-          s.resize(3*N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
+        if(s.size()!=3*x_size)
+          s.resize(3*x_size);
+        for(int i=0; i<x_size; i++)
           s(i) = m_x_filter_std[i];
-        for(int i=0; i<N_JOINTS; i++)
-          s(i+N_JOINTS) = m_dx_filter_std[i];
-        for(int i=0; i<N_JOINTS; i++)
-          s(i+2*N_JOINTS) = m_ddx_filter_std[i];
+        for(int i=0; i<x_size; i++)
+          s(i+x_size) = m_dx_filter_std[i];
+        for(int i=0; i<x_size; i++)
+          s(i+2*x_size) = m_ddx_filter_std[i];
 
         return s;
       }
@@ -136,9 +142,9 @@ namespace dynamicgraph
         sotDEBUG(15)<<"Compute x_filtered output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s.head<N_JOINTS>() = x_dx_ddx.head<N_JOINTS>();
+        if(s.size()!=x_size)
+          s.resize(x_size);
+	s = x_dx_ddx.head(x_size);
         return s;
       }
 
@@ -148,9 +154,9 @@ namespace dynamicgraph
         sotDEBUG(15)<<"Compute dx output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
-        if(s.size()!=N_JOINTS)
-	  s.resize(N_JOINTS);
-	s = x_dx_ddx.segment<N_JOINTS>(N_JOINTS);
+        if(s.size()!=x_size)
+	  s.resize(x_size);
+	s = x_dx_ddx.segment(x_size,x_size);
         return s;
       }
 
@@ -159,9 +165,9 @@ namespace dynamicgraph
         sotDEBUG(15)<<"Compute ddx output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s = x_dx_ddx.segment<N_JOINTS>(2*N_JOINTS);
+        if(s.size()!=x_size)
+          s.resize(x_size);
+	s = x_dx_ddx.segment(2*x_size, x_size);
         return s;
       }
 

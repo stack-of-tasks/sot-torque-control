@@ -36,7 +36,7 @@ def compute_delta_q_components(enc, delta_q, dq, delta_q_ff, qRef, dqRef, k_tau,
 
 def set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensor_data):
     estimator_ft.base6d_encoders.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
-    estimator_kin.x.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
+    estimator_kin.x.value = tuple(sensor_data['enc'][:30].tolist());
     estimator_ft.accelerometer.value   = tuple(sensor_data['acc'][0:3]);
     estimator_ft.gyroscope.value       = tuple(sensor_data['gyro']);
     estimator_ft.ftSensRightFoot.value = tuple(sensor_data['forceRL']);
@@ -76,7 +76,7 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
         estimator_ft.init(dt,delay,delay,delay,delay,True);
     else:
         estimator_ft.init(dt,delay,delay,delay,delay,False);
-    estimator_kin.init(dt,delay);
+    estimator_kin.init(dt,NJ, delay);
     estimator_ft.setFTsensorOffsets(tuple(ftSensorOffsets));
     estimator_ft.setUseRawEncoders(False);
     estimator_ft.setUseRefJointVel(False);
