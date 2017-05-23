@@ -19,6 +19,9 @@ import time
 
 from pinocchio_inv_dyn.simulator import Simulator
 from pinocchio_inv_dyn.robot_wrapper import RobotWrapper
+from pinocchio_inv_dyn.plot_utils import *
+import pinocchio_inv_dyn.plot_utils as plut
+
 import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as conf
 from dynamic_graph.sot.torque_control.hrp2.sot_utils import config_sot_to_urdf, joints_sot_to_urdf
 from pinocchio.utils import zero as mat_zeros
@@ -338,20 +341,25 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
     COM_DES_1 = (0.012, 0.09, 0.85);
     T_CONTACT_TRANSITION = 1.8;
     CONTACT_TRANSITION_DURATION = 0.5;
-    T_LIFT = T_CONTACT_TRANSITION + CONTACT_TRANSITION_DURATION;
+    T_LIFT = T_CONTACT_TRANSITION + CONTACT_TRANSITION_DURATION + 10.0;
     T_MOVE_DOWN = T_LIFT+1.0;
     ent = create_graph(dt, delay);
     robot = ent.simulator.r;
     
 #    ent.ctrl.com_ref_pos.value = COM_DES_1;
-    ent.com_traj_gen.move(0, COM_DES_1[0], T_LIFT);
-    ent.com_traj_gen.move(1, COM_DES_1[1], T_LIFT);
-    ent.com_traj_gen.move(2, COM_DES_1[2], T_LIFT);
+    ent.com_traj_gen.move(0, COM_DES_1[0], T_CONTACT_TRANSITION);
+    ent.com_traj_gen.move(1, COM_DES_1[1], T_CONTACT_TRANSITION);
+    ent.com_traj_gen.move(2, COM_DES_1[2], T_CONTACT_TRANSITION);
 
     t = 0.0;
     x_rf = robot.framePosition(robot.model.getFrameId('RLEG_JOINT5')).translation;
     x_lf = robot.framePosition(robot.model.getFrameId('LLEG_JOINT5')).translation;
     tauMax = mat_zeros(NJ);
+    
+    tau    = mat_zeros((NJ, conf.MAX_TEST_DURATION));
+    dv     = mat_zeros((NJ+6, conf.MAX_TEST_DURATION));
+    f_rf   = mat_zeros((6, conf.MAX_TEST_DURATION));
+    f_lf   = mat_zeros((6, conf.MAX_TEST_DURATION));
 
     for i in range(conf.MAX_TEST_DURATION):
         start = time.time();
@@ -360,23 +368,32 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
 
         ent.device.increment(dt);
         
-        tau = np.matrix(ent.ctrl.tau_des.value).T;
+        dv[:,i]  = np.matrix(ent.ctrl.dv_des.value).T;
+        tau[:,i] = np.matrix(ent.ctrl.tau_des.value).T;
         for j in range(NJ):
-            if(abs(tau[j]) > tauMax[j]):
-                tauMax[j] = abs(tau[j]);
+            if(abs(tau[j,i]) > tauMax[j]):
+                tauMax[j] = abs(tau[j,i]);
+                
+        if(i>0 and norm(tau[:,i]-tau[:,i-1]) > 10.0):
+            print "t=%.3f Joint torque variation is too large: "%t, norm(tau[:,i]-tau[:,i-1]);
+                
+        ent.ctrl.f_des_right_foot.recompute(i);
+        ent.ctrl.f_des_left_foot.recompute(i);
+        f_rf[:,i] = np.matrix(ent.ctrl.f_des_right_foot.value).T
+        f_lf[:,i] = np.matrix(ent.ctrl.f_des_left_foot.value).T
         
         if(abs(t-T_CONTACT_TRANSITION)<0.5*dt):
-            print "Remove right foot contact";
+            print "t=%.3f Remove right foot contact"%t;
             ent.ctrl.removeRightFootContact(CONTACT_TRANSITION_DURATION); 
             
         if(abs(t-T_LIFT) < 0.5*dt):
-            print "Lift foot"
+            print "t=%.3f Lift foot"%t
             ent.ctrl.right_foot_pos.recompute(i);
             M_rf = ent.ctrl.right_foot_pos.value;
             ent.rf_traj_gen.move(2, M_rf[2]+0.1, T_MOVE_DOWN-T_LIFT-dt);
             
         if(abs(t-T_MOVE_DOWN)<0.5*dt):
-            print "Move foot down"
+            print "t=%.3f Move foot down"%t
             ent.rf_traj_gen.move(2, M_rf[2], 1.0);
             
         if(abs(t%0.05)<dt):
@@ -384,22 +401,18 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
             q_urdf = config_sot_to_urdf(q);
             ent.simulator.viewer.updateRobotConfig(q_urdf);
 
-            ent.ctrl.f_des_right_foot.recompute(i);
-            ent.ctrl.f_des_left_foot.recompute(i);
-            f_rf = np.matrix(ent.ctrl.f_des_right_foot.value).T
-            f_lf = np.matrix(ent.ctrl.f_des_left_foot.value).T
             ent.simulator.updateContactForcesInViewer(['rf', 'lf'], 
                                                   [x_rf, x_lf], 
-                                                  [f_rf, f_lf]);
+                                                  [f_rf[:,i], f_lf[:,i]]);
                                                   
             ent.ctrl.com.recompute(i);
             com = np.matrix(ent.ctrl.com.value).T
         
-            v = np.matrix(ent.device.velocity.value).T;
-            dv = np.matrix(ent.ctrl.dv_des.value).T;
-            print "t=%.3f dv=%.1f v=%.1f com=" % (t, norm(dv), norm(v)), com.T, 
-            print "com_ref", np.array(ent.com_traj_gen.x.value),
-            print "f_rf %.1f"%f_rf[2,0].T, "f_lf %.1f"%f_lf[2,0].T;
+#            v = np.matrix(ent.device.velocity.value).T;
+#            dv = np.matrix(ent.ctrl.dv_des.value).T;
+#            print "t=%.3f dv=%.1f v=%.1f com=" % (t, norm(dv), norm(v)), com.T, 
+#            print "com_ref", np.array(ent.com_traj_gen.x.value),
+#            print "f_rf %.1f"%f_rf[2,i].T, "f_lf %.1f"%f_lf[2,i].T;
             
             com[2,0] = 0.0;
             ent.simulator.updateComPositionInViewer(com);
@@ -412,9 +425,28 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
         if(start-stop<dt):
             sleep(dt-start+stop);
     
-    tauMax = joints_sot_to_urdf(tauMax);
-    print "max torques requested at each joint:\n", tauMax.T;
-    print "tauMax - tau =\n", robot.model.effortLimit[6:,0].T - tauMax.T;
+    tauMax_urdf = joints_sot_to_urdf(tauMax);
+    print "max torques requested at each joint:\n", tauMax_urdf.T;
+    print "tauMax - tau =\n", robot.model.effortLimit[6:,0].T - tauMax_urdf.T;
+    
+    for i in range(2):
+        for j in range(6):
+            plt.plot(tau[i*6+j,:].A.squeeze());
+        plt.title('Torque joint '+str(i*6)+'-'+str(i*6+5));
+        plt.show();
+        
+    for i in range(2):
+        for j in range(6):
+            plt.plot(dv[6+i*6+j,:].A.squeeze());
+        plt.title('Acc joint '+str(i*6)+'-'+str(i*6+5));
+        plt.show();
+        
+    plt.plot(f_rf[2,:].A.squeeze());
+    plt.plot(f_lf[2,:].A.squeeze());
+    plt.title('Normal forces');
+    plt.legend(['right', 'left']);
+    plt.show();
+    
     return ent;
     
 if __name__=='__main__':
