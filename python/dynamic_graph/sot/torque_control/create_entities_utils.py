@@ -99,8 +99,13 @@ def create_estimators(ent, dt, delay):
     estimator_kin = VelAccEstimator("estimator_kin");
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
+    from dynamic_graph.sot.core import Selec_of_vector
+    qn = Selec_of_vector('qn')
+    plug(ent.device.robotState,     qn);
+    qn.selec(6,NJ+6);
+
+    plug(qn,                        estimator_kin.x);
     plug(ent.device.robotState,     estimator_ft.base6d_encoders);
-    plug(ent.device.robotState,     estimator_kin.x);
     plug(ent.device.accelerometer,  estimator_ft.accelerometer);
     plug(ent.device.gyrometer,      estimator_ft.gyroscope);
     plug(ent.device.forceRLEG,      estimator_ft.ftSensRightFoot);

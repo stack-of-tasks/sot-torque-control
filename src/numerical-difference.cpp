@@ -66,7 +66,7 @@ namespace dynamicgraph
         addCommand("getDelay",
                    makeDirectGetter(*this,&m_delay,
                                     docDirectGetter("Delay in the estimation of signal x","double")));
-        addCommand("getXSize",
+        addCommand("getSize",
                    makeDirectGetter(*this,&x_size,
                                     docDirectGetter("Size of the x signal","int")));
         addCommand("init", makeCommandVoid3(*this, &NumericalDifference::init,
