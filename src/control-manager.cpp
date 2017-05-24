@@ -130,7 +130,7 @@ namespace dynamicgraph
 
 	addCommand("setForceNameToForceId",
 		   makeCommandVoid2(*this,&ControlManager::setForceNameToForceId,
-				    docCommandVoid2("Set map for a force sensor name to a force sensor Id",
+				    docCommandVoid2("Set map from a force sensor name to a force sensor Id",
 						    "(string) force sensor name",
 						    "(double) force sensor id")));
 
@@ -153,7 +153,18 @@ namespace dynamicgraph
 		   makeCommandVoid1(*this, &ControlManager::setJoints,
                                     docCommandVoid1("Map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
+	
+	addCommand("setRightFootSoleXYZ",
+		   makeCommandVoid1(*this, &ControlManager::setRightFootSoleXYZ,
+                                    docCommandVoid1("Set the right foot sole XYZ.",
+                                                    "Vector of double")));
 
+	addCommand("setFootFrameName",
+                   makeCommandVoid2(*this, &ControlManager::setFootFrameName,
+                                    docCommandVoid2("Set the Frame Name for the Foot Name.",
+                                                    "(string) Foot name",
+                                                    "(string) Frame name")));
+		   
         addCommand("displayRobotUtil",
                    makeCommandVoid0(*this, &ControlManager::displayRobotUtil,
                                     docCommandVoid0("Display the current robot util data set.")));
@@ -590,6 +601,33 @@ namespace dynamicgraph
           return;
         }
 	m_robot_util.set_urdf_to_sot(urdf_to_sot);
+      }
+
+      void ControlManager::setRightFootSoleXYZ( const dynamicgraph::Vector &xyz)
+      {
+	if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot set right foot sole XYZ before initialization!");
+          return;
+        }
+
+	m_robot_util.m_foot_util.m_Right_Foot_Sole_XYZ = xyz;
+      }
+
+      void ControlManager::setFootFrameName( const std::string &FootName,
+					     const std::string &FrameName)
+      {
+	if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot set foot frame name!");
+          return;
+        }
+	if (FootName=="Left")
+	  m_robot_util.m_foot_util.m_Left_Foot_Frame_Name = FrameName;
+	else if (FootName=="Right")
+	  m_robot_util.m_foot_util.m_Right_Foot_Frame_Name = FrameName;
+	else 
+	  SEND_WARNING_STREAM_MSG("Did not understand the foot name !" + FootName);
       }
       
       void ControlManager::displayRobotUtil()

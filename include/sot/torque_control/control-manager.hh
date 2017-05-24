@@ -126,21 +126,32 @@ namespace dynamicgraph {
 
 
         /* --- COMMANDS --- */
+
+	/// Commands related to the control mode.
         void addCtrlMode(const std::string& name);
         void ctrlModes();
         void getCtrlMode(const std::string& jointName);
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
+	
         void resetProfiler();
 	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
+	
+	/// Commands related to joint name and joint id
 	void setNameToId(const std::string& jointName, const double & jointId);
 	void setJointLimitsFromId(const double &jointId, 
 				const double &lq, const double &uq);
+
+	/// Command related to ForceUtil
 	void setForceLimitsFromId(const double &jointId, 
 				  const dynamicgraph::Vector &lq, 
 				  const dynamicgraph::Vector &uq);
 	void setForceNameToForceId(const std::string& forceName, 
 				   const double & forceId);
+	
+	/// Commands related to FootUtil
+	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
+	void setFootFrameName(const std::string &, const std::string &);
 
 	void displayRobotUtil();
 	/// Set the mapping between urdf and sot.

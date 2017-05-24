@@ -80,9 +80,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         FreeFlyerLocator( const std::string & name );
 
-        void init(const std::string& urdfFile,
-		  const std::string & leftFootFrameName,
-		  const std::string & rightFootFrameName);
+        void init();
 
 
         /* --- SIGNALS --- */
@@ -124,12 +122,7 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
 
 	RobotUtil & m_robot_util;
-	std::string m_Left_Foot_Frame_Name;
-	std::string m_Right_Foot_Frame_Name;
-	unsigned int m_nbJoints;
-	double m_Right_Foot_Sole_XYZ[3];
 
-	dynamicgraph::Vector m_urdf_to_sot;
       }; // class FreeFlyerLocator
       
     }    // namespace torque_control

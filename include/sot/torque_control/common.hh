@@ -157,6 +157,14 @@ namespace dynamicgraph {
 	
       }; // struct ForceUtil
 
+      struct FootUtil
+      {
+	dynamicgraph::Vector m_Right_Foot_Sole_XYZ;
+	std::string m_Left_Foot_Frame_Name;
+	std::string m_Right_Foot_Frame_Name;
+	void display(std::ostream & os) const;
+      };
+
       struct RobotUtil
       {
       public:
@@ -165,6 +173,9 @@ namespace dynamicgraph {
 
 	/// Forces data
 	ForceUtil m_force_util;
+
+	/// Foot information
+	FootUtil m_foot_util;
 
 	/// Map from the urdf index to the SoT index.
 	std::vector<Index> m_urdf_to_sot;
@@ -188,6 +199,7 @@ namespace dynamicgraph {
 
 	/// URDF file path
 	std::string m_urdf_filename;
+	
 
 	dynamicgraph::Vector m_dgv_urdf_to_sot;
 
@@ -254,8 +266,6 @@ namespace dynamicgraph {
       bool config_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
       bool velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot);
       bool velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf);
-      bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
-      bool joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
 
     }    // namespace torque_control
   }      // namespace sot

@@ -87,3 +87,14 @@ mapNameToForceId={
     "rh": 2,
     "lh": 3
 }
+
+indexOfForceSensors= () 
+FootFrameNames= { 
+    "Right": "RLEG_JOINT5",
+    "Left" : "LLEG_JOINT5"
+}
+
+RightFootSensorXYZ = (0.0,0.0,-0.085)
+
+
+
