@@ -28,34 +28,139 @@ namespace dynamicgraph
       namespace dg = ::dynamicgraph;
       using namespace dg;
       using namespace dg::command;
- 
-      void FromURDFToSoT::
+
+      void ForceLimits::display(std::ostream &os) const
+      {
+	os << "Lower limits:" << std::endl;
+	os << lower << std::endl;
+	os << "Upper Limits:" << std::endl;
+	os << upper << std::endl;
+      }
+
+
+      /******************** ForceUtil ***************************/
+
+      void ForceUtil::set_name_to_force_id(const std::string &name,
+					   const double &force_id)
+      {
+	m_name_to_force_id[name] = (Index) force_id;
+	create_force_id_to_name_map();
+      }
+
+      void ForceUtil::set_force_id_to_limits(const double &force_id,
+					     const dg::Vector &lf,
+					     const dg::Vector &uf)
+      {
+	m_force_id_to_limits[(Index)force_id] = 
+	  ForceLimits(lf,uf); // Potential memory leak
+      }
+      
+      Index ForceUtil::get_id_from_name(const std::string &name)
+      {
+	std::map<std::string, Index>::const_iterator it;
+	it = m_name_to_force_id.find(name);
+	if (it!=m_name_to_force_id.end())
+	  return it->second;
+	return -1;
+      }
+
+      const std::string & ForceUtil::get_name_from_id(Index idx)
+      {
+	std::string default_rtn("Force name not found");
+	std::map<Index,std::string>::const_iterator it;
+	it = m_force_id_to_name.find(idx);
+	if (it!=m_force_id_to_name.end())
+	  return it->second;
+	return default_rtn;
+      }
+
+      void ForceUtil::create_force_id_to_name_map()
+      {
+	std::map<std::string, Index>::const_iterator it;
+	for(it = m_name_to_force_id.begin(); 
+	    it != m_name_to_force_id.end(); it++)
+	  m_force_id_to_name[it->second] = it->first;
+      }
+
+      const ForceLimits & ForceUtil::get_limits_from_id(Index force_id)
+      {
+	std::map<Index,ForceLimits>::const_iterator iter = 
+	  m_force_id_to_limits.find(force_id);
+	if(iter==m_force_id_to_limits.end())
+	  return ForceLimits(); // Potential memory leak
+	return iter->second;
+	
+      }
+
+      void ForceUtil::display(std::ostream &os) const
+      {
+	os << "Force Id to limits "<< std::endl;
+	for( std::map<Index,ForceLimits>::const_iterator 
+	       it = m_force_id_to_limits.begin();
+	     it != m_force_id_to_limits.end();
+	     ++it)
+	  {
+	    it->second.display(os); 
+	  }
+	
+	os << "Name to force id:" << std::endl;
+	for( std::map<std::string,Index>::const_iterator 
+	       it = m_name_to_force_id.begin();
+	     it != m_name_to_force_id.end();
+	     ++it)
+	  {
+	    os << "(" << it->first << "," << it->second << ") ";
+	  }
+	os << std::endl;
+
+	os << "Force id to Name:" << std::endl;
+	for( std::map<Index,std::string>::const_iterator 
+	       it = m_force_id_to_name.begin();
+	     it != m_force_id_to_name.end();
+	     ++it)
+	  {
+	    os << "(" << it->first << "," << it->second << ") ";
+	  }
+	os << std::endl;
+
+	os << "Index for force sensors:" << std::endl;
+	os << "Left Hand (" <<m_Force_Id_Left_Hand  << ") ,"
+	   << "Right Hand (" << m_Force_Id_Right_Hand << ") ,"
+	   << "Left Foot (" <<m_Force_Id_Left_Foot << ") ,"
+	   << "Right Right (" << m_Force_Id_Right_Foot << ") "
+	   << std::endl;
+      }
+      /**************** FromURDFToSot *************************/
+      RobotUtil::RobotUtil()
+      {}
+
+      void RobotUtil::
       set_joint_limits_for_id( const double &idx,
 			       const double &lq,
 			       const double &uq)
       {
-	m_limits_map[idx] = JointLimits(lq,uq);
+	m_limits_map[(Index)idx] = JointLimits(lq,uq);
       }
       
-      const JointLimits & FromURDFToSoT::
+      const JointLimits & RobotUtil::
       get_limits_from_id(Index id)
-        {
-          std::map<Index,JointLimits>::const_iterator 
-	    iter = m_limits_map.find(id);
-          if(iter==m_limits_map.end())
-            return JointLimits(0.0,0.0);
-          return iter->second;
-        }
+      {
+	std::map<Index,JointLimits>::const_iterator 
+	  iter = m_limits_map.find(id);
+	if(iter==m_limits_map.end())
+	  return JointLimits(0.0,0.0);
+	return iter->second;
+      }
 
-      void FromURDFToSoT::
+      void RobotUtil::
       set_name_to_id(const std::string &jointName,
-		  const double &jointId)
+		     const double &jointId)
       {
 	m_name_to_id[jointName] = (Index)jointId;
 	create_id_to_name_map();
       }
 
-      void FromURDFToSoT::
+      void RobotUtil::
       create_id_to_name_map()
       {
 	std::map<std::string, Index>::const_iterator it;
@@ -63,7 +168,7 @@ namespace dynamicgraph
 	  m_id_to_name[it->second] = it->first;
       }
 
-      const FromURDFToSoT::Index FromURDFToSoT::
+      const Index RobotUtil::
       get_id_from_name(const std::string &name)
       {
 	std::map<std::string,Index>::const_iterator it = 
@@ -73,17 +178,17 @@ namespace dynamicgraph
 	return it->second;
       }
       
-      const std::string & FromURDFToSoT::
-      get_name_from_id(FromURDFToSoT::Index id)
-        {
-          std::map<FromURDFToSoT::Index,std::string>::const_iterator iter = 
-	    m_id_to_name.find(id);
-          if(iter==m_id_to_name.end())
-            return "Joint name not found";
-          return iter->second;
-        }
+      const std::string & RobotUtil::
+      get_name_from_id(Index id)
+      {
+	std::map<Index,std::string>::const_iterator iter = 
+	  m_id_to_name.find(id);
+	if(iter==m_id_to_name.end())
+	  return "Joint name not found";
+	return iter->second;
+      }
       
-      void FromURDFToSoT::
+      void RobotUtil::
       set_urdf_to_sot(const std::vector<Index> &urdf_to_sot)
       {
 	m_nbJoints = urdf_to_sot.size();
@@ -92,12 +197,12 @@ namespace dynamicgraph
 	for(std::size_t idx=0;
 	    idx<urdf_to_sot.size();idx++)
 	  {
-	    m_urdf_to_sot[idx] = urdf_to_sot[idx];
-	    m_dgv_urdf_to_sot[idx] = urdf_to_sot[idx];
+	    m_urdf_to_sot[(Index)idx] = urdf_to_sot[(Index)idx];
+	    m_dgv_urdf_to_sot[(Index)idx] = urdf_to_sot[(Index)idx];
 	  }
       }
       
-      void FromURDFToSoT::
+      void RobotUtil::
       set_urdf_to_sot(const dg::Vector &urdf_to_sot)
       {
 	m_nbJoints = urdf_to_sot.size();
@@ -109,7 +214,7 @@ namespace dynamicgraph
 	m_dgv_urdf_to_sot = urdf_to_sot;
       }
       
-      bool FromURDFToSoT::
+      bool RobotUtil::
       joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot)
       {
 	if (m_nbJoints==0)
@@ -125,7 +230,7 @@ namespace dynamicgraph
 	return true;
       }
       
-      bool FromURDFToSoT::
+      bool RobotUtil::
       joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf)
       {
 	assert(q_urdf.size()==m_nbJoints);
@@ -142,7 +247,40 @@ namespace dynamicgraph
 	return true;
       }
 
+      void RobotUtil::
+      display(std::ostream &os) const
+      {
+	m_force_util.display(os);
+	os << "Nb of joints: " << m_nbJoints <<std::endl;
+	os << "Urdf file name: " << m_urdf_filename << std::endl;
+
+	// Display m_urdf_to_sot
+	os << "Map from urdf index to the Sot Index " << std::endl;
+	for(unsigned int i=0;i<m_urdf_to_sot.size();i++)
+	  os << "(" << i << " : " << m_urdf_to_sot[i] << ") ";
+	os << std::endl;
+
+	os << "Joint name to joint id:" << std::endl;
+	for( std::map<std::string,Index>::const_iterator 
+	       it = m_name_to_id.begin();
+	     it != m_name_to_id.end();
+	     ++it)
+	  {
+	    os << "(" << it->first << "," << it->second << ") ";
+	  }
+	os << std::endl;
+
+	os << "Joint id to joint Name:" << std::endl;
+	for( std::map<Index,std::string>::const_iterator 
+	       it = m_id_to_name.begin();
+	     it != m_id_to_name.end();
+	     ++it)
+	  {
+	    os << "(" << it->first << "," << it->second << ") ";
+	  }
+	os << std::endl;
 	
+      }
       bool base_se3_to_sot(Eigen::ConstRefVector pos,
 			   Eigen::ConstRefMatrix R,
 			   Eigen::RefVector q_sot)
@@ -211,6 +349,31 @@ namespace dynamicgraph
 	  
 	return true;
       }
+
+      std::map<std::string,RobotUtil> sgl_map_name_to_robot_util;
+
+      RobotUtil & getRobotUtil(std::string &robotName)
+      {
+	std::map<std::string,RobotUtil>::iterator it =
+	  sgl_map_name_to_robot_util.find(robotName);
+	if (it!=sgl_map_name_to_robot_util.end())
+	  return it->second;
+	return VoidRobotUtil;
+      }
+	
+      bool isNameInRobotUtil(std::string &robotName)
+      {
+	std::map<std::string,RobotUtil>::iterator it =
+	  sgl_map_name_to_robot_util.find(robotName);
+	if (it!=sgl_map_name_to_robot_util.end())
+	  return false;
+	return true;
+      }
+      RobotUtil & createRobotUtil(std::string &robotName)
+      {
+	return sgl_map_name_to_robot_util[robotName];
+      }
+      
     } // torque_control
   } // sot
 } // dynamic_graph

@@ -66,11 +66,105 @@ namespace dynamicgraph {
           lower(l)
         {}
       };
-      
-      struct FromURDFToSoT
+
+      typedef Eigen::VectorXd::Index Index;
+
+      struct ForceLimits
       {
-	typedef Eigen::VectorXd::Index Index;
-      protected:
+        Eigen::VectorXd upper;
+        Eigen::VectorXd lower;
+
+        ForceLimits():
+          upper(Eigen::Vector6d::Zero()),
+          lower(Eigen::Vector6d::Zero())
+        {}
+
+        ForceLimits(const Eigen::VectorXd& l, const Eigen::VectorXd& u):
+          upper(u),
+          lower(l)
+        {}
+
+	void display(std::ostream &os) const;
+      };
+
+      
+      struct ForceUtil
+      {
+	std::map<Index,ForceLimits> m_force_id_to_limits;
+	std::map<std::string,Index> m_name_to_force_id;
+	std::map<Index,std::string> m_force_id_to_name;
+	
+	Index m_Force_Id_Left_Hand, m_Force_Id_Right_Hand,
+	  m_Force_Id_Left_Foot, m_Force_Id_Right_Foot;
+	
+	void set_name_to_force_id(const std::string & name,
+				  const double &force_id);
+	
+	void set_force_id_to_limits(const double &force_id,
+				    const dg::Vector &lf,
+				    const dg::Vector &uf);
+
+	void create_force_id_to_name_map();
+	
+
+	Index get_id_from_name(const std::string &name);
+
+	const std::string & get_name_from_id(Index idx);
+
+	const ForceLimits & get_limits_from_id(Index force_id);
+	
+	const Index & get_force_id_left_hand()
+	{
+	  return m_Force_Id_Left_Hand;
+	}
+	
+	void set_force_id_left_hand(const Index &anId)
+	{
+	  m_Force_Id_Left_Hand = anId;
+	}
+	
+	const Index & get_force_id_right_hand()
+	{
+	  return m_Force_Id_Right_Hand;
+	}
+	
+	void set_force_id_right_hand(const Index &anId)
+	{
+	  m_Force_Id_Right_Hand = anId;
+	}
+
+	const Index & get_force_id_left_foot()
+	{
+	  return m_Force_Id_Left_Foot;
+	}
+	
+	void set_force_id_left_foot(const Index &anId)
+	{
+	  m_Force_Id_Left_Foot = anId;
+	}
+
+	const Index & get_force_id_right_foot()
+	{
+	  return m_Force_Id_Right_Foot;
+	}
+	
+	void set_force_id_right_foot(const Index &anId)
+	{
+	  m_Force_Id_Right_Foot = anId;
+	}
+
+	void display(std::ostream & out) const;
+	
+      }; // struct ForceUtil
+
+      struct RobotUtil
+      {
+      public:
+
+	RobotUtil();
+
+	/// Forces data
+	ForceUtil m_force_util;
 
 	/// Map from the urdf index to the SoT index.
 	std::vector<Index> m_urdf_to_sot;
@@ -92,8 +186,9 @@ namespace dynamicgraph {
 	/// (i.e. when set_name_to_id is called).
 	void create_id_to_name_map();
 
+	/// URDF file path
+	std::string m_urdf_filename;
 
-      public:
 	dynamicgraph::Vector m_dgv_urdf_to_sot;
 
         /** Given a joint name it finds the associated joint id.
@@ -132,7 +227,8 @@ namespace dynamicgraph {
          * @param id Id of the joint to find.
          * @return The limits of the specified joint, JointLimits(0,0) if not found. */
         const JointLimits & get_limits_from_id(Index id);
-
+	
+	
 	void sendMsg(const std::string& msg, 
 		     MsgType t=MSG_TYPE_INFO, 
 		     const char* file="", int line=0)
@@ -140,8 +236,14 @@ namespace dynamicgraph {
           getLogger().sendMsg("[FromURDFToSoT] "+msg, t, file, line);
 	}
 
-      }; // struct FromURDFToSoT
+	void display(std::ostream &os) const;
 
+      }; // struct RobotUtil
+      static RobotUtil VoidRobotUtil;
+
+      RobotUtil & getRobotUtil(std::string &robotName);
+      bool isNameInRobotUtil(std::string &robotName);
+      RobotUtil &createRobotUtil(std::string &robotName);
 
       bool base_se3_to_sot(Eigen::ConstRefVector pos,
                            Eigen::ConstRefMatrix R,

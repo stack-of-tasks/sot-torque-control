@@ -39,7 +39,7 @@ ENDIF(UNIX)
 SET(plugins
 #  joint-torque-controller
 #  force-torque-estimator
-#  joint-trajectory-generator
+  joint-trajectory-generator
   nd-trajectory-generator
   se3-trajectory-generator
   inverse-dynamics-balance-controller
