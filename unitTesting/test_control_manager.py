@@ -1,7 +1,8 @@
 from dynamic_graph.sot.core.matrix_util import matrixToTuple, vectorToTuple,rotate, matrixToRPY
 from dynamic_graph.sot.torque_control.control_manager import *
 from dynamic_graph.sot.torque_control.tests.robot_data_test import testRobotPath,controlDT,maxCurrent,mapJointNameToID, \
-    mapJointLimits, urdftosot,mapForceIdToForceLimits, mapNameToForceId
+    mapJointLimits, urdftosot,mapForceIdToForceLimits, mapNameToForceId, \
+    FootFrameNames, RightFootSensorXYZ
 from numpy import matrix, identity, zeros, eye, array, pi, ndarray, ones
 
 # Instanciate the free flyer
@@ -54,6 +55,12 @@ for key in mapNameToForceId:
 
 # Set the map from the urdf joint list to the sot joint list
 cm.setJointsUrdfToSot(urdftosot)
+
+# Set the foot frame name
+for key in FootFrameNames:
+    cm.setFootFrameName(key,FootFrameNames[key])
+
+cm.setRightFootSoleXYZ(RightFootSensorXYZ)
 
 cm.setDefaultMaxCurrent(-10.0)
 cm.setDefaultMaxCurrent(maxCurrent)

@@ -232,11 +232,7 @@ namespace dynamicgraph {
         pininvdyn::math::Vector  m_v_urdf;
 
         unsigned int m_timeLast;
-	unsigned int m_nbJoints;
-	RobotUtil m_robot_util;
-	dynamicgraph::Vector m_urdf_to_sot;
-	std::string m_Left_Foot_Frame_Name;
-	std::string m_Right_Foot_Frame_Name;
+	RobotUtil & m_robot_util;
 
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control

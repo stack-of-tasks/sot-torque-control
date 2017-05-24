@@ -37,7 +37,16 @@ namespace dynamicgraph
 	os << upper << std::endl;
       }
 
+      /******************** FootUtil ***************************/
 
+      void FootUtil::display(std::ostream &os) const
+      {
+	os << "Right Foot Sole XYZ " << std::endl;
+	os << m_Right_Foot_Sole_XYZ << std::endl;
+	os << "Left Foot Frame Name:" << m_Left_Foot_Frame_Name << std::endl;
+	os << "Right Foot Frame Name:" << m_Right_Foot_Frame_Name << std::endl;
+      }
+      
       /******************** ForceUtil ***************************/
 
       void ForceUtil::set_name_to_force_id(const std::string &name,
@@ -45,6 +54,15 @@ namespace dynamicgraph
       {
 	m_name_to_force_id[name] = (Index) force_id;
 	create_force_id_to_name_map();
+	if (name=="rf")
+	  set_force_id_right_foot(m_name_to_force_id[name]);
+	else if (name=="lf")
+	  set_force_id_left_foot(m_name_to_force_id[name]);
+	else if (name=="lh")
+	  set_force_id_left_hand(m_name_to_force_id[name]);
+	else if (name=="rh")
+	  set_force_id_right_hand(m_name_to_force_id[name]);
+	  
       }
 
       void ForceUtil::set_force_id_to_limits(const double &force_id,
@@ -88,8 +106,7 @@ namespace dynamicgraph
 	  m_force_id_to_limits.find(force_id);
 	if(iter==m_force_id_to_limits.end())
 	  return ForceLimits(); // Potential memory leak
-	return iter->second;
-	
+	return iter->second;	
       }
 
       void ForceUtil::display(std::ostream &os) const
@@ -127,9 +144,10 @@ namespace dynamicgraph
 	os << "Left Hand (" <<m_Force_Id_Left_Hand  << ") ,"
 	   << "Right Hand (" << m_Force_Id_Right_Hand << ") ,"
 	   << "Left Foot (" <<m_Force_Id_Left_Foot << ") ,"
-	   << "Right Right (" << m_Force_Id_Right_Foot << ") "
+	   << "Right Foot (" << m_Force_Id_Right_Foot << ") "
 	   << std::endl;
       }
+
       /**************** FromURDFToSot *************************/
       RobotUtil::RobotUtil()
       {}
@@ -251,6 +269,7 @@ namespace dynamicgraph
       display(std::ostream &os) const
       {
 	m_force_util.display(os);
+	m_foot_util.display(os);
 	os << "Nb of joints: " << m_nbJoints <<std::endl;
 	os << "Urdf file name: " << m_urdf_filename << std::endl;
 
