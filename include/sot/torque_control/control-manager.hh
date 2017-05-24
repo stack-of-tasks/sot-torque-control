@@ -134,8 +134,17 @@ namespace dynamicgraph {
         void resetProfiler();
 	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
 	void setNameToId(const std::string& jointName, const double & jointId);
-	void setJointLimitsToId(const double &jointId, 
+	void setJointLimitsFromId(const double &jointId, 
 				const double &lq, const double &uq);
+	void setForceLimitsFromId(const double &jointId, 
+				  const dynamicgraph::Vector &lq, 
+				  const dynamicgraph::Vector &uq);
+	void setForceNameToForceId(const std::string& forceName, 
+				   const double & forceId);
+
+	void displayRobotUtil();
+	/// Set the mapping between urdf and sot.
+	void setJoints(const dynamicgraph::Vector &);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -149,7 +158,7 @@ namespace dynamicgraph {
         }
 
       protected:
-	FromURDFToSoT m_from_urdf_to_sot;
+	RobotUtil & m_robot_util;
 	Eigen::VectorXd::Index m_nJoints;      /// Number of joints
         pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized

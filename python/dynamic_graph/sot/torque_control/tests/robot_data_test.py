@@ -1,7 +1,10 @@
 
+import numpy
 testRobotPath="/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf"
 controlDT=0.005
 maxCurrent=5
+
+urdftosot=(12,13,14,15,23,24,25,26,27,28,29,16,17,18,19,20,21,22,6,7,8,9,10,11,0,1,2,3,4,5)
 
 mapJointNameToID={
     'rhy': 0, 
@@ -67,4 +70,20 @@ mapJointLimits={
     27 : [-1.6057, 1.6057],     
     28 : [-1.6057, 1.6057],    
     29 : [-1.0, 1.0]          
+}
+
+fMax=numpy.array([100.0,100.0,300.0,80.0,80.0,30.0])
+fMin=-fMax
+mapForceIdToForceLimits={
+    0: [fMin,fMax],
+    1: [fMin,fMax],
+    2: [fMin,fMax],
+    3: [fMin,fMax]
+}
+
+mapNameToForceId={
+    "rf": 0,
+    "lf": 1,
+    "rh": 2,
+    "lh": 3
 }

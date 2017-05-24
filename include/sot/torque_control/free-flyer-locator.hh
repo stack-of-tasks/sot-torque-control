@@ -84,9 +84,6 @@ namespace dynamicgraph {
 		  const std::string & leftFootFrameName,
 		  const std::string & rightFootFrameName);
 
-	/// Set the mapping between urdf and sot.
-	void setJoints(const dynamicgraph::Vector &);
-        void resetIntegral();
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(base6d_encoders,            dynamicgraph::Vector);
@@ -126,11 +123,12 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
 
+	RobotUtil & m_robot_util;
 	std::string m_Left_Foot_Frame_Name;
 	std::string m_Right_Foot_Frame_Name;
 	unsigned int m_nbJoints;
 	double m_Right_Foot_Sole_XYZ[3];
-	FromURDFToSoT m_from_urdf_to_sot;
+
 	dynamicgraph::Vector m_urdf_to_sot;
       }; // class FreeFlyerLocator
       

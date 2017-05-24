@@ -63,7 +63,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
             ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
-            ,m_initSucceeded(false)
+	    ,m_initSucceeded(false)
+	    ,m_robot_util(VoidRobotUtil)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -75,14 +76,6 @@ namespace dynamicgraph
 						    "Left Foot Frame Name (string)",
 						    "Right Foot Frame Name (string)")));
 	
-	addCommand("setJointsUrdfToSot",
-		   makeCommandVoid1(*this, &FreeFlyerLocator::setJoints,
-                                    docCommandVoid1("Map Joints From URDF to SoT.",
-                                                    "Vector of integer for mapping")));
-	addCommand("getJointsUrdfToSot",
-		   makeDirectGetter(*this, &m_from_urdf_to_sot.m_dgv_urdf_to_sot,
-                                    docDirectSetter("Display map Joints From URDF to SoT.",
-                                                    "Vector of integer for mapping")));
 
       }
 
@@ -92,6 +85,16 @@ namespace dynamicgraph
       {
         try 
         {
+	  /* Retrieve m_robot_util  informations */
+	  std::string localName("control-manager-robot");
+	  if (isNameInRobotUtil(localName))
+	    m_robot_util = createRobotUtil(localName);
+	  else 
+	    {
+	      SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	      return;
+	    }
+
 	  m_Left_Foot_Frame_Name = leftFootFrameName;
 	  m_Right_Foot_Frame_Name = rightFootFrameName;
 
@@ -118,11 +121,6 @@ namespace dynamicgraph
         m_initSucceeded = true;
       }
 
-      void FreeFlyerLocator::setJoints(const dg::Vector & urdf_to_sot)
-      {
-	m_from_urdf_to_sot.set_urdf_to_sot(urdf_to_sot);
-
-      }
 
 
       /* ------------------------------------------------------------------- */
@@ -143,8 +141,8 @@ namespace dynamicgraph
         assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
-        m_from_urdf_to_sot.joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
-        m_from_urdf_to_sot.joints_sot_to_urdf(dq, m_v_pin.tail(m_nbJoints));
+        m_robot_util.joints_sot_to_urdf(q.tail(m_nbJoints), m_q_pin.tail(m_nbJoints));
+        m_robot_util.joints_sot_to_urdf(dq, m_v_pin.tail(m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
         se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);

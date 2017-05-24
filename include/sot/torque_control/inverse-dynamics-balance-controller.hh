@@ -233,7 +233,7 @@ namespace dynamicgraph {
 
         unsigned int m_timeLast;
 	unsigned int m_nbJoints;
-	FromURDFToSoT m_from_urdf_to_sot;
+	RobotUtil m_robot_util;
 	dynamicgraph::Vector m_urdf_to_sot;
 	std::string m_Left_Foot_Frame_Name;
 	std::string m_Right_Foot_Frame_Name;
