@@ -70,6 +70,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(qError,             dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                   m_qRefSIN)
             ,m_initSucceeded(false)
+	      ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -104,11 +105,21 @@ namespace dynamicgraph
         if(!m_KiSIN.isPlugged())
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
-	m_nJoints = (Eigen::VectorXd::Index)nJoints;
+	/* Retrieve m_robot_util  informations */
+	std::string localName("control-manager-robot");
+	if (isNameInRobotUtil(localName))
+	  m_robot_util = getRobotUtil(localName);
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
+
         m_dt = dt;
-        m_pwmDes.setZero(m_nJoints);
-        m_q.setZero(m_nJoints+6);
-        m_dq.setZero(m_nJoints);
+   
+	m_pwmDes.setZero(m_robot_util->m_nbJoints);
+        m_q.setZero(m_robot_util->m_nbJoints+6);
+        m_dq.setZero(m_robot_util->m_nbJoints);
 
         resetIntegral();
 
@@ -117,7 +128,7 @@ namespace dynamicgraph
 
       void PositionController::resetIntegral()
       {
-        m_e_integral.setZero(m_nJoints);
+        m_e_integral.setZero(m_robot_util->m_nbJoints);
       }
 
       /* ------------------------------------------------------------------- */
@@ -141,17 +152,17 @@ namespace dynamicgraph
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
-          assert(q.size()==m_nJoints+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==m_nJoints      && "Unexpected size of signal dq");
-          assert(qRef.size()==m_nJoints    && "Unexpected size of signal qRef");
-          assert(dqRef.size()==m_nJoints   && "Unexpected size of signal dqRef");
-          assert(Kp.size()==m_nJoints      && "Unexpected size of signal Kd");
-          assert(Kd.size()==m_nJoints      && "Unexpected size of signal Kd");
+          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
+          assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==m_robot_util->m_nbJoints   && "Unexpected size of signal dqRef");
+          assert(Kp.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
+          assert(Kd.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
 
-          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_nJoints)) + Kd.cwiseProduct(dqRef-dq);
+          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq);
 
-	if(s.size()!=m_nJoints)
-          s.resize(m_nJoints);
+	if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
@@ -167,15 +178,15 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-        assert(q.size()==m_nJoints+6     && "Unexpected size of signal base6d_encoder");
-        assert(qRef.size()==m_nJoints    && "Unexpected size of signal qRef");
+        const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
+        const VectorN& qRef =      m_qRefSIN(iter);   // n
+        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+        assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
 
-        if(s.size()!=m_nJoints)
-          s.resize(m_nJoints);
-        for(unsigned int i=0; i<m_nJoints; i++)
-          s(i)= qRef[i]-q(6+i);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = qRef - q.tail(m_robot_util->m_nbJoints);
+
 
         return s;
       }

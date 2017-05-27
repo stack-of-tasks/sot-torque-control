@@ -95,6 +95,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  
 
         /* --- COMMANDS --- */
+	void displayRobotUtil();
+
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
         virtual void commandLine(const std::string& cmdLine,
@@ -121,7 +123,7 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
 
-	RobotUtil & m_robot_util;
+	RobotUtil * m_robot_util;
 
       }; // class FreeFlyerLocator
       

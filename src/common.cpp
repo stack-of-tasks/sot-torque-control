@@ -28,6 +28,13 @@ namespace dynamicgraph
       namespace dg = ::dynamicgraph;
       using namespace dg;
       using namespace dg::command;
+      
+      RobotUtil VoidRobotUtil;
+
+      RobotUtil * RefVoidRobotUtil()
+      {
+	return & VoidRobotUtil;
+      }
 
       void ForceLimits::display(std::ostream &os) const
       {
@@ -264,7 +271,106 @@ namespace dynamicgraph
 	  q_urdf[idx]=q_sot[m_urdf_to_sot[idx]];	
 	return true;
       }
+      
+      bool RobotUtil::
+      velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot)
+      {
+	assert(q_urdf.size()==m_nbJoints+6);
+	assert(q_sot.size()==m_nbJoints+6);
+	
+	if (m_nbJoints==0)
+	  {
+	    SEND_MSG("velocity_urdf_to_sot should be called", MSG_TYPE_ERROR);
+	    return false;
+	  }
 
+        v_sot.head<6>() = v_urdf.head<6>();
+        joints_urdf_to_sot(v_urdf.tail(m_nbJoints), 
+			   v_sot.tail(m_nbJoints));
+	return true;
+      }
+
+      bool RobotUtil::
+      velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf)
+      {
+	assert(q_urdf.size()==m_nbJoints+6);
+	assert(q_sot.size()==m_nbJoints+6);
+	
+	if (m_nbJoints==0)
+	  {
+	    SEND_MSG("velocity_sot_to_urdf should be called", MSG_TYPE_ERROR);
+	    return false;
+	  }
+	v_urdf.head<6>() = v_sot.head<6>();
+        joints_sot_to_urdf(v_sot.tail(m_nbJoints), 
+			   v_urdf.tail(m_nbJoints));
+	return true;
+      }
+
+      bool RobotUtil::
+      base_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot)
+      {
+	assert(q_urdf.size()==7);
+        assert(q_sot.size()==6);
+	
+	// ********* Quat to RPY *********
+        const double W = q_urdf[6];
+        const double X = q_urdf[3];
+        const double Y = q_urdf[4];
+        const double Z = q_urdf[5];
+        const Eigen::Matrix3d R = Eigen::Quaterniond(W, X, Y, Z).toRotationMatrix();
+        return base_se3_to_sot(q_urdf.head<3>(), R, q_sot);
+
+      }
+
+      bool RobotUtil::
+      base_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf)
+      {
+	assert(q_urdf.size()==7);
+        assert(q_sot.size()==6);
+        // *********  RPY to Quat *********
+        const double r = q_sot[3];
+        const double p = q_sot[4];
+        const double y = q_sot[5];
+        const Eigen::AngleAxisd  rollAngle(r, Eigen::Vector3d::UnitX());
+        const Eigen::AngleAxisd pitchAngle(p, Eigen::Vector3d::UnitY());
+        const Eigen::AngleAxisd   yawAngle(y, Eigen::Vector3d::UnitZ());
+        const Eigen::Quaternion<double> quat = yawAngle * pitchAngle * rollAngle;
+
+        q_urdf[0 ]=q_sot[0 ]; //BASE
+        q_urdf[1 ]=q_sot[1 ];
+        q_urdf[2 ]=q_sot[2 ];
+        q_urdf[3 ]=quat.x();
+        q_urdf[4 ]=quat.y();
+        q_urdf[5 ]=quat.z();
+        q_urdf[6 ]=quat.w();
+
+        return true;
+      }
+      
+      bool RobotUtil::
+      config_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot)
+      {
+        assert(q_urdf.size()==m_nbJoints+7);
+        assert(q_sot.size()==m_nbJoints+6);
+
+	base_urdf_to_sot(q_urdf.head<7>(), q_sot.head<6>());
+        joints_urdf_to_sot(q_urdf.tail(m_nbJoints), q_sot.tail(m_nbJoints));
+
+	return true;
+      }
+
+      bool RobotUtil::
+      config_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf)
+      {
+        assert(q_urdf.size()==m_nbJoints+7);
+        assert(q_sot.size()==m_nbJoints+6);
+	base_sot_to_urdf(q_sot.head<6>(), q_urdf.head<7>());
+        joints_sot_to_urdf(q_sot.tail(m_nbJoints), 
+			   q_urdf.tail(m_nbJoints));
+
+	
+      }
       void RobotUtil::
       display(std::ostream &os) const
       {
@@ -369,28 +475,38 @@ namespace dynamicgraph
 	return true;
       }
 
-      std::map<std::string,RobotUtil> sgl_map_name_to_robot_util;
+      std::map<std::string,RobotUtil *> sgl_map_name_to_robot_util;
 
-      RobotUtil & getRobotUtil(std::string &robotName)
+      RobotUtil * getRobotUtil(std::string &robotName)
       {
-	std::map<std::string,RobotUtil>::iterator it =
+	std::map<std::string,RobotUtil *>::iterator it =
 	  sgl_map_name_to_robot_util.find(robotName);
 	if (it!=sgl_map_name_to_robot_util.end())
 	  return it->second;
-	return VoidRobotUtil;
+	return RefVoidRobotUtil();
       }
 	
       bool isNameInRobotUtil(std::string &robotName)
       {
-	std::map<std::string,RobotUtil>::iterator it =
+	std::map<std::string,RobotUtil *>::iterator it =
 	  sgl_map_name_to_robot_util.find(robotName);
 	if (it!=sgl_map_name_to_robot_util.end())
-	  return false;
-	return true;
+	  return true;
+	return false;
       }
-      RobotUtil & createRobotUtil(std::string &robotName)
+      RobotUtil * createRobotUtil(std::string &robotName)
       {
-	return sgl_map_name_to_robot_util[robotName];
+	std::map<std::string,RobotUtil *>::iterator it =
+	  sgl_map_name_to_robot_util.find(robotName);
+	if (it==sgl_map_name_to_robot_util.end())
+	  {
+	    sgl_map_name_to_robot_util[robotName]= new RobotUtil;
+	    it = sgl_map_name_to_robot_util.find(robotName);
+	    return it->second;
+	  }
+	std::cout << "Another robot is already in the map for " << robotName
+		  << std::endl;
+	return RefVoidRobotUtil();
       }
       
     } // torque_control

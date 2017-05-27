@@ -64,7 +64,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
             ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
 	    ,m_initSucceeded(false)
-	    ,m_robot_util(VoidRobotUtil)
+	    ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -73,6 +73,9 @@ namespace dynamicgraph
                    makeCommandVoid0(*this, &FreeFlyerLocator::init,
                                     docCommandVoid0("Initialize the entity.")));
 	
+        addCommand("displayRobotUtil",
+                   makeCommandVoid0(*this, &FreeFlyerLocator::displayRobotUtil,
+                                    docCommandVoid0("Display the robot util data set linked with this free flyer locator.")));
 
       }
 
@@ -83,30 +86,32 @@ namespace dynamicgraph
 	  /* Retrieve m_robot_util  informations */
 	  std::string localName("control-manager-robot");
 	  if (isNameInRobotUtil(localName))
-	    m_robot_util = createRobotUtil(localName);
+	    {	      
+	      m_robot_util = getRobotUtil(localName);
+	    }
 	  else 
 	    {
 	      SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
 	      return;
 	    }
 
-          se3::urdf::buildModel(m_robot_util.m_urdf_filename,
+          se3::urdf::buildModel(m_robot_util->m_urdf_filename,
 				se3::JointModelFreeFlyer(),m_model);
-	  assert(m_model.nv == m_robot_util.m_nbJoints+6);
+	  assert(m_model.nv == m_robot_util->m_nbJoints+6);
           assert(m_model.existFrame(m_Left_Foot_Frame_Name));
           assert(m_model.existFrame(m_Right_Foot_Frame_Name));
-          m_left_foot_id = m_model.getFrameId(m_robot_util.m_foot_util.m_Left_Foot_Frame_Name);
-          m_right_foot_id = m_model.getFrameId(m_robot_util.m_foot_util.m_Right_Foot_Frame_Name);
+          m_left_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+          m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_q_pin.setZero(m_model.nq);
           m_q_pin[6]= 1.; // for quaternion
-          m_q_sot.setZero(m_robot_util.m_nbJoints+6);
-          m_v_pin.setZero(m_robot_util.m_nbJoints+6);
-          m_v_sot.setZero(m_robot_util.m_nbJoints+6);
+          m_q_sot.setZero(m_robot_util->m_nbJoints+6);
+          m_v_pin.setZero(m_robot_util->m_nbJoints+6);
+          m_v_sot.setZero(m_robot_util->m_nbJoints+6);
         } 
         catch (const std::exception& e) 
         { 
           std::cout << e.what();
-          return SEND_MSG("Init failed: Could load URDF :" + m_robot_util.m_urdf_filename, MSG_TYPE_ERROR);
+          return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
         m_data = new se3::Data(m_model);
         m_initSucceeded = true;
@@ -128,12 +133,12 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(q.size()==m_robot_util.m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        assert(dq.size()==m_robot_util.m_nbJoints     && "Unexpected size of signal joint_velocities");
+        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
-        m_robot_util.joints_sot_to_urdf(q.tail(m_robot_util.m_nbJoints), m_q_pin.tail(m_robot_util.m_nbJoints));
-        m_robot_util.joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util.m_nbJoints));
+        m_robot_util->joints_sot_to_urdf(q.tail(m_robot_util->m_nbJoints), m_q_pin.tail(m_robot_util->m_nbJoints));
+        m_robot_util->joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util->m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
         se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
@@ -149,15 +154,15 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util.m_nbJoints+6)
-          s.resize(m_robot_util.m_nbJoints+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
         
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
           const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-          assert(q.size()==m_robot_util.m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
                     
           /* Compute kinematic and return q with freeflyer */
           const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
@@ -167,9 +172,9 @@ namespace dynamicgraph
           m_Mff = se3::SE3(se3::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
 
           // due to distance from ankle to ground
-          Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util.m_foot_util.m_Right_Foot_Sole_XYZ[0]);
+          Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ[0]);
 
-          m_q_sot.tail(m_robot_util.m_nbJoints) = q.tail(m_robot_util.m_nbJoints);
+          m_q_sot.tail(m_robot_util->m_nbJoints) = q.tail(m_robot_util->m_nbJoints);
           base_se3_to_sot(m_Mff.translation()-righ_foot_sole_xyz,
                           m_Mff.rotation(),
                           m_q_sot.head(6));
@@ -199,7 +204,7 @@ namespace dynamicgraph
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();
 
         // due to distance from ankle to ground
-        Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util.m_foot_util.m_Right_Foot_Sole_XYZ[0]);
+        Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ[0]);
         freeflyer.head<3>() -= righ_foot_sole_xyz;
 
         s = freeflyer;
@@ -213,20 +218,15 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util.m_nbJoints+6)
-          s.resize(m_robot_util.m_nbJoints+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
-<<<<<<< HEAD
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(dq, m_joint_velocitiesSIN(iter));
-          assert(dq.size()==m_nbJoints     && "Unexpected size of signal joint_velocities");
-=======
           const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==m_robot_util.m_nbJoints     && "Unexpected size of signal joint_velocities");
->>>>>>> Add setting of XYZ Sole + frame name for the feet
+          assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model.frames[m_left_foot_id];
@@ -238,7 +238,7 @@ namespace dynamicgraph
           const Vector6 v_rf = m_data->oMf[m_right_foot_id].act(v_rf_local).toVector();
 
           m_v_sot.head<6>() = - 0.5*(v_lf + v_rf);
-          m_v_sot.tail(m_robot_util.m_nbJoints) = dq;
+          m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
 
           s = m_v_sot;
         }
@@ -248,6 +248,10 @@ namespace dynamicgraph
       }
 
       /* --- COMMANDS ---------------------------------------------------------- */
+      void FreeFlyerLocator::displayRobotUtil()
+      {
+	m_robot_util->display(std::cout);
+      }
 
       /* ------------------------------------------------------------------- */
       /* --- ENTITY -------------------------------------------------------- */

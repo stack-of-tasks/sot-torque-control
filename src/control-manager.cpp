@@ -72,11 +72,10 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
         ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
         ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
-	,m_robot_util(VoidRobotUtil)
+	,m_robot_util(RefVoidRobotUtil())
         ,m_initSucceeded(false)
         ,m_emergency_stop_triggered(false)
         ,m_is_first_iter(true)
-	,m_nJoints(0)										   
       {
 
         Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
@@ -188,26 +187,30 @@ namespace dynamicgraph
 	m_robot = new pininvdyn::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
 	
 	std::string localName("control-manager-robot");
-	if (isNameInRobotUtil(localName))
-	  m_robot_util = createRobotUtil(localName);
-	else 
-	  m_robot_util = getRobotUtil(localName);
+	if (!isNameInRobotUtil(localName))
+	  {
+	    m_robot_util = createRobotUtil(localName);
+	  }
+	else
+	  {
+	    m_robot_util = getRobotUtil(localName);
+	  }
 
-	m_robot_util.m_urdf_filename = urdfFile;
+	m_robot_util->m_urdf_filename = urdfFile;
 
 	addCommand("getJointsUrdfToSot",
-		   makeDirectGetter(*this, &m_robot_util.m_dgv_urdf_to_sot,
+		   makeDirectGetter(*this, &m_robot_util->m_dgv_urdf_to_sot,
                                     docDirectSetter("Display map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
 	
-	m_nJoints = m_robot->nv()-6;
+	m_robot_util->m_nbJoints = m_robot->nv()-6;
 
-	m_jointCtrlModes_current.resize(m_nJoints);
-	m_jointCtrlModes_previous.resize(m_nJoints);
-        m_jointCtrlModesCountDown.resize(m_nJoints,0);
-        m_signIsPos.resize(m_nJoints, false);
-        m_changeSignCpt.resize(m_nJoints, 0);
-        m_winSizeAdapt.resize(m_nJoints, 0);
+	m_jointCtrlModes_current.resize(m_robot_util->m_nbJoints);
+	m_jointCtrlModes_previous.resize(m_robot_util->m_nbJoints);
+        m_jointCtrlModesCountDown.resize(m_robot_util->m_nbJoints,0);
+        m_signIsPos.resize(m_robot_util->m_nbJoints, false);
+        m_changeSignCpt.resize(m_robot_util->m_nbJoints, 0);
+        m_winSizeAdapt.resize(m_robot_util->m_nbJoints, 0);
 
       }
 
@@ -232,8 +235,8 @@ namespace dynamicgraph
 
         //const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
 
-        if(s.size()!=(Eigen::VectorXd::Index) m_nJoints)
-          s.resize(m_nJoints);
+        if(s.size()!=(Eigen::VectorXd::Index) m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
         getProfiler().start(PROFILE_PWM_DESIRED_COMPUTATION);
         {
@@ -242,7 +245,7 @@ namespace dynamicgraph
             (*m_ctrlInputsSIN[i])(iter);
 
           int cm_id, cm_id_prev;
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             cm_id = m_jointCtrlModes_current[i].id;
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
@@ -289,9 +292,9 @@ namespace dynamicgraph
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
         const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
         const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
-        if(s.size()!=m_nJoints)
-          s.resize(m_nJoints);
         
         if(!m_emergency_stop_triggered)
         {
@@ -302,7 +305,7 @@ namespace dynamicgraph
               m_emergency_stop_triggered = true;
               SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
           }
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             //Trigger sign filter**********************
             /*              _    _   _________________________    _
@@ -344,7 +347,7 @@ namespace dynamicgraph
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Estimated torque "+toString(tau(i))+" > max torque "+toString(tau_max(i))+
-                       " for joint "+ m_robot_util.get_name_from_id(i), MSG_TYPE_ERROR);
+                       " for joint "+ m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
@@ -354,7 +357,7 @@ namespace dynamicgraph
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Predicted torque "+toString(tau_predicted(i))+" > max torque "+toString(tau_max(i))+
-                       " for joint "+m_robot_util.get_name_from_id(i), MSG_TYPE_ERROR);
+                       " for joint "+m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
@@ -369,7 +372,7 @@ namespace dynamicgraph
                 (fabs(s(i))      > m_maxCurrent * FROM_CURRENT_TO_12_BIT_CTRL) )
             {
               m_emergency_stop_triggered = true;
-              SEND_MSG("Joint "+m_robot_util.get_name_from_id(i)+" desired current is too large: "+
+              SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+
                        toString(pwmDes(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
@@ -387,11 +390,17 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
       {
         const dynamicgraph::Vector& pwmDes = m_pwmDesSOUT(iter);
+<<<<<<< HEAD
         if(s.size()!=(Eigen::VectorXd::Index)m_nJoints)
 
           s.resize(m_nJoints);
         for(unsigned int i=0; i<m_nJoints; i++)
 
+=======
+        if(s.size()!=(Eigen::VectorXd::Index)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
+>>>>>>> Implements a pointer base handling of the list of nodes.
         {
           if (pwmDes(i)>0)
             s(i)= 1;
@@ -407,9 +416,15 @@ namespace dynamicgraph
       {
 
         const dynamicgraph::Vector& pwmDesSafe = m_pwmDesSafeSOUT(iter);
+<<<<<<< HEAD
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
         for(unsigned int i=0; i<N_JOINTS; i++)
+=======
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
+>>>>>>> Implements a pointer base handling of the list of nodes.
         {
           if (pwmDesSafe(i)==0) 
             s(i)=0;
@@ -466,7 +481,7 @@ namespace dynamicgraph
           
         if(jointName=="all")
         {
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             setCtrlMode(i,cm);
         }
         else
@@ -506,7 +521,7 @@ namespace dynamicgraph
           }
         }
         else
-          SEND_MSG("Cannot change control mode of joint "+m_robot_util.get_name_from_id(jid)+
+          SEND_MSG("Cannot change control mode of joint "+m_robot_util->get_name_from_id(jid)+
                    " because either it has already the specified ctrl mode or its previous"+
                    " ctrl mode transition has not terminated yet", MSG_TYPE_ERROR);
       }
@@ -516,8 +531,8 @@ namespace dynamicgraph
         if(jointName=="all")
         {
           stringstream ss;
-          for(unsigned int i=0; i<m_nJoints; i++)
-            ss<<m_robot_util.get_name_from_id(i) <<" "
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
+            ss<<m_robot_util->get_name_from_id(i) <<" "
 	      <<m_jointCtrlModes_current[i]<<"; ";
           SEND_MSG(ss.str(),MSG_TYPE_INFO);
           return;
@@ -552,7 +567,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-	m_robot_util.set_name_to_id(jointName,jointId);
+	m_robot_util->set_name_to_id(jointName,jointId);
       }
 
       void ControlManager::setJointLimitsFromId( const double &jointId,
@@ -565,7 +580,7 @@ namespace dynamicgraph
 	    return;
 	  }
 	
-	m_robot_util.set_joint_limits_for_id((Index)jointId,lq,uq);
+	m_robot_util->set_joint_limits_for_id((Index)jointId,lq,uq);
       }
 
       void ControlManager::setForceLimitsFromId( const double &jointId,
@@ -578,7 +593,7 @@ namespace dynamicgraph
           return;
         }
 
-	m_robot_util.m_force_util.set_force_id_to_limits((Index)jointId,lq,uq);
+	m_robot_util->m_force_util.set_force_id_to_limits((Index)jointId,lq,uq);
       }
 
       void ControlManager::setForceNameToForceId(const std::string &forceName,
@@ -590,7 +605,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-	m_robot_util.m_force_util.set_name_to_force_id(forceName,forceId);
+	m_robot_util->m_force_util.set_name_to_force_id(forceName,forceId);
       }
 
       void ControlManager::setJoints(const dg::Vector & urdf_to_sot)
@@ -600,7 +615,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot set mapping to sot before initialization!");
           return;
         }
-	m_robot_util.set_urdf_to_sot(urdf_to_sot);
+	m_robot_util->set_urdf_to_sot(urdf_to_sot);
       }
 
       void ControlManager::setRightFootSoleXYZ( const dynamicgraph::Vector &xyz)
@@ -611,7 +626,7 @@ namespace dynamicgraph
           return;
         }
 
-	m_robot_util.m_foot_util.m_Right_Foot_Sole_XYZ = xyz;
+	m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ = xyz;
       }
 
       void ControlManager::setFootFrameName( const std::string &FootName,
@@ -623,9 +638,9 @@ namespace dynamicgraph
           return;
         }
 	if (FootName=="Left")
-	  m_robot_util.m_foot_util.m_Left_Foot_Frame_Name = FrameName;
+	  m_robot_util->m_foot_util.m_Left_Foot_Frame_Name = FrameName;
 	else if (FootName=="Right")
-	  m_robot_util.m_foot_util.m_Right_Foot_Frame_Name = FrameName;
+	  m_robot_util->m_foot_util.m_Right_Foot_Frame_Name = FrameName;
 	else 
 	  SEND_WARNING_STREAM_MSG("Did not understand the foot name !" + FootName);
       }
@@ -633,24 +648,28 @@ namespace dynamicgraph
       void ControlManager::displayRobotUtil()
       {
 	
-	m_robot_util.display(std::cout);
+	m_robot_util->display(std::cout);
       }
 
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
 
       void ControlManager::updateJointCtrlModesOutputSignal()
       {
-	if (m_nJoints==0)
+	if (m_robot_util->m_nbJoints==0)
 	  {
 	    SEND_MSG("You should call init first. The size of the vector is unknown.", MSG_TYPE_ERROR);
 	    return;
 	  }
 
+<<<<<<< HEAD
         dynamicgraph::Vector cm(m_nJoints);
 
+=======
+        dynamicgraph::Vector cm(m_robot_util->m_nbJoints);
+>>>>>>> Implements a pointer base handling of the list of nodes.
         for(unsigned int i=0; i<m_jointsCtrlModesSOUT.size(); i++)
         {
-          for(unsigned int j=0; j<m_nJoints; j++)
+          for(unsigned int j=0; j<m_robot_util->m_nbJoints; j++)
           {
             cm(j) = 0;
             if((unsigned int)m_jointCtrlModes_current[j].id == i)
@@ -682,13 +701,13 @@ namespace dynamicgraph
       bool ControlManager::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-	se3::Model::JointIndex jid = m_robot_util.get_id_from_name(name);
+	se3::Model::JointIndex jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist: "+name, MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(se3::Model::JointIndex it=0; it< m_nJoints;it++)
-            ss<< m_robot_util.get_name_from_id(it) <<", ";
+          for(se3::Model::JointIndex it=0; it< m_robot_util->m_nbJoints;it++)
+            ss<< m_robot_util->get_name_from_id(it) <<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
         }
@@ -698,7 +717,7 @@ namespace dynamicgraph
 
       bool ControlManager::isJointInRange(unsigned int id, double q)
       {
-	const JointLimits & JL = m_robot_util.get_limits_from_id((Index)id);
+	const JointLimits & JL = m_robot_util->get_limits_from_id((Index)id);
 
 	double jl= JL.lower;
         if(q<jl)

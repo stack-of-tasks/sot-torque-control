@@ -233,6 +233,17 @@ namespace dynamicgraph {
 	bool joints_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
 
 	bool joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
+
+	bool velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot);
+      
+	bool velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf);
+
+	bool config_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
+	bool config_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
+
+	bool base_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
+	bool base_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
+
 	
 	/** Given a joint id it finds the associated joint limits.
          * If the specified joint is not found it returns JointLimits(0,0).
@@ -251,21 +262,15 @@ namespace dynamicgraph {
 	void display(std::ostream &os) const;
 
       }; // struct RobotUtil
-      static RobotUtil VoidRobotUtil;
+      RobotUtil * RefVoidRobotUtil();
 
-      RobotUtil & getRobotUtil(std::string &robotName);
+      RobotUtil * getRobotUtil(std::string &robotName);
       bool isNameInRobotUtil(std::string &robotName);
-      RobotUtil &createRobotUtil(std::string &robotName);
+      RobotUtil * createRobotUtil(std::string &robotName);
 
       bool base_se3_to_sot(Eigen::ConstRefVector pos,
                            Eigen::ConstRefMatrix R,
                            Eigen::RefVector q_sot);
-      bool base_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
-      bool base_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
-      bool config_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
-      bool config_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
-      bool velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot);
-      bool velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf);
 
     }    // namespace torque_control
   }      // namespace sot

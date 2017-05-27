@@ -39,6 +39,7 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -94,7 +95,7 @@ namespace dynamicgraph {
         }
         
       protected:
-	unsigned int m_nJoints;
+	RobotUtil *       m_robot_util;        /// Robot Util
         Eigen::VectorXd   m_pwmDes;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         double            m_dt;               /// control loop time period
