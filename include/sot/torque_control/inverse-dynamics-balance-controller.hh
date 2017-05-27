@@ -232,7 +232,7 @@ namespace dynamicgraph {
         pininvdyn::math::Vector  m_v_urdf;
 
         unsigned int m_timeLast;
-	RobotUtil & m_robot_util;
+	RobotUtil * m_robot_util;
 
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control

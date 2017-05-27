@@ -422,7 +422,7 @@ def one_foot_balance_test(dt=0.001, delay=0.01):
             print "com_ref", np.array(ent.com_traj_gen.x.value),
             print "f_rf %.1f"%f_rf[2,0].T, "f_lf %.1f"%f_lf[2,0].T;
             
-            com[2,0] = 0.0;
++            com[2,0] = 0.0;
             ent.simulator.updateComPositionInViewer(com);
             
         if(i==1):

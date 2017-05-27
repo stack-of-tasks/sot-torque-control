@@ -169,8 +169,7 @@ namespace dynamicgraph {
         }
 
       protected:
-	RobotUtil & m_robot_util;
-	Eigen::VectorXd::Index m_nJoints;      /// Number of joints
+	RobotUtil * m_robot_util;
         pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
