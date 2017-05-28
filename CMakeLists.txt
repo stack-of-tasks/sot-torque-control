@@ -77,7 +77,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
   include/sot/torque_control/utils/quad-estimator.hh
-#  include/sot/torque_control/utils/Stdafx.hh
+  include/sot/torque_control/utils/Stdafx.hh
 #  include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
   )
