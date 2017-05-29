@@ -101,10 +101,10 @@ def create_estimators(ent, dt, delay):
 
     from dynamic_graph.sot.core import Selec_of_vector
     qn = Selec_of_vector('qn')
-    plug(ent.device.robotState,     qn);
+    plug(ent.device.robotState,     qn.sin);
     qn.selec(6,NJ+6);
 
-    plug(qn,                        estimator_kin.x);
+    plug(qn.sout,                   estimator_kin.x);
     plug(ent.device.robotState,     estimator_ft.base6d_encoders);
     plug(ent.device.accelerometer,  estimator_ft.accelerometer);
     plug(ent.device.gyrometer,      estimator_ft.gyroscope);
