@@ -59,7 +59,6 @@ namespace dynamicgraph
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace std;
-      using namespace metapod;
       using namespace Eigen;
 
       /// Define EntityClassName here rather than in the header file

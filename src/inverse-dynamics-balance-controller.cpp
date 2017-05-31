@@ -126,8 +126,8 @@ namespace dynamicgraph
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef InverseDynamicsBalanceController EntityClassName;
 
-      typedef Eigen::Matrix<double,N_JOINTS,1> VectorN;
-      typedef Eigen::Matrix<double,N_JOINTS+6,1> VectorN6;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN6;
       /* --- DG FACTORY ---------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(InverseDynamicsBalanceController,
                                          "InverseDynamicsBalanceController");
@@ -221,6 +221,7 @@ namespace dynamicgraph
             ,m_firstTime(true)
             ,m_timeLast(0)
             ,m_contactState(DOUBLE_SUPPORT)
+	    ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -249,6 +250,8 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeLeftFootContact,
                                     docCommandVoid1("Remove the contact at the left foot.",
                                                     "Transition time in seconds (double)")));
+
+	
       }
 
       void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime)
@@ -287,6 +290,15 @@ namespace dynamicgraph
         if(dt<=0.0)
           return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
+	/* Retrieve m_robot_util  informations */
+	std::string localName("control-manager-robot");
+	if (isNameInRobotUtil(localName))
+	  m_robot_util = createRobotUtil(localName);
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
 
 
         const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
@@ -314,10 +326,10 @@ namespace dynamicgraph
         assert(kd_com.size()==3);
         assert(kp_feet.size()==6);
         assert(kd_feet.size()==6);
-        assert(kp_posture.size()==N_JOINTS);
-        assert(kd_posture.size()==N_JOINTS);
-        assert(rotor_inertias.size()==N_JOINTS);
-        assert(gear_ratios.size()==N_JOINTS);
+        assert(kp_posture.size()==m_nbJoints);
+        assert(kd_posture.size()==m_nbJoints);
+        assert(rotor_inertias.size()==m_nbJoints);
+        assert(gear_ratios.size()==m_nbJoints);
 
         const double & w_com = m_w_comSIN(0);
         const double & w_posture = m_w_postureSIN(0);
@@ -328,30 +340,45 @@ namespace dynamicgraph
         const double & fMin = m_f_minSIN(0);
         const double & fMax = m_f_maxSIN(0);
 
+
         try
         {
           vector<string> package_dirs;
           m_robot = new RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+
+          assert(m_robot->nv()>=6);
+	  m_robot_util->m_nbJoints = m_robot->nv()-6;
+
+
           m_robot->rotor_inertias(rotor_inertias);
           m_robot->gear_ratios(gear_ratios);
 
-          assert(m_robot->nv()-6==N_JOINTS);
+	  const double & w_com = m_w_comSIN(0);
+	  const double & w_posture = m_w_postureSIN(0);
+	  //        const double & w_base_orientation = m_w_base_orientationSIN(0);
+	  //        const double & w_torques = m_w_torquesSIN(0);
+	  const double & w_forces = m_w_forcesSIN(0);
+	  const double & mu = m_muSIN(0);
+	  const double & fMin = m_f_minSIN(0);
+
           m_dv_sot.setZero(m_robot->nv());
           m_tau_sot.setZero(m_robot->nv()-6);
           m_f.setZero(24);
           m_q_urdf.setZero(m_robot->nq());
           m_v_urdf.setZero(m_robot->nv());
+	  
+	  m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
-          m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
-
-          m_contactRF = new Contact6d("contact_rfoot", *m_robot, RIGHT_FOOT_FRAME_NAME,
+          m_contactRF = new Contact6d("contact_rfoot", *m_robot, 
+				      m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
                                       contactPoints, contactNormal,
                                       mu, fMin, fMax, w_forces);
           m_contactRF->Kp(kp_contact);
           m_contactRF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactRF);
 
-          m_contactLF = new Contact6d("contact_lfoot", *m_robot, LEFT_FOOT_FRAME_NAME,
+          m_contactLF = new Contact6d("contact_lfoot", *m_robot, 
+				      m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                       contactPoints, contactNormal,
                                       mu, fMin, fMax, w_forces);
           m_contactLF->Kp(kp_contact);
@@ -363,11 +390,11 @@ namespace dynamicgraph
           m_taskCom->Kd(kd_com);
           m_invDyn->addMotionTask(*m_taskCom, w_com, 1);
 
-          m_taskRF = new TaskSE3Equality("task-rf", *m_robot, RIGHT_FOOT_FRAME_NAME);
+          m_taskRF = new TaskSE3Equality("task-rf", *m_robot, m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_taskRF->Kp(kp_feet);
           m_taskRF->Kd(kd_feet);
 
-          m_taskLF = new TaskSE3Equality("task-lf", *m_robot, LEFT_FOOT_FRAME_NAME);
+          m_taskLF = new TaskSE3Equality("task-lf", *m_robot, m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
           m_taskLF->Kp(kp_feet);
           m_taskLF->Kd(kd_feet);
 
@@ -379,8 +406,8 @@ namespace dynamicgraph
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
 
-          m_frame_id_rf = m_robot->model().getFrameId(RIGHT_FOOT_FRAME_NAME);
-          m_frame_id_lf = m_robot->model().getFrameId(LEFT_FOOT_FRAME_NAME);
+          m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
+          m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
 
           m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
                                                       "eiquadprog-fast");
@@ -406,8 +433,8 @@ namespace dynamicgraph
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
       {
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
         const Eigen::VectorXd& active_joints_sot = m_active_jointsSIN(iter);
         if (m_enabled == false)
@@ -418,19 +445,19 @@ namespace dynamicgraph
             m_enabled = true ;
 
               s = active_joints_sot;
-            Eigen::VectorXd active_joints_urdf(N_JOINTS);
-            joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
+            Eigen::VectorXd active_joints_urdf(m_robot_util->m_nbJoints);
+            m_robot_util->joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
 
             m_taskBlockedJoints = new TaskJointPosture("task-posture", *m_robot);
-            Eigen::VectorXd blocked_joints(N_JOINTS);
-            for(unsigned int i=0; i<N_JOINTS; i++)
+            Eigen::VectorXd blocked_joints(m_robot_util->m_nbJoints);
+            for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
               if(active_joints_urdf(i)==0.0)
                 blocked_joints(i) = 1.0;
               else
                 blocked_joints(i) = 0.0;
             SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
             m_taskBlockedJoints->mask(blocked_joints);
-            TrajectorySample ref_zero(N_JOINTS);
+            TrajectorySample ref_zero(m_robot_util->m_nbJoints);
             m_taskBlockedJoints->setReference(ref_zero);
             m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
           }
@@ -441,7 +468,7 @@ namespace dynamicgraph
           m_enabled = false ;
         }
         if (m_enabled == false)
-          for(int i=0; i<N_JOINTS; i++)
+          for(int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i)=false;
         return s;
       }
@@ -453,8 +480,8 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
 
@@ -471,22 +498,24 @@ namespace dynamicgraph
         m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
-        assert(q_sot.size()==N_JOINTS+6);
+        assert(q_sot.size()==m_robot_util->m_nbJoints+6);
         const VectorN6& v_sot = m_vSIN(iter);
-        assert(v_sot.size()==N_JOINTS+6);
+        assert(v_sot.size()==m_robot_util->m_nbJoints+6);
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
+
         assert(x_com_ref.size()==3);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
         assert(dx_com_ref.size()==3);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
         assert(ddx_com_ref.size()==3);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-        assert(q_ref.size()==N_JOINTS);
+        assert(q_ref.size()==m_robot_util->m_nbJoints);
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==N_JOINTS);
+        assert(dq_ref.size()==m_robot_util->m_nbJoints);
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-        assert(ddq_ref.size()==N_JOINTS);
+        assert(ddq_ref.size()==m_robot_util->m_nbJoints);
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
+
         assert(kp_contact.size()==6);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
         assert(kd_contact.size()==6);
@@ -494,14 +523,15 @@ namespace dynamicgraph
         assert(kp_com.size()==3);
         const Vector3& kd_com = m_kd_comSIN(iter);
         assert(kd_com.size()==3);
+
         const VectorN& kp_posture = m_kp_postureSIN(iter);
-        assert(kp_posture.size()==N_JOINTS);
+        assert(kp_posture.size()==m_robot_util->m_nbJoints);
         const VectorN& kd_posture = m_kd_postureSIN(iter);
-        assert(kd_posture.size()==N_JOINTS);
+        assert(kd_posture.size()==m_robot_util->m_nbJoints);
         const VectorN& kp_pos = m_kp_posSIN(iter);
-        assert(kp_pos.size()==N_JOINTS);
+        assert(kp_pos.size()==m_robot_util->m_nbJoints);
         const VectorN& kd_pos = m_kd_posSIN(iter);
-        assert(kd_pos.size()==N_JOINTS);
+        assert(kd_pos.size()==m_robot_util->m_nbJoints);
 
         if(m_contactState == LEFT_SUPPORT)
         {
@@ -541,11 +571,12 @@ namespace dynamicgraph
           m_taskLF->Kp(kp_feet);
           m_taskLF->Kd(kd_feet);
         }
+
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
-        config_sot_to_urdf(q_sot, m_q_urdf);
-        velocity_sot_to_urdf(v_sot, m_v_urdf);
+        m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
+        m_robot_util->velocity_sot_to_urdf(v_sot, m_v_urdf);
 
         m_sampleCom.pos = x_com_ref;
         m_sampleCom.vel = dx_com_ref;
@@ -554,9 +585,9 @@ namespace dynamicgraph
         m_taskCom->Kp(kp_com);
         m_taskCom->Kd(kd_com);
 
-        joints_sot_to_urdf(q_ref, m_samplePosture.pos);
-        joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
-        joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
+        m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
+        m_robot_util->joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
+        m_robot_util->joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
         m_taskPosture->setReference(m_samplePosture);
         m_taskPosture->Kp(kp_posture);
         m_taskPosture->Kd(kd_posture);
@@ -572,12 +603,12 @@ namespace dynamicgraph
           m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
           //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
           se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
-                                            m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
+                                            m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           m_contactLF->setReference(H_lf);
           SEND_MSG("Setting left foot reference to "+toString(H_lf), MSG_TYPE_DEBUG);
 
           se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
-                                            m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
+                                            m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_contactRF->setReference(H_rf);
           SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
         }
@@ -626,16 +657,16 @@ namespace dynamicgraph
         if(ddx_com_ref.norm()>1e-3)
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
-        velocity_urdf_to_sot(m_invDyn->getAccelerations(sol), m_dv_sot);
+        m_robot_util->velocity_urdf_to_sot(m_invDyn->getAccelerations(sol), m_dv_sot);
         Eigen::Matrix<double,12,1> tmp;
         if(m_invDyn->getContactForces(m_contactRF->name(), sol, tmp))
           m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
         if(m_invDyn->getContactForces(m_contactLF->name(), sol, tmp))
           m_f_LF = m_contactLF->getForceGeneratorMatrix() * tmp;
-        joints_urdf_to_sot(m_invDyn->getActuatorForces(sol), m_tau_sot);
+        m_robot_util->joints_urdf_to_sot(m_invDyn->getActuatorForces(sol), m_tau_sot);
 
-        m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail<N_JOINTS>()) +
-                     kd_pos.cwiseProduct(dq_ref-v_sot.tail<N_JOINTS>());
+        m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail(m_robot_util->m_nbJoints)) +
+                     kd_pos.cwiseProduct(dq_ref-v_sot.tail(m_robot_util->m_nbJoints));
 
         getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
         m_t += m_dt;
@@ -757,7 +788,7 @@ namespace dynamicgraph
           s.resize(2);
         m_f_des_right_footSOUT(iter);
         se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
-                                          m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
         if(fabs(m_f_RF(2)>1.0))
         {
           m_zmp_des_RF(0) = -m_f_RF(4) / m_f_RF(2);
@@ -783,7 +814,7 @@ namespace dynamicgraph
           s.resize(2);
         m_f_des_left_footSOUT(iter);
         se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
-                                          m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
         if(fabs(m_f_LF(2)>1.0))
         {
           m_zmp_des_LF(0) = -m_f_LF(4) / m_f_LF(2);
@@ -827,7 +858,7 @@ namespace dynamicgraph
         const Vector6& f = m_wrench_right_footSIN(iter);
         assert(f.size()==6);
         se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
-                                          m_robot->model().getJointId(RIGHT_FOOT_FRAME_NAME));
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
         if(fabs(f(2)>1.0))
         {
           m_zmp_RF(0) = -f(4) / f(2);
@@ -853,7 +884,7 @@ namespace dynamicgraph
           s.resize(2);
         const Vector6& f = m_wrench_left_footSIN(iter);
         se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
-                                          m_robot->model().getJointId(LEFT_FOOT_FRAME_NAME));
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
         if(fabs(f(2)>1.0))
         {
           m_zmp_LF(0) = -f(4) / f(2);

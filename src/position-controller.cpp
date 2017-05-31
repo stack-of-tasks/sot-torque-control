@@ -19,7 +19,7 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/metapod-helper.hh>
+//#include <sot/torque_control/utils/metapod-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
 namespace dynamicgraph
@@ -32,7 +32,6 @@ namespace dynamicgraph
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace std;
-      using namespace metapod;
 //Size to be aligned                "-------------------------------------------------------"
 #define PROFILE_PWM_DES_COMPUTATION "PositionController: desired pwm computation            "
 
@@ -47,8 +46,8 @@ namespace dynamicgraph
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef PositionController EntityClassName;
-      typedef Eigen::Matrix<double,N_JOINTS,1>                     VectorN;
-      typedef Eigen::Matrix<double,N_JOINTS+6,1>                   VectorN6;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN;
+      typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN6;
 
       /* --- DG FACTORY ---------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(PositionController,
@@ -71,20 +70,23 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(qError,             dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                   m_qRefSIN)
             ,m_initSucceeded(false)
+	      ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid1(*this, &PositionController::init,
-                                    docCommandVoid1("Initialize the entity.",
-                                                    "Time period in seconds (double)")));
+                   makeCommandVoid2(*this, &PositionController::init,
+                                    docCommandVoid2("Initialize the entity.",
+                                                    "Time period in seconds (double)",
+						    "Size of the state vector (double)")));
         addCommand("resetIntegral",
                    makeCommandVoid0(*this, &PositionController::resetIntegral,
                                     docCommandVoid0("Reset the integral.")));
       }
 
-      void PositionController::init(const double& dt)
+      void PositionController::init(const double& dt,
+				    const double& nJoints)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
@@ -103,10 +105,21 @@ namespace dynamicgraph
         if(!m_KiSIN.isPlugged())
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
+	/* Retrieve m_robot_util  informations */
+	std::string localName("control-manager-robot");
+	if (isNameInRobotUtil(localName))
+	  m_robot_util = getRobotUtil(localName);
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
+
         m_dt = dt;
-        m_pwmDes.setZero(N_JOINTS);
-        m_q.setZero();
-        m_dq.setZero();
+   
+	m_pwmDes.setZero(m_robot_util->m_nbJoints);
+        m_q.setZero(m_robot_util->m_nbJoints+6);
+        m_dq.setZero(m_robot_util->m_nbJoints);
 
         resetIntegral();
 
@@ -115,7 +128,7 @@ namespace dynamicgraph
 
       void PositionController::resetIntegral()
       {
-        m_e_integral.setZero(N_JOINTS);
+        m_e_integral.setZero(m_robot_util->m_nbJoints);
       }
 
       /* ------------------------------------------------------------------- */
@@ -139,17 +152,17 @@ namespace dynamicgraph
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
-          assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
-          assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
-          assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
-          assert(Kp.size()==N_JOINTS      && "Unexpected size of signal Kd");
-          assert(Kd.size()==N_JOINTS      && "Unexpected size of signal Kd");
+          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
+          assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==m_robot_util->m_nbJoints   && "Unexpected size of signal dqRef");
+          assert(Kp.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
+          assert(Kd.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
 
-          m_pwmDes = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
+          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq);
 
-	if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+	if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
@@ -167,12 +180,12 @@ namespace dynamicgraph
 
         const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
         const VectorN& qRef =      m_qRefSIN(iter);   // n
-        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
-        assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
+        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+        assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s = qRef - q.tail<N_JOINTS>();
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = qRef - q.tail(m_robot_util->m_nbJoints);
 
         return s;
       }

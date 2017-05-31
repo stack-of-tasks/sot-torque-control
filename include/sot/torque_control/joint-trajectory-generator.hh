@@ -37,9 +37,9 @@
 /* --------------------------------------------------------------------- */
 
 #include <sot/torque_control/signal-helper.hh>
+#include <sot/torque_control/common.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 #include <map>
 #include <initializer_list>
@@ -64,7 +64,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         JointTrajectoryGenerator( const std::string & name );
 
-        void init(const double& dt);
+        void init(const double& dt, const double &nJoints);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
@@ -179,6 +179,9 @@ namespace dynamicgraph {
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
+
+	RobotUtil     m_robot_util;
+	Eigen::VectorXd::Index m_nJoints;     /// Number of joints.
 
         std::vector<int>  m_iterForceSignals;
 

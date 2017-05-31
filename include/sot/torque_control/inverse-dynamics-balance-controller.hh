@@ -39,7 +39,7 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -174,7 +174,7 @@ namespace dynamicgraph {
         {
           getLogger().sendMsg("[InverseDynamicsBalanceController-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         double            m_dt;               /// control loop time period
         double            m_t;
@@ -232,7 +232,8 @@ namespace dynamicgraph {
         pininvdyn::math::Vector  m_v_urdf;
 
         unsigned int m_timeLast;
-        
+	RobotUtil * m_robot_util;
+
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control
   }      // namespace sot
