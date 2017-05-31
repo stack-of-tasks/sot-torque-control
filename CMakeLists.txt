@@ -51,7 +51,7 @@ SEARCH_FOR_BOOST()
 SEARCH_FOR_EIGEN()
 
 ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 3.0.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >=3.0.0")
+ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("PinInvDyn")
