@@ -20,7 +20,7 @@ def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfF
     robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
     robot.rf_traj_gen.init(dt);
     robot.lf_traj_gen.init(dt);
-    robot.estimator       = create_estimator(robot, dt, delay);
+    (robot.estimator_ft, robot.estimator_kin)       = create_estimators(robot, dt, delay);
 
     robot.ff_locator      = create_free_flyer_locator(robot, urdfFileName);
     robot.flex_est        = create_flex_estimator(robot, dt);
@@ -32,7 +32,7 @@ def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfF
     robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
-    robot.estimator.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";

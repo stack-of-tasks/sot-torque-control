@@ -49,7 +49,7 @@ def create_device(kp=30*[1,]):
     device.increment(0.001);
     return device;
 
-def test_vel_acc_estimator(device, estimator, dt=0.001, estimationDelay = 5):
+def test_vel_acc_estimator(device, estimator_ft, estimator_kin, dt=0.001, estimationDelay = 5):
     j               = 0;        # index of joint under analysis
     N               = 1000;     # test duration (in number of timesteps)
     
@@ -62,7 +62,7 @@ def test_vel_acc_estimator(device, estimator, dt=0.001, estimationDelay = 5):
     err_dq   = 0;
     err_ddq  = 0;
     count    = 0;
-    t        = estimator.jointsTorques.time;
+    t        = estimator_ft.jointsTorques.time;
     if(USE_ROBOT_VIEWER):
         viewer=robotviewer.client('XML-RPC');
     print "Start simulation..."
@@ -70,26 +70,26 @@ def test_vel_acc_estimator(device, estimator, dt=0.001, estimationDelay = 5):
         device.increment (dt);
         if(USE_ROBOT_VIEWER):            
             viewer.updateElementConfig('hrp_device', list(device.state.value)+[0.0,]*10);
-        estimator.jointsTorques.recompute (t+i);
+        estimator_ft.jointsTorques.recompute (t+i);
         if(i%estimationDelay == 0):
             q_real   = rad2deg*device.robotState.value[j+6];
             dq_real  = rad2deg*device.jointsVelocities.value[j];
             ddq_real = rad2deg*device.jointsAccelerations.value[j];
             if(i>estimationDelay):
                 print "\nTime %.3f) q est VS real = (%.2f, %.2f), dq est VS real (%.2f, %.2f) ddq est VS real (%.2f, %.2f)" % (i*dt, \
-                    rad2deg*estimator.jointsPositions.value[j], q_real, \
-                    rad2deg*estimator.jointsVelocities.value[j], dq_real, \
-                    rad2deg*estimator.jointsAccelerations.value[j], ddq_real);
-                print "Torque %f" % (estimator.jointsTorques.value[j]);
+                    rad2deg*estimator_kin.x_filtered.value[j], q_real, \
+                    rad2deg*estimator_kin.dx.value[j], dq_real, \
+                    rad2deg*estimator_kin.ddx.value[j], ddq_real);
+                print "Torque %f" % (estimator_ft.jointsTorques.value[j]);
                 
                 if(abs(ddq_real)<1e-2):
                     ddq_real = 1e-2;
                 if(q_real!=0.0):
-                    err_q   += abs((rad2deg*estimator.jointsPositions.value[j]     - q_real)/q_real);
+                    err_q   += abs((rad2deg*estimator_kin.x_filtered.value[j]     - q_real)/q_real);
                 if(dq_real!=0.0):
-                    err_dq  += abs((rad2deg*estimator.jointsVelocities.value[j]    - dq_real)/dq_real);
+                    err_dq  += abs((rad2deg*estimator_kin.dx.value[j]    - dq_real)/dq_real);
                 if(ddq_real!=0.0):
-                    err_ddq += abs((rad2deg*estimator.jointsAccelerations.value[j] - ddq_real)/ddq_real);
+                    err_ddq += abs((rad2deg*estimator_kin.ddx.value[j] - ddq_real)/ddq_real);
                 count   += 1;
     
     print "*************************************************************************************************\n";
@@ -103,7 +103,7 @@ def test_vel_acc_estimator(device, estimator, dt=0.001, estimationDelay = 5):
         print "Average percentual errors:\n* position: %.2f %%\n* velocity: %.2f %%\n* acceleration: %.2f %%" % \
             (100*err_q/count, 100*err_dq/count, 100*err_ddq/count);
 
-def test_force_estimator(device, estimator, dt=0.001, estimationDelay = 5):
+def test_force_estimator(device, estimator_ft, estimator_kin, dt=0.001, estimationDelay = 5):
     N               = 1000;     # test duration (in number of timesteps)
     freq = 0.5; # frequency
     A = 100;    # amplitude
@@ -129,10 +129,10 @@ def test_force_estimator(device, estimator, dt=0.001, estimationDelay = 5):
         if(USE_ROBOT_VIEWER):            
             viewer.updateElementConfig('hrp_device', list(device.state.value)+[0.0,]*10);
         if(i%estimationDelay == 0):
-            f_est[0,:]   = np.array(estimator.contactWrenchLeftHand.value);
-            f_est[1,:]   = np.array(estimator.contactWrenchRightHand.value);
-            f_est[2,:]   = np.array(estimator.contactWrenchLeftFoot.value);
-            f_est[3,:]   = np.array(estimator.contactWrenchRightFoot.value);
+            f_est[0,:]   = np.array(estimator_ft.contactWrenchLeftHand.value);
+            f_est[1,:]   = np.array(estimator_ft.contactWrenchRightHand.value);
+            f_est[2,:]   = np.array(estimator_ft.contactWrenchLeftFoot.value);
+            f_est[3,:]   = np.array(estimator_ft.contactWrenchRightFoot.value);
             if(i>estimationDelay):
                 print ("Time",i,"f est", f_est[0,:], "f real", f[0,:]);
                 err_f += abs(f_est - f);
@@ -148,8 +148,8 @@ def test_force_estimator(device, estimator, dt=0.001, estimationDelay = 5):
         print "Average percentual errors:";
         print (f_est/count);
 
-def test_chirp(device, traj_gen, estimator):
-    device.after.addDownsampledSignal('estimator.ftSensRightFootPrediction',1);
+def test_chirp(device, traj_gen, estimator_ft):
+    device.after.addDownsampledSignal('estimator_ft.ftSensRightFootPrediction',1);
     print "Start linear chirp from %f to -1.0" % device.robotState.value[6+2];
     tt = 4;
     jid = 1;
@@ -178,7 +178,7 @@ def test_chirp(device, traj_gen, estimator):
         if(USE_ROBOT_VIEWER and i%30==0):
             viewer.updateElementConfig('hrp_device', list(device.state.value)+[0.0,]*10);
         if(i%100==0):
-            print ("FT sensor right foot prediction: ", estimator.ftSensRightFootPrediction.value);
+            print ("FT sensor right foot prediction: ", estimator_ft.ftSensRightFootPrediction.value);
 #                print "q(%.3f) = %.3f, \tqDes = %.3f" % (device.robotState.time*dt,device.robotState.value[6+jid],traj_gen.q.value[jid]);
     
     dq_fd = np.diff(qChirp)/dt;
@@ -261,7 +261,7 @@ def test_read_traj_file(device, traj_gen):
     traj_gen.playTrajectoryFile(FILE_PATH+FILE_NAME);
     simulate(device, 8.1);
     
-def test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator, adm_ctrl, dt=0.001):
+def test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator_ft, adm_ctrl, dt=0.001):
     if(USE_ROBOT_VIEWER):
         viewer=robotviewer.client('XML-RPC');
     N = 10*1000;
@@ -279,7 +279,7 @@ def test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator, adm_ctrl, dt
         device.increment (dt);
         sleep(dt);
         fDes[i,:] = traj_gen.fLeftFoot.value;
-        f[i,:] = estimator.contactWrenchLeftFoot.value;        
+        f[i,:] = estimator_ft.contactWrenchLeftFoot.value;        
         if(USE_ROBOT_VIEWER and i%30==0):
             viewer.updateElementConfig('hrp_device', list(device.state.value)+[0.0,]*10);
         if(i%100==0):
@@ -293,7 +293,7 @@ def test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator, adm_ctrl, dt
     ax[2].plot(fDes[:,2],'r'); ax[2].plot(f[:,2],'b');
     plt.show();
     
-def test_force_jacobians(device,estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn, dt):
+def test_force_jacobians(device,estimator_ft,torque_ctrl,traj_gen,ctrl_manager,inv_dyn, dt):
     if(USE_ROBOT_VIEWER):
         viewer=robotviewer.client('XML-RPC');
     ctrl_manager.setCtrlMode("rhr", "torque");
@@ -337,13 +337,13 @@ def main(task='', dt=0.001, delay=0.01):
     np.set_printoptions(precision=2, suppress=True);
     device          = create_device(list(1.0/k_tau));
     traj_gen        = create_trajectory_generator(device, dt);
-    estimator       = create_estimator(device, dt, delay, traj_gen);
-    torque_ctrl     = create_torque_controller(device, estimator);
-    pos_ctrl        = create_position_controller(device, estimator, dt, traj_gen);
-    inv_dyn         = create_inverse_dynamics(device, estimator, torque_ctrl, traj_gen, dt);
-    ctrl_manager    = create_ctrl_manager(device, torque_ctrl, pos_ctrl, inv_dyn, estimator, dt);
-    adm_ctrl        = create_admittance_ctrl(device, estimator, ctrl_manager, traj_gen, dt);
-    tracer          = create_tracer(device, traj_gen, estimator, inv_dyn, torque_ctrl);
+    (estimator_ft, estimator_kin)       = create_estimators(device, dt, delay, traj_gen);
+    torque_ctrl     = create_torque_controller(device);
+    pos_ctrl        = create_position_controller(device, dt);
+    inv_dyn         = create_inverse_dynamics(device, dt);
+    ctrl_manager    = create_ctrl_manager(device, dt);
+    adm_ctrl        = create_admittance_ctrl(device, dt);
+    tracer          = create_tracer(device, traj_gen, estimator_ft, estimator_kin, inv_dyn, torque_ctrl);
 #    tracer.start();
 
     torque_ctrl.KpTorque.value = tuple(k_p);
@@ -356,12 +356,12 @@ def main(task='', dt=0.001, delay=0.01):
     ctrl_manager.max_pwm.value = NJ*(500,);
     
     if(task=='test_admittance_control'):
-        test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator, adm_ctrl, dt);
+        test_admittance_ctrl(device, ctrl_manager, traj_gen, estimator_ft, adm_ctrl, dt);
     elif(task=='test_read_traj_file'):
         device.increment (dt);
         test_read_traj_file(device, traj_gen);
     elif(task=='test_force_jacobians'):
-        test_force_jacobians(device,estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn, dt);
+        test_force_jacobians(device,estimator_ft,torque_ctrl,traj_gen,ctrl_manager,inv_dyn, dt);
         
         
 #        q_des = randTuple(30);
@@ -374,9 +374,9 @@ def main(task='', dt=0.001, delay=0.01):
         
 #    tracer.stop();
 #    tracer.dump();
-    return (device,estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer);
+    return (device,estimator_ft, estimator_kin,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer);
     
 if __name__=='__main__':
-    (device,estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer) = main('none',0.001,0.01);
+    (device,estimator_ft,estimator_kin,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer) = main('none',0.001,0.01);
     pass;
     
