@@ -437,9 +437,14 @@ def create_tracer(device, traj_gen=None, estimator=None, inv_dyn=None, torque_ct
     return tracer;
 
 def reset_tracer(device,tracer):
+    from time import sleep
     tracer.stop();
+    sleep(0.2);
     tracer.dump();
+    sleep(0.2);
     tracer.close();
+    sleep(0.2);
     tracer.clear();
+    sleep(0.2);
     tracer = create_tracer(device);
     return tracer;
