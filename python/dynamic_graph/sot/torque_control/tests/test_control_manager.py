@@ -18,6 +18,8 @@ tau_predicted = 110.0 * ones(initRobotData.nbJoints)
 pwmDes = 100.0 *ones(initRobotData.nbJoints)
 currentDes = 100.0 *ones(initRobotData.nbJoints)
 
+cm.controlDT=0.005
+
 # Initializing the input ports
 # Setting the robot configuration
 cm.base6d_encoders.value=q

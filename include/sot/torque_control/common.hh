@@ -98,7 +98,8 @@ namespace dynamicgraph {
 	  m_Force_Id_Left_Foot, m_Force_Id_Right_Foot;
 	
 	void set_name_to_force_id(const std::string & name,
-				  const double &force_id);
+	 			  const double &force_id);
+
 	
 	void set_force_id_to_limits(const double &force_id,
 				    const dg::Vector &lf,
@@ -110,45 +111,47 @@ namespace dynamicgraph {
 	Index get_id_from_name(const std::string &name);
 
 	const std::string & get_name_from_id(Index idx);
+	std::string cp_get_name_from_id(Index idx);
 
 	const ForceLimits & get_limits_from_id(Index force_id);
-	
-	const Index & get_force_id_left_hand()
+	ForceLimits cp_get_limits_from_id(Index force_id);
+
+	Index get_force_id_left_hand()
 	{
 	  return m_Force_Id_Left_Hand;
 	}
 	
-	void set_force_id_left_hand(const Index &anId)
+	void set_force_id_left_hand(Index anId)
 	{
 	  m_Force_Id_Left_Hand = anId;
 	}
 	
-	const Index & get_force_id_right_hand()
+	Index get_force_id_right_hand()
 	{
 	  return m_Force_Id_Right_Hand;
 	}
 	
-	void set_force_id_right_hand(const Index &anId)
+	void set_force_id_right_hand( Index anId)
 	{
 	  m_Force_Id_Right_Hand = anId;
 	}
 
-	const Index & get_force_id_left_foot()
+	Index get_force_id_left_foot()
 	{
 	  return m_Force_Id_Left_Foot;
 	}
 	
-	void set_force_id_left_foot(const Index &anId)
+	void set_force_id_left_foot(Index anId)
 	{
 	  m_Force_Id_Left_Foot = anId;
 	}
-
-	const Index & get_force_id_right_foot()
+	
+	Index  get_force_id_right_foot()
 	{
 	  return m_Force_Id_Right_Foot;
 	}
 	
-	void set_force_id_right_foot(const Index &anId)
+	void set_force_id_right_foot( Index anId)
 	{
 	  m_Force_Id_Right_Foot = anId;
 	}
@@ -249,7 +252,8 @@ namespace dynamicgraph {
          * If the specified joint is not found it returns JointLimits(0,0).
          * @param id Id of the joint to find.
          * @return The limits of the specified joint, JointLimits(0,0) if not found. */
-        const JointLimits & get_limits_from_id(Index id);
+        const JointLimits & get_joint_limits_from_id(Index id);
+        JointLimits cp_get_joint_limits_from_id(Index id);
 	
 	
 	void sendMsg(const std::string& msg, 
