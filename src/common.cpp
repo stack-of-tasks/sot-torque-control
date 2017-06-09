@@ -61,16 +61,16 @@ namespace dynamicgraph
       {
 	m_name_to_force_id[name] = (Index) force_id;
 	create_force_id_to_name_map();
-	if (name=="rf")
-	  set_force_id_right_foot(m_name_to_force_id[name]);
-	else if (name=="lf")
-	  set_force_id_left_foot(m_name_to_force_id[name]);
-	else if (name=="lh")
-	  set_force_id_left_hand(m_name_to_force_id[name]);
-	else if (name=="rh")
-	  set_force_id_right_hand(m_name_to_force_id[name]);
-	  
+	 if (name=="rf")
+	   set_force_id_right_foot(m_name_to_force_id[name]);
+	 else if (name=="lf")
+	   set_force_id_left_foot(m_name_to_force_id[name]);
+	 else if (name=="lh")
+	   set_force_id_left_hand(m_name_to_force_id[name]);
+	 else if (name=="rh")
+	   set_force_id_right_hand(m_name_to_force_id[name]);
       }
+
 
       void ForceUtil::set_force_id_to_limits(const double &force_id,
 					     const dg::Vector &lf,
@@ -99,6 +99,11 @@ namespace dynamicgraph
 	return default_rtn;
       }
 
+      std::string ForceUtil::cp_get_name_from_id(Index idx)
+      {
+	const std::string & default_rtn = get_name_from_id(idx);
+	return default_rtn;
+      }
       void ForceUtil::create_force_id_to_name_map()
       {
 	std::map<std::string, Index>::const_iterator it;
@@ -108,6 +113,15 @@ namespace dynamicgraph
       }
 
       const ForceLimits & ForceUtil::get_limits_from_id(Index force_id)
+      {
+	std::map<Index,ForceLimits>::const_iterator iter = 
+	  m_force_id_to_limits.find(force_id);
+	if(iter==m_force_id_to_limits.end())
+	  return ForceLimits(); // Potential memory leak
+	return iter->second;	
+      }
+
+      ForceLimits ForceUtil::cp_get_limits_from_id(Index force_id)
       {
 	std::map<Index,ForceLimits>::const_iterator iter = 
 	  m_force_id_to_limits.find(force_id);
@@ -168,13 +182,19 @@ namespace dynamicgraph
       }
       
       const JointLimits & RobotUtil::
-      get_limits_from_id(Index id)
+      get_joint_limits_from_id(Index id)
       {
 	std::map<Index,JointLimits>::const_iterator 
 	  iter = m_limits_map.find(id);
 	if(iter==m_limits_map.end())
 	  return JointLimits(0.0,0.0);
 	return iter->second;
+      }
+      JointLimits RobotUtil::
+      cp_get_joint_limits_from_id(Index id)
+      {
+	const JointLimits &rtn = get_joint_limits_from_id(id);
+	return rtn;
       }
 
       void RobotUtil::

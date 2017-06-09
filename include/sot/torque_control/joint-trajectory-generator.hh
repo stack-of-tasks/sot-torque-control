@@ -64,7 +64,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         JointTrajectoryGenerator( const std::string & name );
 
-        void init(const double& dt, const double &nJoints);
+        void init(const double& dt);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
@@ -180,8 +180,7 @@ namespace dynamicgraph {
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
 
-	RobotUtil     m_robot_util;
-	Eigen::VectorXd::Index m_nJoints;     /// Number of joints.
+	RobotUtil     *m_robot_util;
 
         std::vector<int>  m_iterForceSignals;
 

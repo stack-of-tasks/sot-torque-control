@@ -301,7 +301,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-
+	
         const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
         const Eigen::Vector3d& contactNormal = m_contact_normalSIN(0);
 //        const Eigen::VectorXd w_forceReg = m_weight_contact_forcesSIN(0);
@@ -328,10 +328,10 @@ namespace dynamicgraph
 
         assert(kp_feet.size()==6);
         assert(kd_feet.size()==6);
-        assert(kp_posture.size()==m_nbJoints);
-        assert(kd_posture.size()==m_nbJoints);
-        assert(rotor_inertias.size()==m_nbJoints);
-        assert(gear_ratios.size()==m_nbJoints);
+        assert(kp_posture.size()==m_robot_util->m_nbJoints);
+        assert(kd_posture.size()==m_robot_util->m_nbJoints);
+        assert(rotor_inertias.size()==m_robot_util->m_nbJoints);
+        assert(gear_ratios.size()==m_robot_util->m_nbJoints);
 
         const double & w_com = m_w_comSIN(0);
         const double & w_posture = m_w_postureSIN(0);

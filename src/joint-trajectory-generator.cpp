@@ -61,6 +61,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL(fLeftHand,  OUT, dynamicgraph::Vector)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
+	,m_robot_util(RefVoidRobotUtil())
       {
         BIND_SIGNAL_TO_FUNCTION(fRightFoot, OUT, dynamicgraph::Vector);
         BIND_SIGNAL_TO_FUNCTION(fLeftFoot,  OUT, dynamicgraph::Vector);
@@ -83,10 +84,9 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid2(*this, &JointTrajectoryGenerator::init,
-                                    docCommandVoid2("Initialize the entity.",
-                                                    "Time period in seconds (double)",
-						    "Size of the vector state (double)")));
+                   makeCommandVoid1(*this, &JointTrajectoryGenerator::init,
+                                    docCommandVoid1("Initialize the entity.",
+                                                    "Time period in seconds (double)")));
         
         addCommand("getJoint",
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::getJoint,
@@ -180,25 +180,33 @@ namespace dynamicgraph
                                                     "(string) force name (rh,lh,lf,rf)")));
       }
 
-      void JointTrajectoryGenerator::init(const double& dt,
-					  const double& nJoints)
+      void JointTrajectoryGenerator::init(const double& dt)
       {
+	/* Retrieve m_robot_util  informations */
+	std::string localName("control-manager-robot");
+	if (isNameInRobotUtil(localName))
+	  m_robot_util = createRobotUtil(localName);
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
+
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_firstIter = true;
         m_dt = dt;
 
-	m_nJoints = (Eigen::VectorXd::Index) nJoints;
-        m_status.resize(m_nJoints,JTG_STOP);
-        m_minJerkTrajGen.resize(m_nJoints);
-        m_sinTrajGen.resize(m_nJoints);
-        m_triangleTrajGen.resize(m_nJoints);
-        m_constAccTrajGen.resize(m_nJoints);
-        m_linChirpTrajGen.resize(m_nJoints);
-        m_currentTrajGen.resize(m_nJoints);
-        m_noTrajGen.resize(m_nJoints);
+        m_status.resize(m_robot_util->m_nbJoints,JTG_STOP);
+        m_minJerkTrajGen.resize(m_robot_util->m_nbJoints);
+        m_sinTrajGen.resize(m_robot_util->m_nbJoints);
+        m_triangleTrajGen.resize(m_robot_util->m_nbJoints);
+        m_constAccTrajGen.resize(m_robot_util->m_nbJoints);
+        m_linChirpTrajGen.resize(m_robot_util->m_nbJoints);
+        m_currentTrajGen.resize(m_robot_util->m_nbJoints);
+        m_noTrajGen.resize(m_robot_util->m_nbJoints);
 
-        for(int i=0; i<m_nJoints; i++)
+        for(int i=0; i<m_robot_util->m_nbJoints; i++)
         {
           m_minJerkTrajGen[i]   = new MinimumJerkTrajectoryGenerator(dt,5.0,1);
           m_sinTrajGen[i]       = new SinusoidTrajectoryGenerator(dt,5.0,1);
@@ -208,7 +216,7 @@ namespace dynamicgraph
           m_noTrajGen[i]        = new NoTrajectoryGenerator(1);
           m_currentTrajGen[i]   = m_noTrajGen[i];
         }
-        m_textFileTrajGen = new TextFileTrajectoryGenerator(dt, m_nJoints);
+        m_textFileTrajGen = new TextFileTrajectoryGenerator(dt, m_robot_util->m_nbJoints);
 
         for(int i=0; i<4; i++)
         {
@@ -241,23 +249,23 @@ namespace dynamicgraph
           if(m_firstIter)
           {
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-            if(base6d_encoders.size()!=m_nJoints+6)
+            if(base6d_encoders.size()!=m_robot_util->m_nbJoints+6)
             {
               SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder");
               return s;
             }
-            for(unsigned int i=0; i<m_nJoints; i++)
+            for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
               m_noTrajGen[i]->set_initial_point(base6d_encoders(6+i));
             m_firstIter = false;
           }
 
-          if(s.size()!=m_nJoints)
-            s.resize(m_nJoints);
+          if(s.size()!=m_robot_util->m_nbJoints)
+            s.resize(m_robot_util->m_nbJoints);
 
           if(m_status[0]==JTG_TEXT_FILE)
           {
             const VectorXd& qRef = m_textFileTrajGen->compute_next_point();
-            for(unsigned int i=0; i<m_nJoints; i++)
+            for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             {
               s(i) = qRef[i];
               if(m_textFileTrajGen->isTrajectoryEnded())
@@ -271,7 +279,7 @@ namespace dynamicgraph
           }
           else
           {
-            for(unsigned int i=0; i<m_nJoints; i++)
+            for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             {
               s(i) = m_currentTrajGen[i]->compute_next_point()(0);
               if(m_currentTrajGen[i]->isTrajectoryEnded())
@@ -280,7 +288,7 @@ namespace dynamicgraph
                 m_noTrajGen[i]->set_initial_point(s(i));
                 m_status[i] = JTG_STOP;
                 SEND_MSG("Trajectory of joint "+
-			 m_robot_util.get_name_from_id(i)+
+			 m_robot_util->get_name_from_id(i)+
 			 " ended.", MSG_TYPE_INFO);
               }
             }
@@ -302,15 +310,15 @@ namespace dynamicgraph
 
         const dynamicgraph::Vector& q = m_qSOUT(iter);
 
-        if(s.size()!=m_nJoints)
-          s.resize(m_nJoints);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
         if(m_status[0]==JTG_TEXT_FILE)
         {
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_textFileTrajGen->getVel()[i];
         }
         else
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_currentTrajGen[i]->getVel()(0);
 
         return s;
@@ -326,16 +334,16 @@ namespace dynamicgraph
 
         const dynamicgraph::Vector& q = m_qSOUT(iter);
 
-        if(s.size()!=m_nJoints)
-          s.resize(m_nJoints);
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
         if(m_status[0]==JTG_TEXT_FILE)
         {
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_textFileTrajGen->getAcc()[i];
         }
         else
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_currentTrajGen[i]->getAcc()(0);
 
         return s;
@@ -345,7 +353,7 @@ namespace dynamicgraph
       {
 	//        SEND_MSG("Compute force right foot iter "+toString(iter), MSG_TYPE_DEBUG);
         generateReferenceForceSignal("fRightFoot", 
-				     m_robot_util.m_force_util.get_force_id_right_foot(),
+				     m_robot_util->m_force_util.get_force_id_right_foot(),
 				     s, iter);
         return s;
       }
@@ -353,7 +361,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftFoot", 
-				     m_robot_util.m_force_util.get_force_id_left_foot(),
+				     m_robot_util->m_force_util.get_force_id_left_foot(),
 				     s, iter);
         return s;
       }
@@ -361,7 +369,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fRightHand", 
-				     m_robot_util.
+				     m_robot_util->
 				     m_force_util.get_force_id_right_hand(), 
 				     s, iter);
         return s;
@@ -370,7 +378,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftHand", 
-				     m_robot_util.
+				     m_robot_util->
 				     m_force_util.get_force_id_left_hand(), 
 				     s, iter);
         return s;
@@ -432,9 +440,9 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
-        for(unsigned int i=0; i<m_nJoints; i++)
+        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           if(m_status[i]!=JTG_STOP)
-            return SEND_MSG("You cannot joint "+m_robot_util.get_name_from_id(i)+" because it is already controlled.", MSG_TYPE_ERROR);
+            return SEND_MSG("You cannot joint "+m_robot_util->get_name_from_id(i)+" because it is already controlled.", MSG_TYPE_ERROR);
 
         if(!m_textFileTrajGen->loadTextFile(fileName))
           return SEND_MSG("Error while loading text file "+fileName, MSG_TYPE_ERROR);
@@ -442,17 +450,17 @@ namespace dynamicgraph
         // check current configuration is not too far from initial trajectory configuration
         bool needToMoveToInitConf = false;
         const VectorXd& qInit = m_textFileTrajGen->get_initial_point();
-        for(unsigned int i=0; i<m_nJoints; i++)
+        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           if(fabs(qInit[i] - m_currentTrajGen[i]->getPos()(0)) > 0.001)
           {
             needToMoveToInitConf = true;
-            SEND_MSG("Joint "+m_robot_util.get_name_from_id(i)+" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
+            SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
           }
 
         // if necessary move joints to initial configuration
         if(needToMoveToInitConf)
         {
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             if(!isJointInRange(i, qInit[i]))
               return;
@@ -466,7 +474,7 @@ namespace dynamicgraph
           return;
         }
 
-        for(unsigned int i=0; i<m_nJoints; i++)
+        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
         {
           m_status[i]         = JTG_TEXT_FILE;
         }
@@ -695,7 +703,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
         if(jointName=="all")
         {
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             m_status[i] = JTG_STOP;
             // update the initial position
@@ -736,14 +744,14 @@ namespace dynamicgraph
       convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        int jid = m_robot_util.get_id_from_name(name);
+        int jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
           for(map<string, Index>::const_iterator it = 
-		m_robot_util.m_name_to_id.begin(); 
-	      it != m_robot_util.m_name_to_id.end(); it++)
+		m_robot_util->m_name_to_id.begin(); 
+	      it != m_robot_util->m_name_to_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
@@ -756,14 +764,14 @@ namespace dynamicgraph
       convertForceNameToForceId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        Index fid = m_robot_util.m_force_util.get_id_from_name(name);
+        Index fid = m_robot_util->m_force_util.get_id_from_name(name);
         if (fid<0)
         {
           SEND_MSG("The specified force name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
           for(map<string, Index>::const_iterator 
-		it = m_robot_util.m_force_util.m_name_to_force_id.begin(); 
-	      it != m_robot_util.m_force_util.m_name_to_force_id.end(); it++)
+		it = m_robot_util->m_force_util.m_name_to_force_id.begin(); 
+	      it != m_robot_util->m_force_util.m_name_to_force_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible force names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
@@ -774,7 +782,7 @@ namespace dynamicgraph
 
       bool JointTrajectoryGenerator::isJointInRange(unsigned int id, double q)
       {
-        JointLimits jl = m_robot_util.get_limits_from_id(id);
+        JointLimits jl = m_robot_util->get_joint_limits_from_id(id);
         if(q<jl.lower)
         {
           SEND_MSG("Desired joint angle is smaller than lower limit: "+
@@ -792,7 +800,7 @@ namespace dynamicgraph
 
       bool JointTrajectoryGenerator::isForceInRange(unsigned int id, const Eigen::VectorXd& f)
       {
-        ForceLimits fl = m_robot_util.m_force_util.get_limits_from_id(id);
+        ForceLimits fl = m_robot_util->m_force_util.get_limits_from_id(id);
         for(unsigned int i=0; i<6; i++)
           if(f[i]<fl.lower[i] || f[i]>fl.upper[i])
           {
@@ -805,7 +813,7 @@ namespace dynamicgraph
 
       bool JointTrajectoryGenerator::isForceInRange(unsigned int id, int axis, double f)
       {
-        ForceLimits fl = m_robot_util.m_force_util.get_limits_from_id(id);
+        ForceLimits fl = m_robot_util->m_force_util.get_limits_from_id(id);
         if(f<fl.lower[axis] || f>fl.upper[axis])
         {
           SEND_MSG("Desired force "+toString(axis)+" is out of range: "+toString(fl.lower[axis])+" < "+

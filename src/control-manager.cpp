@@ -717,7 +717,8 @@ namespace dynamicgraph
 
       bool ControlManager::isJointInRange(unsigned int id, double q)
       {
-	const JointLimits & JL = m_robot_util->get_limits_from_id((Index)id);
+	const JointLimits & JL = m_robot_util->
+	  get_joint_limits_from_id((Index)id);
 
 	double jl= JL.lower;
         if(q<jl)

@@ -45,7 +45,7 @@ PKG_CONFIG_APPEND_LIBS("sot-torque-control")
 
 # Search for dependencies.
 # Boost
-SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex )
+SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex python)
 SEARCH_FOR_BOOST()
 
 SEARCH_FOR_EIGEN()
@@ -128,6 +128,7 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_LIBRARIES})
 INSTALL(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 FINDPYTHON()
+
 INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
               python/dynamic_graph/sot/torque_control/main.py
               python/dynamic_graph/sot/torque_control/create_entities_utils.py
@@ -149,6 +150,19 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(unitTesting)
+
+# *****************************
+# Common-sot-py PYTHON module *
+# *****************************
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIR})
+PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
+TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+TARGET_LINK_BOOST_PYTHON(common_sot_py)
+TARGET_LINK_LIBRARIES(common_sot_py ${LIBRARY_NAME})
+
+SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
+INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
