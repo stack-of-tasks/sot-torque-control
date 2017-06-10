@@ -9,7 +9,7 @@ pc = PositionController("pc_test")
 
 q=zeros(initRobotData.nbJoints+6)
 dq=zeros(initRobotData.nbJoints)
-qRef=zeros(initRobotData.nbJoints+6)
+qRef=zeros(initRobotData.nbJoints)
 dqRef=zeros(initRobotData.nbJoints)
 
 # Setting the robot configuration

@@ -64,6 +64,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
             ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
 	    ,m_initSucceeded(false)
+	    ,m_model(0)
+    	    ,m_data(0)
 	    ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -78,6 +80,13 @@ namespace dynamicgraph
                                     docCommandVoid0("Display the robot util data set linked with this free flyer locator.")));
 
       }
+      FreeFlyerLocator::~FreeFlyerLocator()
+      {
+	if (m_model)
+	  delete m_model;
+	if (m_data)
+	  delete m_data;
+      }
 
       void FreeFlyerLocator::init()
       {
@@ -88,6 +97,7 @@ namespace dynamicgraph
 	  if (isNameInRobotUtil(localName))
 	    {	      
 	      m_robot_util = getRobotUtil(localName);
+	      std::cerr << "m_robot_util:" << m_robot_util << std::endl;
 	    }
 	  else 
 	    {
@@ -95,14 +105,17 @@ namespace dynamicgraph
 	      return;
 	    }
 
+	  m_model = new se3::Model();
+	  m_model->name.assign("EmptyRobot");
+
           se3::urdf::buildModel(m_robot_util->m_urdf_filename,
-				se3::JointModelFreeFlyer(),m_model);
-	  assert(m_model.nv == m_robot_util->m_nbJoints+6);
-          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
-          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
-          m_left_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
-          m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
-          m_q_pin.setZero(m_model.nq);
+				se3::JointModelFreeFlyer(),*m_model);
+	  assert(m_model->nv == m_robot_util->m_nbJoints+6);
+          assert(m_model->existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+          assert(m_model->existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+          m_left_foot_id = m_model->getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+          m_right_foot_id = m_model->getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
+          m_q_pin.setZero(m_model->nq);
           m_q_pin[6]= 1.; // for quaternion
           m_q_sot.setZero(m_robot_util->m_nbJoints+6);
           m_v_pin.setZero(m_robot_util->m_nbJoints+6);
@@ -113,7 +126,7 @@ namespace dynamicgraph
           std::cout << e.what();
           return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
-        m_data = new se3::Data(m_model);
+        m_data = new se3::Data(*m_model);
         m_initSucceeded = true;
       }
 
@@ -141,8 +154,8 @@ namespace dynamicgraph
         m_robot_util->joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util->m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
-        se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
-        se3::framesForwardKinematics(m_model, *m_data);
+        se3::forwardKinematics(*m_model, *m_data, m_q_pin, m_v_pin);
+        se3::framesForwardKinematics(*m_model, *m_data);
 
         return s;
       }
@@ -229,11 +242,11 @@ namespace dynamicgraph
           assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
-          const Frame & f_lf = m_model.frames[m_left_foot_id];
+          const Frame & f_lf = m_model->frames[m_left_foot_id];
           const Motion v_lf_local = f_lf.placement.actInv(m_data->v[f_lf.parent]);
           const Vector6 v_lf = m_data->oMf[m_left_foot_id].act(v_lf_local).toVector();
 
-          const Frame & f_rf = m_model.frames[m_right_foot_id];
+          const Frame & f_rf = m_model->frames[m_right_foot_id];
           const Motion v_rf_local = f_rf.placement.actInv(m_data->v[f_rf.parent]);
           const Vector6 v_rf = m_data->oMf[m_right_foot_id].act(v_rf_local).toVector();
 

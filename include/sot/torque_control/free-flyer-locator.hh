@@ -79,6 +79,7 @@ namespace dynamicgraph {
 
         /* --- CONSTRUCTOR ---- */
         FreeFlyerLocator( const std::string & name );
+        ~FreeFlyerLocator();
 
         void init();
 
@@ -111,7 +112,7 @@ namespace dynamicgraph {
       protected:
         
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
-        se3::Model        m_model;            /// Pinocchio robot model
+        se3::Model        *m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data 
         se3::SE3          m_Mff;               /// SE3 Transform from center of feet to base
         se3::SE3          m_w_M_lf;
