@@ -40,10 +40,9 @@
 /* HELPER */
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/metapod-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <pininvdyn/utils/stop-watch.hpp>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 
 /*Motor model*/
 #include <sot/torque_control/motor-model.hh>
@@ -187,9 +186,10 @@ namespace dynamicgraph {
         Eigen::VectorXd m_tauErrIntegral; /// integral of the torque error
         Eigen::VectorXd m_currentErrIntegral; /// integral of the current error
         Eigen::VectorXd m_qDes_for_position_controlled_joints;
-        Eigen::Array<int, N_JOINTS, 1> m_activeJoints;
+        Eigen::Array<int, Eigen::Dynamic, 1> m_activeJoints;
         std::string m_activeJointsString;
 
+	RobotUtil * m_robot_util;
 //        void compute_f(const Eigen::VectorXd &tau, Eigen::const_SigVectorXd &dq, Eigen::const_SigVectorXd &dq_thr, int iter, Eigen::VectorXd &f);
 //        void compute_g(Eigen::const_SigVectorXd &dq, Eigen::const_SigVectorXd &ddq, Eigen::const_SigVectorXd &ddq_thr, int iter, Eigen::VectorXd &g);
 
@@ -207,9 +207,11 @@ namespace dynamicgraph {
         {
           std::stringstream ss;
           unsigned int i;
-          for(i=0; i<N_JOINTS-1; i++)
-            ss << JointUtil::get_name_from_id(i)<<" "<<toString(m_activeJoints[i])<<", ";
-          ss << JointUtil::get_name_from_id(i)<<" "<<toString(m_activeJoints[i]);
+          for(i=0; i<m_robot_util->m_nbJoints-1; i++)
+            ss << m_robot_util->get_name_from_id(i)<<" "
+	       <<toString(m_activeJoints[i])<<", ";
+          ss << m_robot_util->get_name_from_id(i)<<" "
+	     <<toString(m_activeJoints[i]);
           m_activeJointsString = ss.str();
         }
 

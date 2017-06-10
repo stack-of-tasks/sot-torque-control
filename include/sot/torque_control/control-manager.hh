@@ -39,11 +39,16 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
 
+
+#include <pinocchio/multibody/model.hpp>
+#include <pinocchio/parsers/urdf.hpp>
+
+#include <pininvdyn/robot-wrapper.hpp>
 
 namespace dynamicgraph {
   namespace sot {
@@ -88,9 +93,16 @@ namespace dynamicgraph {
 
       public:
         /* --- CONSTRUCTOR ---- */
-        ControlManager( const std::string & name );
+        ControlManager( const std::string & name);
 
-        void init(const double& dt);
+	/// Initialize
+	/// @param dt: control interval
+	/// @param urdfFile: path to the URDF model of the robot
+	/// @param maxCurrent: default maximum current for each motor. 
+	/// The recommended way is to use the signal max_current.
+        void init(const double& dt, 
+		  const std::string &urdfFile,
+		  const double & maxCurrent);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
@@ -114,12 +126,36 @@ namespace dynamicgraph {
 
 
         /* --- COMMANDS --- */
+
+	/// Commands related to the control mode.
         void addCtrlMode(const std::string& name);
         void ctrlModes();
         void getCtrlMode(const std::string& jointName);
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
+	
         void resetProfiler();
+	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
+	
+	/// Commands related to joint name and joint id
+	void setNameToId(const std::string& jointName, const double & jointId);
+	void setJointLimitsFromId(const double &jointId, 
+				const double &lq, const double &uq);
+
+	/// Command related to ForceUtil
+	void setForceLimitsFromId(const double &jointId, 
+				  const dynamicgraph::Vector &lq, 
+				  const dynamicgraph::Vector &uq);
+	void setForceNameToForceId(const std::string& forceName, 
+				   const double & forceId);
+	
+	/// Commands related to FootUtil
+	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
+	void setFootFrameName(const std::string &, const std::string &);
+
+	void displayRobotUtil();
+	/// Set the mapping between urdf and sot.
+	void setJoints(const dynamicgraph::Vector &);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -133,6 +169,8 @@ namespace dynamicgraph {
         }
 
       protected:
+	RobotUtil * m_robot_util;
+        pininvdyn::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
         double  m_maxCurrent;       /// control limit in Ampers

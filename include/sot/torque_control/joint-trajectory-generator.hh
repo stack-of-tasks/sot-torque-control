@@ -37,9 +37,9 @@
 /* --------------------------------------------------------------------- */
 
 #include <sot/torque_control/signal-helper.hh>
+#include <sot/torque_control/common.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 #include <map>
 #include <initializer_list>
@@ -179,6 +179,8 @@ namespace dynamicgraph {
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
+
+	RobotUtil     *m_robot_util;
 
         std::vector<int>  m_iterForceSignals;
 

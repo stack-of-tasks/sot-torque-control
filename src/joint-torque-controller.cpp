@@ -53,13 +53,10 @@ namespace dynamicgraph
                                 m_predictedPwmSOUT << m_predictedPwm_tauSOUT << \
                                 m_pwm_ffSOUT << m_pwm_fbSOUT << m_pwm_frictionSOUT << m_smoothSignDqSOUT
 
-#define N_JOINTS 30
-
       namespace dynamicgraph = ::dynamicgraph;
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace std;
-      using namespace metapod;
       using namespace Eigen;
 
       /// Define EntityClassName here rather than in the header file
@@ -176,16 +173,29 @@ namespace dynamicgraph
           return SEND_MSG("Init failed: signal m_KpCurrentSIN is not plugged", MSG_TYPE_ERROR);
         if(!m_KiCurrentSIN.isPlugged())
           return SEND_MSG("Init failed: signal m_KiCurrentSIN is not plugged", MSG_TYPE_ERROR);
+
+	/* Retrieve m_robot_util  informations */
+	std::string localName("control-manager-robot");
+	if (isNameInRobotUtil(localName))
+	  {	      
+	    m_robot_util = getRobotUtil(localName);
+	  }
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
+	
         m_dt = timestep;
         m_firstIter = true;
-        m_tau_star.setZero(N_JOINTS);
-        m_current_star.setZero(N_JOINTS);
-        m_f.setZero(N_JOINTS);
-        m_g.setZero(N_JOINTS);
-        m_current_des.setZero(N_JOINTS);
-        m_tauErrIntegral.setZero(N_JOINTS);
-        m_currentErrIntegral.setZero(N_JOINTS);
-        m_qDes_for_position_controlled_joints.setZero(N_JOINTS);
+        m_tau_star.setZero(m_robot_util->m_nbJoints);
+        m_current_star.setZero(m_robot_util->m_nbJoints);
+        m_f.setZero(m_robot_util->m_nbJoints);
+        m_g.setZero(m_robot_util->m_nbJoints);
+        m_current_des.setZero(m_robot_util->m_nbJoints);
+        m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
+        m_currentErrIntegral.setZero(m_robot_util->m_nbJoints);
+        m_qDes_for_position_controlled_joints.setZero(m_robot_util->m_nbJoints);
         m_activeJoints.setOnes();
         updateActiveJointsString();
       }
@@ -258,14 +268,14 @@ namespace dynamicgraph
 
         if(m_firstIter)
         {
-          m_qDes_for_position_controlled_joints = q.tail<N_JOINTS>();
+          m_qDes_for_position_controlled_joints = q.tail(m_robot_util->m_nbJoints);
           m_firstIter = false;
         }
 
         m_tauErrIntegral += m_dt * ki.cwiseProduct(tau_d-tau);
         m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + m_tauErrIntegral;
-        if(dq.size()==N_JOINTS)
-            for(int i=0; i<N_JOINTS; i++)
+        if(dq.size()==(int)m_robot_util->m_nbJoints)
+	  for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
             {
                 m_current_des(i) = motorModel.getCurrent(m_tau_star(i), dq(i), ddq(i),
                                                          motorParameterKt_p(i), motorParameterKt_n(i),
@@ -273,8 +283,8 @@ namespace dynamicgraph
                                                          motorParameterKv_p(i), motorParameterKv_n(i),
                                                          motorParameterKa_p(i), motorParameterKa_n(i) , polySignDq(i));
             }
-        else if(dq.size()==N_JOINTS+6)
-            for(int i=0; i<N_JOINTS; i++)
+        else if(dq.size()==(int)(m_robot_util->m_nbJoints+6))
+	  for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
             {
                 m_current_des(i) = motorModel.getCurrent(m_tau_star(i), dq(i+6), ddq(i+6),
                                                          motorParameterKt_p(i), motorParameterKt_n(i),
@@ -285,12 +295,9 @@ namespace dynamicgraph
             else
           SEND_ERROR_STREAM_MSG("Unexpected size of signal dq: "+toString(dq.size()));
 
-//        compute_f(m_tau_star, dq, dq_thr, iter, m_f);
-//        compute_g(dq, ddq, ddq_thr, iter, m_g);
-//        m_q_des = q.tail<N_JOINTS>() + m_f + m_g;
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = m_activeJoints.select(m_current_des,0.0).matrix();
 	
 //        SEND_MSG("qDes = "+toString(s), MSG_TYPE_DEBUG_STREAM);
@@ -313,8 +320,8 @@ namespace dynamicgraph
 
         m_currentErrIntegral += m_dt * ki.cwiseProduct(current_d-current);
         m_current_star = current_d + kp.cwiseProduct(current_d - current) + m_currentErrIntegral;
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = m_activeJoints.select(m_current_star,0.0).matrix(); //TODO check saturation
         return s;
       }
@@ -328,8 +335,8 @@ namespace dynamicgraph
         const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
         const Eigen::VectorXd& k_v =           m_k_vSIN(iter);
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = k_tau.cwiseProduct(tau) + k_v.cwiseProduct(dq);
         return s;
       }
@@ -339,8 +346,8 @@ namespace dynamicgraph
         const Eigen::VectorXd& tau =     m_jointsTorquesSIN(iter);
         const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = k_tau.cwiseProduct(tau);
         return s;
       }
@@ -349,8 +356,8 @@ namespace dynamicgraph
       {
         const Eigen::VectorXd& tauFF =         m_tauFFSIN(iter);
         const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = k_tau.cwiseProduct(tauFF);
         return s;
       }
@@ -362,8 +369,8 @@ namespace dynamicgraph
         const Eigen::VectorXd& tauFB =         m_tauFBSIN(iter);
         const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
         const Eigen::VectorXd& k_p =           m_KpTorqueSIN(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = k_tau.cwiseProduct(tauFB + k_p.cwiseProduct(tau_d-tau));
         return s;
       }
@@ -372,8 +379,8 @@ namespace dynamicgraph
       {
         const Eigen::VectorXd& k_v =         m_k_vSIN(iter);
         const Eigen::VectorXd& dq =          m_jointsVelocitiesSIN(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	s = k_v.cwiseProduct(dq);
         return s;
       }
@@ -383,10 +390,10 @@ namespace dynamicgraph
       {
         const Eigen::VectorXd& dq =            m_jointsVelocitiesSIN(iter);
         const Eigen::VectorXd& polySignDq =    m_polySignDqSIN(iter);
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 	
-        for(int i=0; i<N_JOINTS; i++)
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
           s(i) = motorModel.smoothSign(dq[i], 0.1, polySignDq[i]); //TODO Use Eigen binaryexpr
         return s;
       }
@@ -438,11 +445,11 @@ namespace dynamicgraph
         const Eigen::VectorXd& k_v =       m_k_vSIN(iter);
 
         /// k_tau^{-1}*(delta_q - k_v*dq)
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
         //TODO: Use Eigen cwise operations
-        for(int i=0; i<N_JOINTS; i++)
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
           if(k_tau(i)!=0.0)
             s(i) = (pwm(i) - k_v(i)*dq(i))/k_tau(i);
           else
@@ -542,12 +549,14 @@ namespace dynamicgraph
       bool JointTorqueController::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        int jid = JointUtil::get_id_from_name(name);
+        int jid = (int)m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(map<string, unsigned int>::const_iterator it = JointUtil::name_2_id.begin(); it != JointUtil::name_2_id.end(); it++)
+          for(map<string, Index>::const_iterator 
+		it = m_robot_util->m_name_to_id.begin(); 
+	      it != m_robot_util->m_name_to_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
