@@ -1,4 +1,4 @@
-g/*
+/*
  * Copyright 2014, Andrea Del Prete, LAAS-CNRS
  *
  * This file is part of sot-torque-control.
@@ -382,7 +382,7 @@ namespace dynamicgraph
         }
 
         if(m_emergency_stop_triggered)
-          for(unsigned int i=0; i<m_nJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = 0.0;
         return s;
       }
@@ -390,17 +390,9 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
       {
         const dynamicgraph::Vector& pwmDes = m_pwmDesSOUT(iter);
-<<<<<<< HEAD
-        if(s.size()!=(Eigen::VectorXd::Index)m_nJoints)
-
-          s.resize(m_nJoints);
-        for(unsigned int i=0; i<m_nJoints; i++)
-
-=======
         if(s.size()!=(Eigen::VectorXd::Index)m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
->>>>>>> Implements a pointer base handling of the list of nodes.
         {
           if (pwmDes(i)>0)
             s(i)= 1;
@@ -416,15 +408,9 @@ namespace dynamicgraph
       {
 
         const dynamicgraph::Vector& pwmDesSafe = m_pwmDesSafeSOUT(iter);
-<<<<<<< HEAD
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(unsigned int i=0; i<N_JOINTS; i++)
-=======
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
->>>>>>> Implements a pointer base handling of the list of nodes.
         {
           if (pwmDesSafe(i)==0) 
             s(i)=0;
@@ -661,12 +647,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-<<<<<<< HEAD
-        dynamicgraph::Vector cm(m_nJoints);
-
-=======
         dynamicgraph::Vector cm(m_robot_util->m_nbJoints);
->>>>>>> Implements a pointer base handling of the list of nodes.
         for(unsigned int i=0; i<m_jointsCtrlModesSOUT.size(); i++)
         {
           for(unsigned int j=0; j<m_robot_util->m_nbJoints; j++)

@@ -98,8 +98,8 @@ namespace dynamicgraph
           se3::urdf::buildModel(m_robot_util->m_urdf_filename,
 				se3::JointModelFreeFlyer(),m_model);
 	  assert(m_model.nv == m_robot_util->m_nbJoints+6);
-          assert(m_model.existFrame(m_Left_Foot_Frame_Name));
-          assert(m_model.existFrame(m_Right_Foot_Frame_Name));
+          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_left_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
           m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_q_pin.setZero(m_model.nq);

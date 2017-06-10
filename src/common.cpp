@@ -295,8 +295,8 @@ namespace dynamicgraph
       bool RobotUtil::
       velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot)
       {
-	assert(q_urdf.size()==m_nbJoints+6);
-	assert(q_sot.size()==m_nbJoints+6);
+	assert(v_urdf.size()==m_nbJoints+6);
+	assert(v_sot.size()==m_nbJoints+6);
 	
 	if (m_nbJoints==0)
 	  {
@@ -313,8 +313,8 @@ namespace dynamicgraph
       bool RobotUtil::
       velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf)
       {
-	assert(q_urdf.size()==m_nbJoints+6);
-	assert(q_sot.size()==m_nbJoints+6);
+	assert(v_urdf.size()==m_nbJoints+6);
+	assert(v_sot.size()==m_nbJoints+6);
 	
 	if (m_nbJoints==0)
 	  {

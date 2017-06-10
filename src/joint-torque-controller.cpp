@@ -295,9 +295,6 @@ namespace dynamicgraph
             else
           SEND_ERROR_STREAM_MSG("Unexpected size of signal dq: "+toString(dq.size()));
 
-//        compute_f(m_tau_star, dq, dq_thr, iter, m_f);
-//        compute_g(dq, ddq, ddq_thr, iter, m_g);
-//        m_q_des = q.tail<N_JOINTS>() + m_f + m_g;
 
         if(s.size()!=(int)m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
