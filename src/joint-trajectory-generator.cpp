@@ -790,14 +790,12 @@ namespace dynamicgraph
         JointLimits jl = m_robot_util->get_joint_limits_from_id(id);
         if(q<jl.lower)
         {
-          SEND_MSG("Desired joint angle is smaller than lower limit: "+
-		   toString(jl.lower),MSG_TYPE_ERROR);
+          SEND_MSG("Joint "+JointUtil::get_name_from_id(id)+", desired angle "+toString(q)+" is smaller than lower limit "+toString(jl.lower),MSG_TYPE_ERROR);
           return false;
         }
         if(q>jl.upper)
         {
-          SEND_MSG("Desired joint angle is larger than upper limit: "+
-		   toString(jl.upper),MSG_TYPE_ERROR);
+	  SEND_MSG("Joint "+JointUtil::get_name_from_id(id)+", desired angle "+toString(q)+" is larger than upper limit "+toString(jl.upper),MSG_TYPE_ERROR);
           return false;
         }
         return true;
