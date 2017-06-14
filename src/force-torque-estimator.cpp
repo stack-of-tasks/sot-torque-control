@@ -61,9 +61,9 @@ namespace dynamicgraph
 #define PROFILE_JOINTS_TORQUES_MOTOR_COMPUTATION     "ForceTorqueEst: tau from motor model computation"
 #define PROFILE_JOINTS_TORQUES_INERTIAL_COMPUTATION  "ForceTorqueEst: tau from inertial model computation"
 
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
       using namespace metapod;
       using namespace Eigen;
@@ -72,6 +72,10 @@ namespace dynamicgraph
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef ForceTorqueEstimator EntityClassName;
 
+      typedef Eigen::Matrix<double,N_JOINTS,1>                     VectorN;
+      typedef Eigen::Matrix<double,N_JOINTS+6,1>                   VectorN6;
+      typedef Eigen::Matrix<double,3,1>                            Vector3;
+      typedef Eigen::Matrix<double,6,1>                            Vector6;
       /* --- DG FACTORY ------------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(ForceTorqueEstimator,"ForceTorqueEstimator");
 
@@ -81,62 +85,62 @@ namespace dynamicgraph
       ForceTorqueEstimator::
       ForceTorqueEstimator( const std::string & name )
         : Entity(name),
-        CONSTRUCT_SIGNAL_IN(base6d_encoders,   ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(accelerometer,    ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(gyroscope,        ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(ftSensLeftFoot,   ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(ftSensRightFoot,  ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(ftSensLeftHand,   ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(ftSensRightHand,  ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(ddqRef,           ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(dqRef,            ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(currentMeasure,   ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(saturationCurrent,ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(wCurrentTrust,    ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(tauDes, ml::Vector)
-        ,CONSTRUCT_SIGNAL_OUT(ftSensRightFootPrediction,  ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(currentFiltered,         ml::Vector, m_currentMeasureSIN)
-        ,CONSTRUCT_SIGNAL_OUT(jointsPositions,         ml::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsVelocities,        ml::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsAccelerations,     ml::Vector, m_q_dq_ddqSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(torsoAcceleration,       ml::Vector, m_w_dv_torsoSINNER)    // 6d
-        ,CONSTRUCT_SIGNAL_OUT(torsoAngularVelocity,    ml::Vector, m_w_dv_torsoSINNER)    // 3d
-        ,CONSTRUCT_SIGNAL_OUT(baseAcceleration,        ml::Vector, m_torques_wrenchesSINNER)    // 6d
-        ,CONSTRUCT_SIGNAL_OUT(baseAngularVelocity,     ml::Vector, m_torques_wrenchesSINNER)    // 3d
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftFoot,   ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightFoot,  ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftSole,   ml::Vector, m_contactWrenchLeftFootSOUT)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightSole,  ml::Vector, m_contactWrenchRightFootSOUT)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftHand,   ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightHand,  ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(contactWrenchBody,       ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsTorques,           ml::Vector, m_torques_wrenchesSINNER << m_torquesFromMotorModelSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsTorquesFromMotorModel,   ml::Vector, m_torquesFromMotorModelSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(jointsTorquesFromInertiaModel, ml::Vector, m_torques_wrenchesSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(dynamicsError, ml::Vector, m_contactWrenchBodySOUT <<
+        CONSTRUCT_SIGNAL_IN(base6d_encoders,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(accelerometer,    dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(gyroscope,        dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ftSensLeftFoot,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ftSensRightFoot,  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ftSensLeftHand,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ftSensRightHand,  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ddqRef,           dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(dqRef,            dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(currentMeasure,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(saturationCurrent,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(wCurrentTrust,    dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(tauDes, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_OUT(ftSensRightFootPrediction,  dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(currentFiltered,         dynamicgraph::Vector, m_currentMeasureSIN)
+        ,CONSTRUCT_SIGNAL_OUT(jointsPositions,         dynamicgraph::Vector, m_q_dq_ddqSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(jointsVelocities,        dynamicgraph::Vector, m_q_dq_ddqSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(jointsAccelerations,     dynamicgraph::Vector, m_q_dq_ddqSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(torsoAcceleration,       dynamicgraph::Vector, m_w_dv_torsoSINNER)    // 6d
+        ,CONSTRUCT_SIGNAL_OUT(torsoAngularVelocity,    dynamicgraph::Vector, m_w_dv_torsoSINNER)    // 3d
+        ,CONSTRUCT_SIGNAL_OUT(baseAcceleration,        dynamicgraph::Vector, m_torques_wrenchesSINNER)    // 6d
+        ,CONSTRUCT_SIGNAL_OUT(baseAngularVelocity,     dynamicgraph::Vector, m_torques_wrenchesSINNER)    // 3d
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftFoot,   dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightFoot,  dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftSole,   dynamicgraph::Vector, m_contactWrenchLeftFootSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightSole,  dynamicgraph::Vector, m_contactWrenchRightFootSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchLeftHand,   dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchRightHand,  dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(contactWrenchBody,       dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(jointsTorques,           dynamicgraph::Vector, m_torques_wrenchesSINNER << m_torquesFromMotorModelSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(jointsTorquesFromMotorModel,   dynamicgraph::Vector, m_torquesFromMotorModelSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(jointsTorquesFromInertiaModel, dynamicgraph::Vector, m_torques_wrenchesSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(dynamicsError, dynamicgraph::Vector, m_contactWrenchBodySOUT <<
                                                          m_jointsTorquesSOUT <<
                                                          m_tauDesSIN)
 
-        ,CONSTRUCT_SIGNAL_INNER(torques_wrenches,      ml::Vector, FORCE_TORQUE_SENSORS_SIGNALS
+        ,CONSTRUCT_SIGNAL_INNER(torques_wrenches,      dynamicgraph::Vector, FORCE_TORQUE_SENSORS_SIGNALS
                                                                 <<KINEMATIC_OUTPUT_SIGNALS
                                                                 <<m_ddqRefSIN
                                                                 <<m_dqRefSIN
                                                                 <<m_base6d_encodersSIN)
                                                                 
-        ,CONSTRUCT_SIGNAL_INNER(torquesFromMotorModel, ml::Vector, MOTOR_PARAMETER_SIGNALS
+        ,CONSTRUCT_SIGNAL_INNER(torquesFromMotorModel, dynamicgraph::Vector, MOTOR_PARAMETER_SIGNALS
                                                                    << m_jointsVelocitiesSOUT 
                                                                    << m_jointsAccelerationsSOUT
                                                                    << m_currentFilteredSOUT)
-        ,CONSTRUCT_SIGNAL_INNER(q_dq_ddq,              ml::Vector, m_base6d_encodersSIN)
-        ,CONSTRUCT_SIGNAL_INNER(w_dv_torso,            ml::Vector, m_accelerometerSIN<<m_gyroscopeSIN)
+        ,CONSTRUCT_SIGNAL_INNER(q_dq_ddq,              dynamicgraph::Vector, m_base6d_encodersSIN)
+        ,CONSTRUCT_SIGNAL_INNER(w_dv_torso,            dynamicgraph::Vector, m_accelerometerSIN<<m_gyroscopeSIN)
 
         ,m_node_right_foot(boost::fusion::at_c<Hrp2_14::r_ankle>(m_robot.nodes))
         ,m_node_left_foot(boost::fusion::at_c<Hrp2_14::l_ankle>(m_robot.nodes))
@@ -273,8 +277,8 @@ namespace dynamicgraph
         m_currentMeasureFilter   = new LinEstimator(winSizeCur, N_JOINTS, m_dt);
 
         m_delayTauDes = 0.0;
-        m_tauDesBuffer = boost::circular_buffer<ml::Vector>(winSizeFT/2);
-        m_tauBuffer = boost::circular_buffer<ml::Vector>(2);
+        m_tauDesBuffer = boost::circular_buffer<dynamicgraph::Vector>(winSizeFT/2);
+        m_tauBuffer = boost::circular_buffer<dynamicgraph::Vector>(2);
 
         m_ddq_filter_std.resize(N_JOINTS);
         m_dq_filter_std.resize(N_JOINTS);
@@ -337,17 +341,14 @@ namespace dynamicgraph
         m_torso_X_imu = TransformNoRot(eye, -CMap3d(IMU_XYZ));
       }
 
-      void ForceTorqueEstimator::setFTsensorOffsets(const ml::Vector& offsets)
+      void ForceTorqueEstimator::setFTsensorOffsets(const dynamicgraph::Vector& offsets)
       {
         m_FTsensorOffsets = offsets;
-        // copy F/T sensor offsets from mal vector to eigen vectors
-        for(int i=0;i<6;i++)
-        {
-          m_ftSensRightFoot_offset(i) = m_FTsensorOffsets(i);
-          m_ftSensLeftFoot_offset(i)  = m_FTsensorOffsets(6+i);
-          m_ftSensRightHand_offset(i) = m_FTsensorOffsets(12+i);
-          m_ftSensLeftHand_offset(i)  = m_FTsensorOffsets(18+i);
-        }
+	m_ftSensRightFoot_offset.head<6>()   = m_FTsensorOffsets.head<6>();
+	m_ftSensLeftFoot_offset.head<6>()  = m_FTsensorOffsets.segment<6>(6);
+	m_ftSensRightHand_offset.head<6>() = m_FTsensorOffsets.segment<6>(12);
+	m_ftSensLeftHand_offset.head<6>()  = m_FTsensorOffsets.segment<6>(18);
+	
       }
       
       void ForceTorqueEstimator::recomputeFTsensorOffsets()
@@ -360,12 +361,12 @@ namespace dynamicgraph
       /* --- SIGNALS ---------------------------------------------------------- */
 
       /** Estimate the joints' positions, velocities and accelerations. */
-      DEFINE_SIGNAL_INNER_FUNCTION(q_dq_ddq, ml::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(q_dq_ddq, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute q_dq_ddq inner signal "<<iter<<endl;
 
         // read encoders and copy in std vector
-        const ml::Vector& base_q = m_base6d_encodersSIN(iter);
+        const dynamicgraph::Vector& base_q = m_base6d_encodersSIN(iter);
         COPY_SHIFTED_VECTOR_TO_ARRAY(base_q, m_q_std, 6);
 
 
@@ -389,7 +390,7 @@ namespace dynamicgraph
 
 
       /** Estimate the torso's angular velocity. and linear/angular acceleration. */
-      DEFINE_SIGNAL_INNER_FUNCTION(w_dv_torso, ml::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(w_dv_torso, dynamicgraph::Vector)
       {
 //        SEND_MSG("Compute w_dv_torso inner signal "+toString(iter), MSG_TYPE_DEBUG);
         // read accelerometer and gyroscope and copy in std vector
@@ -414,19 +415,16 @@ namespace dynamicgraph
         // copy data in signal vector
         if(s.size()!=9)
           s.resize(9);
-        int i;
-        for(i=0; i<3; i++)
-          s(i)   = m_v_torso.w()[i];
-        for(i=0; i<3; i++)
-          s(i+3) = m_dv_torso.v()[i];
-        for(i=0; i<3; i++)
-          s(i+6) = m_dv_torso.w()[i];
+	//TODO: MOVE METAPOD VECTORS TO PINOCCHIO
+	s.segment<3>(0) = m_v_torso.w();
+	s.segment<3>(3) = m_dv_torso.v();
+	s.segment<3>(6) = m_dv_torso.w();
         return s;
       }
 
 
       /** Estimate the joints' torques from the motor model and current measurment */
-      DEFINE_SIGNAL_INNER_FUNCTION(torquesFromMotorModel, ml::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(torquesFromMotorModel, dynamicgraph::Vector)
       {
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
@@ -434,7 +432,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_JOINTS_TORQUES_MOTOR_COMPUTATION);
         {
 
-          const ml::Vector& currentFiltered          = m_currentFilteredSOUT(iter);
+          const dynamicgraph::Vector& currentFiltered          = m_currentFilteredSOUT(iter);
           // copy motor model parameters from mal to std vectors
           COPY_VECTOR_TO_ARRAY(m_motorParameterKt_pSIN(iter), m_motorParameterKt_p_std  );
           COPY_VECTOR_TO_ARRAY(m_motorParameterKt_nSIN(iter), m_motorParameterKt_n_std  );
@@ -461,7 +459,7 @@ namespace dynamicgraph
         return s;
       }
       /** Estimate the joints' torques and the 5 contact wrenches (feet, hand and body). */
-      DEFINE_SIGNAL_INNER_FUNCTION(torques_wrenches, ml::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(torques_wrenches, dynamicgraph::Vector)
       {
         if(s.size()!=N_JOINTS+5*6)
           s.resize(N_JOINTS+5*6);
@@ -469,29 +467,29 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_JOINTS_TORQUES_INERTIAL_COMPUTATION);
         {
           // map data from mal to eigen vectors
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(w_torso_eig,  m_torsoAngularVelocitySOUT(iter));
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(dv_torso_eig, m_torsoAccelerationSOUT(iter));
+          const Eigen::VectorXd& w_torso_eig =  m_torsoAngularVelocitySOUT(iter);
+          const Eigen::VectorXd& dv_torso_eig = m_torsoAccelerationSOUT(iter);
 
           /// COMPUTE BASE ANGULAR VELOCITY AND ACCELERATION FROM IMU MEASUREMENTS
           if(m_useRawEncoders)
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(base6d_encoders, m_base6d_encodersSIN(iter));
+            const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
             m_q.tail<N_JOINTS>()    = base6d_encoders.tail<N_JOINTS>();
           }
           else
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(q_eig,    m_jointsPositionsSOUT(iter));
+            const Eigen::VectorXd& q_eig =    m_jointsPositionsSOUT(iter);
             m_q.tail<N_JOINTS>()    = q_eig;
           }
 
           if(m_useRefJointsVel)
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_ref,       m_dqRefSIN(iter));
+            const Eigen::VectorXd& dq_ref =       m_dqRefSIN(iter);
             m_dq.tail<N_JOINTS>()   = dq_ref;
           }
           else
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_eig,       m_jointsVelocitiesSOUT(iter));
+            const Eigen::VectorXd& dq_eig =       m_jointsVelocitiesSOUT(iter);
             m_dq.tail<N_JOINTS>()   = dq_eig;
           }
 
@@ -517,12 +515,12 @@ namespace dynamicgraph
           // propagate vel/acc from torso to base link
           if(m_useRefJointsAcc)
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_ref,    m_ddqRefSIN(iter));
+            const Eigen::VectorXd& ddq_ref =    m_ddqRefSIN(iter);
             m_ddq.tail<N_JOINTS>()  = ddq_ref;
           }
           else
           {
-            EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_eig,  m_jointsAccelerationsSOUT(iter));
+            const Eigen::VectorXd& ddq_eig =  m_jointsAccelerationsSOUT(iter);
             m_ddq.tail<N_JOINTS>()  = ddq_eig;
           }
           Vector1d ddqi = m_ddq.segment<1>(m_node_torso.q_idx);
@@ -598,13 +596,10 @@ namespace dynamicgraph
               SEND_MSG("ddq "+toString(m_ddq.transpose()), MSG_TYPE_INFO);  
               SEND_MSG("Foot weight "+toString(m_node_right_foot.joint.f.f()), MSG_TYPE_INFO);
               // copy F/T sensor offsets in mal vector read by the command getFTsensorOffsets()
-              for(int i=0;i<6;i++)
-              {
-                m_FTsensorOffsets(i) = m_ftSensRightFoot_offset(i);
-                m_FTsensorOffsets(6+i) = m_ftSensLeftFoot_offset(i);
-                m_FTsensorOffsets(12+i) = m_ftSensRightHand_offset(i);
-                m_FTsensorOffsets(18+i) = m_ftSensLeftHand_offset(i);
-              }
+	      m_FTsensorOffsets.segment<6>(0) = m_ftSensRightFoot_offset.head<6>();
+	      m_FTsensorOffsets.segment<6>(6) = m_ftSensLeftFoot_offset.head<6>();
+	      m_FTsensorOffsets.segment<6>(12) = m_ftSensRightHand_offset.head<6>();
+	      m_FTsensorOffsets.segment<6>(18) = m_ftSensLeftHand_offset.head<6>();
 
               m_is_first_iter = false;
               SEND_MSG("Computing force/torque sensor offsets: the robot should make no contact with hands and feet at this moment", MSG_TYPE_WARNING);
@@ -639,20 +634,19 @@ namespace dynamicgraph
             m_node_right_hand.body.Fext = m_node_right_hand.body.iX0.applyInv(f_RH);
             m_node_left_hand.body.Fext  = m_node_left_hand.body.iX0.applyInv(f_LH);
 
-            for(int i=0; i<3; i++)
-            {
-              s(N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND+i)   = f_LH.f()[i];
-              s(N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND+i+3) = f_LH.n()[i];
 
-              s(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND+i)   = f_RH.f()[i];
-              s(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND+i+3) = f_RH.n()[i];
-
-              s(N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT+i)   = f_LF.f()[i];
-              s(N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT+i+3) = f_LF.n()[i];
-
-              s(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT+i)   = f_RF.f()[i];
-              s(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT+i+3) = f_RF.n()[i];
-            }
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND)   = f_LH.f();
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND+3) = f_LH.n();
+	    
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND)   = f_RH.f();
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND+3) = f_RH.n();
+	    
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT)   = f_LF.f();
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT+3) = f_LF.n();
+	    
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT)   = f_RF.f();
+	    s.segment<3>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT+3) = f_RF.n();
+	    
           }
 
           /// *** COMPUTE RNEA TO ESTIMATE JOINTS TORQUES
@@ -682,10 +676,8 @@ namespace dynamicgraph
         //SEND_MSG("Tau without using current: "+toString(m_torques.transpose()), MSG_TYPE_DEBUG);
 
         // copy estimated joints' torques to output signal
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = m_torques(i+6);
-        for(int i=0; i<6; i++)
-          s(N_JOINTS+6*m_INDEX_WRENCH_BODY+i)   = m_torques(i);
+	s.head<N_JOINTS>() = m_torques.segment<N_JOINTS>(6);
+	s.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_BODY)   = m_torques.head<6>();
         //SEND_MSG("currentMeasure: "+toString(m_currentMeasure_std), MSG_TYPE_DEBUG);
         //SEND_MSG("currentMeasure filter: "+toString(m_currentMeasure_filter_std), MSG_TYPE_DEBUG);
         return s;
@@ -693,7 +685,7 @@ namespace dynamicgraph
 
 
       /**  */
-      DEFINE_SIGNAL_OUT_FUNCTION(ftSensRightFootPrediction, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(ftSensRightFootPrediction, dynamicgraph::Vector)
       {
         m_torques_wrenchesSINNER(iter);
 
@@ -715,15 +707,14 @@ namespace dynamicgraph
         // copy data
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<3; i++)
-        {
-          s(i)   = m_ftSensRightFoot_offset[i]   - RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.f()[i];
-          s(i+3) = m_ftSensRightFoot_offset[i+3] - RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.n()[i];
-        }
+	s.head<3>() = m_ftSensRightFoot_offset.head<3>() -
+	  RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.f();
+	s.tail<3>() = m_ftSensRightFoot_offset.segment<3>(3) -
+	  RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.n();
 
         if(m_is_first_iter)
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(ft_RF, m_ftSensRightFootSIN(iter));
+          const Eigen::VectorXd& ft_RF = m_ftSensRightFootSIN(iter);
           m_ftSensRightFoot_offset.head<3>() = ft_RF.head<3>() + RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.f();
           m_ftSensRightFoot_offset.tail<3>() = ft_RF.tail<3>() + RIGHT_FOOT_FORCE_SENSOR_MASS_PERCENTAGE*m_node_right_foot.joint.f.n();
           m_is_first_iter = false;
@@ -738,42 +729,39 @@ namespace dynamicgraph
       /// just need to copy the interested part of the inner signal they depend on.
       /// ************************************************************************* ///
 
-      DEFINE_SIGNAL_OUT_FUNCTION(baseAcceleration, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(baseAcceleration, dynamicgraph::Vector)
       {
         m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
         // add back gravity acceleration which was previously subtracted
         m_ddq(2) += 9.81; // assume the world z axis points upwards
-        for(int i=0; i<6; i++)
-          s(i) = m_ddq(i);
+	s = m_ddq.head<6>();
         m_ddq(2) -= 9.81;
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(baseAngularVelocity, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(baseAngularVelocity, dynamicgraph::Vector)
       {
         m_torques_wrenchesSINNER(iter);
         if(s.size()!=3)
           s.resize(3);
-        for(int i=0; i<3; i++)
-          s(i) = m_dq(3+i);
-        return s;
+	s.head<3>() = m_dq.segment<3>(3);
+	return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsPositions, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsPositions, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute jointsPositions output signal "<<iter<<endl;
 
-        const ml::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = q_dq_ddq(i);
+	s.head<N_JOINTS>() = q_dq_ddq.head<N_JOINTS>();
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(currentFiltered, ml::Vector) 
+      DEFINE_SIGNAL_OUT_FUNCTION(currentFiltered, dynamicgraph::Vector) 
       {
         sotDEBUG(15)<<"Compute currentFiltered output signal "<<iter<<endl;
 
@@ -781,11 +769,10 @@ namespace dynamicgraph
         COPY_VECTOR_TO_ARRAY(m_currentMeasureSIN(iter)   ,  m_currentMeasure_std   );
         // filter current measurements
         m_currentMeasureFilter->estimate(m_currentMeasure_filter_std, m_currentMeasure_std);
-        // map filtered current measurements from std to Eigen vectors
-        EIGEN_VECTOR_FROM_STD_VECTOR(currentMeasure_eig, m_currentMeasure_filter_std);
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
+	
         for(int i=0; i<N_JOINTS; i++)
           s(i) = m_currentMeasure_filter_std[i];
         return s;
@@ -794,77 +781,71 @@ namespace dynamicgraph
 
 
 
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsVelocities, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsVelocities, dynamicgraph::Vector)
       {
 //        sotDEBUG(15)<<"Compute jointsVelocities output signal "<<iter<<endl;
 
-        const ml::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
         if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = q_dq_ddq(i+N_JOINTS);
+	  s.resize(N_JOINTS);
+	s = q_dq_ddq.segment<N_JOINTS>(N_JOINTS);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsAccelerations, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsAccelerations, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute jointsAccelerations output signal "<<iter<<endl;
 
-        const ml::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
+        const dynamicgraph::Vector &q_dq_ddq = m_q_dq_ddqSINNER(iter);
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = q_dq_ddq(i+2*N_JOINTS);
+	s = q_dq_ddq.segment<N_JOINTS>(2*N_JOINTS);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(torsoAngularVelocity, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(torsoAngularVelocity, dynamicgraph::Vector)
       {
 //        SEND_MSG("Compute torsoAngularVelocity output signal "+toString(iter), MSG_TYPE_DEBUG);
-        const ml::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
+        const dynamicgraph::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
         if(s.size()!=3)
           s.resize(3);
-        for(int i=0; i<3; i++)
-          s(i) = w_dw_base(i);
+	s = w_dw_base.head<3>();
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(torsoAcceleration, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(torsoAcceleration, dynamicgraph::Vector)
       {
 //        SEND_MSG("Compute torsoAcceleration output signal "+toString(iter), MSG_TYPE_DEBUG);
-        const ml::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
+        const dynamicgraph::Vector &w_dw_base = m_w_dv_torsoSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = w_dw_base(i+3);
+	s = w_dw_base.segment<6>(3);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftFoot, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftFoot, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchLeftFoot output signal "<<iter<<endl;
 
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = torques_wrenches(i+N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT);
+	s = torques_wrenches.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_FOOT);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightFoot, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightFoot, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchRighttFoot output signal "<<iter<<endl;
 
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = torques_wrenches(i+N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT);
+	s = torques_wrenches.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_FOOT);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftSole, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftSole, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchLeftSole output signal "<<iter<<endl;
 
@@ -873,15 +854,12 @@ namespace dynamicgraph
 
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<3; i++)
-        {
-          s(i)   = f_LF.f()(i);
-          s(i+3) = f_LF.n()(i);
-        }
+	s.head<3>() = f_LF.f();
+	s.tail<3>() = f_LF.n();
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightSole, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightSole, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchRightSole output signal "<<iter<<endl;
 
@@ -890,75 +868,68 @@ namespace dynamicgraph
 
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<3; i++)
-        {
-          s(i)   = f_RF.f()(i);
-          s(i+3) = f_RF.n()(i);
-        }
+	s.head<3>() = f_RF.f();
+	s.tail<3>() = f_RF.n();
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightHand, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchRightHand, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchRightHand output signal "<<iter<<endl;
 
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = torques_wrenches(i+N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND);
+	s = torques_wrenches.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_RIGHT_HAND);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftHand, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchLeftHand, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchLeftHand output signal "<<iter<<endl;
 
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = torques_wrenches(i+N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND);
+	s = torques_wrenches.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_LEFT_HAND);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchBody, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(contactWrenchBody, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute contactWrenchBody output signal "<<iter<<endl;
 
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=6)
           s.resize(6);
-        for(int i=0; i<6; i++)
-          s(i) = torques_wrenches(i+N_JOINTS+6*m_INDEX_WRENCH_BODY);
+	s = torques_wrenches.segment<6>(N_JOINTS+6*m_INDEX_WRENCH_BODY);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorquesFromInertiaModel, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorquesFromInertiaModel, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute jointsTorquesFromInertiaModel output signal "<<iter<<endl;
 //        bool useVelocity = velocitySIN;
-        const ml::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
+        const dynamicgraph::Vector &torques_wrenches = m_torques_wrenchesSINNER(iter);
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = torques_wrenches(i);
+	s = torques_wrenches.head<N_JOINTS>();
         return s;
       }
       
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorquesFromMotorModel, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorquesFromMotorModel, dynamicgraph::Vector)
       {
-          sotDEBUG(15)<<"Compute jointsTorquesFromMotorModel output signal "<<iter<<endl;
-          const ml::Vector &torques = m_torquesFromMotorModelSINNER(iter);
-          if(s.size()!=N_JOINTS)
-            s.resize(N_JOINTS);
-          for(int i=0; i<N_JOINTS; i++)
-            s(i) = torques(i);
+	sotDEBUG(15)<<"Compute jointsTorquesFromMotorModel output signal "<<iter<<endl;
+	const dynamicgraph::Vector &torques = m_torquesFromMotorModelSINNER(iter);
+	if(s.size()!=N_JOINTS)
+	  s.resize(N_JOINTS);
+	s = torques.head<N_JOINTS>();
+	
 
         return s;
       }
       
-      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorques, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(jointsTorques, dynamicgraph::Vector)
       {
         getProfiler().start(PROFILE_JOINTS_TORQUES_COMPUTATION);
         {
@@ -967,8 +938,8 @@ namespace dynamicgraph
           COPY_VECTOR_TO_ARRAY(m_saturationCurrentSIN(iter),  m_saturationCurrent_std);
           COPY_VECTOR_TO_ARRAY(m_wCurrentTrustSIN(iter)    ,  m_wCurrentTrust_std    );
           
-          const ml::Vector &torques_fromMotor   = m_torquesFromMotorModelSINNER(iter);
-          const ml::Vector &torques_fromInertia = m_torques_wrenchesSINNER(iter);
+          const dynamicgraph::Vector &torques_fromMotor   = m_torquesFromMotorModelSINNER(iter);
+          const dynamicgraph::Vector &torques_fromInertia = m_torques_wrenchesSINNER(iter);
 
           if(s.size()!=N_JOINTS) s.resize(N_JOINTS);
           for(int i=0; i<N_JOINTS; i++)
@@ -988,7 +959,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(dynamicsError, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(dynamicsError, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute dynamicsError output signal "<<iter<<endl;
         if(s.size()!=N_JOINTS+6)
@@ -997,8 +968,8 @@ namespace dynamicgraph
         if(!m_tauDesSIN.isPlugged() || m_tauDesSIN.getTime()<=1)
           return s;
 
-        const ml::Vector &contactWrenchBody = m_contactWrenchBodySOUT(iter);
-        const ml::Vector &tauDesLast = m_tauDesSIN(iter-1);
+        const dynamicgraph::Vector &contactWrenchBody = m_contactWrenchBodySOUT(iter);
+        const dynamicgraph::Vector &tauDesLast = m_tauDesSIN(iter-1);
         m_jointsTorquesSOUT(iter);
 
         // take the value in the buffer corresponding to the desired delay
@@ -1006,19 +977,17 @@ namespace dynamicgraph
         int index = m_tauDesBuffer.size() - 1 - (int)(m_delayTauDes/m_dt);
         if(index<0)
           index = 0;
-        ml::Vector tauDes = m_tauDesBuffer[index];
+        dynamicgraph::Vector tauDes = m_tauDesBuffer[index];
 
         // take the second most recent value (i.e. the one computed at the last cycle)
-        ml::Vector tau;
+        dynamicgraph::Vector tau;
         if(m_tauBuffer.size()==1)
           tau = m_tauBuffer[0];
         else
           tau = m_tauBuffer[m_tauBuffer.size()-2];
 
-        for(int i=0; i<6; i++)
-          s(i) = -1.0*contactWrenchBody(i);
-        for(int i=0; i<N_JOINTS; i++)
-          s(6+i) = tauDes(i) - tau(i);
+	s.head<6>() = -1.0*contactWrenchBody.head<6>();
+	s.tail<N_JOINTS>() = tauDes.head<N_JOINTS>() - tau.head<N_JOINTS>();
         return s;
       }
 

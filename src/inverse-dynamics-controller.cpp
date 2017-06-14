@@ -28,9 +28,9 @@ namespace dynamicgraph
   {
     namespace torque_control
     {
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
       using namespace metapod;
 
@@ -56,6 +56,10 @@ namespace dynamicgraph
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef InverseDynamicsController EntityClassName;
+      typedef Eigen::Matrix<double,N_JOINTS,1>                     VectorN;
+      typedef Eigen::Matrix<double,N_JOINTS+6,1>                   VectorN6;
+      typedef Eigen::Matrix<double,3,1>                            Vector3;
+      typedef Eigen::Matrix<double,6,1>                            Vector6;
 
       /* --- DG FACTORY ---------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(InverseDynamicsController,
@@ -67,48 +71,48 @@ namespace dynamicgraph
       InverseDynamicsController::
           InverseDynamicsController(const std::string& name)
             : Entity(name)
-            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,     ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(jointsVelocities,    ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(baseAngularVelocity, ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(baseAcceleration,    ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(qRef,                ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(dqRef,               ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(ddqRef,              ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Kp,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Kd,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Kf,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(Ki,                  ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fRightFootRef,       ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fLeftFootRef,        ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fRightHandRef,       ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fLeftHandRef,        ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fRightFoot,          ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fLeftFoot,           ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fRightHand,          ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(fLeftHand,           ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(controlledJoints,    ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(dynamicsError,       ml::Vector)
-            ,CONSTRUCT_SIGNAL_IN(dynamicsErrorGain,   ml::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(tauDes,             ml::Vector, m_tauFBSOUT<<
+            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,     dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(jointsVelocities,    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(baseAngularVelocity, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(baseAcceleration,    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(qRef,                dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dqRef,               dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(ddqRef,              dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Kp,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Kd,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Kf,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(Ki,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fRightFootRef,       dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fLeftFootRef,        dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fRightHandRef,       dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fLeftHandRef,        dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fRightFoot,          dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fLeftFoot,           dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fRightHand,          dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fLeftHand,           dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(controlledJoints,    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dynamicsError,       dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dynamicsErrorGain,   dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_OUT(tauDes,             dynamicgraph::Vector, m_tauFBSOUT<<
                                                                   m_tauFFSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(tauFF,            ml::Vector, STATE_SIGNALS<<
+            ,CONSTRUCT_SIGNAL_OUT(tauFF,            dynamicgraph::Vector, STATE_SIGNALS<<
                                                                 REF_JOINT_SIGNALS<<
                                                                 REF_FORCE_SIGNALS<<
                                                                 m_controlledJointsSIN)
-            ,CONSTRUCT_SIGNAL_OUT(tauFB,            ml::Vector,  STATE_SIGNALS<<
+            ,CONSTRUCT_SIGNAL_OUT(tauFB,            dynamicgraph::Vector,  STATE_SIGNALS<<
                                                                  REF_JOINT_SIGNALS<<
                                                                  FORCE_SIGNALS<<
                                                                  REF_FORCE_SIGNALS<<
                                                                  GAIN_SIGNALS<<
                                                                  m_controlledJointsSIN)
-            ,CONSTRUCT_SIGNAL_OUT(tauFB2,           ml::Vector,  STATE_SIGNALS<<
+            ,CONSTRUCT_SIGNAL_OUT(tauFB2,           dynamicgraph::Vector,  STATE_SIGNALS<<
                                                                  REF_JOINT_SIGNALS<<
                                                                  FORCE_SIGNALS<<
                                                                  REF_FORCE_SIGNALS<<
                                                                  GAIN_SIGNALS<<
                                                                  m_controlledJointsSIN)
-            ,CONSTRUCT_SIGNAL_OUT(ddqDes,           ml::Vector, INPUT_SIGNALS)
-            ,CONSTRUCT_SIGNAL_OUT(qError,           ml::Vector, m_base6d_encodersSIN <<
+            ,CONSTRUCT_SIGNAL_OUT(ddqDes,           dynamicgraph::Vector, INPUT_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(qError,           dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                 m_qRefSIN)
             ,m_initSucceeded(false)
             ,m_useFeedforward(true)
@@ -202,7 +206,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(tauDes, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(tauDes, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -212,23 +216,21 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
         {
-          const ml::Vector& tauFB  = m_tauFBSOUT(iter); // n
-          const ml::Vector& tauFF  = m_tauFFSOUT(iter); // n
-          const ml::Vector& dynamicsError  = m_dynamicsErrorSIN(iter); // n+6
-          const ml::Vector& dynamicsErrorGain  = m_dynamicsErrorGainSIN(iter); // n+6
+          const VectorN& tauFB  = m_tauFBSOUT(iter);                          // n
+          const VectorN& tauFF  = m_tauFFSOUT(iter);                          // n
+          const VectorN6& dynamicsError  = m_dynamicsErrorSIN(iter);          // n+6
+          const VectorN6& dynamicsErrorGain  = m_dynamicsErrorGainSIN(iter);  // n+6
 
           if(s.size()!=N_JOINTS)
             s.resize(N_JOINTS);
           if(m_useFeedforward)
-          {
-            for(unsigned int i=0; i<N_JOINTS; i++)
-              s(i) = tauFB(i) + tauFF(i) + dynamicsErrorGain(6+i)*dynamicsError(6+i);
-          }
+	    s = tauFB +
+	      tauFF +
+	      dynamicsErrorGain.tail<N_JOINTS>().cwiseProduct(dynamicsError.tail<N_JOINTS>());
           else
-          {
-            for(unsigned int i=0; i<N_JOINTS; i++)
-              s(i) = tauFB(i) + dynamicsErrorGain(6+i)*dynamicsError(6+i);
-          }
+	    s = tauFB +
+	      tauFF +
+	      dynamicsErrorGain.tail<N_JOINTS>().cwiseProduct(dynamicsError.tail<N_JOINTS>());
         }
         getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
 
@@ -236,7 +238,7 @@ namespace dynamicgraph
       }
 
 
-      DEFINE_SIGNAL_OUT_FUNCTION(ddqDes,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(ddqDes,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -244,13 +246,13 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kp,          m_KpSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kd,          m_KdSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));     // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dqRef,       m_dqRefSIN(iter));  // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddqRef,      m_ddqRefSIN(iter)); // n
+        const VectorN& Kp =m_KpSIN(iter);                   // n
+        const VectorN& Kd =m_KdSIN(iter);                   // n
+        const VectorN6& q = m_base6d_encodersSIN(iter);     //n+6
+        const VectorN& dq =m_jointsVelocitiesSIN(iter);     // n
+        const VectorN& qRef = m_qRefSIN(iter);              // n
+        const VectorN& dqRef =     m_dqRefSIN(iter);        // n
+        const VectorN& ddqRef =    m_ddqRefSIN(iter);       // n
 
         getProfiler().start(PROFILE_DDQ_DES_COMPUTATION);
         {
@@ -265,14 +267,16 @@ namespace dynamicgraph
           m_ddqDes = ddqRef + Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
                                Kd.cwiseProduct(dqRef-dq);
 
-          EIGEN_VECTOR_TO_VECTOR(m_ddqDes,s);
+        if(s.size()!=N_JOINTS)
+          s.resize(N_JOINTS);
+	s = m_ddqDes;
         }
         getProfiler().stop(PROFILE_DDQ_DES_COMPUTATION);
 
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(qError,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(qError,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -280,20 +284,19 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));     //n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
+        const VectorN6& q = m_base6d_encodersSIN(iter);     //n+6
+        const VectorN&  qRef = m_qRefSIN(iter);   // n
         assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
         assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        for(unsigned int i=0; i<N_JOINTS; i++)
-          s(i)= qRef[i]-q(6+i);
+	s = qRef-q.tail<N_JOINTS>();
 
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(tauFF,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(tauFF,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -301,12 +304,12 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));    // n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(w_b,         m_baseAngularVelocitySIN(iter));   // 3
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dw_b,        m_baseAccelerationSIN(iter));   // 6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddqRef,      m_ddqRefSIN(iter));             // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qMask,       m_controlledJointsSIN(iter));   // n
+        const VectorN6& q = m_base6d_encodersSIN(iter);         // n+6
+        const VectorN& dq = m_jointsVelocitiesSIN(iter);        // n
+        const Vector3& w_b =  m_baseAngularVelocitySIN(iter);   // 3
+        const Vector6& dw_b = m_baseAccelerationSIN(iter);      // 6
+        const VectorN& ddqRef =    m_ddqRefSIN(iter);           // n
+        const VectorN& qMask =     m_controlledJointsSIN(iter); // n
         assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
         assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
         assert(w_b.size()==3            && "Unexpected size of signal base angular velocity");
@@ -357,12 +360,12 @@ namespace dynamicgraph
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        COPY_SHIFTED_VECTOR_TO_VECTOR(m_torques,s,6); // s[i] = m_torques[i+6]
+	s = m_torques.tail<N_JOINTS>();  // s[i] = m_torques[i+6]
 
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(tauFB,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(tauFB, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -370,14 +373,14 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));    // n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kp,          m_KpSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kd,          m_KdSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kf,          m_KfSIN(iter)); // 6*4
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Ki,          m_KiSIN(iter)); // 6*4
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dqRef,       m_dqRefSIN(iter));  // n
+        const VectorN6& q = m_base6d_encodersSIN(iter);         // n+6
+        const VectorN& dq =m_jointsVelocitiesSIN(iter);         // n
+        const VectorN& Kp =m_KpSIN(iter);                       // n
+        const VectorN& Kd =m_KdSIN(iter);                       // n
+        const Eigen::Matrix<double, 24, 1>& Kf =m_KfSIN(iter);  // 6*4
+        const Eigen::Matrix<double, 24, 1>& Ki =m_KiSIN(iter);  // 6*4
+        const VectorN& qRef = m_qRefSIN(iter);                  // n
+        const VectorN& dqRef =     m_dqRefSIN(iter);            // n
 
         assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
         assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
@@ -387,8 +390,8 @@ namespace dynamicgraph
         assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
         assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
 
-        Eigen::Matrix<double,N_JOINTS,1> tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
-                                                 Kd.cwiseProduct(dqRef-dq);
+        VectorN tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
+	  Kd.cwiseProduct(dqRef-dq);
 
         /// *** Compute all Jacobians ***
         // jcalc computes homogeneous transformations (sXp) and local velocities (vj)
@@ -413,8 +416,8 @@ namespace dynamicgraph
         {
           // both f and fRef are expressed in body local coordinates
           // and so is the Jacobian
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fRightFootRefSIN(iter));  // 6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fRightFootSIN(iter));     // 6
+          const Vector6& fRef = m_fRightFootRefSIN(iter);  // 6
+          const Vector6& f =  m_fRightFootSIN(iter);     // 6
           m_f_RF_integral += Ki.head<6>().cwiseProduct(fRef-f);
 //          SEND_DEBUG_STREAM_MSG("Force err RF integral: "+toString(m_f_RF_integral.transpose()));
           e_f = Kf.head<6>().cwiseProduct(fRef-f) + m_f_RF_integral;
@@ -423,8 +426,8 @@ namespace dynamicgraph
         }
         if(m_fLeftFootRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fLeftFootRefSIN(iter));  // 6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fLeftFootSIN(iter));     // 6
+          const Vector6& fRef = m_fLeftFootRefSIN(iter);  // 6
+          const Vector6& f =  m_fLeftFootSIN(iter);     // 6
           m_f_LF_integral += Ki.segment<6>(6).cwiseProduct(fRef-f);
           e_f = Kf.segment<6>(6).cwiseProduct(fRef-f) + m_f_LF_integral;
           m_torques -= m_J_left_foot.topRows<3>().transpose()*e_f.tail<3>();
@@ -432,8 +435,8 @@ namespace dynamicgraph
         }
         if(m_fRightHandRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fRightHandRefSIN(iter));  // 6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fRightHandSIN(iter));     // 6
+          const Vector6& fRef = m_fRightHandRefSIN(iter);  // 6
+          const Vector6& f =  m_fRightHandSIN(iter);     // 6
           m_f_RH_integral += Ki.segment<6>(12).cwiseProduct(fRef-f);
           e_f = Kf.segment<6>(12).cwiseProduct(fRef-f) + m_f_RH_integral;
           m_torques -= m_J_right_hand.topRows<3>().transpose()*e_f.tail<3>();
@@ -441,8 +444,8 @@ namespace dynamicgraph
         }
         if(m_fLeftHandRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fLeftHandRefSIN(iter));  // 6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fLeftHandSIN(iter));     // 6
+          const Vector6& fRef = m_fLeftHandRefSIN(iter);  // 6
+          const Vector6& f =  m_fLeftHandSIN(iter);     // 6
           m_f_LH_integral += Ki.tail<6>().cwiseProduct(fRef-f);
           e_f = Kf.tail<6>().cwiseProduct(fRef-f) + m_f_LH_integral;
           m_torques -= m_J_left_hand.topRows<3>().transpose()*e_f.tail<3>();
@@ -451,14 +454,14 @@ namespace dynamicgraph
 
         tauFB += m_torques.tail<N_JOINTS>();
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        COPY_VECTOR_TO_VECTOR(tauFB,s);
+	if(s.size()!=N_JOINTS)
+	  s.resize(N_JOINTS);
+	s = tauFB;
 
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(tauFB2,ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(tauFB2,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -466,13 +469,13 @@ namespace dynamicgraph
           return s;
         }
 
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,           m_base6d_encodersSIN(iter));    // n+6
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kp,          m_KpSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kd,          m_KdSIN(iter)); // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(Kf,          m_KfSIN(iter)); // 6*4
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(qRef,        m_qRefSIN(iter));   // n
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dqRef,       m_dqRefSIN(iter));  // n
+        const VectorN6& q = m_base6d_encodersSIN(iter);    // n+6
+        const VectorN& dq = m_jointsVelocitiesSIN(iter);   // n
+        const VectorN& Kp = m_KpSIN(iter); // n
+        const VectorN& Kd = m_KdSIN(iter); // n
+        const Eigen::Matrix<double,24,1>& Kf = m_KfSIN(iter); // 6*4
+        const VectorN& qRef = m_qRefSIN(iter);   // n
+        const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
         assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
         assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
@@ -482,8 +485,7 @@ namespace dynamicgraph
         assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
         assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
 
-        Eigen::Matrix<double,N_JOINTS,1> tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
-                                                 Kd.cwiseProduct(dqRef-dq);
+        VectorN tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
 
         m_q.head<6>().setZero();
         m_q.tail<N_JOINTS>()   = q.tail<N_JOINTS>();
@@ -500,8 +502,8 @@ namespace dynamicgraph
         // if ref force signals are plugged use them
         if(m_fRightFootRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fRightFootRefSIN(iter));  // 6
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fRightFootSIN(iter));     // 6
+          const Vector6& fRef = m_fRightFootRefSIN(iter);  // 6
+          const Vector6& f =  m_fRightFootSIN(iter);     // 6
           e_f_vector = Kf.head<6>().cwiseProduct(fRef-f) + m_f_RF_integral;
           e_f = Spatial::ForceTpl<double>(e_f_vector.tail<3>(), e_f_vector.head<3>());
           e_f = m_sole_X_RF.applyInv(e_f);
@@ -509,8 +511,8 @@ namespace dynamicgraph
         }
         if(m_fLeftFootRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fLeftFootRefSIN(iter));
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fLeftFootSIN(iter));
+          const Vector6& fRef = m_fLeftFootRefSIN(iter);
+          const Vector6& f =  m_fLeftFootSIN(iter);
           e_f_vector = Kf.segment<6>(6).cwiseProduct(fRef-f) + m_f_LF_integral;
           e_f = Spatial::ForceTpl<double>(e_f_vector.tail<3>(), e_f_vector.head<3>());
           e_f = m_sole_X_LF.applyInv(e_f);
@@ -518,8 +520,8 @@ namespace dynamicgraph
         }
         if(m_fRightHandRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fRightHandRefSIN(iter));
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fRightHandSIN(iter));
+          const Vector6& fRef = m_fRightHandRefSIN(iter);
+          const Vector6& f =  m_fRightHandSIN(iter);
           e_f_vector = Kf.segment<6>(12).cwiseProduct(fRef-f) + m_f_RH_integral;
           e_f = Spatial::ForceTpl<double>(e_f_vector.tail<3>(), e_f_vector.head<3>());
           e_f = m_gripper_X_RH.applyInv(e_f);
@@ -527,8 +529,8 @@ namespace dynamicgraph
         }
         if(m_fLeftHandRefSIN.isPlugged())
         {
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(fRef, m_fLeftHandRefSIN(iter));
-          EIGEN_CONST_VECTOR_FROM_SIGNAL(f,    m_fLeftHandSIN(iter));
+          const Vector6& fRef = m_fLeftHandRefSIN(iter);
+          const Vector6& f =  m_fLeftHandSIN(iter);
           e_f_vector = Kf.tail<6>().cwiseProduct(fRef-f) + m_f_LH_integral;
           e_f = Spatial::ForceTpl<double>(e_f_vector.tail<3>(), e_f_vector.head<3>());
           e_f = m_gripper_X_LH.applyInv(e_f);
@@ -540,9 +542,9 @@ namespace dynamicgraph
 
         tauFB += m_torques.tail<N_JOINTS>();
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        COPY_VECTOR_TO_VECTOR(tauFB,s);
+	if(s.size()!=N_JOINTS)
+	  s.resize(N_JOINTS);
+	s = tauFB;
 
         return s;
       }

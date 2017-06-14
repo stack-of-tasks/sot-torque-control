@@ -254,11 +254,11 @@ void QuadEstimator::estimate(std::vector<double>& esteem,
 
   double x;
   // Cycle all the elements in the vector
-  for (unsigned int i = 0; i < dim_; ++i)
+  for (int i = 0; i < dim_; ++i)
   {
     c0_[i] = 0.0; c1_[i] = 0.0; c2_[i] = 0.0;
     // Retrieve the data in the window
-    for (unsigned int j = 0; j < N_; ++j)
+    for (int j = 0; j < N_; ++j)
     {
       idx = (pt_+j);
       if (idx >= N_ ) idx -= N_;
@@ -280,22 +280,22 @@ void QuadEstimator::getEstimateDerivative(std::vector<double>& estimateDerivativ
   switch(order)
   {
     case 0:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = 0.5*c2_[i]*tmed_*tmed_ + c1_[i]*tmed_ + c0_[i];
       return;
 
     case 1:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c2_[i]*tmed_ + c1_[i];
       return;
 
     case 2:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c2_[i];
       return;
 
     default:
-      for (unsigned int i = 0; i < dim_; ++i)
+      for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = 0.0;
   }
 }

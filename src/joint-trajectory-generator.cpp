@@ -27,9 +27,9 @@ namespace dynamicgraph
   {
     namespace torque_control
     {
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
       using namespace Eigen;
 
@@ -50,21 +50,21 @@ namespace dynamicgraph
       JointTrajectoryGenerator::
           JointTrajectoryGenerator(const std::string& name)
             : Entity(name)
-            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,ml::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(q,   ml::Vector, m_base6d_encodersSIN)
-            ,CONSTRUCT_SIGNAL_OUT(dq,  ml::Vector, m_qSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(ddq, ml::Vector, m_qSOUT)
-            ,CONSTRUCT_SIGNAL(fRightFoot, OUT, ml::Vector)
-            ,CONSTRUCT_SIGNAL(fLeftFoot,  OUT, ml::Vector)
-            ,CONSTRUCT_SIGNAL(fRightHand, OUT, ml::Vector)
-            ,CONSTRUCT_SIGNAL(fLeftHand,  OUT, ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(base6d_encoders,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_OUT(q,   dynamicgraph::Vector, m_base6d_encodersSIN)
+            ,CONSTRUCT_SIGNAL_OUT(dq,  dynamicgraph::Vector, m_qSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(ddq, dynamicgraph::Vector, m_qSOUT)
+            ,CONSTRUCT_SIGNAL(fRightFoot, OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL(fLeftFoot,  OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL(fRightHand, OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL(fLeftHand,  OUT, dynamicgraph::Vector)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
       {
-        BIND_SIGNAL_TO_FUNCTION(fRightFoot, OUT, ml::Vector);
-        BIND_SIGNAL_TO_FUNCTION(fLeftFoot,  OUT, ml::Vector);
-        BIND_SIGNAL_TO_FUNCTION(fRightHand, OUT, ml::Vector);
-        BIND_SIGNAL_TO_FUNCTION(fLeftHand,  OUT, ml::Vector);
+        BIND_SIGNAL_TO_FUNCTION(fRightFoot, OUT, dynamicgraph::Vector);
+        BIND_SIGNAL_TO_FUNCTION(fLeftFoot,  OUT, dynamicgraph::Vector);
+        BIND_SIGNAL_TO_FUNCTION(fRightHand, OUT, dynamicgraph::Vector);
+        BIND_SIGNAL_TO_FUNCTION(fLeftHand,  OUT, dynamicgraph::Vector);
 
         m_status.resize(N_JOINTS,JTG_STOP);
         m_minJerkTrajGen.resize(N_JOINTS);
@@ -220,7 +220,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(q, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(q, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -234,7 +234,7 @@ namespace dynamicgraph
           // at first iteration store current joints positions
           if(m_firstIter)
           {
-            const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
+            const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
             if(base6d_encoders.size()!=N_JOINTS+6)
             {
               SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder");
@@ -284,7 +284,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(dq, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(dq, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -292,7 +292,7 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& q = m_qSOUT(iter);
+        const dynamicgraph::Vector& q = m_qSOUT(iter);
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
@@ -308,7 +308,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(ddq, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(ddq, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -316,7 +316,7 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& q = m_qSOUT(iter);
+        const dynamicgraph::Vector& q = m_qSOUT(iter);
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
@@ -333,32 +333,32 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fRightFoot, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(fRightFoot, dynamicgraph::Vector)
       {
 //        SEND_MSG("Compute force right foot iter "+toString(iter), MSG_TYPE_DEBUG);
         generateReferenceForceSignal("fRightFoot", FORCE_ID_RIGHT_FOOT, s, iter);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftFoot", FORCE_ID_LEFT_FOOT, s, iter);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fRightHand", FORCE_ID_RIGHT_HAND, s, iter);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftHand", FORCE_ID_LEFT_HAND, s, iter);
         return s;
       }
 
-      bool JointTrajectoryGenerator::generateReferenceForceSignal(const std::string& forceName, int fid, ml::Vector& s, int iter)
+      bool JointTrajectoryGenerator::generateReferenceForceSignal(const std::string& forceName, int fid, dynamicgraph::Vector& s, int iter)
       {
         if(!m_initSucceeded)
         {
@@ -404,7 +404,7 @@ namespace dynamicgraph
         unsigned int i;
         if(convertJointNameToJointId(jointName,i)==false)
           return;
-        const ml::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
+        const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
         SEND_MSG("Current angle of joint "+jointName+" is "+toString(base6d_encoders(6+i)), MSG_TYPE_INFO);
       }
 
@@ -673,7 +673,7 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop joint before initialization!",MSG_TYPE_ERROR);
 
-        const ml::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
+        const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
         if(jointName=="all")
         {
           for(unsigned int i=0; i<N_JOINTS; i++)

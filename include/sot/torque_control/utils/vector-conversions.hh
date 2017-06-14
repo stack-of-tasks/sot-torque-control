@@ -68,33 +68,6 @@ namespace Eigen
   typedef const Eigen::Ref<const Eigen::MatrixXd>  ConstRefMatrix;
 }
 
-#define EIGEN_CONST_MATRIX_FROM_SIGNAL(name,signal)	                 \
-  Eigen::const_SigMatrixXd name						\
-  (							                 \
-   signal.accessToMotherLib().data().begin(),                      	 \
-   signal.nbRows(),				               	         \
-   signal.nbCols()				               	         \
-  )
-#define EIGEN_MATRIX_FROM_SIGNAL(name,signal)	                         \
-  Eigen::SigMatrixXd name			                         \
-  (							                 \
-   signal.accessToMotherLib().data().begin(),	                         \
-   signal.nbRows(),				               	         \
-   signal.nbCols()				               	         \
-  )
-#define EIGEN_CONST_VECTOR_FROM_SIGNAL(name,signal)	                 \
-  Eigen::const_SigVectorXd name		               	                 \
-  (						               	         \
-   signal.accessToMotherLib().data().begin(),	               	         \
-   signal.size()				               	         \
-  )
-#define EIGEN_VECTOR_FROM_SIGNAL(name,signal)	                         \
-  Eigen::SigVectorXd name	 	               	                 \
-  (						               	         \
-   signal.accessToMotherLib().data().begin(),	               	         \
-   signal.size()				               	         \
-  )
-
 #define EIGEN_CONST_VECTOR_FROM_STD_VECTOR(name,signal)	                 \
   Eigen::const_SigVectorXd name		               	                 \
   (						               	         \
@@ -107,57 +80,6 @@ namespace Eigen
    signal.data(),                                                        \
    signal.size()				               	         \
   )
-
-
-namespace dynamicgraph
-{
-  namespace sot
-  {
-    namespace torque_control
-    {
-
-      template< typename D >
-        inline void EIGEN_VECTOR_TO_VECTOR( const Eigen::MatrixBase<D>& in, ml::Vector & out )
-        {
-          EIGEN_STATIC_ASSERT_VECTOR_ONLY( Eigen::MatrixBase<D> );
-          out.resize(in.size());
-          memcpy( out.accessToMotherLib().data().begin(),in.derived().data(),
-                  in.size()*sizeof(double));
-        }
-
-      template< typename MB >
-        inline void EIGEN_ROWMAJOR_MATRIX_TO_MATRIX( const Eigen::MatrixBase<MB>& in,
-                                                     ml::Matrix & out )
-        {
-          out.resize( in.rows(),in.cols() );
-          memcpy( out.accessToMotherLib().data().begin(),in.derived().data(),
-                  in.cols()*in.rows()*sizeof(double));
-        }
-
-      template< typename MB >
-        inline void EIGEN_COLMAJOR_MATRIX_TO_MATRIX( const Eigen::MatrixBase<MB>& in,
-                                                     ml::Matrix & out )
-        {
-          // TODO: find a better way for that!
-          out.resize( in.rows(),in.cols() );
-          for( int i=0;i<in.rows();++i )
-            for( int j=0;j<in.cols();++j )
-              out(i,j)=in(i,j);
-        }
-
-    } // namespace torque_control
-  } // namespace sot
-} // namespace dynamicgraph
-
-
-
-#define EIGEN_MATRIX_FROM_MATRIX(eigName,mlName,r,c)	         \
-  mlName.resize(r,c);						 \
-  EIGEN_MATRIX_FROM_SIGNAL(eigName,mlName)
-
-#define EIGEN_VECTOR_FROM_VECTOR(eigName,mlName,r)	         \
-  mlName.resize(r);						 \
-  EIGEN_VECTOR_FROM_SIGNAL(eigName,mlName)
 
 
 /********************* VECTOR COPY ******************************/
@@ -177,10 +99,6 @@ namespace dynamicgraph
 #define COPY_VECTOR_TO_ARRAY(src, dest) \
   for(unsigned int i=0; i<src.size(); i++) \
     dest[i] = src(i)
-
-#define COPY_VECTOR_TO_VECTOR(src, dest) \
-  for(unsigned int i=0; i< src.size(); i++) \
-    dest(i) = src(i)
 
 #define COPY_SHIFTED_VECTOR_TO_VECTOR(src, dest, offset) \
   for(unsigned int i=0; i< dest.size(); i++) \
@@ -203,7 +121,7 @@ namespace dynamicgraph
 
 ///  METAPOD
 #define METAPOD_FORCE_FROM_SIGNAL(force, signal) \
-  EIGEN_CONST_VECTOR_FROM_SIGNAL(tmp##force##_eig,signal); \
+  const Eigen::VectorXd& tmp##force##_eig = signal;	\
   metapod::Spatial::ForceTpl<double> force(tmp##force##_eig.tail<3>(), tmp##force##_eig.head<3>())
 
 #endif // __sot_torque_control_vector_conversion_H__
