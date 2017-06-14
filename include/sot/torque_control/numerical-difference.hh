@@ -179,13 +179,13 @@ namespace dynamicgraph {
       
         double m_dt;              /// timestep of the controller
         double m_delay;   /// delay introduced by the estimation of joints pos/vel/acc
-
+        int x_size;
         /// std::vector to use with the filters
         /// All the variables whose name contains 'filter' are outputs of the filters
-        std::vector<double> m_ddx_filter_std;  /// joints accelerations
-        std::vector<double> m_dx_filter_std;   /// joints velocities
-        std::vector<double> m_x_filter_std;    /// joints positions
-        std::vector<double> m_x_std;           /// joints positions
+        std::vector<double> m_ddx_filter_std;  /// 2nd derivative
+        std::vector<double> m_dx_filter_std;   /// 1st derivative
+        std::vector<double> m_x_filter_std;    /// filtered output
+        std::vector<double> m_x_std;           /// x signal
 
 
         /// polynomial-fitting filters
@@ -208,7 +208,7 @@ namespace dynamicgraph {
          * @note The estimationDelay is half of the length of the window used for the
          * polynomial fitting. The larger the delay, the smoother the estimations.
          */
-        void init(const double &timestep, const double &delay);
+        void init(const double &timestep, const int& sigSize, const double &delay);
 
       protected:
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
