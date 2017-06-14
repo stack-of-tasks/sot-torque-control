@@ -32,7 +32,7 @@ def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfF
     robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
-    robot.estimator_kin.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";

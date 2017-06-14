@@ -11,7 +11,7 @@ USE_ROBOT_VIEWER = False;
 PLOT_SENSOR_DATA = False;
 
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
-from dynamic_graph.sot.torque_control.vel_acc_estimator import VelAccEstimator
+from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference as VelAccEstimator
 from load_hrpsys_log import load_hrpsys_log_astate
 import numpy as np
 import dynamic_graph.sot.torque_control.utils.plot_utils as plut
@@ -36,9 +36,9 @@ def compute_delta_q_components(enc, delta_q, dq, delta_q_ff, qRef, dqRef, k_tau,
 
 def set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensor_data):
     estimator_ft.base6d_encoders.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
-    estimator_kin.base6d_encoders.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
-    estimator_kin.accelerometer.value   = tuple(sensor_data['acc'][0:3]);
-    estimator_kin.gyroscope.value       = tuple(sensor_data['gyro']);
+    estimator_kin.x.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
+    estimator_ft.accelerometer.value   = tuple(sensor_data['acc'][0:3]);
+    estimator_ft.gyroscope.value       = tuple(sensor_data['gyro']);
     estimator_ft.ftSensRightFoot.value = tuple(sensor_data['forceRL']);
     estimator_ft.ftSensLeftFoot.value  = tuple(sensor_data['forceLL']);
     estimator_ft.ftSensRightHand.value = tuple(sensor_data['forceRA']);
@@ -73,10 +73,10 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
     print "Time step: %f" % dt;
     print "Estimation delay: %f" % delay;
     if(ftSensorOffsets==None):
-        estimator_ft.init(dt,delay,delay,delay,True);
+        estimator_ft.init(dt,delay,delay,delay,delay,True);
     else:
-        estimator_ft.init(dt,delay,delay,delay,False);
-    estimator_kin.init(dt,delay,delay,delay);
+        estimator_ft.init(dt,delay,delay,delay,delay,False);
+    estimator_kin.init(dt,delay);
     estimator_ft.setFTsensorOffsets(tuple(ftSensorOffsets));
     estimator_ft.setUseRawEncoders(False);
     estimator_ft.setUseRefJointVel(False);
@@ -96,8 +96,8 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
         set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensors[i]);
         estimator_ft.jointsTorques.recompute(i);
         torques[i,:] = np.array(estimator_ft.jointsTorques.value);
-        dq[i,:]      = np.array(estimator_kin.jointsVelocities.value);
-        ddq[i,:]     = np.array(estimator_kin.jointsAccelerations.value);
+        dq[i,:]      = np.array(estimator_kin.dx.value);
+        ddq[i,:]     = np.array(estimator_kin.ddx.value);
         
         if(i==2):
             print ("F/T sensor offsets are: ", estimator_ft.getFTsensorOffsets());
