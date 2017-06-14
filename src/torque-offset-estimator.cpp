@@ -29,7 +29,8 @@ namespace dynamicgraph
     namespace torque_control
     {
 
-#define ALL_INPUT_SIGNALS m_base6d_encodersSIN << m_accelerometerSIN << m_jointTorquesSIN
+#define ALL_INPUT_SIGNALS m_base6d_encodersSIN << m_accelerometerSIN \
+      << m_jointTorquesSIN << m_gyroscopeSIN
 
 #define ALL_OUTPUT_SIGNALS m_jointTorquesEstimatedSOUT
 
@@ -54,6 +55,7 @@ namespace dynamicgraph
         : Entity(name),
           CONSTRUCT_SIGNAL_IN(base6d_encoders,      dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(accelerometer,         dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(gyroscope,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointTorques,          dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_INNER(collectSensorData,  dynamicgraph::Vector, ALL_INPUT_SIGNALS)
         ,CONSTRUCT_SIGNAL_OUT(jointTorquesEstimated,
@@ -62,10 +64,11 @@ namespace dynamicgraph
         ,current_progress(0)
       {
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
-        addCommand("init", makeCommandVoid2(*this, &TorqueOffsetEstimator::init,
-                                            docCommandVoid2("Initialize the estimator" ,
+        addCommand("init", makeCommandVoid3(*this, &TorqueOffsetEstimator::init,
+                                            docCommandVoid3("Initialize the estimator" ,
                                                             "urdfFilePath",
-                                                            "Homogeneous transformation from chest frame to IMU frame")));
+                                                            "Homogeneous transformation from chest frame to IMU frame",
+                                                            "Maximum angular velocity allowed in either axis")));
         addCommand("computeOffset",
                    makeCommandVoid2(*this, &TorqueOffsetEstimator::computeOffset,
                                     docCommandVoid2("Compute the offset for sensor calibration",
@@ -88,7 +91,8 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       void TorqueOffsetEstimator::init(const std::string &urdfFile,
-                                       const Eigen::Matrix4d& m_torso_X_imu_)
+                                       const Eigen::Matrix4d& m_torso_X_imu_,
+                                       const double& gyro_epsilon_)
       {
         try {
           se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
@@ -98,7 +102,7 @@ namespace dynamicgraph
           jointTorqueOffsets.resize(m_model.nv);
           jointTorqueOffsets.setZero();
 
-          ffIndex = 0;
+          ffIndex = 1;
           torsoIndex = m_model.getJointId("torso_2_joint");
         }
         catch (const std::exception& e) 
@@ -109,6 +113,7 @@ namespace dynamicgraph
         m_data = new se3::Data(m_model);
         m_torso_X_imu.rotation() = m_torso_X_imu_.block<3,3>(0,0);
         m_torso_X_imu.translation() = m_torso_X_imu_.block<3,1>(0,3);
+        gyro_epsilon = gyro_epsilon_;
       }
 
       void TorqueOffsetEstimator::computeOffset(const int& nIterations, const double& epsilon_)
@@ -201,6 +206,12 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(jointTorquesEstimated, dynamicgraph::Vector)
       {
         m_collectSensorDataSINNER(iter);
+
+        const Eigen::VectorXd& gyro = m_gyroscopeSIN(iter);
+        if(gyro.array().abs().maxCoeff() >=gyro_epsilon) {
+          SEND_MSG("Very High Angular Rotations.", MSG_TYPE_ERROR_STREAM);
+        }        
+
         if (s.size() != m_model.nv) s.resize(m_model.nv);
 
         if (sensor_offset_status == PRECOMPUTATION || sensor_offset_status == INPROGRESS) {

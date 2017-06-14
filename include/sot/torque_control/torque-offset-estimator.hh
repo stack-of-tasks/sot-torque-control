@@ -69,7 +69,8 @@ namespace dynamicgraph {
         /** --- CONSTRUCTOR ---- */
         TorqueOffsetEstimator( const std::string & name );
         void init(const std::string &urdfFile,
-                  const Eigen::Matrix4d& _m_torso_X_imu);
+                  const Eigen::Matrix4d& _m_torso_X_imu,
+                  const double& gyro_epsilon);
         void computeOffset(const int& nIterations, const double& epsilon);
 
         virtual void display( std::ostream& os ) const;
@@ -79,6 +80,7 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_IN(base6d_encoders,          dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(accelerometer,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gyroscope,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(jointTorques,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
@@ -89,6 +91,7 @@ namespace dynamicgraph {
         se3::Data         *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
         int epsilon;
+        int gyro_epsilon;
 
         int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
         Eigen::VectorXd jointTorqueOffsets;

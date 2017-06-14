@@ -126,8 +126,9 @@ import numpy as np
 
 toe = TOE("test_entity_toe")
 id4 = ((1.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(0.0,0.0,0.0,1.0))
-toe.init(urdfPath, id4)
+toe.init(urdfPath, id4, 0.1)
 plug(robot.device.state, toe.base6d_encoders)
+toe.gyroscope.value = (0.,0.,0.)
 
 from pinocchio import Motion
 gravity = Motion.Zero()
@@ -147,7 +148,7 @@ def runner(n):
         tau = np.asarray(rnea(pinocchioRobot.model, pinocchioRobot.data, q_pin, nvZero, nvZero)).squeeze()
         tau_offset = np.asarray((0.1,)*tau.size).squeeze()
         toe.jointTorques.value = tau_offset + tau
-
+        pinocchioRobot.forwardKinematics(q_pin)
         toe.accelerometer.value = np.asarray((pinocchioRobot.data.oMi[15].inverse()*pinocchioRobot.data.oMi[1]*gravity).linear).squeeze()
 
         toe.jointTorquesEstimated.recompute(robot.device.state.time)
