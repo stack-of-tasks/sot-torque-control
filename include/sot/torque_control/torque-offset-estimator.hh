@@ -79,7 +79,6 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_IN(base6d_encoders,          dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(accelerometer,            dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(gyroscope,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(jointTorques,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
