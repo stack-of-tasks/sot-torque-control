@@ -225,13 +225,7 @@ namespace dynamicgraph
           const VectorN& qMask =       m_controlledJointsSIN(iter); // n
           const Eigen::Vector4d& damping =     m_dampingSIN(iter);          // 4
 
-          assert(e_f_RF.size()==6       && "Unexpected size of signal fRightFootError");
-          assert(e_f_LF.size()==6       && "Unexpected size of signal fLeftFootError");
 //          assert(Kd.size()==N_JOINTS    && "Unexpected size of signal Kd");
-          assert(q.size()==N_JOINTS+6   && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==N_JOINTS    && "Unexpected size of signal dq");
-          assert(qMask.size()==N_JOINTS && "Unexpected size of signal controlledJoints");
-          assert(damping.size()==4      && "Unexpected size of signal damping");
 
           /// *** Compute all Jacobians ***
           m_q.head<6>().setZero();
@@ -304,8 +298,6 @@ namespace dynamicgraph
         const Eigen::Matrix<double,24,1>& Kf =          m_KfSIN(iter); // 6*4
         const Vector6& f =           m_fRightFootSIN(iter);      // 6
         const Vector6& fRef =        m_fRightFootRefSIN(iter);   // 6
-        assert(f.size()==6     && "Unexpected size of signal fRightFoot");
-        assert(fRef.size()==6  && "Unexpected size of signal fRightFootRef");
 
         if(s.size()!=6)
           s.resize(6);
@@ -326,8 +318,6 @@ namespace dynamicgraph
         const Eigen::Matrix<double,24,1>& Kf =         m_KfSIN(iter); // 6*4
         const Vector6& f =           m_fLeftFootSIN(iter);      // 6
         const Vector6& fRef =        m_fLeftFootRefSIN(iter);   // 6
-        assert(f.size()==6     && "Unexpected size of signal fLeftFoot");
-        assert(fRef.size()==6  && "Unexpected size of signal fLeftFootRef");
 
         if(s.size()!=6)
           s.resize(6);
@@ -348,8 +338,6 @@ namespace dynamicgraph
         const Eigen::Matrix<double,24,1>& Kf =        m_KfSIN(iter); // 6*4
         const Vector6& f =          m_fRightHandSIN(iter);      // 6
         const Vector6& fRef =       m_fRightHandRefSIN(iter);   // 6
-        assert(f.size()==6     && "Unexpected size of signal fRightHand");
-        assert(fRef.size()==6  && "Unexpected size of signal fRightHandRef");
 
         if(s.size()!=6)
           s.resize(6);
@@ -369,8 +357,6 @@ namespace dynamicgraph
         const Eigen::Matrix<double,24,1>&  Kf =         m_KfSIN(iter); // 6*4
         const Vector6& f =           m_fLeftHandSIN(iter);      // 6
         const Vector6& fRef =        m_fLeftHandRefSIN(iter);   // 6
-        assert(f.size()==6     && "Unexpected size of signal fLeftHand");
-        assert(fRef.size()==6  && "Unexpected size of signal fLeftHandRef");
 
         if(s.size()!=6)
           s.resize(6);
