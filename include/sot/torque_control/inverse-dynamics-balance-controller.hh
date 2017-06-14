@@ -132,7 +132,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(q_max,                      dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq_max,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(ddq_max,                    dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double);
+        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double    );
 
         DECLARE_SIGNAL_IN(tau_estimated,              dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(q,                          dynamicgraph::Vector);

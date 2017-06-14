@@ -36,6 +36,7 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <vector>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
@@ -93,10 +94,9 @@ namespace dynamicgraph {
         void init(const double& dt);
 
         /* --- SIGNALS --- */
-        std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
-        std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*> m_jointsCtrlModesSOUT;
-
-        std::vector<dynamicgraph::SignalPtr<bool,int>*> m_emergencyStopSIN;/// emergency stop inputs. If one is true, control is set to zero forever
+        std::vector< dynamicgraph::SignalPtr<dynamicgraph::Vector,int>* > m_ctrlInputsSIN;
+        std::vector< dynamicgraph::SignalPtr<bool,int>* >                 m_emergencyStopSIN; /// emergency stop inputs. If one is true, control is set to zero forever
+        std::vector< dynamicgraph::Signal<dynamicgraph::Vector,int>* >    m_jointsCtrlModesSOUT;
 
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
@@ -107,12 +107,10 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(signWindowsFilterSize,                 dynamicgraph::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
-        DECLARE_SIGNAL_IN(emergencyStop,                         bool      );  /// emergency stop input. If true, control is set to zero forever 
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
         DECLARE_SIGNAL_OUT(signOfControlFiltered,                dynamicgraph::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
         DECLARE_SIGNAL_OUT(signOfControl,                        dynamicgraph::Vector);  /// sign of control without filtered (indicating what would be the dead zone compensation applyed if no filtering on sign)
-
 
 
         /* --- COMMANDS --- */
@@ -150,7 +148,6 @@ namespace dynamicgraph {
            input ______| |__| |_|                         |__| |________
                         __________________________________
            output______|                                  |_____________
-
         */
 
         std::vector<std::string>  m_ctrlModes;                /// existing control modes
