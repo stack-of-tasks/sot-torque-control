@@ -102,6 +102,7 @@ SET(${LIBRARY_NAME}_HEADERS
   #include/sot/torque_control/hrp2-device-torque-ctrl.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
+  include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
@@ -182,6 +183,7 @@ INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/_
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/sot_utils.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/hrp2)
 
 ADD_SUBDIRECTORY(src)

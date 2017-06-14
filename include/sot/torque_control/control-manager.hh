@@ -36,6 +36,7 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <vector>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
@@ -93,8 +94,9 @@ namespace dynamicgraph {
         void init(const double& dt);
 
         /* --- SIGNALS --- */
-        std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
-        std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*> m_jointsCtrlModesSOUT;
+        std::vector< dynamicgraph::SignalPtr<dynamicgraph::Vector,int>* > m_ctrlInputsSIN;
+        std::vector< dynamicgraph::SignalPtr<bool,int>* >                 m_emergencyStopSIN; /// emergency stop inputs. If one is true, control is set to zero forever
+        std::vector< dynamicgraph::Signal<dynamicgraph::Vector,int>* >    m_jointsCtrlModesSOUT;
 
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
@@ -105,12 +107,10 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(signWindowsFilterSize,                 dynamicgraph::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
-        DECLARE_SIGNAL_IN(emergencyStop,                         bool      );  /// emergency stop input. If true, control is set to zero forever 
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
         DECLARE_SIGNAL_OUT(signOfControlFiltered,                dynamicgraph::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
         DECLARE_SIGNAL_OUT(signOfControl,                        dynamicgraph::Vector);  /// sign of control without filtered (indicating what would be the dead zone compensation applyed if no filtering on sign)
-
 
 
         /* --- COMMANDS --- */
@@ -120,6 +120,7 @@ namespace dynamicgraph {
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
         void resetProfiler();
+        void addEmergencyStopSIN(const std::string& name);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -154,6 +155,8 @@ namespace dynamicgraph {
         std::vector<CtrlMode>     m_jointCtrlModes_current;   /// control mode of the joints
         std::vector<CtrlMode>     m_jointCtrlModes_previous;  /// previous control mode of the joints
         std::vector<int>          m_jointCtrlModesCountDown;  /// counters used for the transition between two ctrl modes
+
+        std::vector<bool>         m_currentWarningZone;      /// true if desired current > 0.8*maxCurrent
 
         bool convertStringToCtrlMode(const std::string& name, CtrlMode& cm);
         bool convertJointNameToJointId(const std::string& name, unsigned int& id);

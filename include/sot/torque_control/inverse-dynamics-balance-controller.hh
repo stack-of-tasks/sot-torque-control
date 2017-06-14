@@ -122,7 +122,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(contact_points,             dynamicgraph::Matrix);
         DECLARE_SIGNAL_IN(contact_normal,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(f_min,                      double);
-        DECLARE_SIGNAL_IN(f_max,                      double);
+        DECLARE_SIGNAL_IN(f_max_right_foot,           double);
+        DECLARE_SIGNAL_IN(f_max_left_foot,            double);
 
         DECLARE_SIGNAL_IN(rotor_inertias,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(gear_ratios,                dynamicgraph::Vector);
@@ -131,7 +132,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(q_max,                      dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq_max,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(ddq_max,                    dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double);
+        DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double    );
 
         DECLARE_SIGNAL_IN(tau_estimated,              dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(q,                          dynamicgraph::Vector);
@@ -172,7 +173,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[InverseDynamicsBalanceController-"+name+"] "+msg, t, file, line);
+          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
         }
         
       protected:

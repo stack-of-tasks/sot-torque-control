@@ -43,7 +43,6 @@ namespace dynamicgraph
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
-      //Size to be aligned                "-------------------------------------------------------"
 #define PROFILE_TAU_DES_COMPUTATION "InverseDynamicsBalanceController: desired tau"
 #define PROFILE_HQP_SOLUTION        "InverseDynamicsBalanceController: HQP"
 #define PROFILE_PREPARE_INV_DYN     "InverseDynamicsBalanceController: prepare inv-dyn"
@@ -87,7 +86,8 @@ namespace dynamicgraph
   << m_contact_pointsSIN \
   << m_contact_normalSIN \
   << m_f_minSIN \
-  << m_f_maxSIN \
+  << m_f_max_right_footSIN \
+  << m_f_max_left_footSIN \
   << m_rotor_inertiasSIN \
   << m_gear_ratiosSIN \
   << m_tau_maxSIN \
@@ -173,7 +173,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(w_forces,                    double)
             ,CONSTRUCT_SIGNAL_IN(mu,                          double)
             ,CONSTRUCT_SIGNAL_IN(f_min,                       double)
-            ,CONSTRUCT_SIGNAL_IN(f_max,                       double)
+            ,CONSTRUCT_SIGNAL_IN(f_max_right_foot,            double)
+            ,CONSTRUCT_SIGNAL_IN(f_max_left_foot,             double)
             ,CONSTRUCT_SIGNAL_IN(dt_joint_pos_limits,         double)
             ,CONSTRUCT_SIGNAL_IN(weight_contact_forces,       dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
@@ -262,9 +263,13 @@ namespace dynamicgraph
           {
             m_contactState = LEFT_SUPPORT_TRANSITION;
             m_contactTransitionTime = m_t + transitionTime;
+            SEND_MSG("Starting transition to remove right foot contact", MSG_TYPE_INFO);
           }
           else
+          {
             m_contactState = LEFT_SUPPORT;
+            SEND_MSG("Right foot contact removed", MSG_TYPE_INFO);
+          }
         }
       }
 
@@ -276,9 +281,16 @@ namespace dynamicgraph
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
           if(transitionTime>m_dt)
+          {
             m_contactState = RIGHT_SUPPORT_TRANSITION;
+            m_contactTransitionTime = m_t + transitionTime;
+            SEND_MSG("Starting transition to remove left foot contact", MSG_TYPE_INFO);
+          }
           else
+          {
             m_contactState = RIGHT_SUPPORT;
+            SEND_MSG("Left foot contact removed", MSG_TYPE_INFO);
+          }
         }
       }
 
@@ -326,7 +338,8 @@ namespace dynamicgraph
         const double & w_forces = m_w_forcesSIN(0);
         const double & mu = m_muSIN(0);
         const double & fMin = m_f_minSIN(0);
-        const double & fMax = m_f_maxSIN(0);
+        const double & fMaxRF = m_f_max_right_footSIN(0);
+        const double & fMaxLF = m_f_max_left_footSIN(0);
 
         try
         {
@@ -346,14 +359,14 @@ namespace dynamicgraph
 
           m_contactRF = new Contact6d("contact_rfoot", *m_robot, RIGHT_FOOT_FRAME_NAME,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMax, w_forces);
+                                      mu, fMin, fMaxRF, w_forces);
           m_contactRF->Kp(kp_contact);
           m_contactRF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactRF);
 
           m_contactLF = new Contact6d("contact_lfoot", *m_robot, LEFT_FOOT_FRAME_NAME,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMax, w_forces);
+                                      mu, fMin, fMaxLF, w_forces);
           m_contactLF->Kp(kp_contact);
           m_contactLF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactLF);
@@ -461,10 +474,12 @@ namespace dynamicgraph
         if(m_contactState == RIGHT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime)
         {
           m_contactState = RIGHT_SUPPORT;
+          SEND_MSG("Time "+toString(m_t)+" right foot contact removed", MSG_TYPE_INFO);
         }
         else if(m_contactState == LEFT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime)
         {
           m_contactState = LEFT_SUPPORT;
+          SEND_MSG("Time "+toString(m_t)+" left foot contact removed", MSG_TYPE_INFO);
         }
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
@@ -503,7 +518,10 @@ namespace dynamicgraph
         const VectorN& kd_pos = m_kd_posSIN(iter);
         assert(kd_pos.size()==N_JOINTS);
 
-        if(m_contactState == LEFT_SUPPORT)
+        const double & fMaxRF = m_f_max_right_footSIN(0);
+        const double & fMaxLF = m_f_max_left_footSIN(0);
+
+        if(m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION)
         {
   		  const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
           assert(x_rf_ref.size()==12);
@@ -522,7 +540,7 @@ namespace dynamicgraph
           m_taskRF->Kp(kp_feet);
           m_taskRF->Kd(kd_feet);
         }
-        else if(m_contactState==RIGHT_SUPPORT)
+        else if(m_contactState==RIGHT_SUPPORT || m_contactState==RIGHT_SUPPORT_TRANSITION)
         {
           const Eigen::Matrix<double,12,1>& x_lf_ref = m_lf_ref_posSIN(iter);
           assert(x_lf_ref.size()==12);
@@ -565,6 +583,10 @@ namespace dynamicgraph
         m_contactLF->Kd(kd_contact);
         m_contactRF->Kp(kp_contact);
         m_contactRF->Kd(kd_contact);
+
+        // during contact transitions these values are overwritten in computeProblemData
+        m_contactLF->setMaxNormalForce(fMaxLF);
+        m_contactRF->setMaxNormalForce(fMaxRF);
 
         if(m_firstTime)
         {
@@ -620,6 +642,18 @@ namespace dynamicgraph
           s.resize(0);
           return s;
         }
+
+        // DEBUG START
+//        if(m_contactState == LEFT_SUPPORT_TRANSITION && fabs(m_t-m_contactTransitionTime)<0.1)
+//        {
+//          const pininvdyn::math::Vector & dv = m_invDyn->getAccelerations(sol);
+//          SEND_MSG("Contact transition time "+toString(m_contactTransitionTime), MSG_TYPE_DEBUG);
+//          SEND_MSG("Time "+toString(m_t)+" RF task acc des "+toString(m_taskRF->getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
+//          SEND_MSG("Time "+toString(m_t)+" RF cont acc des "+toString(m_contactRF->getMotionTask().getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
+//          SEND_MSG("Time "+toString(m_t)+" RF task acc     "+toString(m_taskRF->getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
+//          SEND_MSG("Time "+toString(m_t)+" RF cont acc     "+toString(m_contactRF->getMotionTask().getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
+//        }
+        // DEBUG END
 
         getStatistics().store("active inequalities", sol.activeSet.size());
         getStatistics().store("solver iterations", sol.iterations);

@@ -216,7 +216,8 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
-    ctrl.f_max.value = conf.fMax;
+    ctrl.f_max_right_foot.value = conf.fMax;
+    ctrl.f_max_left_foot.value = conf.fMax;
     ctrl.mu.value = conf.mu[0];
     ctrl.weight_contact_forces.value = (1e2, 1e2, 1e0, 1e3, 1e3, 1e3);
     ctrl.kp_com.value = 3*(conf.kp_com,);
@@ -347,7 +348,7 @@ def create_ros_topics(ent):
         pass;
     
     try:
-        create_topic(ros, ent.estimator_kin.dx,               'jointsVelocities');
+        create_topic(ros, ent.estimator_kin.dx,                            'jointsVelocities');
         create_topic(ros, ent.estimator_ft.contactWrenchLeftSole,          'contactWrenchLeftSole');
         create_topic(ros, ent.estimator_ft.contactWrenchRightSole,         'contactWrenchRightSole');
         create_topic(ros, ent.estimator_ft.jointsTorques,                  'jointsTorques');
@@ -451,9 +452,14 @@ def create_tracer(device, traj_gen=None, estimator_ft=None, estimator_kin=None,
     return tracer;
 
 def reset_tracer(device,tracer):
+    from time import sleep
     tracer.stop();
+    sleep(0.2);
     tracer.dump();
+    sleep(0.2);
     tracer.close();
+    sleep(0.2);
     tracer.clear();
+    sleep(0.2);
     tracer = create_tracer(device);
     return tracer;

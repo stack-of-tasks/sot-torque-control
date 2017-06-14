@@ -43,6 +43,7 @@ SET(plugins
   joint-trajectory-generator
   nd-trajectory-generator
   se3-trajectory-generator
+  madgwickahrs
   inverse-dynamics-controller
   inverse-dynamics-balance-controller
   position-controller

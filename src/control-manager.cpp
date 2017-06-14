@@ -33,11 +33,11 @@ namespace dynamicgraph
       using namespace dynamicgraph::command;
       using namespace std;
       using namespace dynamicgraph::sot::torque_control;
-//Size to be aligned                          "-------------------------------------------------------"
-#define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
-#define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
 
-#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_emergencyStopSIN
+#define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager"
+#define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period"
+
+#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << m_bemfFactorSIN
 
       /// Define EntityClassName here rather than in the header file
@@ -64,7 +64,6 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL_IN(emergencyStop, dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
             ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
             ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
@@ -80,6 +79,7 @@ namespace dynamicgraph
         m_signIsPos.resize(N_JOINTS, false);
         m_changeSignCpt.resize(N_JOINTS, 0);
         m_winSizeAdapt.resize(N_JOINTS, 0);
+        m_currentWarningZone.resize(N_JOINTS, false);
 
         Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
 
@@ -112,6 +112,11 @@ namespace dynamicgraph
         addCommand("resetProfiler",
                    makeCommandVoid0(*this, &ControlManager::resetProfiler,
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
+
+        addCommand("addEmergencyStopSIN",
+                   makeCommandVoid1(*this, &ControlManager::addEmergencyStopSIN,
+                                    docCommandVoid1("Add emergency signal input from another entity that can stop the control if necessary.",
+                                                    "(string) signal name : 'emergencyStop_' + name")));
       }
 
       void ControlManager::init(const double& dt)
@@ -142,10 +147,11 @@ namespace dynamicgraph
           getProfiler().stop(PROFILE_DYNAMIC_GRAPH_PERIOD);
         getProfiler().start(PROFILE_DYNAMIC_GRAPH_PERIOD);
 
-        const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
-
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
+
+        if(m_emergency_stop_triggered)
+          return s;
 
         getProfiler().start(PROFILE_PWM_DESIRED_COMPUTATION);
         {
@@ -192,7 +198,6 @@ namespace dynamicgraph
           return s;
         }
 
-        const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
         const dynamicgraph::Vector& pwmDes          = m_pwmDesSOUT(iter);
         const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
         const dynamicgraph::Vector& tau             = m_tauSIN(iter);
@@ -201,19 +206,20 @@ namespace dynamicgraph
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
         const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
         const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-        
+
+        for(int i=0;i<m_emergencyStopSIN.size();i++)
+        {
+          if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter)) {
+            m_emergency_stop_triggered = true;
+            SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
+          }
+        }
+
         if(!m_emergency_stop_triggered)
         {
-          int cm_id;
-          stringstream ss;
-          if(m_emergencyStopSIN.isPlugged())
-          {
-            if (m_emergencyStopSIN(iter))
-              m_emergency_stop_triggered = true;
-              SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
-          }
           for(unsigned int i=0; i<N_JOINTS; i++)
           {
             //Trigger sign filter**********************
@@ -236,7 +242,6 @@ namespace dynamicgraph
             }
             if (m_changeSignCpt[i] > m_winSizeAdapt[i]) 
             {
-              
               m_signIsPos[i] = !m_signIsPos[i];//let's change our mind
               m_changeSignCpt[i] = 0; //we just agreed
               m_winSizeAdapt[i]  = signWindowsFilterSize(i); //be not so reactive for next event (set a large windows size)
@@ -272,7 +277,7 @@ namespace dynamicgraph
               break;
             }
 
-            /// if the signal is plugged, read maxPwm from the associated signal
+            /// if the signal is plugged, read max current from the associated signal
             /// if not use the default value
             if(m_max_currentSIN.isPlugged())
               m_maxCurrent = m_max_currentSIN(iter)(i);
@@ -288,6 +293,19 @@ namespace dynamicgraph
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               break;
+            }
+
+            if(m_currentWarningZone[i]==false && fabs(pwmDes(i)) > 0.8*m_maxCurrent)
+            {
+              m_currentWarningZone[i] = true;
+              SEND_MSG("Joint "+JointUtil::get_name_from_id(i)+" desired current close to max current: "+
+                       toString(pwmDes(i))+"A > 0.8*"+toString(m_maxCurrent)+"A", MSG_TYPE_WARNING);
+            }
+            else if(m_currentWarningZone[i] && fabs(pwmDes(i)) < 0.8*m_maxCurrent)
+            {
+              m_currentWarningZone[i] = false;
+              SEND_MSG("Joint "+JointUtil::get_name_from_id(i)+" desired current no longer close to max current: "+
+                       toString(pwmDes(i))+"A < 0.8*"+toString(m_maxCurrent)+"A", MSG_TYPE_INFO);
             }
           }
         }
@@ -443,6 +461,19 @@ namespace dynamicgraph
       {
         getProfiler().reset_all();
         getStatistics().reset_all();
+      }
+
+      void ControlManager::addEmergencyStopSIN(const string& name)
+      {
+          SEND_MSG("New emergency signal input emergencyStop_" + name + " created",MSG_TYPE_INFO);
+        // create a new input signal
+        m_emergencyStopSIN.push_back(new SignalPtr<bool, int>(NULL,
+          getClassName()+"("+getName()+")::input(bool)::emergencyStop_"+name));
+
+        // register the new signals and add the new signal dependecy
+        unsigned int i = m_emergencyStopSIN.size()-1;
+        m_pwmDesSafeSOUT.addDependency(*m_emergencyStopSIN[i]);
+        Entity::signalRegistration(*m_emergencyStopSIN[i]);
       }
 
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
