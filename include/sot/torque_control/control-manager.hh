@@ -148,7 +148,6 @@ namespace dynamicgraph {
            input ______| |__| |_|                         |__| |________
                         __________________________________
            output______|                                  |_____________
-
         */
 
         std::vector<std::string>  m_ctrlModes;                /// existing control modes

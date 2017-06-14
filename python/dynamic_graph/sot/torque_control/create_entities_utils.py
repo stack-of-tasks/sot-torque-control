@@ -462,4 +462,4 @@ def reset_tracer(device,tracer):
     tracer.clear();
     sleep(0.2);
     tracer = create_tracer(device);
-    return tracer;
+return tracer;

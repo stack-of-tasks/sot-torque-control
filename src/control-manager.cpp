@@ -581,4 +581,3 @@ namespace dynamicgraph
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
-
