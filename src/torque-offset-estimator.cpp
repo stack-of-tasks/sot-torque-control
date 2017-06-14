@@ -93,10 +93,10 @@ namespace dynamicgraph
       {
         try {
           se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
-          assert(m_model.nq == N_JOINTS+7);
-          assert(m_model.nv == N_JOINTS+6);
+          // assert(m_model.nq == N_JOINTS+7);
+          // assert(m_model.nv == N_JOINTS+6);
 
-          jointTorqueOffsets.resize(N_JOINTS);
+          jointTorqueOffsets.resize(m_model.nv-6);
           jointTorqueOffsets.setZero();
 
           ffIndex = 0;
@@ -157,9 +157,9 @@ namespace dynamicgraph
             const Eigen::VectorXd& IMU_gyr = m_gyroscopeSIN(iter);
             const Eigen::VectorXd& _tau = m_jointTorquesSIN(iter);
 
-            Eigen::VectorXd _enc(N_JOINTS+7);
+            Eigen::VectorXd _enc(m_model.nq);
             base_sot_to_urdf(sot_enc.head<6>(), _enc.head<7>());
-            _enc.tail<N_JOINTS>() = sot_enc.tail<N_JOINTS>();
+            _enc.tail(m_model.njoints) = sot_enc.tail(m_model.njoints);
 
             //Get the transformation from ff(f) to torso (t) to IMU(i) frame:
             // fMi = oMf^-1 * fMt * tMi
@@ -174,9 +174,9 @@ namespace dynamicgraph
             m_model.gravity.linear() = _acc;
 
             const Eigen::VectorXd& _tau_rnea = se3::rnea(m_model, *m_data, _enc,
-                                                         Eigen::VectorXd::Zero(N_JOINTS),
-                                                         Eigen::VectorXd::Zero(N_JOINTS));
-            const Eigen::VectorXd _current_offset = _tau - _tau_rnea.tail<N_JOINTS>();
+                                                         Eigen::VectorXd::Zero(m_model.njoints),
+                                                         Eigen::VectorXd::Zero(m_model.njoints));
+            const Eigen::VectorXd _current_offset = _tau - _tau_rnea.tail(m_model.njoints);
             if(_current_offset.array().abs().maxCoeff() >=epsilon) {
               SEND_MSG("Too high torque offset estimated for iteration"+ _i, MSG_TYPE_ERROR);
               assert(false);
@@ -215,7 +215,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(jointTorquesEstimated, dynamicgraph::Vector)
       {
         m_collectSensorDataSINNER(iter);
-        if (s.size() != N_JOINTS) s.resize(N_JOINTS);
+        if (s.size() != m_model.njoints) s.resize(m_model.njoints);
 
         if (sensor_offset_status == PRECOMPUTATION || sensor_offset_status == INPROGRESS) {
           s = m_jointTorquesSIN(iter);
