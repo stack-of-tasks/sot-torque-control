@@ -3,7 +3,7 @@
     <table>
         <background_color>#ffffff</background_color>
         <foreground_color>#000000</foreground_color>
-        <link_cursor>false</link_cursor>
+        <link_cursor>true</link_cursor>
         <link_scale>false</link_scale>
         <plots>
             <row_0>
@@ -13,12 +13,12 @@
                             <x_axis>
                                 <custom_title>Time</custom_title>
                                 <title_type>1</title_type>
-                                <title_visible>true</title_visible>
+                                <title_visible>false</title_visible>
                             </x_axis>
                             <y_axis>
-                                <custom_title>X</custom_title>
+                                <custom_title>Force</custom_title>
                                 <title_type>1</title_type>
-                                <title_visible>true</title_visible>
+                                <title_visible>false</title_visible>
                             </y_axis>
                         </axes>
                     </axes>
@@ -26,7 +26,7 @@
                         <curve_0>
                             <axes>
                                 <x_axis>
-                                    <field></field>
+                                    <field>data/0</field>
                                     <field_type>1</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -35,26 +35,26 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com_ref_pos</topic>
+                                    <topic>/f_LeftSole</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/0</field>
+                                    <field>data/2</field>
                                     <field_type>0</field_type>
                                     <scale>
-                                        <absolute_maximum>1</absolute_maximum>
-                                        <absolute_minimum>-1</absolute_minimum>
+                                        <absolute_maximum>8</absolute_maximum>
+                                        <absolute_minimum>-8</absolute_minimum>
                                         <relative_maximum>0</relative_maximum>
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com_ref_pos</topic>
+                                    <topic>/f_LeftSole</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#00ffff</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -72,12 +72,12 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>Com Ref</title>
+                            <title>F left sole</title>
                         </curve_0>
                         <curve_1>
                             <axes>
                                 <x_axis>
-                                    <field></field>
+                                    <field>data/0</field>
                                     <field_type>1</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -86,26 +86,26 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com</topic>
+                                    <topic>/inv_dyn_f_des_L</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/0</field>
+                                    <field>data/2</field>
                                     <field_type>0</field_type>
                                     <scale>
-                                        <absolute_maximum>1</absolute_maximum>
-                                        <absolute_minimum>-1</absolute_minimum>
+                                        <absolute_maximum>8</absolute_maximum>
+                                        <absolute_minimum>-8</absolute_minimum>
                                         <relative_maximum>0</relative_maximum>
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com</topic>
+                                    <topic>/inv_dyn_f_des_L</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
+                                <custom_color>#ff0000</custom_color>
+                                <type>1</type>
                             </color>
                             <data>
                                 <circular_buffer_capacity>1000</circular_buffer_capacity>
@@ -123,14 +123,14 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>CoM</title>
+                            <title>F des left</title>
                         </curve_1>
                     </curves>
                     <legend>
                         <visible>true</visible>
                     </legend>
-                    <plot_rate>30</plot_rate>
-                    <title>Com X</title>
+                    <plot_rate>20</plot_rate>
+                    <title>F left</title>
                 </column_0>
             </row_0>
             <row_1>
@@ -138,14 +138,14 @@
                     <axes>
                         <axes>
                             <x_axis>
-                                <custom_title>Time</custom_title>
-                                <title_type>1</title_type>
-                                <title_visible>true</title_visible>
+                                <custom_title>Untitled Axis</custom_title>
+                                <title_type>0</title_type>
+                                <title_visible>false</title_visible>
                             </x_axis>
                             <y_axis>
-                                <custom_title>Y</custom_title>
-                                <title_type>1</title_type>
-                                <title_visible>true</title_visible>
+                                <custom_title>Untitled Axis</custom_title>
+                                <title_type>0</title_type>
+                                <title_visible>false</title_visible>
                             </y_axis>
                         </axes>
                     </axes>
@@ -153,7 +153,7 @@
                         <curve_0>
                             <axes>
                                 <x_axis>
-                                    <field></field>
+                                    <field>data/0</field>
                                     <field_type>1</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -162,20 +162,20 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com_ref_pos</topic>
+                                    <topic>/inv_dyn_f_des_R</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/1</field>
+                                    <field>data/2</field>
                                     <field_type>0</field_type>
                                     <scale>
-                                        <absolute_maximum>1</absolute_maximum>
-                                        <absolute_minimum>-1</absolute_minimum>
+                                        <absolute_maximum>8</absolute_maximum>
+                                        <absolute_minimum>-8</absolute_minimum>
                                         <relative_maximum>0</relative_maximum>
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com_ref_pos</topic>
+                                    <topic>/inv_dyn_f_des_R</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </y_axis>
                             </axes>
@@ -199,12 +199,12 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>Com Ref</title>
+                            <title>F des right</title>
                         </curve_0>
                         <curve_1>
                             <axes>
                                 <x_axis>
-                                    <field></field>
+                                    <field>data/0</field>
                                     <field_type>1</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -213,20 +213,20 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com</topic>
+                                    <topic>/f_RightSole</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>data/1</field>
+                                    <field>data/2</field>
                                     <field_type>0</field_type>
                                     <scale>
-                                        <absolute_maximum>1</absolute_maximum>
-                                        <absolute_minimum>-1</absolute_minimum>
+                                        <absolute_maximum>8</absolute_maximum>
+                                        <absolute_minimum>-8</absolute_minimum>
                                         <relative_maximum>0</relative_maximum>
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/inv_dyn_com</topic>
+                                    <topic>/f_RightSole</topic>
                                     <type>dynamic_graph_bridge_msgs/Vector</type>
                                 </y_axis>
                             </axes>
@@ -250,14 +250,14 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>CoM</title>
+                            <title>F right</title>
                         </curve_1>
                     </curves>
                     <legend>
                         <visible>true</visible>
                     </legend>
-                    <plot_rate>30</plot_rate>
-                    <title>CoM Y</title>
+                    <plot_rate>20</plot_rate>
+                    <title>F right</title>
                 </column_0>
             </row_1>
         </plots>
