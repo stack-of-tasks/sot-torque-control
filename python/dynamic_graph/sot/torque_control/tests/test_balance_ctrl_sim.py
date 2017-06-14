@@ -82,19 +82,19 @@ def main_new(dt=0.001, delay=0.01):
     
     device          = create_device_torque_ctrl(dt, conf.urdfFileName, conf.q0_sot);
     traj_gen        = create_trajectory_generator(device, dt);
-    estimator       = create_estimator(device, dt, delay, traj_gen);
-    ff_locator      = create_free_flyer_locator(device, estimator, conf.urdfFileName);
+    (estimator_ft, estimator_kin)       = create_estimators(device, dt,);
+    ff_locator      = create_free_flyer_locator(device, conf.urdfFileName);
 #    flex_est        = create_flex_estimator(robot,dt);
 #    floatingBase    = create_floatingBase(flex_est,ff_locator);    
-    torque_ctrl     = create_torque_controller(device, estimator);
-    pos_ctrl        = create_position_controller(device, estimator, dt, traj_gen);
+    torque_ctrl     = create_torque_controller(device);
+    pos_ctrl        = create_position_controller(device, dt);
     
-    ctrl = create_balance_controller(device, None, estimator, torque_ctrl, traj_gen, conf.urdfFileName, dt, ff_locator);
+    ctrl = create_balance_controller(device, conf.urdfFileName, dt);
     plug(device.state,                 ctrl.q);    
     ctrl.init(dt, conf.urdfFileName);
     ctrl.active_joints.value = conf.active_joints;
     
-    ctrl_manager    = create_ctrl_manager(device, torque_ctrl, pos_ctrl, ctrl, estimator, dt);
+    ctrl_manager    = create_ctrl_manager(device, dt);
 #    plug(device.jointsVelocities, torque_ctrl.jointsVelocities);    
     plug(device.velocity,       ctrl.v);
     plug(ctrl.tau_des,          device.control);

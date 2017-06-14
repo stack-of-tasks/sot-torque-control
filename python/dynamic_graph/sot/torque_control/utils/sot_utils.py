@@ -30,8 +30,8 @@ def start_sot():
 def stop_sot():
     os.system('rosservice call /stop_dynamic_graph');
 
-def start_tracer(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl):
-    tracer = create_tracer(robot.device, traj_gen, estimator, inv_dyn, torque_ctrl);
+def start_tracer(robot, estimator_ft, estimator_kin, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl):
+    tracer = create_tracer(robot.device, traj_gen, estimator_ft, estimator_kin, inv_dyn, torque_ctrl);
     tracer.start();
     return tracer;
 
