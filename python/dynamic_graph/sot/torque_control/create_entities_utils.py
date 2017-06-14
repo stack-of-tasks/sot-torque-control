@@ -135,7 +135,7 @@ def create_estimators(ent, dt, delay):
     estimator_ft.motorParameterKa_n.value  = tuple(Ka_n)
 
     estimator_ft.init(dt,delay,delay,delay,delay,True);
-    estimator_kin.init(dt,delay);
+    estimator_kin.init(dt,NJ, delay);
     
     return (estimator_ft, estimator_kin);
         
