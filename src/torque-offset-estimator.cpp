@@ -43,7 +43,7 @@ namespace dynamicgraph
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef TorqueOffsetEstimator EntityClassName;
       typedef int dummy;
-      std::vector<Eigen::VectorXd,Eigen::aligned_allocator<Eigen::VectorXd> > stdAlignedVector;
+
       /* --- DG FACTORY ------------------------------------------------------- */
       DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(TorqueOffsetEstimator,"TorqueOffsetEstimator");
 
@@ -66,7 +66,7 @@ namespace dynamicgraph
         addCommand("init", makeCommandVoid2(*this, &TorqueOffsetEstimator::init,
                                             docCommandVoid2("Initialize the estimator" ,
                                                             "urdfFilePath",
-                                                            "Definition of the imu in the chest frame")));
+                                                            "Homogeneous transformation from chest frame to IMU frame")));
         addCommand("computeOffset",
                    makeCommandVoid2(*this, &TorqueOffsetEstimator::computeOffset,
                                     docCommandVoid2("Compute the offset for sensor calibration",
@@ -121,9 +121,9 @@ namespace dynamicgraph
           sensor_offset_status = INPROGRESS;
         }
         else if (sensor_offset_status == INPROGRESS) {
-          SEND_MSG("Collecting input signals. Please keep the graph running", MSG_TYPE_WARNING_STREAM);
+          SEND_MSG("Collecting input signals. Please keep the graph running", MSG_TYPE_WARNING);
         }
-        else if (sensor_offset_status == COMPUTED) {
+        else { //sensor_offset_status == COMPUTED
           SEND_MSG("Recomputing offset with no. iterations:"+ nIterations, MSG_TYPE_DEBUG);
 
           stdVecJointTorqueOffsets.clear();
@@ -132,10 +132,6 @@ namespace dynamicgraph
           n_iterations = nIterations;
           epsilon = _epsilon;
           sensor_offset_status = INPROGRESS;
-        }
-        else { //should not happend
-          SEND_MSG("Problem in computeOffset sensor_offset_status", MSG_TYPE_ERROR);
-          assert(false && "Problem in computeOffset sensor_offset_status");
         }
         return;
       }
@@ -150,7 +146,7 @@ namespace dynamicgraph
           int _i = stdVecJointTorqueOffsets.size();
           
           if (_i < n_iterations) {
-            SEND_MSG("Collecting signals for iteration no:" + _i , MSG_TYPE_DEBUG);
+            SEND_MSG("Collecting signals for iteration no:" + _i , MSG_TYPE_DEBUG_STREAM);
 
             const Eigen::VectorXd& sot_enc = m_base6d_encodersSIN(iter);
             const Eigen::VectorXd& IMU_acc = m_accelerometerSIN(iter);
@@ -193,22 +189,14 @@ namespace dynamicgraph
             calculateSensorOffsets();
             sensor_offset_status = COMPUTED;
           }
-          else if (_i > n_iterations) {
-            SEND_MSG("This should not happen", MSG_TYPE_ERROR);
-            assert(false);
-          }
-          else {
-            SEND_MSG("This should not happen", MSG_TYPE_ERROR);
-            assert(false);
+          else { // _i > n_iterations
+            //Doesn't reach here.
+            assert(false && "Error in collectSensorData. ");
           }
         }
-        else if (sensor_offset_status == COMPUTED) {
-          SEND_MSG("Offset computed", MSG_TYPE_DEBUG);
+        else { // sensor_offset_status == COMPUTED
+          continue;
         } 
-        else {
-          SEND_MSG("This should not happen", MSG_TYPE_ERROR);
-          assert(false);
-        }
         return s; 
       }
 
