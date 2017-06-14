@@ -77,11 +77,11 @@ namespace dynamicgraph
                                     docDirectGetter("Return the computed sensor offsets",
                                                     "vector")));
 
-        encSignals.clear();
-        accSignals.clear();
-        gyrSignals.clear();
-        tauSignals.clear();
-        
+        // encSignals.clear();
+        // accSignals.clear();
+        // gyrSignals.clear();
+        // tauSignals.clear();
+        stdVecJointTorqueOffsets.clear();
       }
 
 
@@ -95,8 +95,12 @@ namespace dynamicgraph
           se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
           assert(m_model.nq == N_JOINTS+7);
           assert(m_model.nv == N_JOINTS+6);
+
           jointTorqueOffsets.resize(N_JOINTS);
           jointTorqueOffsets.setZero();
+
+          ffIndex = 0;
+          torsoIndex = m_model.getJointId("torso_2_joint");
         }
         catch (const std::exception& e) 
         { 
@@ -113,6 +117,7 @@ namespace dynamicgraph
         if (sensor_offset_status == PRECOMPUTATION) {
           SEND_MSG("Starting offset computation with no. iterations:"+ nIterations, MSG_TYPE_DEBUG);
           n_iterations = nIterations;
+          epsilon = _epsilon;
           sensor_offset_status = INPROGRESS;
         }
         else if (sensor_offset_status == INPROGRESS) {
@@ -121,12 +126,7 @@ namespace dynamicgraph
         else if (sensor_offset_status == COMPUTED) {
           SEND_MSG("Recomputing offset with no. iterations:"+ nIterations, MSG_TYPE_DEBUG);
 
-          // resetSavedSignals();
-          encSignals.clear();
-          accSignals.clear();
-          gyrSignals.clear();
-          tauSignals.clear();
-
+          stdVecJointTorqueOffsets.clear();
           jointTorqueOffsets.setZero();
 
           n_iterations = nIterations;
@@ -147,22 +147,49 @@ namespace dynamicgraph
         }
         else if (sensor_offset_status == INPROGRESS) {
           // Check the current iteration status
-          int _i = encSignals.size();
-
+          int _i = stdVecJointTorqueOffsets.size();
+          
           if (_i < n_iterations) {
             SEND_MSG("Collecting signals for iteration no:" + _i , MSG_TYPE_DEBUG);
-            const dynamicgraph::Vector& _enc = m_base6d_encodersSIN(iter);
-            const dynamicgraph::Vector& _acc = m_accelerometerSIN(iter);
-            const dynamicgraph::Vector& _gyr = m_gyroscopeSIN(iter);
-            const dynamicgraph::Vector& _tau = m_jointTorquesSIN(iter);
 
-            encSignals.push_back(_enc);
-            accSignals.push_back(_acc);
-            gyrSignals.push_back(_gyr);
-            tauSignals.push_back(_tau);
+            const Eigen::VectorXd& sot_enc = m_base6d_encodersSIN(iter);
+            const Eigen::VectorXd& IMU_acc = m_accelerometerSIN(iter);
+            const Eigen::VectorXd& IMU_gyr = m_gyroscopeSIN(iter);
+            const Eigen::VectorXd& _tau = m_jointTorquesSIN(iter);
+
+            Eigen::VectorXd _enc(N_JOINTS+7);
+            base_sot_to_urdf(sot_enc.head<6>(), _enc.head<7>());
+            _enc.tail<N_JOINTS>() = sot_enc.tail<N_JOINTS>();
+
+            //Get the transformation from ff(f) to torso (t) to IMU(i) frame:
+            // fMi = oMf^-1 * fMt * tMi
+            se3::forwardKinematics(m_model,*m_data,_enc);
+            se3::SE3 fMi = m_data->oMi[ffIndex].inverse()*m_data->oMi[torsoIndex]*m_torso_X_imu;
+
+            //Move the IMU signal to the base frame.
+            //angularAcceleration is zero. Intermediate frame acc and velocities are zero
+            const dynamicgraph::Vector _acc = fMi.rotation()*IMU_acc; //Torso Acceleration
+
+            //Deal with gravity predefined in robot model. Robot Z should be pointing upwards
+            m_model.gravity.linear() = _acc;
+
+            const Eigen::VectorXd& _tau_rnea = se3::rnea(m_model, *m_data, _enc,
+                                                         Eigen::VectorXd::Zero(N_JOINTS),
+                                                         Eigen::VectorXd::Zero(N_JOINTS));
+            const Eigen::VectorXd _current_offset = _tau - _tau_rnea.tail<N_JOINTS>();
+            if(_current_offset.array().abs().maxCoeff() >=epsilon) {
+              SEND_MSG("Too high torque offset estimated for iteration"+ _i, MSG_TYPE_ERROR);
+              assert(false);
+            }
+            // encSignals.push_back(_enc);
+            // accSignals.push_back(_acc);
+            // gyrSignals.push_back(_gyr);
+            // tauSignals.push_back(_tau);
+            stdVecJointTorqueOffsets.push_back(_current_offset);
+
           }
           else if (_i == n_iterations){
-            // Do the computations, enough signals collected
+            // Find the mean, enough signals collected
             calculateSensorOffsets();
             sensor_offset_status = COMPUTED;
           }
@@ -201,52 +228,18 @@ namespace dynamicgraph
       }
 
       void TorqueOffsetEstimator::calculateSensorOffsets() {
-        assert(encSignals.size() == n_iterations);
-        assert(accSignals.size() == n_iterations);
-        assert(gyrSignals.size() == n_iterations);
-        assert(tauSignals.size() == n_iterations);
+        // assert(encSignals.size() == n_iterations);
+        // assert(accSignals.size() == n_iterations);
+        // assert(gyrSignals.size() == n_iterations);
+        // assert(tauSignals.size() == n_iterations);
+        assert(stdVecJointTorqueOffsets.size() == n_iterations);
 
-        const int ffIndex = 0;
-        const int torsoIndex = m_model.getJointId("torso_2_joint");
-
-        //stdAlignedVector offset_stack;
         jointTorqueOffsets.setZero();
         for (int _i=0; _i<n_iterations; _i++){
-          const Eigen::VectorXd& sot_enc = encSignals.at(_i);
-          const Eigen::VectorXd& IMU_acc = accSignals.at(_i);
-          const Eigen::VectorXd& IMU_gyr = gyrSignals.at(_i);
-          const Eigen::VectorXd& _tau = tauSignals.at(_i);
-
-          Eigen::VectorXd _enc(N_JOINTS+7);
-          base_sot_to_urdf(sot_enc.head<6>(), _enc.head<7>());
-          _enc.tail<N_JOINTS>() = sot_enc.tail<N_JOINTS>();
-
-          //Get the transformation from ff(f) to torso (t) to IMU(i) frame:
-          // fMi = oMf^-1 * fMt * tMi
-          se3::forwardKinematics(m_model,*m_data,_enc);
-          se3::SE3 fMi = m_data->oMi[ffIndex].inverse()*m_data->oMi[torsoIndex]*m_torso_X_imu;
-
-          //Move the IMU signal to the base frame.
-          //angularAcceleration is zero. Intermediate frame acc and velocities are zero
-          const dynamicgraph::Vector _acc = fMi.rotation()*IMU_acc; //Torso Acceleration
-
-          //Deal with gravity predefined in robot model. Robot Z should be pointing upwards
-          m_model.gravity.linear() = _acc;
-
-          const Eigen::VectorXd& _tau_rnea = se3::rnea(m_model, *m_data, _enc,
-                                                       Eigen::VectorXd::Zero(N_JOINTS),
-                                                       Eigen::VectorXd::Zero(N_JOINTS));
-          const Eigen::VectorXd _current_offset = _tau - _tau_rnea.tail<N_JOINTS>();
-          if(_current_offset.array().abs().maxCoeff() >=epsilon) {
-            SEND_MSG("Too high torque offset estimated for iteration"+ _i, MSG_TYPE_ERROR);
-            assert(false);
-
-          }
-          jointTorqueOffsets +=_current_offset;
-          //offset_stack.push_back(offset);
+          const Eigen::VectorXd& current_offset = stdVecJointTorqueOffsets.at(_i);
+          jointTorqueOffsets +=current_offset;
         }
         jointTorqueOffsets /=n_iterations;
-
         return;
       }
 

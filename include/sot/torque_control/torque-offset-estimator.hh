@@ -90,13 +90,17 @@ namespace dynamicgraph {
         se3::Data         *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
         int epsilon;
-        dynamicgraph::Vector jointTorqueOffsets;
+
+        int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
+        Eigen::VectorXd jointTorqueOffsets;
         se3::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
 
-        stdAlignedVector encSignals;
-        stdAlignedVector accSignals;
-        stdAlignedVector gyrSignals;
-        stdAlignedVector tauSignals;
+        // stdAlignedVector encSignals;
+        // stdAlignedVector accSignals;
+        // stdAlignedVector gyrSignals;
+        // stdAlignedVector tauSignals;
+
+        stdAlignedVector stdVecJointTorqueOffsets;
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
