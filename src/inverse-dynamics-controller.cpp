@@ -256,6 +256,13 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_DDQ_DES_COMPUTATION);
         {
+          assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
+          assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
+          assert(ddqRef.size()==N_JOINTS  && "Unexpected size of signal ddqRef");
+          assert(Kp.size()==N_JOINTS      && "Unexpected size of signal Kd");
+          assert(Kd.size()==N_JOINTS      && "Unexpected size of signal Kd");
 
           m_ddqDes = ddqRef + Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
                                Kd.cwiseProduct(dqRef-dq);
@@ -279,6 +286,8 @@ namespace dynamicgraph
 
         const VectorN6& q = m_base6d_encodersSIN(iter);     //n+6
         const VectorN&  qRef = m_qRefSIN(iter);   // n
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
 
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
@@ -301,6 +310,12 @@ namespace dynamicgraph
         const Vector6& dw_b = m_baseAccelerationSIN(iter);      // 6
         const VectorN& ddqRef =    m_ddqRefSIN(iter);           // n
         const VectorN& qMask =     m_controlledJointsSIN(iter); // n
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
+        assert(w_b.size()==3            && "Unexpected size of signal base angular velocity");
+        assert(dw_b.size()==6           && "Unexpected size of signal base acceleration");
+        assert(ddqRef.size()==N_JOINTS  && "Unexpected size of signal ddqRef");
+        assert(qMask.size()==N_JOINTS   && "Unexpected size of signal controlledJoints");
 
         m_q.head<6>().setZero();
         m_q.tail<N_JOINTS>()   = q.tail<N_JOINTS>();
@@ -366,6 +381,14 @@ namespace dynamicgraph
         const Eigen::Matrix<double, 24, 1>& Ki =m_KiSIN(iter);  // 6*4
         const VectorN& qRef = m_qRefSIN(iter);                  // n
         const VectorN& dqRef =     m_dqRefSIN(iter);            // n
+
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
+        assert(Kf.size()==6*4           && "Unexpected size of signal Kf");
+        assert(Kp.size()==N_JOINTS      && "Unexpected size of signal Kp");
+        assert(Kd.size()==N_JOINTS      && "Unexpected size of signal Kd");
+        assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
+        assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
 
         VectorN tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) +
 	  Kd.cwiseProduct(dqRef-dq);
@@ -453,6 +476,14 @@ namespace dynamicgraph
         const Eigen::Matrix<double,24,1>& Kf = m_KfSIN(iter); // 6*4
         const VectorN& qRef = m_qRefSIN(iter);   // n
         const VectorN& dqRef =     m_dqRefSIN(iter);  // n
+
+        assert(q.size()==N_JOINTS+6     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==N_JOINTS      && "Unexpected size of signal dq");
+        assert(Kf.size()==6*4           && "Unexpected size of signal Kf");
+        assert(Kp.size()==N_JOINTS      && "Unexpected size of signal Kp");
+        assert(Kd.size()==N_JOINTS      && "Unexpected size of signal Kd");
+        assert(qRef.size()==N_JOINTS    && "Unexpected size of signal qRef");
+        assert(dqRef.size()==N_JOINTS   && "Unexpected size of signal dqRef");
 
         VectorN tauFB = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
 
