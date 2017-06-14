@@ -4,10 +4,9 @@ Read the project wiki to get a description of the main entities contained in thi
 
 ## Dependencies
 This project depends on:
-* jrl-mal >= 1.8.0
-* dynamic-graph >= 1.0.0
-* dynamic-graph-python
-* sot-core
+* dynamic-graph >= 3.0.0
+* dynamic-graph-python >= 3.0.0
+* sot-core >= 3.0.0
 * pinocchio >= 1.2
 * metapod
 * [PinInvDyn](https://github.com/stack-of-tasks/invdyn)
