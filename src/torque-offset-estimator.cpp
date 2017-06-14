@@ -155,7 +155,8 @@ namespace dynamicgraph
             const Eigen::VectorXd& tau = m_jointTorquesSIN(iter);
 
             Eigen::VectorXd enc(m_model.nq);
-            enc.tail(m_model.nv-6) = sot_enc.tail(m_model.nv-6);
+            joints_sot_to_urdf(sot_enc.tail(m_model.nv-6), enc.tail(m_model.nv-6));
+            //enc.tail(m_model.nv-6) = sot_enc.tail(m_model.nv-6);
             base_sot_to_urdf(sot_enc.head<6>(), enc.head<7>());
 
             //Get the transformation from ff(f) to torso (t) to IMU(i) frame:
