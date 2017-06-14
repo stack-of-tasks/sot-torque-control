@@ -59,6 +59,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(jointTorquesEstimated,
                               dynamicgraph::Vector, m_collectSensorDataSINNER << ALL_INPUT_SIGNALS)
         ,sensor_offset_status(PRECOMPUTATION)
+        ,current_progress(0)
       {
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
         addCommand("init", makeCommandVoid2(*this, &TorqueOffsetEstimator::init,
@@ -79,7 +80,7 @@ namespace dynamicgraph
         // accSignals.clear();
         // gyrSignals.clear();
         // tauSignals.clear();
-        stdVecJointTorqueOffsets.clear();
+        // stdVecJointTorqueOffsets.clear();
       }
 
 
@@ -124,7 +125,8 @@ namespace dynamicgraph
         else { //sensor_offset_status == COMPUTED
           SEND_MSG("Recomputing offset with no. iterations:"+ nIterations, MSG_TYPE_DEBUG);
 
-          stdVecJointTorqueOffsets.clear();
+          // stdVecJointTorqueOffsets.clear();
+          current_progress = 0;
           jointTorqueOffsets.setZero();
 
           n_iterations = nIterations;
@@ -138,7 +140,7 @@ namespace dynamicgraph
       {
         if (sensor_offset_status == INPROGRESS) {
           // Check the current iteration status
-          int i = stdVecJointTorqueOffsets.size();
+          int i = current_progress;
           
           if (i < n_iterations) {
             SEND_MSG("Collecting signals for iteration no:" + i , MSG_TYPE_DEBUG_STREAM);
@@ -162,6 +164,8 @@ namespace dynamicgraph
 
             //Deal with gravity predefined in robot model. Robot Z should be pointing upwards
             m_model.gravity.linear() = acc;
+            
+            //Set fixed for DEBUG
             //m_model.gravity.linear() = m_model.gravity981;
 
             const Eigen::VectorXd& tau_rnea = se3::rnea(m_model, *m_data, enc,
@@ -176,12 +180,12 @@ namespace dynamicgraph
             // accSignals.push_back(_acc);
             // gyrSignals.push_back(_gyr);
             // tauSignals.push_back(_tau);
-            stdVecJointTorqueOffsets.push_back(current_offset);
-
+            jointTorqueOffsets += current_offset;
+            current_progress++;
           }
           else if (i == n_iterations){
             // Find the mean, enough signals collected
-            calculateSensorOffsets();
+            jointTorqueOffsets /=n_iterations;
             sensor_offset_status = COMPUTED;
           }
           else { // i > n_iterations
@@ -207,22 +211,6 @@ namespace dynamicgraph
           s = inputTorques - jointTorqueOffsets;
         }
           return s;
-      }
-
-      void TorqueOffsetEstimator::calculateSensorOffsets() {
-        // assert(encSignals.size() == n_iterations);
-        // assert(accSignals.size() == n_iterations);
-        // assert(gyrSignals.size() == n_iterations);
-        // assert(tauSignals.size() == n_iterations);
-        assert(stdVecJointTorqueOffsets.size() == n_iterations);
-
-        jointTorqueOffsets.setZero();
-        for (int i=0; i<n_iterations; i++){
-          const Eigen::VectorXd& current_offset = stdVecJointTorqueOffsets.at(i);
-          jointTorqueOffsets += current_offset;
-        }
-        jointTorqueOffsets /=n_iterations;
-        return;
       }
 
       void TorqueOffsetEstimator::display( std::ostream& os ) const

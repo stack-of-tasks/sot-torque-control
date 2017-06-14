@@ -99,7 +99,7 @@ namespace dynamicgraph {
         // stdAlignedVector gyrSignals;
         // stdAlignedVector tauSignals;
 
-        stdAlignedVector stdVecJointTorqueOffsets;
+        // stdAlignedVector stdVecJointTorqueOffsets;
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
@@ -112,8 +112,8 @@ namespace dynamicgraph {
           INPROGRESS,
           COMPUTED } sensor_offset_status;
 
-        void calculateSensorOffsets();
-
+        // void calculateSensorOffsets();
+        int current_progress;
       }; // class TorqueOffsetEstimator
 
     } // namespace torque_control
