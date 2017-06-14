@@ -47,7 +47,7 @@ def main_pre_start(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfF
     return robot;
     
 ''' Main function to call before starting the graph. '''
-def main_pre_start_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
+def main_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
     dt = robot.timeStep;
     
     # TMP: overwrite halfSitting configuration to use SoT joint order
@@ -71,7 +71,7 @@ def main_pre_start_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, ur
     robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
     robot.rf_traj_gen.init(dt);
     robot.lf_traj_gen.init(dt);
-    robot.estimator       = create_estimator(robot, dt, delay);
+    (robot.estimator_ft, robot.estimator_kin) = create_estimators(robot, dt, delay);
 
     robot.ff_locator      = create_free_flyer_locator(robot, urdfFileName);
 
@@ -80,7 +80,7 @@ def main_pre_start_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, ur
     robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
-    robot.estimator.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";
