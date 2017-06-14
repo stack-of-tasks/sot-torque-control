@@ -99,7 +99,7 @@ namespace dynamicgraph
           // assert(m_model.nq == N_JOINTS+7);
           // assert(m_model.nv == N_JOINTS+6);
 
-          jointTorqueOffsets.resize(m_model.nv);
+          jointTorqueOffsets.resize(m_model.nv-6);
           jointTorqueOffsets.setZero();
 
           ffIndex = 1;
@@ -176,8 +176,8 @@ namespace dynamicgraph
             const Eigen::VectorXd& tau_rnea = se3::rnea(m_model, *m_data, enc,
                                                          Eigen::VectorXd::Zero(m_model.nv),
                                                          Eigen::VectorXd::Zero(m_model.nv));
-            const Eigen::VectorXd current_offset = tau - tau_rnea;
-            if(current_offset.tail(m_model.nv-6).array().abs().maxCoeff() >=epsilon) {
+            const Eigen::VectorXd current_offset = tau - tau_rnea.tail(m_model.nv-6);
+            if(current_offset.array().abs().maxCoeff() >=epsilon) {
               SEND_MSG("Too high torque offset estimated for iteration"+ i, MSG_TYPE_ERROR);
               assert(false);
             }
@@ -212,7 +212,7 @@ namespace dynamicgraph
           SEND_MSG("Very High Angular Rotations.", MSG_TYPE_ERROR_STREAM);
         }        
 
-        if (s.size() != m_model.nv) s.resize(m_model.nv);
+        if (s.size() != m_model.nv-6) s.resize(m_model.nv-6);
 
         if (sensor_offset_status == PRECOMPUTATION || sensor_offset_status == INPROGRESS) {
           s = m_jointTorquesSIN(iter);
