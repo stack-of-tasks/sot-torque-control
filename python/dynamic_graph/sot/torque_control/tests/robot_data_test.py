@@ -6,7 +6,7 @@ class initRobotData:
   testRobotPath="/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf"
   controlDT=0.005
   maxCurrent=5
-
+  robotRef= "control-manager-robot"
   urdftosot=(12,13,14,15,23,24,25,26,27,28,29,16,17,18,19,20,21,22,6,7,8,9,10,11,0,1,2,3,4,5)
 
   mapJointNameToID={
@@ -102,7 +102,7 @@ class initRobotData:
   def init_and_set_controller_manager(self, cm):
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    cm.init(self.controlDT,self.testRobotPath,self.maxCurrent,"control-manager-robot")
+    cm.init(self.controlDT,self.testRobotPath,self.maxCurrent,self.robotRef)
 
     # Set the map from joint name to joint ID
     for key in self.mapJointNameToID:

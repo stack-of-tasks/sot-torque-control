@@ -10,8 +10,7 @@ from numpy import matrix, identity, zeros, eye, array, pi, ndarray
 # Instanciate the free flyer
 ffl = FreeFlyerLocator("ffl_test")
 
-
-ffl.init("control-manager-robot")
+ffl.init(initRobotData.robotRef)
 
 # TODO : Set the value of the encoders.
 
