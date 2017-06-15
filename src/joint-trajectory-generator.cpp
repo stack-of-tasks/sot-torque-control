@@ -84,9 +84,10 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid1(*this, &JointTrajectoryGenerator::init,
-                                    docCommandVoid1("Initialize the entity.",
-                                                    "Time period in seconds (double)")));
+                   makeCommandVoid2(*this, &JointTrajectoryGenerator::init,
+                                    docCommandVoid2("Initialize the entity.",
+                                                    "Time period in seconds (double)",
+						    "robotRef (string)")));
         
         addCommand("getJoint",
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::getJoint,
@@ -180,10 +181,11 @@ namespace dynamicgraph
                                                     "(string) force name (rh,lh,lf,rf)")));
       }
 
-      void JointTrajectoryGenerator::init(const double& dt)
+      void JointTrajectoryGenerator::init(const double& dt,
+					  const std::string& robotRef)
       {
 	/* Retrieve m_robot_util  informations */
-	std::string localName("control-manager-robot");
+	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
 	  m_robot_util = createRobotUtil(localName);
 	else 

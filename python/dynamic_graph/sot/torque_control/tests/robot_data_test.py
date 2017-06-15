@@ -102,7 +102,7 @@ class initRobotData:
   def init_and_set_controller_manager(self, cm):
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    cm.init(self.controlDT,self.testRobotPath,self.maxCurrent)
+    cm.init(self.controlDT,self.testRobotPath,self.maxCurrent,"control-manager-robot")
 
     # Set the map from joint name to joint ID
     for key in self.mapJointNameToID:

@@ -29,6 +29,10 @@ idbc.com_ref_acc.value=comRefAcc
 
 # Right foot
 rfRefPos=zeros(12)
+rfRefPos(0)=1.0
+rfRefPos(4)=1.0
+rfRefPos(8)=1.0
+
 rfRefVel=zeros(6)
 rfRefAcc=zeros(6)
 idbc.rf_ref_pos.value=rfRefPos
@@ -37,6 +41,9 @@ idbc.rf_ref_acc.value=rfRefAcc
 
 # Left foot
 lfRefPos=zeros(12)
+lfRefPos(0)=1.0
+lfRefPos(4)=1.0
+lfRefPos(8)=1.0
 lfRefVel=zeros(6)
 lfRefAcc=zeros(6)
 idbc.lf_ref_pos.value=lfRefPos

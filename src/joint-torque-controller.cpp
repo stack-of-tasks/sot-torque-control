@@ -133,9 +133,10 @@ namespace dynamicgraph
         addCommand("getActiveJoints", makeDirectGetter(*this,&m_activeJointsString,
                                       docDirectGetter("Active joints","bool")));
 
-        addCommand("init", makeCommandVoid1(*this, &JointTorqueController::init,
-                              docCommandVoid1("Initialize the controller.",
-                                              "Control timestep [s].")));
+        addCommand("init", makeCommandVoid2(*this, &JointTorqueController::init,
+                              docCommandVoid2("Initialize the controller.",
+                                              "Control timestep [s].",
+					      "Robot reference (string)")));
         addCommand("activate",
                    makeCommandVoid1(*this, &JointTorqueController::activate,
                                     docCommandVoid1("Activate torque control of the specified joint.",
@@ -150,7 +151,8 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void JointTorqueController::init(const double &timestep)
+      void JointTorqueController::init(const double &timestep,
+				       const std::string &robot_ref)
       {
         assert(timestep>0.0 && "Timestep should be > 0");
         if(!m_base6d_encodersSIN.isPlugged())
@@ -175,7 +177,7 @@ namespace dynamicgraph
           return SEND_MSG("Init failed: signal m_KiCurrentSIN is not plugged", MSG_TYPE_ERROR);
 
 	/* Retrieve m_robot_util  informations */
-	std::string localName("control-manager-robot");
+	std::string localName(robot_ref);
 	if (isNameInRobotUtil(localName))
 	  {	      
 	    m_robot_util = getRobotUtil(localName);

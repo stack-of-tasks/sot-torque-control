@@ -237,10 +237,11 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid2(*this, &InverseDynamicsBalanceController::init,
-                                    docCommandVoid2("Initialize the entity.",
+                   makeCommandVoid3(*this, &InverseDynamicsBalanceController::init,
+                                    docCommandVoid3("Initialize the entity.",
                                                     "Time period in seconds (double)",
-                                                    "URDF file path (string)")));
+                                                    "URDF file path (string)",
+						    "Robot reference (string)")));
 
         addCommand("removeRightFootContact",
                    makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeRightFootContact,
@@ -286,15 +287,17 @@ namespace dynamicgraph
         }
       }
 
-      void InverseDynamicsBalanceController::init(const double& dt, const std::string& urdfFile)
+      void InverseDynamicsBalanceController::init(const double& dt, 
+						  const std::string& urdfFile,
+						  const std::string& robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
 	/* Retrieve m_robot_util  informations */
-	std::string localName("control-manager-robot");
+	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
-	  m_robot_util = createRobotUtil(localName);
+	  m_robot_util = getRobotUtil(localName);
 	else 
 	  {
 	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);

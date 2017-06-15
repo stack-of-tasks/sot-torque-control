@@ -229,7 +229,7 @@ namespace dynamicgraph {
         /** Initialize the JointTorqueController.
          * @param timestep Period (in seconds) after which the sensors' data are updated.
          */
-        void init(const double &timestep);
+        void init(const double &timestep, const std::string& robotRef);
 
         void activate(const std::string& jointName);
         void deactivate(const std::string& jointName);

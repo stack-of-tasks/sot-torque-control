@@ -72,8 +72,9 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid0(*this, &FreeFlyerLocator::init,
-                                    docCommandVoid0("Initialize the entity.")));
+                   makeCommandVoid1(*this, &FreeFlyerLocator::init,
+                                    docCommandVoid1("Initialize the entity.",
+						    "Robot reference (string)")));
 	
         addCommand("displayRobotUtil",
                    makeCommandVoid0(*this, &FreeFlyerLocator::displayRobotUtil,
@@ -88,12 +89,12 @@ namespace dynamicgraph
 	  delete m_data;
       }
 
-      void FreeFlyerLocator::init()
+      void FreeFlyerLocator::init(const std::string& robotRef)
       {
         try 
         {
 	  /* Retrieve m_robot_util  informations */
-	  std::string localName("control-manager-robot");
+	  std::string localName(robotRef);
 	  if (isNameInRobotUtil(localName))
 	    {	      
 	      m_robot_util = getRobotUtil(localName);
@@ -190,7 +191,7 @@ namespace dynamicgraph
           m_q_sot.tail(m_robot_util->m_nbJoints) = q.tail(m_robot_util->m_nbJoints);
           base_se3_to_sot(m_Mff.translation()-righ_foot_sole_xyz,
                           m_Mff.rotation(),
-                          m_q_sot.head(6));
+                          m_q_sot.head<6>());
 
           s = m_q_sot;
         }

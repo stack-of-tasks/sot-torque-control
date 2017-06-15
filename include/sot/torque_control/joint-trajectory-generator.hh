@@ -64,7 +64,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         JointTrajectoryGenerator( const std::string & name );
 
-        void init(const double& dt);
+        void init(const double& dt, const std::string &robotRef);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);

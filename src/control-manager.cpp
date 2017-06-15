@@ -82,11 +82,12 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid3(*this, &ControlManager::init,
-                                    docCommandVoid3("Initialize the entity.",
+                   makeCommandVoid4(*this, &ControlManager::init,
+                                    docCommandVoid4("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "URDF file path (string)",
-						    "Max current (double)")));
+						    "Max current (double)",
+						    "Robot reference (string)")));
         
         addCommand("addCtrlMode",
                    makeCommandVoid1(*this, &ControlManager::addCtrlMode,
@@ -172,7 +173,8 @@ namespace dynamicgraph
 
       void ControlManager::init(const double& dt, 
 				const std::string &urdfFile,
-				const double & lmax_current)
+				const double & lmax_current,
+				const std::string &robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
@@ -186,7 +188,7 @@ namespace dynamicgraph
 
 	m_robot = new pininvdyn::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
 	
-	std::string localName("control-manager-robot");
+	std::string localName(robotRef);
 	if (!isNameInRobotUtil(localName))
 	  {
 	    m_robot_util = createRobotUtil(localName);

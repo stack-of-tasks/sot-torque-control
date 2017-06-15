@@ -81,7 +81,7 @@ namespace dynamicgraph {
         FreeFlyerLocator( const std::string & name );
         ~FreeFlyerLocator();
 
-        void init();
+        void init(const std::string &robotRef);
 
 
         /* --- SIGNALS --- */

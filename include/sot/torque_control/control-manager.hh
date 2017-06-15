@@ -101,8 +101,9 @@ namespace dynamicgraph {
 	/// @param maxCurrent: default maximum current for each motor. 
 	/// The recommended way is to use the signal max_current.
         void init(const double& dt, 
-		  const std::string &urdfFile,
-		  const double & maxCurrent);
+		  const std::string& urdfFile,
+		  const double& maxCurrent,
+		  const std::string& robotRef);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
