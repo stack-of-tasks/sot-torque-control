@@ -79,14 +79,14 @@ namespace dynamicgraph
                    makeCommandVoid2(*this, &PositionController::init,
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
-						    "Size of the state vector (double)")));
+						    "Reference to the robot (string)")));
         addCommand("resetIntegral",
                    makeCommandVoid0(*this, &PositionController::resetIntegral,
                                     docCommandVoid0("Reset the integral.")));
       }
 
       void PositionController::init(const double& dt,
-				    const double& nJoints)
+				    const std::string& robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
@@ -106,7 +106,7 @@ namespace dynamicgraph
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
 	/* Retrieve m_robot_util  informations */
-	std::string localName("control-manager-robot");
+	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
 	  m_robot_util = getRobotUtil(localName);
 	else 

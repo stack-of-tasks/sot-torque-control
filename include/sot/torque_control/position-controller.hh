@@ -64,7 +64,7 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         PositionController( const std::string & name );
 
-        void init(const double& dt,const double &nJoints);
+        void init(const double& dt,const std::string &robotRef);
 
         void resetIntegral();
 
