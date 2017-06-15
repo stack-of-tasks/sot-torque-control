@@ -126,7 +126,9 @@ import numpy as np
 
 toe = TOE("test_entity_toe")
 id4 = ((1.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(0.0,0.0,0.0,1.0))
-toe.init(urdfPath, id4, 0.1)
+toe.init(urdfPath, id4, 0.1,
+         pinocchioRobot.model.getJointId(OperationalPointsMap['waist']),
+         pinocchioRobot.model.getJointId(OperationalPointsMap['chest']))
 plug(robot.device.state, toe.base6d_encoders)
 toe.gyroscope.value = (0.,0.,0.)
 
@@ -146,19 +148,21 @@ np.set_printoptions(suppress=True)
 def runner(n):
     for i in xrange(n):
         q_pin = fromSotToPinocchio(robot.device.state.value)
+        q_pin[0,:6]  = 0.0
+        q_pin[0,6] = 1.0
         nvZero = np.asarray((0.0,)*pinocchioRobot.model.nv)
         tau = np.asarray(rnea(pinocchioRobot.model, pinocchioRobot.data, q_pin, nvZero, nvZero)).squeeze()
         tau_offset = np.asarray((0.1,)*njoints).squeeze()
         toe.jointTorques.value = tau_offset + tau[6:]
         pinocchioRobot.forwardKinematics(q_pin)
-        toe.accelerometer.value = np.asarray((pinocchioRobot.data.oMi[15].inverse()*pinocchioRobot.data.oMi[1]*gravity).linear).squeeze()
-
+        toe.accelerometer.value = np.asarray((pinocchioRobot.data.oMi[15].inverse()*gravity).linear).squeeze()
         toe.jointTorquesEstimated.recompute(robot.device.state.time)
         #print toe.jointTorques.value
         entity_offset = np.asarray(toe.jointTorquesEstimated.value).squeeze() - np.asarray(toe.jointTorques.value).squeeze()
 
         robot.device.increment(dt)
         pinocchioRobot.display(q_pin)
+
 
 
 runner(10)
