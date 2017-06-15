@@ -61,7 +61,7 @@ from dynamic_graph.sot.dynamics_pinocchio.humanoid_robot import HumanoidRobot
 robot = HumanoidRobot(robotName, pinocchioRobot.model,
                       pinocchioRobot.data, initialConfig, OperationalPointsMap)
 
-
+njoints = pinocchioRobot.model.nv-6
 # ------------------------------------------------------------------------------
 # ---- Kinematic Stack of Tasks (SoT)  -----------------------------------------
 # ------------------------------------------------------------------------------
@@ -126,7 +126,10 @@ import numpy as np
 
 toe = TOE("test_entity_toe")
 id4 = ((1.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(0.0,0.0,0.0,1.0))
-toe.init(urdfPath, id4, 0.1,
+epsilon = 0.1
+ref_offset = 0.1
+tau_offset = np.asarray((ref_offset,)*njoints).squeeze()
+toe.init(urdfPath, id4, epsilon,
          pinocchioRobot.model.getJointId(OperationalPointsMap['waist']),
          pinocchioRobot.model.getJointId(OperationalPointsMap['chest']))
 plug(robot.device.state, toe.base6d_encoders)
@@ -135,15 +138,16 @@ toe.gyroscope.value = (0.,0.,0.)
 from pinocchio import Motion
 gravity = Motion.Zero()
 gravity.linear = np.asarray((0.0,0.0,-9.81))
-njoints = pinocchioRobot.model.nv-6
 
 #-------------------------------------------------------------------------------
 #----- MAIN LOOP ---------------------------------------------------------------
 #-------------------------------------------------------------------------------
 robot.device.increment(dt)
 from pinocchio import rnea
-
 np.set_printoptions(suppress=True)
+
+
+
 
 def runner(n):
     for i in xrange(n):
@@ -152,13 +156,10 @@ def runner(n):
         q_pin[0,6] = 1.0
         nvZero = np.asarray((0.0,)*pinocchioRobot.model.nv)
         tau = np.asarray(rnea(pinocchioRobot.model, pinocchioRobot.data, q_pin, nvZero, nvZero)).squeeze()
-        tau_offset = np.asarray((0.1,)*njoints).squeeze()
         toe.jointTorques.value = tau_offset + tau[6:]
         pinocchioRobot.forwardKinematics(q_pin)
         toe.accelerometer.value = np.asarray((pinocchioRobot.data.oMi[15].inverse()*gravity).linear).squeeze()
         toe.jointTorquesEstimated.recompute(robot.device.state.time)
-        #print toe.jointTorques.value
-        entity_offset = np.asarray(toe.jointTorquesEstimated.value).squeeze() - np.asarray(toe.jointTorques.value).squeeze()
 
         robot.device.increment(dt)
         pinocchioRobot.display(q_pin)
@@ -170,4 +171,6 @@ toe.computeOffset(100,1.0)
 runner(100)
 runner(1000)
 
-print toe.getSensorOffsets()
+print "The desired offset is", tau_offset
+print "The obtained offset is", toe.getSensorOffsets()
+print "The test is passed: ", (np.absolute(np.absolute(np.asarray(toe.getSensorOffsets())).max()-ref_offset)<epsilon)

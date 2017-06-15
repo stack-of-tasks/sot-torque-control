@@ -148,6 +148,12 @@ namespace dynamicgraph
       DEFINE_SIGNAL_INNER_FUNCTION(collectSensorData, dummy)
       {
         if (sensor_offset_status == INPROGRESS) {
+
+        const Eigen::VectorXd& gyro = m_gyroscopeSIN(iter);
+        if(gyro.array().abs().maxCoeff() >=gyro_epsilon) {
+          SEND_MSG("Very High Angular Rotations.", MSG_TYPE_ERROR_STREAM);
+        }
+
           // Check the current iteration status
           int i = current_progress;
           
@@ -214,21 +220,18 @@ namespace dynamicgraph
       {
         m_collectSensorDataSINNER(iter);
 
-        const Eigen::VectorXd& gyro = m_gyroscopeSIN(iter);
-        if(gyro.array().abs().maxCoeff() >=gyro_epsilon) {
-          SEND_MSG("Very High Angular Rotations.", MSG_TYPE_ERROR_STREAM);
-        }        
-
         if (s.size() != m_model.nv-6) s.resize(m_model.nv-6);
 
-        if (sensor_offset_status == PRECOMPUTATION || sensor_offset_status == INPROGRESS) {
-          s = m_jointTorquesSIN(iter);
-        }
-        else { //sensor_offset_status == COMPUTED
-          const dynamicgraph::Vector& inputTorques = m_jointTorquesSIN(iter);
-          s = inputTorques - jointTorqueOffsets;
-        }
-          return s;
+        if (sensor_offset_status == PRECOMPUTATION || sensor_offset_status == INPROGRESS)
+          {
+            s = m_jointTorquesSIN(iter);
+          }
+        else
+          { //sensor_offset_status == COMPUTED
+            const dynamicgraph::Vector& inputTorques = m_jointTorquesSIN(iter);
+            s = inputTorques - jointTorqueOffsets;
+          }
+        return s;
       }
 
       void TorqueOffsetEstimator::display( std::ostream& os ) const
