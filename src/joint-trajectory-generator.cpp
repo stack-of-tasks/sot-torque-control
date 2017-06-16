@@ -187,7 +187,7 @@ namespace dynamicgraph
 	/* Retrieve m_robot_util  informations */
 	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
-	  m_robot_util = createRobotUtil(localName);
+	  m_robot_util = getRobotUtil(localName);
 	else 
 	  {
 	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
@@ -253,7 +253,10 @@ namespace dynamicgraph
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
             if(base6d_encoders.size()!=m_robot_util->m_nbJoints+6)
             {
-              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder");
+              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder " + 
+				    toString(base6d_encoders.size()) + " " +
+				    toString(m_robot_util->m_nbJoints+6)
+				    );
               return s;
             }
             for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)

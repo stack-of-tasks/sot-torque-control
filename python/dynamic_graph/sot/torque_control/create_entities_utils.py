@@ -91,6 +91,7 @@ def create_position_controller(ent, dt=0.001):
 
 def create_trajectory_generator(device, dt=0.001):
     jtg = JointTrajectoryGenerator("jtg");
+    print "device.robotState: " + device.robotState
     plug(device.robotState,             jtg.base6d_encoders);
     jtg.init(dt);
     return jtg;
