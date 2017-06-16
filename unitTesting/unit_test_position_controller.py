@@ -28,7 +28,7 @@ Kd=ones(initRobotData.nbJoints)
 pc.Kd.value=Kd
 
 # Initializing the entity.
-pc.init(cm.controlDT,initRobotData.nbJoints+6)
+pc.init(cm.controlDT, "control-manager-robot"); #initRobotData.robotRef)
 
 pc.pwmDes.recompute(10)
 pc.qError.recompute(10)
