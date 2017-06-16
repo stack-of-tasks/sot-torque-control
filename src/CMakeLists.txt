@@ -46,6 +46,7 @@ SET(plugins
   position-controller
   control-manager
   free-flyer-locator
+  numerical-difference
   )
 
 #set(ADDITIONAL_feature-task_LIBS feature-generic task)
