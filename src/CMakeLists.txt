@@ -47,6 +47,7 @@ SET(plugins
   control-manager
   free-flyer-locator
   numerical-difference
+  trace-player
   )
 
 #set(ADDITIONAL_feature-task_LIBS feature-generic task)
