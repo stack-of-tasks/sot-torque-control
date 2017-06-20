@@ -52,6 +52,7 @@ SET(plugins
   hrp2-device-pos-ctrl
   #hrp2-device-torque-ctrl
   free-flyer-locator
+  trace-player
   )
 
 #set(ADDITIONAL_feature-task_LIBS feature-generic task)
