@@ -50,6 +50,7 @@ SET(plugins
   admittance-controller
   control-manager
   hrp2-device-pos-ctrl
+  torque-offset-estimator
   #hrp2-device-torque-ctrl
   free-flyer-locator
   trace-player
