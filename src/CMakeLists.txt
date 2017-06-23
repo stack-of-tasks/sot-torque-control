@@ -44,6 +44,9 @@ SET(plugins
   inverse-dynamics-balance-controller
   position-controller
   control-manager
+#  hrp2-device-pos-ctrl
+  torque-offset-estimator
+  #hrp2-device-torque-ctrl
   free-flyer-locator
   numerical-difference
   device-torque-ctrl

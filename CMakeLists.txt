@@ -56,7 +56,6 @@ ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("tsid")
 
-
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
@@ -166,6 +165,17 @@ TARGET_LINK_LIBRARIES(common_sot_py ${LIBRARY_NAME})
 
 SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
 INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
+
+
+IF(TALOS_DATA_FOUND)
+  FOREACH(py_filename test_torque_offset_estimator)
+    CONFIGURE_FILE(
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      )
+    ENDFOREACH(py_filename)
+ENDIF(TALOS_DATA_FOUND)
+
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()

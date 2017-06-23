@@ -77,7 +77,7 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
 
   // set controlInputType to acceleration so that at the end of the increment
   // method the velocity is copied in the velocity output signal (and not the control)
-  controlInputType_=CONTROL_INPUT_ACCELERATION;
+  controlInputType_=CONTROL_INPUT_TWO_INTEGRATION;
 
   // initialize gyrometer and accelerometer
   dynamicgraph::Vector data(3); data.setZero();
@@ -350,7 +350,7 @@ void DeviceTorqueCtrl::integrate( const double & dt )
   else
   {
     Device::integrate(dt);
-    if (controlInputType_==CONTROL_INPUT_ACCELERATION)
+    if (controlInputType_==CONTROL_INPUT_TWO_INTEGRATION)
       jointsAccelerations_  = controlSIN.accessCopy().tail(m_nj);
     else
       jointsAccelerations_.setZero(m_nj);
