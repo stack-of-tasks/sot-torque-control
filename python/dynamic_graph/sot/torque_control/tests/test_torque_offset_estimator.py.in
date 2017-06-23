@@ -130,8 +130,8 @@ epsilon = 0.1
 ref_offset = 0.1
 tau_offset = np.asarray((ref_offset,)*njoints).squeeze()
 toe.init(urdfPath, id4, epsilon,
-         pinocchioRobot.model.getJointId(OperationalPointsMap['waist']),
-         pinocchioRobot.model.getJointId(OperationalPointsMap['chest']))
+         OperationalPointsMap['waist'],
+         OperationalPointsMap['chest'])
 plug(robot.device.state, toe.base6d_encoders)
 toe.gyroscope.value = (0.,0.,0.)
 

@@ -71,8 +71,8 @@ namespace dynamicgraph {
         void init(const std::string &urdfFile,
                   const Eigen::Matrix4d& _m_torso_X_imu,
                   const double& gyro_epsilon,
-                  const int& ffIndex_,
-                  const int& torsoIndex_);
+                  const std::string& ffJointName,
+                  const std::string& torsoJointName);
         void computeOffset(const int& nIterations, const double& epsilon);
 
         virtual void display( std::ostream& os ) const;
