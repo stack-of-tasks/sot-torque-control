@@ -296,14 +296,13 @@ namespace dynamicgraph
 
 	/* Retrieve m_robot_util  informations */
 	std::string localName(robotRef);
-	if (isNameInRobotUtil(localName))
-	  m_robot_util = getRobotUtil(localName);
-	else 
-	  {
-	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
-	    return;
-	  }
-
+        if (isNameInRobotUtil(localName))
+          m_robot_util = getRobotUtil(localName);
+        else
+        {
+          SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+          return;
+        }
 	
         const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
         const Eigen::Vector3d& contactNormal = m_contact_normalSIN(0);
@@ -318,7 +317,6 @@ namespace dynamicgraph
         const VectorN& kd_posture = m_kd_postureSIN(0);
         const VectorN& rotor_inertias = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios = m_gear_ratiosSIN(0);
-
 
 	//TODO: Remove asserts
         assert(contactPoints.rows()==3 && contactPoints.cols()==4);
@@ -677,6 +675,7 @@ namespace dynamicgraph
         m_t += m_dt;
 
         s = m_tau_sot;
+
         return s;
       }
 
@@ -690,7 +689,7 @@ namespace dynamicgraph
         if(s.size()!=m_robot->nv())
           s.resize(m_robot->nv());
         m_tau_desSOUT(iter);
-		s = m_dv_sot;
+        s = m_dv_sot;
         return s;
       }
 
@@ -709,7 +708,7 @@ namespace dynamicgraph
           s.setZero();
           return s;
         }
-		s = m_f_RF;
+        s = m_f_RF;
         return s;
       }
 
@@ -728,10 +727,7 @@ namespace dynamicgraph
           s.setZero();
           return s;
         }
-
-        const Eigen::MatrixXd & T = m_contactLF->getForceGeneratorMatrix();
-        m_f_LF = T*m_f.tail<12>();
-		s = m_f_LF;
+        s = m_f_LF;
         return s;
       }
 

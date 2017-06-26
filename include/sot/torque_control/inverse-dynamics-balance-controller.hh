@@ -174,10 +174,11 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[InverseDynamicsBalanceController-"+name+"] "+msg, t, file, line);
+          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       protected:
+
         double            m_dt;               /// control loop time period
         double            m_t;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
