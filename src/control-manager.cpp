@@ -13,14 +13,17 @@
  * have received a copy of the GNU Lesser General Public License along
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <tsid/robots/robot-wrapper.hpp>
 
 #include <sot/torque_control/control-manager.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <pininvdyn/utils/stop-watch.hpp>
-#include <pininvdyn/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
+#include <tsid/utils/statistics.hpp>
+
+using namespace tsid;
 
 namespace dynamicgraph
 {
@@ -34,7 +37,6 @@ namespace dynamicgraph
       using namespace std;
       using namespace dg::sot::torque_control;
 
-      using namespace pininvdyn;
 
 //Size to be aligned                          "-------------------------------------------------------"
 #define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
@@ -189,7 +191,7 @@ namespace dynamicgraph
         m_initSucceeded = true;
 	vector<string> package_dirs;
 
-	m_robot = new pininvdyn::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+	m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
 	
 	std::string localName(robotRef);
 	if (!isNameInRobotUtil(localName))

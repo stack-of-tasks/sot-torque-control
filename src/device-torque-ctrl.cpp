@@ -17,22 +17,23 @@
 #include <fstream>
 #include <map>
 
+#include <tsid/math/constraint-base.hpp>
+#include <tsid/math/utils.hpp>
+
 #include <sot/core/debug.hh>
 
 #include "sot/torque_control/device-torque-ctrl.hh"
 #include <dynamic-graph/factory.h>
 #include <dynamic-graph/all-commands.h>
-#include <pininvdyn/math/constraint-base.hpp>
-#include <pininvdyn/math/utils.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp> // integrate
 
 using namespace std;
 using namespace dynamicgraph;
 using namespace sot::torque_control;
-using namespace pininvdyn;
-using namespace pininvdyn::tasks;
+using namespace tsid;
+using namespace tsid::tasks;
 
-typedef pininvdyn::math::ConstraintBase ConstraintBase;
+typedef tsid::math::ConstraintBase ConstraintBase;
 
 
 const double DeviceTorqueCtrl::TIMESTEP_DEFAULT = 0.001;
@@ -142,7 +143,8 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
   try
   {
     vector<string> package_dirs;
-    m_robot = new RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+    m_robot = new robots::RobotWrapper(urdfFile, 
+				      package_dirs, se3::JointModelFreeFlyer());
     m_data = new se3::Data(m_robot->model());
     m_robot->rotor_inertias(rotor_inertias);
     m_robot->gear_ratios(gear_ratios);
@@ -214,14 +216,14 @@ void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
   m_robot->computeAllTerms(*m_data, m_q, m_v);
   se3::SE3 H_lf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
-  pininvdyn::trajectories::TrajectorySample s(12, 6);
-  pininvdyn::math::se3ToVector(H_lf, s.pos);
+  tsid::trajectories::TrajectorySample s(12, 6);
+  tsid::math::SE3ToVector(H_lf, s.pos);
   m_contactLF->setReference(s);
   SEND_MSG("Setting left foot reference to "+toString(H_lf), MSG_TYPE_DEBUG);
 
   se3::SE3 H_rf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
-  pininvdyn::math::se3ToVector(H_rf, s.pos);
+  tsid::math::SE3ToVector(H_rf, s.pos);
   m_contactRF->setReference(s);
   SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
 }
@@ -273,7 +275,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
 
   // compute constraint solution: ddqBar = - Jc^+ * dJc * dq
   m_Jc_svd.compute(m_Jc, Eigen::ComputeThinU | Eigen::ComputeFullV);
-  pininvdyn::math::solveWithDampingFromSvd(m_Jc_svd, m_dJcv,
+  tsid::math::solveWithDampingFromSvd(m_Jc_svd, m_dJcv,
                                            m_dvBar, m_numericalDamping);
 
   // compute base of null space of constraint Jacobian
@@ -289,7 +291,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
   Vector rhs = m_dv_c;
 //  m_ZMZ_chol.compute(m_ZMZ);
 //  m_ZMZ_chol.solveInPlace(m_dv_c);
-  pininvdyn::math::svdSolveWithDamping(m_ZMZ, rhs,
+  tsid::math::svdSolveWithDamping(m_ZMZ, rhs,
                                        m_dv_c, m_numericalDamping);
 
   if((m_ZMZ*m_dv_c - rhs).norm() > 1e-10)
@@ -311,7 +313,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
 //    tmp(i) *= sv/(sv*sv + d2);
 //  }
 //  m_f = m_Jc_svd.matrixU().leftCols(nzsv) * tmp;
-  pininvdyn::math::svdSolveWithDamping(JcT, b,
+  tsid::math::svdSolveWithDamping(JcT, b,
                                        m_f, m_numericalDamping);
 
 //  SEND_MSG("dv = "+toString(m_dv.norm()), MSG_TYPE_DEBUG);

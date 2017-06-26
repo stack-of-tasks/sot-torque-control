@@ -32,8 +32,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
-#include <pininvdyn/robot-wrapper.hpp>
-#include <pininvdyn/tasks/task-se3-equality.hpp>
+#include <tsid/robots/robot-wrapper.hpp>
+#include <tsid/tasks/task-se3-equality.hpp>
 
 #include <Eigen/Cholesky>
 
@@ -142,14 +142,14 @@ namespace dynamicgraph
         bool m_isTorqueControlled;
 
         /// robot geometric/inertial data
-        pininvdyn::RobotWrapper *                       m_robot;
+        tsid::robots::RobotWrapper *                       m_robot;
         se3::Data *                                     m_data;
-        pininvdyn::tasks::TaskSE3Equality *             m_contactRF;
-        pininvdyn::tasks::TaskSE3Equality *             m_contactLF;
+        tsid::tasks::TaskSE3Equality *             m_contactRF;
+        tsid::tasks::TaskSE3Equality *             m_contactLF;
         unsigned int                                    m_nk; // number of contact forces
 
-        pininvdyn::math::Vector m_q, m_v, m_dv, m_f;
-        pininvdyn::math::Vector m_q_sot, m_v_sot, m_dv_sot;
+        tsid::math::Vector m_q, m_v, m_dv, m_f;
+        tsid::math::Vector m_q_sot, m_v_sot, m_dv_sot;
 
         typedef Eigen::LDLT<Eigen::MatrixXd> Cholesky;
         Cholesky        m_K_chol; /// cholesky decomposition of the K matrix

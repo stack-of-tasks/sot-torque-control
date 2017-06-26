@@ -9,6 +9,8 @@ class initRobotData:
   robotRef= "control-manager-robot"
   urdftosot=(12,13,14,15,23,24,25,26,27,28,29,16,17,18,19,20,21,22,6,7,8,9,10,11,0,1,2,3,4,5)
 
+  ctrlManagerCurrentToControlGain=1.0
+
   mapJointNameToID={
     'rhy': 0, 
     'rhr': 1, 
@@ -102,7 +104,9 @@ class initRobotData:
   def init_and_set_controller_manager(self, cm):
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    cm.init(self.controlDT,self.testRobotPath,self.maxCurrent,self.robotRef)
+    cm.init(self.controlDT,self.testRobotPath,
+            self.ctrlManagerCurrentToControlGain,
+            self.maxCurrent,self.robotRef)
 
     # Set the map from joint name to joint ID
     for key in self.mapJointNameToID:

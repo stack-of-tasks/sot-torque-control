@@ -16,7 +16,7 @@
 
 #include <sot/torque_control/common.hh>
 #include <boost/python.hpp>
-
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
 using namespace boost::python;
 using namespace dynamicgraph::sot::torque_control;
 
@@ -57,6 +57,9 @@ BOOST_PYTHON_MODULE(common_sot_py)
     .def_readwrite("m_force_util",&RobotUtil::m_force_util)
     .def_readwrite("m_foot_util",&RobotUtil::m_foot_util)
     .def_readwrite("m_urdf_to_sot",&RobotUtil::m_urdf_to_sot)
+    .def_readonly("m_urdf_to_sot",&RobotUtil::m_nbJoints)
+    .def_readwrite("m_urdf_to_sot",&RobotUtil::m_name_to_id)
+    .def_readwrite("m_id_to_name",&RobotUtil::m_id_to_name)
     .def("set_joint_limits_for_id",&RobotUtil::set_joint_limits_for_id)
     .def("get_joint_limits_from_id",&RobotUtil::cp_get_joint_limits_from_id)
     //.def("set_joint_limits_for_id",&RobotUtil::set_joint_limits_for_id)
@@ -64,4 +67,15 @@ BOOST_PYTHON_MODULE(common_sot_py)
     //.def("create_id_to_name_map",&RobotUtil::create_id_to_name_map)
     //.def("get_id_from_name",&RobotUtil::get_id_from_name)
     ;
+
+
+  class_<std::map<Index,ForceLimits> >("IndexForceLimits")
+    .def(map_indexing_suite<std::map<Index,ForceLimits> > ());
+
+  class_<std::map<std::string,Index> >("stringIndex")
+    .def(map_indexing_suite<std::map<std::string,Index> > ());
+  
+  class_<std::map<Index,std::string> >("Indexstring")
+    .def(map_indexing_suite<std::map<Index,std::string> > ());
+  
 }

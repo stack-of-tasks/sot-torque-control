@@ -48,7 +48,7 @@
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 
-#include <pininvdyn/robot-wrapper.hpp>
+#include <tsid/robots/robot-wrapper.hpp>
 
 namespace dynamicgraph {
   namespace sot {
@@ -172,7 +172,7 @@ namespace dynamicgraph {
 
       protected:
 	RobotUtil * m_robot_util;
-        pininvdyn::RobotWrapper *                       m_robot;
+	tsid::robots::RobotWrapper *                       m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
         double  m_maxCurrent;       /// control limit in Ampers
