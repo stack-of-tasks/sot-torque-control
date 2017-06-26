@@ -74,7 +74,9 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/control-manager.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
+  include/sot/torque_control/common.hh
 #  include/sot/torque_control/madgwickahrs.hh
+  include/sot/torque_control/device-torque-ctrl.hh
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh

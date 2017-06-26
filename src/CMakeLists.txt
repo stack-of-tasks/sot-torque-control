@@ -38,7 +38,6 @@ ENDIF(UNIX)
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
   joint-torque-controller
-#  force-torque-estimator
   joint-trajectory-generator
   nd-trajectory-generator
   se3-trajectory-generator
@@ -47,6 +46,7 @@ SET(plugins
   control-manager
   free-flyer-locator
   numerical-difference
+  device-torque-ctrl
   trace-player
   )
 
