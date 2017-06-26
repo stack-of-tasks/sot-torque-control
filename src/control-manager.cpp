@@ -82,10 +82,11 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid4(*this, &ControlManager::init,
-                                    docCommandVoid4("Initialize the entity.",
+                   makeCommandVoid5(*this, &ControlManager::init,
+                                    docCommandVoid5("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "URDF file path (string)",
+                                                    "Gain to convert current in control value (double)",
 						    "Max current (double)",
 						    "Robot reference (string)")));
         
@@ -171,14 +172,16 @@ namespace dynamicgraph
 
       }
 
-      void ControlManager::init(const double& dt, 
-				const std::string &urdfFile,
-				const double & lmax_current,
+      void ControlManager::init(const double & dt,
+                                const std::string & urdfFile,
+                                const double & current_to_ctrl_gain,
+                                const double & lmax_current,
 				const std::string &robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
 
+        m_current_to_ctrl_gain = current_to_ctrl_gain;
 	m_maxCurrent = lmax_current;
 
         m_dt = dt;
@@ -340,9 +343,9 @@ namespace dynamicgraph
             if (pwmDes(i) == 0)
               s(i) = 0;
             else if (m_signIsPos[i])
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * FROM_CURRENT_TO_12_BIT_CTRL + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * m_current_to_ctrl_gain + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
             else
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * FROM_CURRENT_TO_12_BIT_CTRL - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * m_current_to_ctrl_gain - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
 
 
             if(fabs(tau(i)) > tau_max(i))
@@ -371,7 +374,7 @@ namespace dynamicgraph
               m_maxCurrent = m_max_currentSIN(iter)(i);
 
             if( (fabs(pwmDes(i)) > m_maxCurrent) || 
-                (fabs(s(i))      > m_maxCurrent * FROM_CURRENT_TO_12_BIT_CTRL) )
+                (fabs(s(i))      > m_maxCurrent * m_current_to_ctrl_gain) )
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+

@@ -63,7 +63,7 @@ namespace dynamicgraph {
 
 ///factor to go from a [-20.0 ; 20.0] Ampers value 
 ///             to the [-2048 ; 2048] 12bit DAC register
-#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
+//#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
 
 ///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
 #define DEAD_ZONE_OFFSET 40
@@ -100,10 +100,11 @@ namespace dynamicgraph {
 	/// @param urdfFile: path to the URDF model of the robot
 	/// @param maxCurrent: default maximum current for each motor. 
 	/// The recommended way is to use the signal max_current.
-        void init(const double& dt, 
-		  const std::string& urdfFile,
-		  const double& maxCurrent,
-		  const std::string& robotRef);
+        void init(const double & dt,
+                  const std::string & urdfFile,
+                  const double & current_to_ctrl_gain,
+                  const double & maxCurrent,
+                  const std::string & robotRef);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
@@ -177,7 +178,7 @@ namespace dynamicgraph {
         double  m_maxCurrent;       /// control limit in Ampers
         bool    m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or by control limit violation
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
-
+        double  m_current_to_ctrl_gain; /// gain to multiply the input current with, to get the output control value
         std::vector<bool>         m_signIsPos;      /// Control sign filtered for deadzone compensation
         std::vector<unsigned int> m_changeSignCpt;  /// Cpt to filter the control sign
         std::vector<unsigned int> m_winSizeAdapt;   /// Variable windows filter size used to be more reactibe if last changing sign event is dating a bit (see graph)
