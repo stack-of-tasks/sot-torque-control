@@ -253,6 +253,12 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             cm_id = m_jointCtrlModes_current[i].id;
+            if(cm_id<0)
+            {
+              SEND_MSG("You forgot to set the control mode of joint "+toString(i), MSG_TYPE_ERROR_STREAM);
+              continue;
+            }
+
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
             if(m_jointCtrlModesCountDown[i]==0)
               s(i) = ctrl(i);

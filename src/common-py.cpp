@@ -64,4 +64,4 @@ BOOST_PYTHON_MODULE(common_sot_py)
     //.def("create_id_to_name_map",&RobotUtil::create_id_to_name_map)
     //.def("get_id_from_name",&RobotUtil::get_id_from_name)
     ;
-};
+}
