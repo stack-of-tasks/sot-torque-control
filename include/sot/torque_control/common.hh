@@ -98,10 +98,10 @@ namespace dynamicgraph {
 	  m_Force_Id_Left_Foot, m_Force_Id_Right_Foot;
 	
 	void set_name_to_force_id(const std::string & name,
-	 			  const double &force_id);
+                                  const Index &force_id);
 
 	
-	void set_force_id_to_limits(const double &force_id,
+        void set_force_id_to_limits(const Index &force_id,
 				    const dg::Vector &lf,
 				    const dg::Vector &uf);
 
@@ -222,14 +222,14 @@ namespace dynamicgraph {
 
 	/// Set relation between the name and the SoT id
 	void set_name_to_id(const std::string &jointName,
-			    const double & jointId);
+                            const Index & jointId);
 
 	/// Set the map between urdf index and sot index
 	void set_urdf_to_sot(const std::vector<Index> &urdf_to_sot);
 	void set_urdf_to_sot(const dg::Vector &urdf_to_sot);
 	
 	/// Set the limits (lq,uq) for joint idx
-	void set_joint_limits_for_id(const double &idx,
+        void set_joint_limits_for_id(const Index &idx,
 				     const double &lq,
 				     const double &uq);
 

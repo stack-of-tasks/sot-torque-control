@@ -57,7 +57,7 @@ namespace dynamicgraph
       /******************** ForceUtil ***************************/
 
       void ForceUtil::set_name_to_force_id(const std::string &name,
-					   const double &force_id)
+                                           const Index &force_id)
       {
 	m_name_to_force_id[name] = (Index) force_id;
 	create_force_id_to_name_map();
@@ -72,7 +72,7 @@ namespace dynamicgraph
       }
 
 
-      void ForceUtil::set_force_id_to_limits(const double &force_id,
+      void ForceUtil::set_force_id_to_limits(const Index &force_id,
 					     const dg::Vector &lf,
 					     const dg::Vector &uf)
       {
@@ -174,7 +174,7 @@ namespace dynamicgraph
       {}
 
       void RobotUtil::
-      set_joint_limits_for_id( const double &idx,
+      set_joint_limits_for_id( const Index &idx,
 			       const double &lq,
 			       const double &uq)
       {
@@ -199,7 +199,7 @@ namespace dynamicgraph
 
       void RobotUtil::
       set_name_to_id(const std::string &jointName,
-		     const double &jointId)
+                     const Index &jointId)
       {
 	m_name_to_id[jointName] = (Index)jointId;
 	create_id_to_name_map();
