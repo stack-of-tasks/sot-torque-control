@@ -426,7 +426,7 @@ namespace dynamicgraph
 
           m_hqpSolver = new SolverHQuadProg("eiquadprog-fast");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
-          m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,24>(SOLVER_HQP_EIQUADPROG_RT,
+          m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,34>(SOLVER_HQP_EIQUADPROG_RT,
 									     "eiquadprog_rt_60_36_34");
 
 	  //new SolverHQuadProgRT<60,36,34>("eiquadprog-rt-60-36-34");
