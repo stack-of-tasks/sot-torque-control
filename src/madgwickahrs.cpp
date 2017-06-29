@@ -65,6 +65,12 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &MadgwickAHRS::init,
                                     docCommandVoid1("Initialize the entity.",
                                                     "Timestep in seconds (double)")));
+        addCommand("getBeta",
+                   makeDirectGetter(*this,&m_beta,
+                                    docDirectGetter("Beta parameter", "double")));
+        addCommand("setBeta",
+                   makeDirectSetter(*this, &m_beta,
+                                    docDirectSetter("Beta parameter", "double")));
       }
 
       void MadgwickAHRS::init(const double& dt)
@@ -113,7 +119,8 @@ namespace dynamicgraph
 
       // Fast inverse square-root
       // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
-      float MadgwickAHRS::invSqrt(float x) {
+      float MadgwickAHRS::invSqrt(float x)
+      {
         /*
           float halfx = 0.5f * x;
           float y = x;
@@ -126,7 +133,8 @@ namespace dynamicgraph
       }
 
       // IMU algorithm update
-      void MadgwickAHRS::madgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
+      void MadgwickAHRS::madgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az)
+      {
         float recipNorm;
         float s0, s1, s2, s3;
         float qDot1, qDot2, qDot3, qDot4;
@@ -139,8 +147,8 @@ namespace dynamicgraph
         qDot4 = 0.5f * ( m_q0 * gz + m_q1 * gy - m_q2 * gx);
 
         // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-        if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
+        if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+        {
           // Normalise accelerometer measurement
           recipNorm = invSqrt(ax * ax + ay * ay + az * az);
           ax *= recipNorm;
