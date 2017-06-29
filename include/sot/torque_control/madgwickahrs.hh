@@ -67,7 +67,7 @@ namespace dynamicgraph {
       /* --------------------------------------------------------------------- */
 
       class SOTMADGWICKAHRS_EXPORT MadgwickAHRS
-    :public::dynamicgraph::Entity
+          :public::dynamicgraph::Entity
       {
         typedef MadgwickAHRS EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
@@ -108,17 +108,9 @@ namespace dynamicgraph {
         volatile float    m_q0 = 1.0f, m_q1 = 0.0f, m_q2 = 0.0f, m_q3 = 0.0f;	/// quaternion of sensor frame
         float             m_sampleFreq = 512.0f;		                        /// sample frequency in Hz
 
-
       }; // class MadgwickAHRS
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph
 
-
-
 #endif // #ifndef __sot_torque_control_madgwickahrs_H__
-
-
-
-
-
