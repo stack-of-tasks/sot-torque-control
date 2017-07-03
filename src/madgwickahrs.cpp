@@ -69,8 +69,8 @@ namespace dynamicgraph
                    makeDirectGetter(*this,&m_beta,
                                     docDirectGetter("Beta parameter", "double")));
         addCommand("setBeta",
-                   makeDirectSetter(*this, &m_beta,
-                                    docDirectSetter("Beta parameter", "double")));
+                   makeCommandVoid1(*this, &MadgwickAHRS::set_beta,
+                                    docCommandVoid1("Set the filter parameter beta", "double")));
       }
 
       void MadgwickAHRS::init(const double& dt)
@@ -80,6 +80,14 @@ namespace dynamicgraph
         m_sampleFreq=1.0f/dt;
         m_initSucceeded = true;
       }
+
+      void MadgwickAHRS::set_beta(const double& beta)
+      {
+        if(beta<0.0 || beta>1.0)
+          return SEND_MSG("Beta must be in [0,1]", MSG_TYPE_ERROR);
+        m_beta = beta;
+      }
+
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */

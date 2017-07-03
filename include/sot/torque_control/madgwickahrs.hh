@@ -79,6 +79,8 @@ namespace dynamicgraph {
         MadgwickAHRS( const std::string & name );
 
         void init(const double& dt);
+        void set_beta(const double & beta);
+
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(accelerometer,              dynamicgraph::Vector);  /// ax ay az in m.s-2
         DECLARE_SIGNAL_IN(gyroscope,                  dynamicgraph::Vector);  /// gx gy gz in rad.s-1
