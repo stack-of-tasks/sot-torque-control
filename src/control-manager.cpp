@@ -19,8 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <pininvdyn/utils/stop-watch.hpp>
-#include <pininvdyn/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
+#include <tsid/utils/statistics.hpp>
 
 namespace dynamicgraph
 {

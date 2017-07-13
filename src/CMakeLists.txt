@@ -44,7 +44,7 @@ SET(plugins
   se3-trajectory-generator
   madgwickahrs
   inverse-dynamics-controller
-  inverse-dynamics-balance-controller
+#  inverse-dynamics-balance-controller
   position-controller
   admittance-controller
   control-manager
