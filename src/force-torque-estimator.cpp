@@ -326,7 +326,7 @@ namespace dynamicgraph
 
         // compute transformation from IMU's frame to torso's frame
         typedef Map<const Vector3d> CMap3d;
-        m_torso_X_imu = TransformNoRot(eye, -CMap3d(IMU_XYZ));
+        m_torso_X_imu = TransformNoRot(eye, -CMap3d(IMU_XYZ));  // TODO: check this minus sign
 
       }
 
