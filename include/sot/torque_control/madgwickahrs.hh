@@ -56,7 +56,7 @@
 #include <initializer_list>
 #include "boost/assign.hpp"
 
-#define betaDef		0.1f		// 2 * proportional g
+#define betaDef		0.01f		// 2 * proportional g
 
 namespace dynamicgraph {
   namespace sot {
