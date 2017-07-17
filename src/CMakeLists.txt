@@ -37,6 +37,7 @@ ENDIF(UNIX)
 
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
+  base-estimator
   joint-torque-controller
   force-torque-estimator
   numerical-difference

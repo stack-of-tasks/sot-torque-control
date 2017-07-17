@@ -87,6 +87,7 @@ SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
 SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/joint-torque-controller.hh
+  include/sot/torque_control/base-estimator.hh
   include/sot/torque_control/force-torque-estimator.hh
   include/sot/torque_control/numerical-difference.hh
   include/sot/torque_control/motor-model.hh
