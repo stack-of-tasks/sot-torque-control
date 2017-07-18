@@ -97,6 +97,12 @@ namespace dynamicgraph {
         void set_normal_force_std_dev_left_foot(const double & std_dev);
         void set_stiffness_right_foot(const dynamicgraph::Vector & k);
         void set_stiffness_left_foot(const dynamicgraph::Vector & k);
+        void set_right_foot_sizes(const dynamicgraph::Vector & s);
+        void set_left_foot_sizes(const dynamicgraph::Vector & s);
+        void set_zmp_margin_right_foot(const double & margin);
+        void set_zmp_margin_left_foot(const double & margin);
+        void set_normal_force_margin_right_foot(const double & margin);
+        void set_normal_force_margin_left_foot(const double & margin);
 
         void reset_foot_positions_impl();
         void compute_zmp(const Vector6 & w, Vector2 & zmp);
@@ -118,6 +124,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(q_rf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(q_imu,                      dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
+        DECLARE_SIGNAL_OUT(w_lf,                       double);  /// weight of the estimation coming from the left foot
+        DECLARE_SIGNAL_OUT(w_rf,                       double);  /// weight of the estimation coming from the right foot
 
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
@@ -142,6 +150,12 @@ namespace dynamicgraph {
         double            m_zmp_std_dev_lf;   /// standard deviation of ZMP measurement errors for left foot
         double            m_fz_std_dev_rf;    /// standard deviation of normal force measurement errors for right foot
         double            m_fz_std_dev_lf;    /// standard deviation of normal force measurement errors for left foot
+        Vector4           m_left_foot_sizes;  /// sizes of the left foot (pos x, neg x, pos y, neg y)
+        Vector4           m_right_foot_sizes; /// sizes of the left foot (pos x, neg x, pos y, neg y)
+        double            m_zmp_margin_lf;    /// margin used for computing zmp weight
+        double            m_zmp_margin_rf;    /// margin used for computing zmp weight
+        double            m_fz_margin_lf;     /// margin used for computing normal force weight
+        double            m_fz_margin_rf;     /// margin used for computing normal force weight
         Vector6           m_K_rf;             /// 6d stiffness of right foot spring
         Vector6           m_K_lf;             /// 6d stiffness of left foot spring
 
