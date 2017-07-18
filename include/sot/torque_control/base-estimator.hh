@@ -116,6 +116,9 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(imu_quaternion,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(forceLLEG,                  dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(forceRLEG,                  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(w_lf_in,                    double);  /// weight of the estimation coming from the left foot
+        DECLARE_SIGNAL_IN(w_rf_in,                    double);  /// weight of the estimation coming from the right foot
+
         DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
 
         DECLARE_SIGNAL_OUT(q,                         dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY

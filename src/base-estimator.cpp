@@ -73,7 +73,8 @@ namespace dynamicgraph
 #define IMU_JOINT_NAME "CHEST_JOINT1"
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
-                          m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN
+                          m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
+                          m_w_lf_inSIN << m_w_rf_inSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
                           m_w_lfSOUT << m_w_rfSOUT
 
@@ -96,6 +97,8 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN( imu_quaternion,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceLLEG,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceRLEG,                  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN( w_lf_in,                    double)
+        ,CONSTRUCT_SIGNAL_IN( w_rf_in,                    double)
         ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, m_joint_positionsSIN
                                                                               <<m_joint_velocitiesSIN)
         ,CONSTRUCT_SIGNAL_OUT(q,                          dynamicgraph::Vector, m_kinematics_computationsSINNER
@@ -103,6 +106,8 @@ namespace dynamicgraph
                                                                               <<m_imu_quaternionSIN
                                                                               <<m_forceLLEGSIN
                                                                               <<m_forceRLEGSIN
+                                                                              <<m_w_lf_inSIN
+                                                                              <<m_w_rf_inSIN
                                                                               <<m_w_lfSOUT
                                                                               <<m_w_rfSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
@@ -419,8 +424,19 @@ namespace dynamicgraph
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
         const Vector6 & ftrf                = m_forceRLEGSIN(iter);
         const Vector6 & ftlf                = m_forceLLEGSIN(iter);
-        const double & wL                   = m_w_lfSOUT(iter);
-        const double & wR                   = m_w_rfSOUT(iter);
+
+        // if the weights are not specified by the user through the input signals w_lf, w_rf
+        // then compute them
+        double wL, wR;
+        if(m_w_lf_inSIN.isPlugged())
+          wL = m_w_lf_inSIN(iter);
+        else
+          wL = m_w_lfSOUT(iter);
+
+        if(m_w_rf_inSIN.isPlugged())
+          wR = m_w_rf_inSIN(iter);
+        else
+          wR = m_w_rfSOUT(iter);
 
         assert(qj.size()==N_JOINTS     && "Unexpected size of signal joint_positions");
 
