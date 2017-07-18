@@ -74,7 +74,8 @@ namespace dynamicgraph
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN
-#define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT
+#define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
+                          m_w_lfSOUT << m_w_rfSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -95,12 +96,21 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN( imu_quaternion,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceLLEG,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceRLEG,                  dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, INPUT_SIGNALS)
-        ,CONSTRUCT_SIGNAL_OUT(q,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
+        ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, m_joint_positionsSIN
+                                                                              <<m_joint_velocitiesSIN)
+        ,CONSTRUCT_SIGNAL_OUT(q,                          dynamicgraph::Vector, m_kinematics_computationsSINNER
+                                                                              <<m_joint_positionsSIN
+                                                                              <<m_imu_quaternionSIN
+                                                                              <<m_forceLLEGSIN
+                                                                              <<m_forceRLEGSIN
+                                                                              <<m_w_lfSOUT
+                                                                              <<m_w_rfSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
         ,CONSTRUCT_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_rf,                       dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_imu,                      dynamicgraph::Vector, m_qSOUT<<m_imu_quaternionSIN)
+        ,CONSTRUCT_SIGNAL_OUT(w_lf,                       double, m_forceLLEGSIN)
+        ,CONSTRUCT_SIGNAL_OUT(w_rf,                       double, m_forceRLEGSIN)
         ,m_initSucceeded(false)
         ,m_reset_foot_pos(true)
         ,m_w_imu(0.0)
@@ -108,11 +118,15 @@ namespace dynamicgraph
         ,m_zmp_std_dev_rf(1.0)
         ,m_fz_std_dev_lf(1.0)
         ,m_fz_std_dev_rf(1.0)
+        ,m_zmp_margin_lf(0.0)
+        ,m_zmp_margin_rf(0.0)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         m_K_rf << 4034,23770,239018,707,502,936;
         m_K_lf << 4034,23770,239018,707,502,936;
+        m_left_foot_sizes  << 0.130, -0.100,  0.075, -0.056;
+        m_right_foot_sizes << 0.130, -0.100,  0.056, -0.075;
 
         /* Commands. */
         addCommand("init",
@@ -155,6 +169,30 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &BaseEstimator::set_stiffness_left_foot,
                                     docCommandVoid1("Set the 6d stiffness of the spring at the left foot",
                                                     "vector")));
+        addCommand("set_right_foot_sizes",
+                   makeCommandVoid1(*this, &BaseEstimator::set_right_foot_sizes,
+                                    docCommandVoid1("Set the size of the right foot (pos x, neg x, pos y, neg y)",
+                                                    "4d vector")));
+        addCommand("set_left_foot_sizes",
+                   makeCommandVoid1(*this, &BaseEstimator::set_left_foot_sizes,
+                                    docCommandVoid1("Set the size of the left foot (pos x, neg x, pos y, neg y)",
+                                                    "4d vector")));
+        addCommand("set_zmp_margin_right_foot",
+                   makeCommandVoid1(*this, &BaseEstimator::set_zmp_margin_right_foot,
+                                    docCommandVoid1("Set the ZMP margin for the right foot",
+                                                    "double")));
+        addCommand("set_zmp_margin_left_foot",
+                   makeCommandVoid1(*this, &BaseEstimator::set_zmp_margin_left_foot,
+                                    docCommandVoid1("Set the ZMP margin for the left foot",
+                                                    "double")));
+        addCommand("set_normal_force_margin_right_foot",
+                   makeCommandVoid1(*this, &BaseEstimator::set_normal_force_margin_right_foot,
+                                    docCommandVoid1("Set the normal force margin for the right foot",
+                                                    "double")));
+        addCommand("set_normal_force_margin_left_foot",
+                   makeCommandVoid1(*this, &BaseEstimator::set_normal_force_margin_left_foot,
+                                    docCommandVoid1("Set the normal force margin for the left foot",
+                                                    "double")));
       }
 
       void BaseEstimator::init(const double & dt, const std::string& urdfFile)
@@ -176,7 +214,7 @@ namespace dynamicgraph
           m_v_sot.setZero(N_JOINTS+6);
 
           m_sole_M_ftSens = SE3(Matrix3::Identity(),
-                                Eigen::Map<const Vector3>(RIGHT_FOOT_SOLE_XYZ));
+                                -Eigen::Map<const Vector3>(RIGHT_FOOT_FORCE_SENSOR_XYZ));
         }
         catch (const std::exception& e)
         {
@@ -239,6 +277,40 @@ namespace dynamicgraph
         if(std_dev<=0.0)
           return SEND_MSG("Standard deviation must be a positive number", MSG_TYPE_ERROR);
         m_fz_std_dev_lf = std_dev;
+      }
+
+      void BaseEstimator::set_right_foot_sizes(const dynamicgraph::Vector & s)
+      {
+        if(s.size()!=4)
+          return SEND_MSG("Foot size vector should have size 4, not "+toString(s.size()), MSG_TYPE_ERROR);
+        m_right_foot_sizes = s;
+      }
+
+      void BaseEstimator::set_left_foot_sizes(const dynamicgraph::Vector & s)
+      {
+        if(s.size()!=4)
+          return SEND_MSG("Foot size vector should have size 4, not "+toString(s.size()), MSG_TYPE_ERROR);
+        m_left_foot_sizes = s;
+      }
+
+      void BaseEstimator::set_zmp_margin_right_foot(const double & margin)
+      {
+        m_zmp_margin_rf = margin;
+      }
+
+      void BaseEstimator::set_zmp_margin_left_foot(const double & margin)
+      {
+        m_zmp_margin_lf = margin;
+      }
+
+      void BaseEstimator::set_normal_force_margin_right_foot(const double & margin)
+      {
+        m_fz_margin_rf = margin;
+      }
+
+      void BaseEstimator::set_normal_force_margin_left_foot(const double & margin)
+      {
+        m_fz_margin_lf = margin;
       }
 
       void BaseEstimator::compute_zmp(const Vector6 & w, Vector2 & zmp)
@@ -347,6 +419,9 @@ namespace dynamicgraph
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
         const Vector6 & ftrf                = m_forceRLEGSIN(iter);
         const Vector6 & ftlf                = m_forceLLEGSIN(iter);
+        const double & wL                   = m_w_lfSOUT(iter);
+        const double & wR                   = m_w_rfSOUT(iter);
+
         assert(qj.size()==N_JOINTS     && "Unexpected size of signal joint_positions");
 
         m_kinematics_computationsSINNER(iter);
@@ -383,8 +458,6 @@ namespace dynamicgraph
           matrixToRpy(quatIMU.toRotationMatrix(), RPYff3); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
 
           // average (we do not take into account the IMU yaw)
-          double wL = ftlf(2) / (ftlf(2) + ftrf(2)); //wL=0.0;
-          double wR = ftrf(2) / (ftlf(2) + ftrf(2)); //wR=1.0;
           double wSum = wL + wR + m_w_imu;
           RPYff(0) = (RPYff1[0]*wL + RPYff2[0]*wR + RPYff3[0]*m_w_imu) / wSum;
           RPYff(1) = (RPYff1[1]*wL + RPYff2[1]*wR + RPYff3[1]*m_w_imu) / wSum;
@@ -461,6 +534,42 @@ namespace dynamicgraph
         Eigen::Quaternion<double> quatIMU(quatIMU_vec);
         base_se3_to_sot(q.head<3>(), quatIMU.toRotationMatrix(), s.head<6>());
 
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(w_lf, double)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal w_lf before initialization!");
+          return s;
+        }
+
+        const Vector6 & wrench                = m_forceLLEGSIN(iter);
+        Vector2 zmp;
+        compute_zmp(wrench, zmp);
+        double w_zmp = compute_zmp_weight(zmp, m_left_foot_sizes,
+                                          m_zmp_std_dev_lf, m_zmp_margin_lf);
+        double w_fz = compute_force_weight(wrench(2), m_fz_std_dev_lf, m_fz_margin_lf);
+        s = w_zmp*w_fz;
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(w_rf, double)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal w_rf before initialization!");
+          return s;
+        }
+
+        const Vector6 & wrench                = m_forceRLEGSIN(iter);
+        Vector2 zmp;
+        compute_zmp(wrench, zmp);
+        double w_zmp = compute_zmp_weight(zmp, m_right_foot_sizes,
+                                          m_zmp_std_dev_rf, m_zmp_margin_rf);
+        double w_fz = compute_force_weight(wrench(2), m_fz_std_dev_rf, m_fz_margin_rf);
+        s = w_zmp*w_fz;
         return s;
       }
 
