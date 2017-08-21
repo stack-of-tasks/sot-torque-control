@@ -92,8 +92,8 @@ namespace dynamicgraph {
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
-        int epsilon;
-        int gyro_epsilon;
+        double epsilon;
+        double gyro_epsilon;
 
         int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
         Eigen::VectorXd jointTorqueOffsets;
