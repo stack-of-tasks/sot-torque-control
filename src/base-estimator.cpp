@@ -367,27 +367,52 @@ namespace dynamicgraph
         return (cdf(m_normal, (fz-margin)/std_dev)-0.5)*2.0;
       }
 
-      void BaseEstimator::reset_foot_positions_impl()
+      void BaseEstimator::reset_foot_positions_impl(const Vector6 & ftlf, const Vector6 & ftrf)
       {
-        // set the world frame in between the feet
-        const SE3 & ffMlfa = m_data->oMf[m_left_foot_id];
-        const SE3 & ffMrfa = m_data->oMf[m_right_foot_id];
-        // Average in SE3
-        const Vector3 w(0.5*(se3::log3(ffMlfa.rotation())+
-                             se3::log3(ffMrfa.rotation())));
-        const SE3 ffMo = SE3(se3::exp3(w), 0.5 * (ffMlfa.translation()+ffMrfa.translation()) );
+        // compute the base position wrt each foot
+        SE3 dummy, lfMff, rfMff;
+        m_oMrfs = SE3::Identity();
+        m_oMlfs = SE3::Identity();
+        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, rfMff, dummy);
+        kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  lfMff, dummy);
 
         // distance from ankle to ground
         const Vector3 & ankle_2_sole_xyz = m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ;
-        const SE3 xfaMxfs(Matrix3::Identity(), -1.0*ankle_2_sole_xyz);
+        const SE3 groundMfoot(Matrix3::Identity(), -1.0*ankle_2_sole_xyz);
+        lfMff = groundMfoot * lfMff;
+        rfMff = groundMfoot * rfMff;
 
-        m_oMlfs = ffMo.inverse() * ffMlfa * xfaMxfs;
-        m_oMrfs = ffMo.inverse() * ffMrfa * xfaMxfs;
+        // set the world frame in between the feet
+        const Vector3 w( 0.5*(se3::log3(lfMff.rotation())+se3::log3(rfMff.rotation())) );
+        const SE3 oMff = SE3(se3::exp3(w), 0.5 * (lfMff.translation()+rfMff.translation()) );
+
+        m_oMlfs = oMff * lfMff.inverse() * groundMfoot;
+        m_oMrfs = oMff * rfMff.inverse() * groundMfoot;
 
         sendMsg("Reference pos of left foot:\n"+toString(m_oMlfs), MSG_TYPE_INFO);
         sendMsg("Reference pos of right foot:\n"+toString(m_oMrfs), MSG_TYPE_INFO);
 
+//        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, m_oMff_rf, dummy);
+//        kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, dummy);
+//        sendMsg("Base estimation left foot:\n"+toString(m_oMff_lf), MSG_TYPE_DEBUG);
+//        sendMsg("Base estimation right foot:\n"+toString(m_oMff_rf), MSG_TYPE_DEBUG);
+//        sendMsg("Difference base estimation left-right foot:\n"+toString(m_oMff_rf.inverse()*m_oMff_lf), MSG_TYPE_DEBUG);
+
         m_reset_foot_pos = false;
+      }
+
+      void BaseEstimator::kinematics_estimation(const Vector6 & ft, const Vector6 & K,
+                                                const SE3 & oMfs, const int foot_id,
+                                                SE3 & oMff, SE3 & oMfa)
+      {
+        Vector3 xyz;
+        xyz << -ft[0]/K(0), -ft[1]/K(1), -ft[2]/K(2);
+        Matrix3 R;
+        rpyToMatrix(-ft[3]/K(3), -ft[4]/K(4), -ft[5]/K(5), R);
+        const SE3 fsMfa(R, xyz);                          // foot sole to foot ankle
+        oMfa = oMfs*fsMfa;                                // world to foot ankle
+        const SE3 faMff(m_data->oMf[foot_id].inverse());  // foot ankle to free flyer
+        oMff = oMfa*faMff;                                // world to free flyer
       }
 
       /* ------------------------------------------------------------------- */
@@ -457,48 +482,33 @@ namespace dynamicgraph
         m_kinematics_computationsSINNER(iter);
 
         if(m_reset_foot_pos)
-          reset_foot_positions_impl();
+          reset_foot_positions_impl(ftlf, ftrf);
 
         getProfiler().start(PROFILE_BASE_POSITION_ESTIMATION);
         {
-          // flexibilities: transformation from sole side to ankle side
-          Vector3 xyz_rf, xyz_lf;
-          Matrix3 R_rf, R_lf;
-          xyz_rf << -ftrf[0]/m_K_rf(0), -ftrf[1]/m_K_rf(1), -ftrf[2]/m_K_rf(2);
-          xyz_lf << -ftlf[0]/m_K_lf(0), -ftlf[1]/m_K_lf(1), -ftlf[2]/m_K_lf(2);
-          rpyToMatrix(-ftrf[3]/m_K_rf(3), -ftrf[4]/m_K_rf(4), -ftrf[5]/m_K_rf(5), R_rf);
-          rpyToMatrix(-ftlf[3]/m_K_lf(3), -ftlf[4]/m_K_lf(4), -ftlf[5]/m_K_lf(5), R_lf);
-          const SE3 rfsMrfa(R_rf, xyz_rf);  // foot sole to foot ankle
-          const SE3 lfsMlfa(R_lf, xyz_lf);
-
-          const SE3 oMlfa = m_oMlfs*lfsMlfa;  // world to foot ankle
-          const SE3 oMrfa = m_oMrfs*rfsMrfa;
-
-          const SE3 lfaMff(m_data->oMf[m_left_foot_id].inverse());  // foot ankle to free flyer
-          const SE3 rfaMff(m_data->oMf[m_right_foot_id].inverse());
-
-          m_oMff_lf = oMlfa*lfaMff; // world to free flyer
-          m_oMff_rf = oMrfa*rfaMff;
+          SE3 oMlfa, oMrfa;
+          kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, m_oMff_rf, oMrfa);
+          kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, oMlfa);
 
           // get rpy
-          Vector3 RPYff, RPYff1, RPYff2, RPYff3;
-          matrixToRpy(m_oMff_lf.rotation(), RPYff1);
-          matrixToRpy(m_oMff_rf.rotation(), RPYff2);
+          Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu;
+          matrixToRpy(m_oMff_lf.rotation(), rpy_ff_lf);
+          matrixToRpy(m_oMff_rf.rotation(), rpy_ff_rf);
           Eigen::Quaternion<double> quatIMU(quatIMU_vec);
-          matrixToRpy(quatIMU.toRotationMatrix(), RPYff3); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
+          matrixToRpy(quatIMU.toRotationMatrix(), rpy_ff_imu); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
 
           // average (we do not take into account the IMU yaw)
           double wSum = wL + wR + m_w_imu;
-          RPYff(0) = (RPYff1[0]*wL + RPYff2[0]*wR + RPYff3[0]*m_w_imu) / wSum;
-          RPYff(1) = (RPYff1[1]*wL + RPYff2[1]*wR + RPYff3[1]*m_w_imu) / wSum;
-          RPYff(2) = (RPYff1[2]*wL + RPYff2[2]*wR )                 / (wL+wR);
+          rpy_ff(0) = (rpy_ff_lf[0]*wL + rpy_ff_rf[0]*wR + rpy_ff_imu[0]*m_w_imu) / wSum;
+          rpy_ff(1) = (rpy_ff_lf[1]*wL + rpy_ff_rf[1]*wR + rpy_ff_imu[1]*m_w_imu) / wSum;
+          rpy_ff(2) = (rpy_ff_lf[2]*wL + rpy_ff_rf[2]*wR )                 / (wL+wR);
           Matrix3 R;
-          rpyToMatrix(RPYff, R);
+          rpyToMatrix(rpy_ff, R);
 
           // translation to get foot at the right position
           // evaluate Mrl Mlf for q with the good orientation and zero translation for freeflyer
-          const Vector3 & pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
-          const Vector3 & pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
+          const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
+          const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
           // get average translation
           m_q_pin.head<3>() = ((oMlfa.translation() - pos_lf_ff)*wL +
                                (oMrfa.translation() - pos_rf_ff)*wR) / (wL+wR);

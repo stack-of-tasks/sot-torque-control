@@ -104,11 +104,14 @@ namespace dynamicgraph {
         void set_normal_force_margin_right_foot(const double & margin);
         void set_normal_force_margin_left_foot(const double & margin);
 
-        void reset_foot_positions_impl();
+        void reset_foot_positions_impl(const Vector6 & ftlf, const Vector6 & ftrf);
         void compute_zmp(const Vector6 & w, Vector2 & zmp);
         double compute_zmp_weight(const Vector2 & zmp, const Vector4 & foot_sizes,
                                   double std_dev, double margin);
         double compute_force_weight(double fz, double std_dev, double margin);
+        void kinematics_estimation(const Vector6 & ft, const Vector6 & K,
+                                   const SE3 & oMfs, const int foot_id,
+                                   SE3 & oMff, SE3& oMfa);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(joint_positions,            dynamicgraph::Vector);
