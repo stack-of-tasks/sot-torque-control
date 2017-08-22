@@ -76,7 +76,7 @@ namespace dynamicgraph
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
                           m_w_lf_inSIN << m_w_rf_inSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
-                          m_w_lfSOUT << m_w_rfSOUT
+                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -111,6 +111,8 @@ namespace dynamicgraph
                                                                               <<m_w_lfSOUT
                                                                               <<m_w_rfSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(lf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(rf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_rf,                       dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_imu,                      dynamicgraph::Vector, m_qSOUT<<m_imu_quaternionSIN)
@@ -375,6 +377,20 @@ namespace dynamicgraph
         m_oMlfs = oMff * lfMff.inverse() * groundMfoot;
         m_oMrfs = oMff * rfMff.inverse() * groundMfoot;
 
+        m_oMlfs_xyzquat.head<3>() = m_oMlfs.translation();
+        Eigen::Quaternion<double> quat_lf(m_oMlfs.rotation());
+        m_oMlfs_xyzquat(3) = quat_lf.w();
+        m_oMlfs_xyzquat(4) = quat_lf.x();
+        m_oMlfs_xyzquat(5) = quat_lf.y();
+        m_oMlfs_xyzquat(6) = quat_lf.z();
+
+        m_oMrfs_xyzquat.head<3>() = m_oMrfs.translation();
+        Eigen::Quaternion<double> quat_rf(m_oMrfs.rotation());
+        m_oMrfs_xyzquat(3) = quat_rf.w();
+        m_oMrfs_xyzquat(4) = quat_rf.x();
+        m_oMrfs_xyzquat(5) = quat_rf.y();
+        m_oMrfs_xyzquat(6) = quat_rf.z();
+
         sendMsg("Reference pos of left foot:\n"+toString(m_oMlfs), MSG_TYPE_INFO);
         sendMsg("Reference pos of right foot:\n"+toString(m_oMrfs), MSG_TYPE_INFO);
 
@@ -506,6 +522,34 @@ namespace dynamicgraph
         }
         getProfiler().stop(PROFILE_BASE_POSITION_ESTIMATION);
 
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(lf_xyzquat, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal lf_xyzquat before initialization!");
+          return s;
+        }
+        if(s.size()!=7)
+          s.resize(7);
+        const Eigen::VectorXd & q = m_qSOUT(iter);
+        s = m_oMlfs_xyzquat;
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(rf_xyzquat, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal lf_xyzquat before initialization!");
+          return s;
+        }
+        if(s.size()!=7)
+          s.resize(7);
+        const Eigen::VectorXd & q = m_qSOUT(iter);
+        s = m_oMrfs_xyzquat;
         return s;
       }
 
