@@ -494,7 +494,7 @@ namespace dynamicgraph
           Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu;
           matrixToRpy(m_oMff_lf.rotation(), rpy_ff_lf);
           matrixToRpy(m_oMff_rf.rotation(), rpy_ff_rf);
-          Eigen::Quaternion<double> quatIMU(quatIMU_vec);
+          Eigen::Quaternion<double> quatIMU(quatIMU_vec[0], quatIMU_vec[1], quatIMU_vec[2], quatIMU_vec[3]);
           matrixToRpy(quatIMU.toRotationMatrix(), rpy_ff_imu); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
 
           // average (we do not take into account the IMU yaw)
