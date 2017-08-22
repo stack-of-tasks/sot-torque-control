@@ -83,11 +83,9 @@ namespace dynamicgraph {
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(accelerometer,              dynamicgraph::Vector);  /// ax ay az in m.s-2
         DECLARE_SIGNAL_IN(gyroscope,                  dynamicgraph::Vector);  /// gx gy gz in rad.s-1
-        DECLARE_SIGNAL(imu_quat, OUT,                 dynamicgraph::Vector);  /// Estimated orientation of IMU as a quaternion
+        DECLARE_SIGNAL_OUT(imu_quat,                  dynamicgraph::Vector);  /// Estimated orientation of IMU as a quaternion
 
       protected:
-        DECLARE_SIGNAL_OUT_FUNCTION(imu_quat,         dynamicgraph::Vector);
-
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
