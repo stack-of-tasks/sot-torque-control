@@ -77,6 +77,7 @@ namespace dynamicgraph {
         typedef Eigen::Vector3d Vector3;
         typedef Eigen::Vector4d Vector4;
         typedef Eigen::Vector6d Vector6;
+        typedef Eigen::Vector7d Vector7;
         typedef Eigen::Matrix3d Matrix3;
         typedef boost::math::normal normal;
 
@@ -126,6 +127,8 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_OUT(q,                         dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  /// n+6 robot velocities
+        DECLARE_SIGNAL_OUT(lf_xyzquat,                dynamicgraph::Vector);  /// left foot pose
+        DECLARE_SIGNAL_OUT(rf_xyzquat,                dynamicgraph::Vector);  /// right foot pose
 
         DECLARE_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(q_rf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
@@ -173,6 +176,8 @@ namespace dynamicgraph {
         se3::SE3          m_oMff_rf;          /// world-to-base transformation obtained through right foot
         SE3               m_oMlfs;            /// transformation from world to left foot sole
         SE3               m_oMrfs;            /// transformation from world to right foot sole
+        Vector7           m_oMlfs_xyzquat;
+        Vector7           m_oMrfs_xyzquat;
 
         normal            m_normal;           /// Normal distribution
 
