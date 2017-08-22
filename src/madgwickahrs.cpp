@@ -53,11 +53,11 @@ namespace dynamicgraph
         : Entity(name)
         ,CONSTRUCT_SIGNAL_IN( accelerometer,            dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( gyroscope,                dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL(imu_quat, OUT,                dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_OUT(imu_quat,                 dynamicgraph::Vector, m_gyroscopeSIN <<
+                                                                              m_accelerometerSIN)
         ,m_initSucceeded(false)
         ,m_beta(betaDef)
       {
-        BIND_SIGNAL_TO_FUNCTION(imu_quat,   OUT, dynamicgraph::Vector);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         /* Commands. */
