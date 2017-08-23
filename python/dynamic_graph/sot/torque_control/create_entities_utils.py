@@ -210,23 +210,11 @@ def create_balance_controller(ent, conf):
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
     try:
-        from dynamic_graph.sot.core import Stack_of_vector
-        ent.base6d_encoders = Stack_of_vector('base6d_encoders');
-        plug(ent.floatingBase.soutPos, ent.base6d_encoders.sin1);
-        ent.base6d_encoders.selec1(0,6);
-        plug(ent.device.robotState,    ent.base6d_encoders.sin2);
-        ent.base6d_encoders.selec2(6,6+NJ);
-        plug(ent.base6d_encoders.sout,                 ctrl.q);
-    
-        ent.v = Stack_of_vector('v');
-        plug(ent.floatingBase.soutVel, ent.v.sin1);
-        ent.v.selec1(0,6);
-        plug(ent.estimator_kin.dx,    ent.v.sin2);
-        ent.v.selec2(6,NJ+6);
-        plug(ent.v.sout,                        ctrl.v);
-    except:
         plug(ent.ff_locator.base6dFromFoot_encoders, ctrl.q);
         plug(ent.ff_locator.v, ctrl.v);
+    except:
+        plug(ent.base_estimator.q, ctrl.q);
+        plug(ent.base_estimator.v, ctrl.v);
 
     plug(ent.estimator_ft.contactWrenchRightSole,  ctrl.wrench_right_foot);
     plug(ent.estimator_ft.contactWrenchLeftSole,   ctrl.wrench_left_foot);
