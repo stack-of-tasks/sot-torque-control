@@ -19,8 +19,13 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <pininvdyn/utils/stop-watch.hpp>
-#include <pininvdyn/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
+#include <tsid/utils/statistics.hpp>
+#include <tsid/solvers/solver-HQP-factory.hxx>
+#include <tsid/solvers/solver-HQP-eiquadprog.hpp>
+#include <tsid/solvers/solver-HQP-eiquadprog-rt.hpp>
+#include <tsid/solvers/utils.hpp>
+#include <tsid/math/utils.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -34,12 +39,16 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
-      using namespace pininvdyn;
-      using namespace pininvdyn::trajectories;
-      using namespace pininvdyn::math;
-      using namespace pininvdyn::contacts;
-      using namespace pininvdyn::tasks;
-      using namespace pininvdyn::solvers;
+      using namespace tsid;
+      using namespace tsid::trajectories;
+      using namespace tsid::math;
+      using namespace tsid::contacts;
+      using namespace tsid::tasks;
+      using namespace tsid::solvers;
+      using namespace tsid::robots;
+
+      typedef SolverHQuadProgRT<60,36,34> SolverHQuadProgRT60x36x34;
+      typedef SolverHQuadProgRT<48,30,17> SolverHQuadProgRT48x30x17;
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
@@ -395,14 +404,21 @@ namespace dynamicgraph
           m_frame_id_rf = m_robot->model().getFrameId(RIGHT_FOOT_FRAME_NAME);
           m_frame_id_lf = m_robot->model().getFrameId(LEFT_FOOT_FRAME_NAME);
 
-          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
-                                                      "eiquadprog-fast");
+//          m_hqpSolver = Solver_HQP_base::getNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
+//                                                      "eiquadprog-fast");
+          m_hqpSolver = new SolverHQuadProg("eiquadprog-fast");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
-          m_hqpSolver_60_36_34 = Solver_HQP_base::getNewSolverFixedSize<60,36,34>(SOLVER_HQP_EIQUADPROG_RT,
-                                                                                  "eiquadprog-rt-60-36-34");
-          m_hqpSolver_48_30_17 = Solver_HQP_base::getNewSolverFixedSize<48,30,17>(SOLVER_HQP_EIQUADPROG_RT,
-                                                                                  "eiquadprog-rt-48-30-17");
+          m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,24>(SOLVER_HQP_EIQUADPROG_RT,
+                                                                             "eiquadprog_rt_60_36_34");
 
+          //new SolverHQuadProgRT<60,36,34>("eiquadprog-rt-60-36-34");
+          m_hqpSolver_48_30_17 = SolverHQPFactory::createNewSolver<48,30,17>(SOLVER_HQP_EIQUADPROG_RT,
+                                                                             "eiquadprog_rt_48_30_17");
+          //new SolverHQuadProgRT<48,30,17>("eiquadprog-rt-48-30-17");
+//          m_hqpSolver_60_36_34 = Solver_HQP_base::getNewSolverFixedSize<60,36,34>(SOLVER_HQP_EIQUADPROG_RT,
+//                                                                                  "eiquadprog-rt-60-36-34");
+//          m_hqpSolver_48_30_17 = Solver_HQP_base::getNewSolverFixedSize<48,30,17>(SOLVER_HQP_EIQUADPROG_RT,
+//                                                                                  "eiquadprog-rt-48-30-17");
         }
         catch (const std::exception& e)
         {
@@ -614,11 +630,11 @@ namespace dynamicgraph
         }
         m_timeLast = iter;
 
-        const HqpData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+        const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
-        Solver_HQP_base * solver = m_hqpSolver;
+        SolverHQPBase * solver = m_hqpSolver;
         if(m_invDyn->nVar()==60 && m_invDyn->nEq()==36 && m_invDyn->nIn()==34)
         {
           solver = m_hqpSolver_60_36_34;
@@ -632,13 +648,13 @@ namespace dynamicgraph
         else
           getStatistics().store("solver dynamic size", 1.0);
 
-        const HqpOutput & sol = solver->solve(hqpData);
+        const HQPOutput & sol = solver->solve(hqpData);
         getProfiler().stop(PROFILE_HQP_SOLUTION);
 
         if(sol.status!=HQP_STATUS_OPTIMAL)
         {
           SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: "+toString(sol.status));
-          SEND_DEBUG_STREAM_MSG(hqpDataToString(hqpData, false));
+          SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
           s.resize(0);
           return s;
         }
@@ -646,7 +662,7 @@ namespace dynamicgraph
         // DEBUG START
 //        if(m_contactState == LEFT_SUPPORT_TRANSITION && fabs(m_t-m_contactTransitionTime)<0.1)
 //        {
-//          const pininvdyn::math::Vector & dv = m_invDyn->getAccelerations(sol);
+//          const tsid::math::Vector & dv = m_invDyn->getAccelerations(sol);
 //          SEND_MSG("Contact transition time "+toString(m_contactTransitionTime), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF task acc des "+toString(m_taskRF->getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF cont acc des "+toString(m_contactRF->getMotionTask().getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
@@ -976,7 +992,7 @@ namespace dynamicgraph
         se3::SE3 oMi;
 	    s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
-        se3ToVector(oMi, s);
+        tsid::math::SE3ToVector(oMi, s);
         return s;
       }
       
@@ -991,7 +1007,7 @@ namespace dynamicgraph
         se3::SE3 oMi;
 	    s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
-        se3ToVector(oMi, s);
+        tsid::math::SE3ToVector(oMi, s);
         return s;
       }
 

@@ -48,13 +48,13 @@
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 
-#include <pininvdyn/robot-wrapper.hpp>
-#include <pininvdyn/solvers/solver-HQP-base.hpp>
-#include <pininvdyn/contacts/contact-6d.hpp>
-#include <pininvdyn/inverse-dynamics-formulation-acc-force.hpp>
-#include <pininvdyn/tasks/task-com-equality.hpp>
-#include <pininvdyn/tasks/task-joint-posture.hpp>
-#include <pininvdyn/trajectories/trajectory-euclidian.hpp>
+#include <tsid/robots/robot-wrapper.hpp>
+#include <tsid/solvers/solver-HQP-base.hpp>
+#include <tsid/contacts/contact-6d.hpp>
+#include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
+#include <tsid/tasks/task-com-equality.hpp>
+#include <tsid/tasks/task-joint-posture.hpp>
+#include <tsid/trajectories/trajectory-euclidian.hpp>
 
 namespace dynamicgraph {
   namespace sot {
@@ -197,40 +197,40 @@ namespace dynamicgraph {
         int m_frame_id_rf;  /// frame id of right foot
         int m_frame_id_lf;  /// frame id of left foot
 
-        /// pininvdyn
-        pininvdyn::RobotWrapper *                       m_robot;
-        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver;
-        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_60_36_34;
-        pininvdyn::solvers::Solver_HQP_base *           m_hqpSolver_48_30_17;
-        pininvdyn::InverseDynamicsFormulationAccForce * m_invDyn;
-        pininvdyn::contacts::Contact6d *                m_contactRF;
-        pininvdyn::contacts::Contact6d *                m_contactLF;
-        pininvdyn::tasks::TaskComEquality *             m_taskCom;
-        pininvdyn::tasks::TaskSE3Equality *             m_taskRF;
-        pininvdyn::tasks::TaskSE3Equality *             m_taskLF;
-        pininvdyn::tasks::TaskJointPosture *            m_taskPosture;
-        pininvdyn::tasks::TaskJointPosture *            m_taskBlockedJoints;
+        /// tsid
+        tsid::robots::RobotWrapper *               m_robot;
+        tsid::solvers::SolverHQPBase *           m_hqpSolver;
+        tsid::solvers::SolverHQPBase *           m_hqpSolver_60_36_34;
+        tsid::solvers::SolverHQPBase *           m_hqpSolver_48_30_17;
+        tsid::InverseDynamicsFormulationAccForce * m_invDyn;
+        tsid::contacts::Contact6d *                m_contactRF;
+        tsid::contacts::Contact6d *                m_contactLF;
+        tsid::tasks::TaskComEquality *             m_taskCom;
+        tsid::tasks::TaskSE3Equality *             m_taskRF;
+        tsid::tasks::TaskSE3Equality *             m_taskLF;
+        tsid::tasks::TaskJointPosture *            m_taskPosture;
+        tsid::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
-        pininvdyn::trajectories::TrajectorySample       m_sampleCom;
-        pininvdyn::trajectories::TrajectorySample       m_sampleRF;
-        pininvdyn::trajectories::TrajectorySample       m_sampleLF;
-        pininvdyn::trajectories::TrajectorySample       m_samplePosture;
+        tsid::trajectories::TrajectorySample       m_sampleCom;
+        tsid::trajectories::TrajectorySample       m_sampleRF;
+        tsid::trajectories::TrajectorySample       m_sampleLF;
+        tsid::trajectories::TrajectorySample       m_samplePosture;
 
-        pininvdyn::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
-        pininvdyn::math::Vector  m_f;                   /// desired force coefficients (24d)
-        pininvdyn::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
-        pininvdyn::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
-        pininvdyn::math::Vector3 m_zmp_des_LF;          /// 3d desired zmp left foot
-        pininvdyn::math::Vector3 m_zmp_des_RF;          /// 3d desired zmp left foot
-        pininvdyn::math::Vector3 m_zmp_des_LF_local;    /// 3d desired zmp left foot expressed in local frame
-        pininvdyn::math::Vector3 m_zmp_des_RF_local;    /// 3d desired zmp left foot expressed in local frame
-        pininvdyn::math::Vector3 m_zmp_des;             /// 3d desired global zmp
-        pininvdyn::math::Vector3 m_zmp_LF;              /// 3d zmp left foot
-        pininvdyn::math::Vector3 m_zmp_RF;              /// 3d zmp left foot
-        pininvdyn::math::Vector3 m_zmp;                 /// 3d global zmp
-        pininvdyn::math::Vector  m_tau_sot;
-        pininvdyn::math::Vector  m_q_urdf;
-        pininvdyn::math::Vector  m_v_urdf;
+        tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
+        tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
+        tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
+        tsid::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
+        tsid::math::Vector3 m_zmp_des_LF;          /// 3d desired zmp left foot
+        tsid::math::Vector3 m_zmp_des_RF;          /// 3d desired zmp left foot
+        tsid::math::Vector3 m_zmp_des_LF_local;    /// 3d desired zmp left foot expressed in local frame
+        tsid::math::Vector3 m_zmp_des_RF_local;    /// 3d desired zmp left foot expressed in local frame
+        tsid::math::Vector3 m_zmp_des;             /// 3d desired global zmp
+        tsid::math::Vector3 m_zmp_LF;              /// 3d zmp left foot
+        tsid::math::Vector3 m_zmp_RF;              /// 3d zmp left foot
+        tsid::math::Vector3 m_zmp;                 /// 3d global zmp
+        tsid::math::Vector  m_tau_sot;
+        tsid::math::Vector  m_q_urdf;
+        tsid::math::Vector  m_v_urdf;
 
         unsigned int m_timeLast;
         
