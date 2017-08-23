@@ -55,6 +55,7 @@ SET(plugins
   #hrp2-device-torque-ctrl
   free-flyer-locator
   trace-player
+  imu_offset_compensation
   )
 
 #set(ADDITIONAL_feature-task_LIBS feature-generic task)
