@@ -13,7 +13,6 @@ from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajector
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.inverse_dynamics_controller import InverseDynamicsController
-from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.position_controller import PositionController
 from dynamic_graph.tracer_real_time import TracerRealTime
@@ -21,12 +20,53 @@ from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
+def create_encoders(robot):
+    from dynamic_graph.sot.core import Selec_of_vector
+    encoders = Selec_of_vector('qn')
+    plug(robot.device.robotState,     encoders.sin);
+    encoders.selec(6,NJ+6);
+    return encoders
+
+def create_base_estimator(robot, dt, urdf, conf):    
+    from dynamic_graph.sot.torque_control.base_estimator import BaseEstimator
+    base_estimator = BaseEstimator('base_estimator');
+    plug(robot.encoders.sout,               base_estimator.joint_positions);
+    plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
+    plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
+    plug(robot.estimator_kin.dx,            base_estimator.joint_velocities);
+    plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
+    
+    base_estimator.set_imu_weight(conf.w_imu);
+    base_estimator.set_stiffness_right_foot(conf.K);
+    base_estimator.set_stiffness_left_foot(conf.K);
+    base_estimator.set_zmp_std_dev_right_foot(conf.std_dev_zmp)
+    base_estimator.set_zmp_std_dev_left_foot(conf.std_dev_zmp)
+    base_estimator.set_normal_force_std_dev_right_foot(conf.std_dev_fz)
+    base_estimator.set_normal_force_std_dev_left_foot(conf.std_dev_fz)
+    base_estimator.set_zmp_margin_right_foot(conf.zmp_margin)
+    base_estimator.set_zmp_margin_left_foot(conf.zmp_margin)
+    base_estimator.set_normal_force_margin_right_foot(conf.normal_force_margin)
+    base_estimator.set_normal_force_margin_left_foot(conf.normal_force_margin)
+    base_estimator.set_right_foot_sizes(conf.RIGHT_FOOT_SIZES)
+    base_estimator.set_left_foot_sizes(conf.LEFT_FOOT_SIZES)
+    
+    base_estimator.init(dt, urdf);
+    return base_estimator;
+    
+def create_imu_offset_compensation(robot, dt):
+    from dynamic_graph.sot.torque_control.imu_offset_compensation import ImuOffsetCompensation
+    imu_offset_compensation = ImuOffsetCompensation('imu_offset_comp');
+    plug(robot.device.accelerometer, imu_offset_compensation.accelerometer_in);
+    plug(robot.device.gyrometer,     imu_offset_compensation.gyrometer_in);
+    imu_offset_compensation.init(dt);
+    return imu_offset_compensation;
+
 def create_imu_filter(ent, dt):
     from dynamic_graph.sot.torque_control.madgwickahrs import MadgwickAHRS
     imu_filter = MadgwickAHRS('imu_filter');
     imu_filter.init(dt);
-    plug(ent.device.accelerometer, imu_filter.accelerometer);
-    plug(ent.device.gyrometer,     imu_filter.gyroscope);
+    plug(ent.imu_offset_compensation.accelerometer_out, imu_filter.accelerometer);
+    plug(ent.imu_offset_compensation.gyrometer_out,     imu_filter.gyroscope);
     return imu_filter;
 
 def create_com_traj_gen(dt=0.001):
@@ -103,21 +143,16 @@ def create_estimators(ent, conf):
     estimator_kin = VelAccEstimator("estimator_kin");
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
-    from dynamic_graph.sot.core import Selec_of_vector
-    qn = Selec_of_vector('qn')
-    plug(ent.device.robotState,     qn.sin);
-    qn.selec(6,NJ+6);
+    plug(ent.encoders.sout,                             estimator_kin.x);
+    plug(ent.device.robotState,                         estimator_ft.base6d_encoders);
+    plug(ent.imu_offset_compensation.accelerometer_out, estimator_ft.accelerometer);
+    plug(ent.imu_offset_compensation.gyrometer_out,     estimator_ft.gyroscope);
+    plug(ent.device.forceRLEG,                          estimator_ft.ftSensRightFoot);
+    plug(ent.device.forceLLEG,                          estimator_ft.ftSensLeftFoot);
+    plug(ent.device.forceRARM,                          estimator_ft.ftSensRightHand);
+    plug(ent.device.forceLARM,                          estimator_ft.ftSensLeftHand);
+    plug(ent.device.currents,                           estimator_ft.currentMeasure);
 
-    plug(qn.sout,                   estimator_kin.x);
-    plug(ent.device.robotState,     estimator_ft.base6d_encoders);
-    plug(ent.device.accelerometer,  estimator_ft.accelerometer);
-    plug(ent.device.gyrometer,      estimator_ft.gyroscope);
-    plug(ent.device.forceRLEG,      estimator_ft.ftSensRightFoot);
-    plug(ent.device.forceLLEG,      estimator_ft.ftSensLeftFoot);
-    plug(ent.device.forceRARM,      estimator_ft.ftSensRightHand);
-    plug(ent.device.forceLARM,      estimator_ft.ftSensLeftHand);
-    plug(ent.device.currents,       estimator_ft.currentMeasure);
-    
     plug(estimator_kin.x_filtered, estimator_ft.q_filtered);
     plug(estimator_kin.dx,         estimator_ft.dq_filtered);
     plug(estimator_kin.ddx,        estimator_ft.ddq_filtered);
@@ -253,7 +288,7 @@ def create_balance_controller(ent, conf):
 def create_inverse_dynamics(ent, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
     plug(ent.device.robotState,             inv_dyn_ctrl.base6d_encoders);
-    plug(ent.estimator_kin.dx,    inv_dyn_ctrl.jointsVelocities);
+    plug(ent.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
     plug(ent.traj_gen.q,                    inv_dyn_ctrl.qRef);
     plug(ent.traj_gen.dq,                   inv_dyn_ctrl.dqRef);
     plug(ent.traj_gen.ddq,                  inv_dyn_ctrl.ddqRef);
