@@ -19,9 +19,9 @@ from dynamic_graph.tracer_real_time import TracerRealTime
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
+from dynamic_graph.sot.core import Selec_of_vector
 
 def create_encoders(robot):
-    from dynamic_graph.sot.core import Selec_of_vector
     encoders = Selec_of_vector('qn')
     plug(robot.device.robotState,     encoders.sin);
     encoders.selec(6,NJ+6);
@@ -78,8 +78,13 @@ def create_com_traj_gen(dt=0.001):
 
 def create_free_flyer_locator(ent, urdf):
     from dynamic_graph.sot.torque_control.free_flyer_locator import FreeFlyerLocator
+
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
     ff_locator = FreeFlyerLocator("ffLocator");
-    plug(ent.device.robotState,           ff_locator.base6d_encoders);
+    plug(joint_state.sout,           ff_locator.base6d_encoders);
     plug(ent.estimator_kin.dx,  ff_locator.joint_velocities);
     plug(ff_locator.base6dFromFoot_encoders, ent.dynamic.position);
     ff_locator.init(urdf);
@@ -102,7 +107,6 @@ def create_floatingBase(ent):
     floatingBase = FromLocalToGLobalFrame(ent.flex_est, "FloatingBase")
     plug(ent.ff_locator.freeflyer_aa, floatingBase.sinPos);
 
-    from dynamic_graph.sot.core import Selec_of_vector
     base_vel_no_flex = Selec_of_vector('base_vel_no_flex');
     plug(ent.ff_locator.v, base_vel_no_flex.sin);
     base_vel_no_flex.selec(0, 6);
@@ -115,9 +119,16 @@ def create_position_controller(ent, dt=0.001):
     posCtrl.Kd.value = tuple(kd_pos);
     posCtrl.Ki.value = tuple(ki_pos);
     posCtrl.dqRef.value = NJ*(0.0,);
-    plug(ent.device.robotState,             posCtrl.base6d_encoders);  
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
+    plug(joint_state.sout,             posCtrl.base6d_encoders);  
     try:  # this works only in simulation
-        plug(ent.device.jointsVelocities,    posCtrl.jointsVelocities);
+        joint_vel = Selec_of_vector("joint_vel");
+        plug(ent.device.robotVelocity, joint_vel.sin);
+        joint_vel.selec(6, NJ+6);
+        plug(joint_vel.sout,    posCtrl.jointsVelocities);
     except:
         plug(ent.estimator_kin.dx, posCtrl.jointsVelocities);
         pass;
@@ -131,7 +142,10 @@ def create_position_controller(ent, dt=0.001):
 
 def create_trajectory_generator(device, dt=0.001):
     jtg = JointTrajectoryGenerator("jtg");
-    plug(device.robotState,             jtg.base6d_encoders);
+    joint_state = Selec_of_vector("joint_state");
+    plug(device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+    plug(joint_state.sout,             jtg.base6d_encoders);
     jtg.init(dt);
     return jtg;
 
@@ -139,10 +153,19 @@ def create_estimators(ent, dt, delay):
     estimator_kin = VelAccEstimator("estimator_kin");
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
-    plug(ent.encoders.sout,                             estimator_kin.x);
-    plug(ent.device.robotState,                         estimator_ft.base6d_encoders);
+    qn = Selec_of_vector('qn')
+    plug(ent.device.robotState,     qn.sin);
+    qn.selec(6,NJ+6);
+
     plug(ent.imu_offset_compensation.accelerometer_out, estimator_ft.accelerometer);
     plug(ent.imu_offset_compensation.gyrometer_out,     estimator_ft.gyroscope);
+
+    plug(qn.sout,                   estimator_kin.x);
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
+    plug(joint_state.sout,     estimator_ft.base6d_encoders);
     plug(ent.device.forceRLEG,                          estimator_ft.ftSensRightFoot);
     plug(ent.device.forceLLEG,                          estimator_ft.ftSensLeftFoot);
     plug(ent.device.forceRARM,                          estimator_ft.ftSensRightHand);
@@ -175,7 +198,12 @@ def create_estimators(ent, dt, delay):
         
 def create_torque_controller(ent, dt=0.001):
     torque_ctrl = JointTorqueController("jtc");
-    plug(ent.device.robotState,             torque_ctrl.base6d_encoders);
+
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
+    plug(joint_state.sout,             torque_ctrl.base6d_encoders);
     plug(ent.estimator_kin.dx,    torque_ctrl.jointsVelocities);
     plug(ent.estimator_kin.ddx, torque_ctrl.jointsAccelerations);
     plug(ent.estimator_ft.jointsTorques,       torque_ctrl.jointsTorques);
@@ -205,7 +233,28 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
     try:
+        from dynamic_graph.sot.core import Stack_of_vector
+        ent.base6d_encoders = Stack_of_vector('base6d_encoders');
+        plug(ent.floatingBase.soutPos, ent.base6d_encoders.sin1);
+        ent.base6d_encoders.selec1(0,6);
+
+        
+        plug(joint_state.sout,    ent.base6d_encoders.sin2);
+        ent.base6d_encoders.selec2(6,6+NJ);
+        plug(ent.base6d_encoders.sout,                 ctrl.q);
+    
+        ent.v = Stack_of_vector('v');
+        plug(ent.floatingBase.soutVel, ent.v.sin1);
+        ent.v.selec1(0,6);
+        plug(ent.estimator_kin.dx,    ent.v.sin2);
+        ent.v.selec2(6,NJ+6);
+        plug(ent.v.sout,                        ctrl.v);
+    except:
         plug(ent.ff_locator.base6dFromFoot_encoders, ctrl.q);
         plug(ent.ff_locator.v, ctrl.v);
     except:
@@ -268,8 +317,12 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     
 def create_inverse_dynamics(ent, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
-    plug(ent.device.robotState,             inv_dyn_ctrl.base6d_encoders);
-    plug(ent.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+
+    plug(joint_state.sout,             inv_dyn_ctrl.base6d_encoders);
+    plug(ent.estimator_kin.dx,    inv_dyn_ctrl.jointsVelocities);
     plug(ent.traj_gen.q,                    inv_dyn_ctrl.qRef);
     plug(ent.traj_gen.dq,                   inv_dyn_ctrl.dqRef);
     plug(ent.traj_gen.ddq,                  inv_dyn_ctrl.ddqRef);
@@ -300,7 +353,10 @@ def create_inverse_dynamics(ent, dt=0.001):
         
 def create_ctrl_manager(ent, dt=0.001):
     ctrl_manager = ControlManager("ctrl_man");
-    plug(ent.device.robotState,                  ctrl_manager.base6d_encoders);
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+    plug(joint_state.sout,                  ctrl_manager.base6d_encoders);
 
     plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
     plug(ent.estimator_ft.jointsTorques,            ctrl_manager.tau);
@@ -324,7 +380,10 @@ def create_ctrl_manager(ent, dt=0.001):
 
 def create_admittance_ctrl(ent, dt=0.001):
     admit_ctrl = AdmittanceController("adm_ctrl");
-    plug(ent.device.robotState,             admit_ctrl.base6d_encoders);
+    joint_state = Selec_of_vector("joint_state");
+    plug(ent.device.robotState, joint_state.sin);
+    joint_state.selec(0, NJ+6);
+    plug(joint_state.sout,             admit_ctrl.base6d_encoders);
     plug(ent.estimator_kin.dx,    admit_ctrl.jointsVelocities);
     plug(ent.estimator_ft.contactWrenchRightSole,   admit_ctrl.fRightFoot);
     plug(ent.estimator_ft.contactWrenchLeftSole,    admit_ctrl.fLeftFoot);
