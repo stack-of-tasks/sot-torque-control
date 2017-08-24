@@ -479,6 +479,13 @@ namespace dynamicgraph
         else
           wR = m_w_rfSOUT(iter);
 
+        // if both weights are zero set them to a small positive value to avoid division by zero
+        if(wR==0.0 && wL==0.0)
+        {
+            wR = 1e-3;
+            wL = 1e-3;
+        }
+
         assert(qj.size()==N_JOINTS     && "Unexpected size of signal joint_positions");
 
         m_kinematics_computationsSINNER(iter);
