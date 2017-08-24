@@ -495,6 +495,13 @@ namespace dynamicgraph
 
         assert(qj.size()==m_robot_util->m_nbJoints && "Unexpected size of signal joint_positions");
 
+        // if both weights are zero set them to a small positive value to avoid division by zero
+        if(wR==0.0 && wL==0.0)
+        {
+            wR = 1e-3;
+            wL = 1e-3;
+        }
+
         m_kinematics_computationsSINNER(iter);
 
         if(m_reset_foot_pos)
