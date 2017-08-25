@@ -408,7 +408,7 @@ namespace dynamicgraph
 //                                                      "eiquadprog-fast");
           m_hqpSolver = new SolverHQuadProg("eiquadprog-fast");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
-          m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,24>(SOLVER_HQP_EIQUADPROG_RT,
+          m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,34>(SOLVER_HQP_EIQUADPROG_RT,
                                                                              "eiquadprog_rt_60_36_34");
 
           //new SolverHQuadProgRT<60,36,34>("eiquadprog-rt-60-36-34");
@@ -457,7 +457,8 @@ namespace dynamicgraph
                 blocked_joints(i) = 1.0;
               else
                 blocked_joints(i) = 0.0;
-            SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
+            SEND_MSG("Active joints SoT:   "+toString(active_joints_sot), MSG_TYPE_INFO);
+            SEND_MSG("Blocked joints URDF: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
             m_taskBlockedJoints->mask(blocked_joints);
             TrajectorySample ref_zero(N_JOINTS);
             m_taskBlockedJoints->setReference(ref_zero);
@@ -655,6 +656,8 @@ namespace dynamicgraph
         {
           SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: "+toString(sol.status));
           SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
+          SEND_DEBUG_STREAM_MSG("q: "+toString(q_sot));
+          SEND_DEBUG_STREAM_MSG("v: "+toString(v_sot));
           s.resize(0);
           return s;
         }
