@@ -115,7 +115,7 @@ def create_position_controller(ent, dt=0.001):
     posCtrl.Kd.value = tuple(kd_pos);
     posCtrl.Ki.value = tuple(ki_pos);
     posCtrl.dqRef.value = NJ*(0.0,);
-    plug(ent.device.robotState,             posCtrl.base6d_encoders);  
+    plug(ent.device.robotState,             posCtrl.base6d_encoders);
     try:  # this works only in simulation
         plug(ent.device.jointsVelocities,    posCtrl.jointsVelocities);
     except:
@@ -201,7 +201,7 @@ def create_torque_controller(ent, dt=0.001):
     torque_ctrl.init(dt);
     return torque_ctrl;
    
-def create_balance_controller(ent, urdfFileName, dt=0.001):
+def create_balance_controller(ent, conf, dt=0.001):
     from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
@@ -234,7 +234,7 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     plug(ent.com_traj_gen.dx,                   ctrl.com_ref_vel);
     plug(ent.com_traj_gen.ddx,                  ctrl.com_ref_acc);
 
-    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
+#    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
     ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
     ctrl.gear_ratios.value = conf.GEAR_RATIOS;
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
@@ -250,10 +250,10 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     ctrl.kd_constraints.value = 6*(conf.kd_constr,);
     ctrl.kp_feet.value = 6*(conf.kp_feet,);
     ctrl.kd_feet.value = 6*(conf.kd_feet,);
-    ctrl.kp_posture.value = NJ*(conf.kp_posture,);
-    ctrl.kd_posture.value = NJ*(conf.kd_posture,);
-    ctrl.kp_pos.value = NJ*(conf.kp_pos,);
-    ctrl.kd_pos.value = NJ*(conf.kd_pos,);
+    ctrl.kp_posture.value = conf.kp_posture;
+    ctrl.kd_posture.value = conf.kd_posture;
+    ctrl.kp_pos.value = conf.kp_pos;
+    ctrl.kd_pos.value = conf.kd_pos;
 
     ctrl.w_com.value = conf.w_com;
     ctrl.w_feet.value = conf.w_feet;
@@ -262,7 +262,7 @@ def create_balance_controller(ent, urdfFileName, dt=0.001):
     ctrl.w_base_orientation.value = conf.w_base_orientation;
     ctrl.w_torques.value = conf.w_torques;
     
-    ctrl.init(dt, urdfFileName);
+    ctrl.init(dt, conf.urdfFileName);
     
     return ctrl;
     

@@ -8,6 +8,7 @@ from dynamic_graph.sot.torque_control.create_entities_utils import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import *
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
+import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as balance_ctrl_conf
 from time import sleep
     
 ''' Main function to call before starting the graph. '''
@@ -44,7 +45,7 @@ def main_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
 
     robot.pos_ctrl        = create_position_controller(robot, dt);
     robot.torque_ctrl     = create_torque_controller(robot);
-    robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
+    robot.inv_dyn         = create_balance_controller(robot, urdfFileName, balance_ctrl_conf, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
     robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
