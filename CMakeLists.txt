@@ -187,6 +187,7 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
+              python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
 INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/__init__.py
