@@ -45,7 +45,7 @@ def main_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
 
     robot.pos_ctrl        = create_position_controller(robot, dt);
     robot.torque_ctrl     = create_torque_controller(robot);
-    robot.inv_dyn         = create_balance_controller(robot, urdfFileName, balance_ctrl_conf, dt);
+    robot.inv_dyn         = create_balance_controller(robot, balance_ctrl_conf, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
     robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
