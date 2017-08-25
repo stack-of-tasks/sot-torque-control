@@ -148,9 +148,9 @@ namespace dynamicgraph
 
           m_pwmDes = Kp.cwiseProduct(qRef-q.tail<N_JOINTS>()) + Kd.cwiseProduct(dqRef-dq);
 
-	if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-	s = m_pwmDes;
+          if(s.size()!=N_JOINTS)
+            s.resize(N_JOINTS);
+          s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
 
