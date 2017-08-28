@@ -1,4 +1,18 @@
-from dynamic_graph.sot.torque_control.test_estimator import *
+from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
+dt = 0.005;
+ent = one_foot_balance_test(robot, dt=dt, delay=30*dt, use_real_vel=True, use_real_base_state=False);
+ent.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
+
+ent.ctrl_manager.setCtrlMode('all','torque')
+
+ent.com_traj_gen.move(1, 0.07, 2.0)
+ent.com_traj_gen.startSinusoid(1, -0.07, 1.5)
+
+
+from dynamic_graph.sot.torque_control.main import *
+robot.timeStep = 0.001
+ent = main_v3(robot, delay=0.1, startSoT=True, go_half_sitting=True)
+
 (estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl) = main_pre_start_pwm(robot,dt=0.001,delay=0.01);
 dump_signal_to_file([robot.device.currents, estimator.jointsTorques, robot.device.control], 16, 'signals.txt', 100, 0.1)
 ros = main_post_start(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, None);

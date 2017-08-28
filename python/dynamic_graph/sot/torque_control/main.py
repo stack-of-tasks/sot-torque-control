@@ -4,11 +4,23 @@
 @author: Andrea Del Prete
 """
 
-from dynamic_graph.sot.torque_control.create_entities_utils import *
-from dynamic_graph.sot.torque_control.utils.sot_utils import *
-from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
-import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
+from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
+from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_generator, create_com_traj_gen, create_encoders
+from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_offset_compensation, create_estimators, create_imu_filter
+from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
+from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager, create_ros_topics
+from dynamic_graph.sot.torque_control.create_entities_utils import create_free_flyer_locator, create_flex_estimator, create_floatingBase
+from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, go_to_position
+
 import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as balance_ctrl_conf
+import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
+import dynamic_graph.sot.torque_control.hrp2.control_manager_conf as control_manager_conf
+import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
+import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
+import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains as pos_ctrl_gains
+import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+
+
 from time import sleep
     
 ''' Main function to call before starting the graph. '''
@@ -39,15 +51,15 @@ def main_v3(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
     
     robot.encoders                              = create_encoders(robot);
     robot.imu_offset_compensation               = create_imu_offset_compensation(robot, dt);
-    (robot.estimator_ft, robot.estimator_kin)   = create_estimators(robot, dt, delay);
+    (robot.estimator_ft, robot.estimator_kin)   = create_estimators(robot, force_torque_estimator_conf, motor_params, dt, delay);
     robot.imu_filter                            = create_imu_filter(robot, dt);
-    robot.base_estimator                        = create_base_estimator(robot, dt, urdfFileName, base_estimator_conf);
+    robot.base_estimator                        = create_base_estimator(robot, dt, balance_ctrl_conf.urdfFileName, base_estimator_conf);
 
-    robot.pos_ctrl        = create_position_controller(robot, dt);
-    robot.torque_ctrl     = create_torque_controller(robot);
+    robot.pos_ctrl        = create_position_controller(robot, pos_ctrl_gains, dt);
+    robot.torque_ctrl     = create_torque_controller(robot, joint_torque_controller_conf, motor_params, dt);
     robot.inv_dyn         = create_balance_controller(robot, balance_ctrl_conf, dt);
-    robot.ctrl_manager    = create_ctrl_manager(robot, dt);
-    
+    robot.ctrl_manager    = create_ctrl_manager(robot, control_manager_conf, dt);
+        
     robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
