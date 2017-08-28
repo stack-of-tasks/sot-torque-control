@@ -139,7 +139,7 @@ def create_trajectory_generator(device, dt=0.001, robot_name="robot"):
     jtg.init(dt, robot_name);
     return jtg;
 
-def create_estimators(robot, conf, motor_params, dt, delay):
+def create_estimators(robot, conf, motor_params, dt):
     estimator_kin = VelAccEstimator("estimator_kin");
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
@@ -173,9 +173,8 @@ def create_estimators(robot, conf, motor_params, dt, delay):
     estimator_ft.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
 
-    delay = conf.ESTIMATOR_DELAY;
-    estimator_ft.init(conf.dt, delay,delay,delay,delay,True);
-    estimator_kin.init(conf.dt, NJ, delay);
+    estimator_ft.init(dt, conf.DELAY_N*dt, conf.DELAY_N*dt, conf.DELAY_N*dt, conf.DELAY_N*dt, True);
+    estimator_kin.init(dt,NJ, conf.DELAY_N*dt);
     
     return (estimator_ft, estimator_kin);
         

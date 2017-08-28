@@ -1,7 +1,11 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
-dt = 0.005;
-ent = one_foot_balance_test(robot, dt=dt, delay=30*dt, use_real_vel=True, use_real_base_state=False);
+robot.timeStep = 0.005;
+ent = one_foot_balance_test(robot, use_real_vel=True, use_real_base_state=False);
 ent.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
+create_topic(robot.ros, robot.estimator_kin.dx, 'dq_est');
+create_topic(robot.ros, robot.dq.sout, 'dq');
+ent.com_traj_gen.startSinusoid(1, -0.07, 1.0)
+
 
 ent.ctrl_manager.setCtrlMode('all','torque')
 
