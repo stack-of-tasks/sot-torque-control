@@ -237,7 +237,7 @@ namespace dynamicgraph
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
             if(base6d_encoders.size()!=N_JOINTS+6)
             {
-              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder");
+              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder: "+toString(base6d_encoders.size()));
               return s;
             }
             for(unsigned int i=0; i<N_JOINTS; i++)
