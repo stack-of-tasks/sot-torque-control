@@ -7,42 +7,35 @@
 import numpy as np
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.create_entities_utils import NJ
-from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
-from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_generator, create_com_traj_gen, create_encoders
-from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_offset_compensation, create_estimators, create_imu_filter
-from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
-from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager
-from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot
-
-import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as balance_ctrl_conf
-import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
-import dynamic_graph.sot.torque_control.hrp2.control_manager_sim_conf as control_manager_conf
-import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
-import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
-import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains_sim as pos_ctrl_gains
-import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, Bunch
+from dynamic_graph.ros import RosPublish
+from dynamic_graph.sot.torque_control.create_entities_utils import create_topic
+from dynamic_graph.sot.torque_control.main import main_v3
 
 #from dynamic_graph.sot.torque_control.hrp2.sot_utils import config_sot_to_urdf, joints_sot_to_urdf
     
-def one_foot_balance_test(robot, dt=0.001, delay=0.01, use_real_vel=False, use_real_base_state=False):
-    # BUILD THE STANDARD GRAPH
-    robot.traj_gen        = create_trajectory_generator(robot.device, dt);
-    robot.com_traj_gen    = create_com_traj_gen(dt);
-    robot.rf_traj_gen     = SE3TrajectoryGenerator("tg_rf");
-    robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
-    robot.rf_traj_gen.init(dt);
-    robot.lf_traj_gen.init(dt);
+def get_sim_conf():
+    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as balance_ctrl_conf
+    import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
+    import dynamic_graph.sot.torque_control.hrp2.control_manager_sim_conf as control_manager_conf
+    import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
+    import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
+    import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains_sim as pos_ctrl_gains
+    import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+    conf = Bunch();
+    conf.balance_ctrl              = balance_ctrl_conf;
+    conf.base_estimator            = base_estimator_conf;
+    conf.control_manager           = control_manager_conf;
+    conf.force_torque_estimator    = force_torque_estimator_conf;
+    conf.joint_torque_controller   = joint_torque_controller_conf;
+    conf.pos_ctrl_gains            = pos_ctrl_gains;
+    conf.motor_params              = motor_params;
+    return conf;
     
-    robot.encoders                              = create_encoders(robot);
-    robot.imu_offset_compensation               = create_imu_offset_compensation(robot, dt);
-    (robot.estimator_ft, robot.estimator_kin)   = create_estimators(robot, force_torque_estimator_conf, motor_params, dt, delay);
-    robot.imu_filter                            = create_imu_filter(robot, dt);
-    robot.base_estimator                        = create_base_estimator(robot, dt, balance_ctrl_conf.urdfFileName, base_estimator_conf);
-
-    robot.pos_ctrl        = create_position_controller(robot, pos_ctrl_gains, dt);
-    robot.torque_ctrl     = create_torque_controller(robot, joint_torque_controller_conf, motor_params, dt);
-    robot.inv_dyn         = create_balance_controller(robot, balance_ctrl_conf, dt);
-    robot.ctrl_manager    = create_ctrl_manager(robot, control_manager_conf, dt);
+def one_foot_balance_test(robot, use_real_vel=False, use_real_base_state=False):
+    # BUILD THE STANDARD GRAPH
+    conf = get_sim_conf();
+    robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf);
     
     # BYPASS TORQUE CONTROLLER
     plug(robot.inv_dyn.tau_des,     robot.ctrl_manager.ctrl_torque);
@@ -57,6 +50,9 @@ def one_foot_balance_test(robot, dt=0.001, delay=0.01, use_real_vel=False, use_r
     plug(robot.q.sout,              robot.estimator_ft.base6d_encoders);
     plug(robot.q.sout,              robot.ctrl_manager.base6d_encoders);
     plug(robot.q.sout,              robot.torque_ctrl.base6d_encoders);
+    
+    robot.ros = RosPublish('rosPublish');
+    robot.device.after.addDownsampledSignal('rosPublish.trigger',1);
     
     # BYPASS JOINT VELOCITY ESTIMATOR
     if(use_real_vel):
