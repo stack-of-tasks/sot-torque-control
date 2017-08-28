@@ -38,7 +38,9 @@ namespace dynamicgraph
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period"
 
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
-#define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << m_bemfFactorSIN
+#define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
+                       SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << \
+                       m_bemfFactorSIN << m_in_out_gainSIN
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -58,6 +60,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(base6d_encoders,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(in_out_gain,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
@@ -81,7 +84,8 @@ namespace dynamicgraph
         m_winSizeAdapt.resize(N_JOINTS, 0);
         m_currentWarningZone.resize(N_JOINTS, false);
 
-        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
+        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT <<
+                                    m_signOfControlFilteredSOUT << m_signOfControlSOUT);
 
         /* Commands. */
         addCommand("init",
@@ -204,6 +208,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
         const dynamicgraph::Vector& dq              = m_dqSIN(iter);
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
+        const dynamicgraph::Vector& in_out_gain     = m_in_out_gainSIN(iter);
         const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
         const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
 
@@ -252,10 +257,9 @@ namespace dynamicgraph
             if (pwmDes(i) == 0)
               s(i) = 0;
             else if (m_signIsPos[i])
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * FROM_CURRENT_TO_12_BIT_CTRL + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
             else
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * FROM_CURRENT_TO_12_BIT_CTRL - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
 
             if(fabs(tau(i)) > tau_max(i))
             {

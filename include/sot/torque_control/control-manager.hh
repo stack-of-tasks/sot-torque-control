@@ -59,7 +59,8 @@ namespace dynamicgraph {
 
 ///factor to go from a [-20.0 ; 20.0] Ampers value 
 ///             to the [-2048 ; 2048] 12bit DAC register
-#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
+//#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
+#define FROM_CURRENT_TO_12_BIT_CTRL 1.0
 
 ///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
 #define DEAD_ZONE_OFFSET 40
@@ -101,6 +102,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
         DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link betwin velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
+        DECLARE_SIGNAL_IN(in_out_gain,                           dynamicgraph::Vector);  /// gain from input to output control values
         DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
         DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
         DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
