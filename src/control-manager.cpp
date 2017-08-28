@@ -43,7 +43,9 @@ namespace dynamicgraph
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
 
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_emergencyStopSIN
-#define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << m_bemfFactorSIN
+#define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
+                       SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << \
+                       m_bemfFactorSIN << m_in_out_gainSIN
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -59,36 +61,38 @@ namespace dynamicgraph
       //to do rename 'pwm' to 'current'
       ControlManager::
       ControlManager(const std::string& name)
-	: Entity(name)
-	,CONSTRUCT_SIGNAL_IN(base6d_encoders,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
-	,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
+        : Entity(name)
+        ,CONSTRUCT_SIGNAL_IN(base6d_encoders,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(in_out_gain,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(emergencyStop, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
         ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
         ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
         ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
-	,m_robot_util(RefVoidRobotUtil())
+        ,m_robot_util(RefVoidRobotUtil())
         ,m_initSucceeded(false)
         ,m_emergency_stop_triggered(false)
+        ,m_maxCurrent(DEFAULT_MAX_CURRENT)
         ,m_is_first_iter(true)
       {
 
-        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
+        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT <<
+                                    m_signOfControlFilteredSOUT << m_signOfControlSOUT);
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid5(*this, &ControlManager::init,
-                                    docCommandVoid5("Initialize the entity.",
+                   makeCommandVoid4(*this, &ControlManager::init,
+                                    docCommandVoid4("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "URDF file path (string)",
-                                                    "Gain to convert current in control value (double)",
 						    "Max current (double)",
 						    "Robot reference (string)")));
         
@@ -176,14 +180,12 @@ namespace dynamicgraph
 
       void ControlManager::init(const double & dt,
                                 const std::string & urdfFile,
-                                const double & current_to_ctrl_gain,
                                 const double & lmax_current,
 				const std::string &robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
 
-        m_current_to_ctrl_gain = current_to_ctrl_gain;
 	m_maxCurrent = lmax_current;
 
         m_dt = dt;
@@ -303,6 +305,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
         const dynamicgraph::Vector& dq              = m_dqSIN(iter);
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
+        const dynamicgraph::Vector& in_out_gain     = m_in_out_gainSIN(iter);
         const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
         const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
         if(s.size()!=m_robot_util->m_nbJoints)
@@ -351,10 +354,9 @@ namespace dynamicgraph
             if (pwmDes(i) == 0)
               s(i) = 0;
             else if (m_signIsPos[i])
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * m_current_to_ctrl_gain + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
             else
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * m_current_to_ctrl_gain - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-
+              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
 
             if(fabs(tau(i)) > tau_max(i))
             {
@@ -382,7 +384,7 @@ namespace dynamicgraph
               m_maxCurrent = m_max_currentSIN(iter)(i);
 
             if( (fabs(pwmDes(i)) > m_maxCurrent) || 
-                (fabs(s(i))      > m_maxCurrent * m_current_to_ctrl_gain) )
+                (fabs(s(i))      > m_maxCurrent * in_out_gain(i)) )
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+

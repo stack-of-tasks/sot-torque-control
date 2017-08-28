@@ -67,6 +67,7 @@ namespace dynamicgraph {
 
 ///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
 #define DEAD_ZONE_OFFSET 40
+#define DEFAULT_MAX_CURRENT 8
 
       class CtrlMode
       {
@@ -102,7 +103,6 @@ namespace dynamicgraph {
 	/// The recommended way is to use the signal max_current.
         void init(const double & dt,
                   const std::string & urdfFile,
-                  const double & current_to_ctrl_gain,
                   const double & maxCurrent,
                   const std::string & robotRef);
 
@@ -113,6 +113,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
         DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link betwin velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
+        DECLARE_SIGNAL_IN(in_out_gain,                           dynamicgraph::Vector);  /// gain from input to output control values
         DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
         DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
         DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
@@ -179,7 +180,6 @@ namespace dynamicgraph {
         double  m_maxCurrent;       /// control limit in Ampers
         bool    m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or by control limit violation
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
-        double  m_current_to_ctrl_gain; /// gain to multiply the input current with, to get the output control value
         std::vector<bool>         m_signIsPos;      /// Control sign filtered for deadzone compensation
         std::vector<unsigned int> m_changeSignCpt;  /// Cpt to filter the control sign
         std::vector<unsigned int> m_winSizeAdapt;   /// Variable windows filter size used to be more reactibe if last changing sign event is dating a bit (see graph)
