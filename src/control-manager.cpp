@@ -42,7 +42,7 @@ namespace dynamicgraph
 #define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
 
-#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_emergencyStopSIN
+#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
                        SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << \
                        m_bemfFactorSIN << m_in_out_gainSIN
@@ -72,7 +72,6 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_IN(emergencyStop, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
         ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
         ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
@@ -176,6 +175,15 @@ namespace dynamicgraph
                    makeCommandVoid0(*this, &ControlManager::displayRobotUtil,
                                     docCommandVoid0("Display the current robot util data set.")));
 
+        addCommand("setStreamPrintPeriod",
+                   makeCommandVoid1(*this, &ControlManager::setStreamPrintPeriod,
+                                    docCommandVoid1("Set the period used for printing in streaming.",
+                                                    "Print period in seconds (double)")));
+
+        addCommand("addEmergencyStopSIN",
+                   makeCommandVoid1(*this, &ControlManager::addEmergencyStopSIN,
+                                    docCommandVoid1("Add emergency signal input from another entity that can stop the control if necessary.",
+                                                    "(string) signal name : 'emergencyStop_' + name")));
       }
 
       void ControlManager::init(const double & dt,
@@ -311,16 +319,16 @@ namespace dynamicgraph
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
+        for(int i=0;i<m_emergencyStopSIN.size();i++)
+        {
+          if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter)) {
+            m_emergency_stop_triggered = true;
+            SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
+          }
+        }
         
         if(!m_emergency_stop_triggered)
         {
-          stringstream ss;
-          if(m_emergencyStopSIN.isPlugged())
-          {
-            if (m_emergencyStopSIN(iter))
-              m_emergency_stop_triggered = true;
-              SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
-          }
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             //Trigger sign filter**********************
@@ -559,8 +567,26 @@ namespace dynamicgraph
 	  SEND_MSG("Max current should be positive",MSG_TYPE_ERROR);
       }
 
+      void ControlManager::setStreamPrintPeriod(const double & s)
+      {
+        getLogger().setStreamPrintPeriod(s);
+      }
+
+      void ControlManager::addEmergencyStopSIN(const string& name)
+      {
+        SEND_MSG("New emergency signal input emergencyStop_" + name + " created",MSG_TYPE_INFO);
+        // create a new input signal
+        m_emergencyStopSIN.push_back(new SignalPtr<bool, int>(NULL,
+          getClassName()+"("+getName()+")::input(bool)::emergencyStop_"+name));
+
+        // register the new signals and add the new signal dependecy
+        unsigned int i = m_emergencyStopSIN.size()-1;
+        m_pwmDesSafeSOUT.addDependency(*m_emergencyStopSIN[i]);
+        Entity::signalRegistration(*m_emergencyStopSIN[i]);
+      }
+
       void ControlManager::setNameToId(const std::string &jointName,
-				      const double & jointId)
+                                      const double & jointId)
       {
 	if(!m_initSucceeded)
 	  {

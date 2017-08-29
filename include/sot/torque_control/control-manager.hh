@@ -108,7 +108,8 @@ namespace dynamicgraph {
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
-        std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*> m_jointsCtrlModesSOUT;
+        std::vector< dynamicgraph::SignalPtr<bool,int>* >               m_emergencyStopSIN; /// emergency stop inputs. If one is true, control is set to zero forever
+        std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*>    m_jointsCtrlModesSOUT;
 
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
@@ -120,7 +121,6 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(signWindowsFilterSize,                 dynamicgraph::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
-        DECLARE_SIGNAL_IN(emergencyStop,                         bool      );  /// emergency stop input. If true, control is set to zero forever 
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
         DECLARE_SIGNAL_OUT(signOfControlFiltered,                dynamicgraph::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
@@ -138,7 +138,8 @@ namespace dynamicgraph {
         void setCtrlMode(const int jid, const CtrlMode& cm);
 	
         void resetProfiler();
-	void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
+
+        void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
 	
 	/// Commands related to joint name and joint id
 	void setNameToId(const std::string& jointName, const double & jointId);
@@ -160,6 +161,9 @@ namespace dynamicgraph {
 	void displayRobotUtil();
 	/// Set the mapping between urdf and sot.
 	void setJoints(const dynamicgraph::Vector &);
+
+        void setStreamPrintPeriod(const double & s);
+        void addEmergencyStopSIN(const std::string& name);
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
