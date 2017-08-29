@@ -187,14 +187,21 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
+              python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
 INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/__init__.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/motors_parameters.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/base_estimator_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/control_manager_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/control_manager_sim_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/force_torque_estimator_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/inverse_dynamics_controller_gains.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains_sim.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_torque_controller_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/motors_parameters.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/hrp2)
 
 ADD_SUBDIRECTORY(src)
