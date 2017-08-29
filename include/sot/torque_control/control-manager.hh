@@ -122,6 +122,7 @@ namespace dynamicgraph {
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
         void resetProfiler();
+        void setStreamPrintPeriod(const double & s);
         void addEmergencyStopSIN(const std::string& name);
 
         /* --- ENTITY INHERITANCE --- */

@@ -19,8 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <pininvdyn/utils/stop-watch.hpp>
-#include <pininvdyn/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
+#include <tsid/utils/statistics.hpp>
 
 namespace dynamicgraph
 {
@@ -116,6 +116,11 @@ namespace dynamicgraph
         addCommand("resetProfiler",
                    makeCommandVoid0(*this, &ControlManager::resetProfiler,
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
+
+        addCommand("setStreamPrintPeriod",
+                   makeCommandVoid1(*this, &ControlManager::setStreamPrintPeriod,
+                                    docCommandVoid1("Set the period used for printing in streaming.",
+                                                    "Print period in seconds (double)")));
 
         addCommand("addEmergencyStopSIN",
                    makeCommandVoid1(*this, &ControlManager::addEmergencyStopSIN,
@@ -465,6 +470,11 @@ namespace dynamicgraph
       {
         getProfiler().reset_all();
         getStatistics().reset_all();
+      }
+
+      void ControlManager::setStreamPrintPeriod(const double & s)
+      {
+        getLogger().setStreamPrintPeriod(s);
       }
 
       void ControlManager::addEmergencyStopSIN(const string& name)
