@@ -59,6 +59,10 @@ namespace dynamicgraph {
       /* --- CLASS ----------------------------------------------------------- */
       /* --------------------------------------------------------------------- */
 
+        
+      /** Compute s12 as an intermediate transform between s1 and s2 SE3 transforms**/
+      void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12);
+
       /** Convert from Roll, Pitch, Yaw to transformation Matrix. */
       void rpyToMatrix(double r, double p, double y, Eigen::Matrix3d & R);
 
@@ -112,7 +116,7 @@ namespace dynamicgraph {
         double compute_force_weight(double fz, double std_dev, double margin);
         void kinematics_estimation(const Vector6 & ft, const Vector6 & K,
                                    const SE3 & oMfs, const int foot_id,
-                                   SE3 & oMff, SE3& oMfa);
+                                   SE3 & oMff, SE3& oMfa, SE3& fsMff);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(joint_positions,            dynamicgraph::Vector);
@@ -122,6 +126,9 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(forceRLEG,                  dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(w_lf_in,                    double);  /// weight of the estimation coming from the left foot
         DECLARE_SIGNAL_IN(w_rf_in,                    double);  /// weight of the estimation coming from the right foot
+        DECLARE_SIGNAL_IN(K_fb_feet_poses,            double);  /// feed back gain to correct feet position according to last base estimation and kinematic
+        DECLARE_SIGNAL_IN(lf_ref_xyzquat,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rf_ref_xyzquat,             dynamicgraph::Vector);
 
         DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
 
@@ -178,7 +185,8 @@ namespace dynamicgraph {
         SE3               m_oMrfs;            /// transformation from world to right foot sole
         Vector7           m_oMlfs_xyzquat;
         Vector7           m_oMrfs_xyzquat;
-
+        SE3               m_oMlfs_default_ref;/// Default reference for left foot pose to use if no ref is pluged 
+        SE3               m_oMrfs_default_ref;/// Default reference for right foot pose to use if no ref is pluged 
         normal            m_normal;           /// Normal distribution
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation

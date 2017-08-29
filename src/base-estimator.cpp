@@ -36,6 +36,16 @@ namespace dynamicgraph
       using namespace se3;
       using boost::math::normal; // typedef provides default type is double.
 
+      void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12)
+      {
+        const Eigen::Vector3d t_( s1.translation() * alpha+
+                                  s2.translation() * (1-alpha));
+                                  
+        const Eigen::Vector3d w( se3::log3(s1.rotation()) * alpha +
+                                 se3::log3(s2.rotation()) * (1-alpha) );
+
+        s12 =  se3::SE3(se3::exp3(w),t_);
+      }
       void rpyToMatrix(double roll, double pitch, double yaw, Eigen::Matrix3d & R)
       {
         Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
@@ -74,7 +84,7 @@ namespace dynamicgraph
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
-                          m_w_lf_inSIN << m_w_rf_inSIN
+                          m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
                           m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT
 
@@ -99,6 +109,9 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN( forceRLEG,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( w_lf_in,                    double)
         ,CONSTRUCT_SIGNAL_IN( w_rf_in,                    double)
+        ,CONSTRUCT_SIGNAL_IN( K_fb_feet_poses,            double)
+        ,CONSTRUCT_SIGNAL_IN( lf_ref_xyzquat,             dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN( rf_ref_xyzquat,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, m_joint_positionsSIN
                                                                               <<m_joint_velocitiesSIN)
         ,CONSTRUCT_SIGNAL_OUT(q,                          dynamicgraph::Vector, m_kinematics_computationsSINNER
@@ -108,8 +121,11 @@ namespace dynamicgraph
                                                                               <<m_forceRLEGSIN
                                                                               <<m_w_lf_inSIN
                                                                               <<m_w_rf_inSIN
+                                                                              <<m_K_fb_feet_posesSIN
                                                                               <<m_w_lfSOUT
-                                                                              <<m_w_rfSOUT)
+                                                                              <<m_w_rfSOUT
+                                                                              <<m_lf_ref_xyzquatSIN
+                                                                              <<m_rf_ref_xyzquatSIN)
         ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
         ,CONSTRUCT_SIGNAL_OUT(lf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(rf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
@@ -372,11 +388,11 @@ namespace dynamicgraph
       void BaseEstimator::reset_foot_positions_impl(const Vector6 & ftlf, const Vector6 & ftrf)
       {
         // compute the base position wrt each foot
-        SE3 dummy, lfMff, rfMff;
+        SE3 dummy, dummy1, lfMff, rfMff;
         m_oMrfs = SE3::Identity();
         m_oMlfs = SE3::Identity();
-        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, rfMff, dummy);
-        kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  lfMff, dummy);
+        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, rfMff, dummy, dummy1); //rfMff is obtain reading oMff becaused oMrfs is here set to Identity 
+        kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  lfMff, dummy, dummy1);
 
         // distance from ankle to ground
         const Vector3 & ankle_2_sole_xyz = m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ;
@@ -405,6 +421,10 @@ namespace dynamicgraph
         m_oMrfs_xyzquat(5) = quat_rf.y();
         m_oMrfs_xyzquat(6) = quat_rf.z();
 
+        //save this poses to use it if no ref is provided
+        m_oMlfs_default_ref = m_oMlfs;
+        m_oMrfs_default_ref = m_oMrfs;
+        
         sendMsg("Reference pos of left foot:\n"+toString(m_oMlfs), MSG_TYPE_INFO);
         sendMsg("Reference pos of right foot:\n"+toString(m_oMrfs), MSG_TYPE_INFO);
 
@@ -419,7 +439,7 @@ namespace dynamicgraph
 
       void BaseEstimator::kinematics_estimation(const Vector6 & ft, const Vector6 & K,
                                                 const SE3 & oMfs, const int foot_id,
-                                                SE3 & oMff, SE3 & oMfa)
+                                                SE3 & oMff, SE3 & oMfa, SE3 & fsMff)
       {
         Vector3 xyz;
         xyz << -ft[0]/K(0), -ft[1]/K(1), -ft[2]/K(2);
@@ -428,7 +448,10 @@ namespace dynamicgraph
         const SE3 fsMfa(R, xyz);                          // foot sole to foot ankle
         oMfa = oMfs*fsMfa;                                // world to foot ankle
         const SE3 faMff(m_data->oMf[foot_id].inverse());  // foot ankle to free flyer
+        //~ sendMsg("faMff (foot_id="+toString(foot_id)+"):\n" + toString(faMff), MSG_TYPE_INFO);
+        //~ sendMsg("fsMfa (foot_id="+toString(foot_id)+"):\n" + toString(fsMfa), MSG_TYPE_INFO);
         oMff = oMfa*faMff;                                // world to free flyer
+        fsMff = fsMfa*faMff;                              // foot sole to free flyer
       }
 
       /* ------------------------------------------------------------------- */
@@ -509,9 +532,9 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_BASE_POSITION_ESTIMATION);
         {
-          SE3 oMlfa, oMrfa;
-          kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, m_oMff_rf, oMrfa);
-          kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, oMlfa);
+          SE3 oMlfa, oMrfa, lfsMff, rfsMff;
+          kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, m_oMff_rf, oMrfa, rfsMff);
+          kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, oMlfa, lfsMff);
 
           // get rpy
           Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu;
@@ -540,9 +563,91 @@ namespace dynamicgraph
           base_se3_to_sot(m_q_pin.head<3>(), R, m_q_sot.head<6>());
 
           s = m_q_sot;
+          
+          // store estimation of the base pose in SE3 format
+          const SE3 oMff_est(R, m_q_pin.head<3>());
+          
+          // feedback on feet poses
+          if(m_K_fb_feet_posesSIN.isPlugged())
+          {
+              const double K_fb = m_K_fb_feet_posesSIN(iter);
+              if (K_fb > 0.0) 
+              {
+                  assert(m_w_imu > 0.0 && "Update of the feet 6d poses should not be done if wIMU = 0.0");
+                  assert(K_fb < 1.0 && "Feedback gain on foot correction should be less than 1.0 (K_fb_feet_poses>1.0)");
+                  //feet positions in the world according to current base estimation
+                  const SE3 oMlfs_est( oMff_est*(lfsMff.inverse()) ); 
+                  const SE3 oMrfs_est( oMff_est*(rfsMff.inverse()) ); 
+                  //error in current foot position
+                  SE3 leftDrift   = m_oMlfs.inverse()*oMlfs_est; 
+                  SE3 rightDrift  = m_oMrfs.inverse()*oMrfs_est; 
+
+                  ///apply feedback correction
+                  SE3 leftDrift_delta;
+                  SE3 rightDrift_delta;
+                  se3Interp(leftDrift ,SE3::Identity(),K_fb*wR,leftDrift_delta);
+                  se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
+                  m_oMlfs = m_oMlfs * leftDrift_delta;
+                  m_oMrfs = m_oMrfs * rightDrift_delta;
+                    // dedrift (x, y, z, yaw) using feet pose references
+                  SE3 oMlfs_ref, oMrfs_ref;
+                  if (m_lf_ref_xyzquatSIN.isPlugged() and 
+                      m_rf_ref_xyzquatSIN.isPlugged())
+                  {
+                      ///convert from xyzquat to se3
+                      const Vector7 & lf_ref_xyzquat_vec  = m_lf_ref_xyzquatSIN(iter);
+                      const Vector7 & rf_ref_xyzquat_vec  = m_rf_ref_xyzquatSIN(iter);
+                      const Eigen::Quaterniond ql(m_lf_ref_xyzquatSIN(iter)(3), 
+                                                  m_lf_ref_xyzquatSIN(iter)(4), 
+                                                  m_lf_ref_xyzquatSIN(iter)(5), 
+                                                  m_lf_ref_xyzquatSIN(iter)(6)); 
+                      const Eigen::Quaterniond qr(m_rf_ref_xyzquatSIN(iter)(3), 
+                                                  m_rf_ref_xyzquatSIN(iter)(4), 
+                                                  m_rf_ref_xyzquatSIN(iter)(5), 
+                                                  m_rf_ref_xyzquatSIN(iter)(6)); 
+                      oMlfs_ref = SE3(ql.toRotationMatrix(), lf_ref_xyzquat_vec.head<3>()); 
+                      oMrfs_ref = SE3(qr.toRotationMatrix(), rf_ref_xyzquat_vec.head<3>()); 
+                  }
+                  else
+                  {
+                      oMlfs_ref = m_oMlfs_default_ref;
+                      oMrfs_ref = m_oMrfs_default_ref;
+                  }
+                  ///find translation to apply to both feet to minimise distances to reference positions
+                  const Vector3 translation_feet_drift = 0.5*( ( oMlfs_ref.translation() - m_oMlfs.translation()) + 
+                                                               ( oMrfs_ref.translation() - m_oMrfs.translation()) );
+                  ///two vectors define by left to right feet translation
+                  const Vector3 V_ref =  oMrfs_ref.translation() - oMlfs_ref.translation();
+                  const Vector3 V_est =  m_oMrfs.translation()  - m_oMlfs.translation();
+                  /// angle betwin this two vectors projected in horizontal plane is the yaw drift
+                  const double yaw_drift = (atan2(V_ref(1), V_ref(0)) -
+                                            atan2(V_est(1), V_est(0)));
+                  //~ printf("yaw_drift=%lf\r\n",yaw_drift);
+                  /// apply correction to cancel this drift
+                  const Vector3 rpy_feet_drift(0.,0.,yaw_drift);
+                  Matrix3 rotation_feet_drift;
+                  rpyToMatrix(rpy_feet_drift,rotation_feet_drift);
+                  const SE3 drift_to_ref(rotation_feet_drift , translation_feet_drift);
+                  m_oMlfs = m_oMlfs * drift_to_ref;
+                  m_oMrfs = m_oMrfs * drift_to_ref;
+              }
+          }
+          // convert to xyz+quaternion format //Rq: this convertions could be done in outupt signals function?
+          m_oMlfs_xyzquat.head<3>() = m_oMlfs.translation();
+          Eigen::Quaternion<double> quat_lf(m_oMlfs.rotation());
+          m_oMlfs_xyzquat(3) = quat_lf.w();
+          m_oMlfs_xyzquat(4) = quat_lf.x();
+          m_oMlfs_xyzquat(5) = quat_lf.y();
+          m_oMlfs_xyzquat(6) = quat_lf.z();
+
+          m_oMrfs_xyzquat.head<3>() = m_oMrfs.translation();
+          Eigen::Quaternion<double> quat_rf(m_oMrfs.rotation());
+          m_oMrfs_xyzquat(3) = quat_rf.w();
+          m_oMrfs_xyzquat(4) = quat_rf.x();
+          m_oMrfs_xyzquat(5) = quat_rf.y();
+          m_oMrfs_xyzquat(6) = quat_rf.z();
         }
         getProfiler().stop(PROFILE_BASE_POSITION_ESTIMATION);
-
         return s;
       }
 
@@ -564,7 +669,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal lf_xyzquat before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal rf_xyzquat before initialization!");
           return s;
         }
         if(s.size()!=7)
