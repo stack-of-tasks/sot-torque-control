@@ -424,16 +424,13 @@ namespace dynamicgraph
           m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
 
-          m_hqpSolver = new SolverHQuadProg("eiquadprog-fast");
+          m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
+                                                          "eiquadprog-fast");
           m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
           m_hqpSolver_60_36_34 = SolverHQPFactory::createNewSolver<60,36,34>(SOLVER_HQP_EIQUADPROG_RT,
-									     "eiquadprog_rt_60_36_34");
-
-	  //new SolverHQuadProgRT<60,36,34>("eiquadprog-rt-60-36-34");
+                                                                             "eiquadprog_rt_60_36_34");
           m_hqpSolver_48_30_17 = SolverHQPFactory::createNewSolver<48,30,17>(SOLVER_HQP_EIQUADPROG_RT,
-									     "eiquadprog_rt_48_30_17");
-	  //new SolverHQuadProgRT<48,30,17>("eiquadprog-rt-48-30-17");
-
+                                                                             "eiquadprog_rt_48_30_17");
         }
         catch (const std::exception& e)
         {
