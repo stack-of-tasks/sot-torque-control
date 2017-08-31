@@ -388,7 +388,9 @@ namespace dynamicgraph
 
         // set the world frame in between the feet
         const Vector3 w( 0.5*(se3::log3(lfMff.rotation())+se3::log3(rfMff.rotation())) );
-        const SE3 oMff = SE3(se3::exp3(w), 0.5 * (lfMff.translation()+rfMff.translation()) );
+        SE3 oMff = SE3(se3::exp3(w), 0.5*(lfMff.translation()+rfMff.translation()));
+        // add a constant offset to make the world frame match the one in OpenHRP
+        oMff.translation()(0) += 9.562e-03;
 
         m_oMlfs = oMff * lfMff.inverse() * groundMfoot;
         m_oMrfs = oMff * rfMff.inverse() * groundMfoot;
