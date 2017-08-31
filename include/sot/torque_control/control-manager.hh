@@ -54,13 +54,8 @@ namespace dynamicgraph {
       /* --- CLASS ----------------------------------------------------------- */
       /* --------------------------------------------------------------------- */
 
-/// Number of time step to transition from one ctrl mode to another
+/// Number of time steps to transition from one ctrl mode to another
 #define CTRL_MODE_TRANSITION_TIME_STEP 1000.0
-
-///factor to go from a [-20.0 ; 20.0] Ampers value 
-///             to the [-2048 ; 2048] 12bit DAC register
-//#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
-#define FROM_CURRENT_TO_12_BIT_CTRL 1.0
 
 ///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
 #define DEAD_ZONE_OFFSET 40

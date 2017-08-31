@@ -294,7 +294,7 @@ namespace dynamicgraph
               m_maxCurrent = DEFAULT_MAX_CURRENT;
 
             if( (fabs(pwmDes(i)) > m_maxCurrent) || 
-                (fabs(s(i))      > m_maxCurrent * FROM_CURRENT_TO_12_BIT_CTRL) )
+                (fabs(s(i))      > m_maxCurrent * in_out_gain(i)) )
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+JointUtil::get_name_from_id(i)+" desired current is too large: "+
