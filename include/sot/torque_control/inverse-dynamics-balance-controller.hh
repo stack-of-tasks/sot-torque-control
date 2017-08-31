@@ -216,6 +216,9 @@ namespace dynamicgraph {
         tsid::trajectories::TrajectorySample       m_sampleLF;
         tsid::trajectories::TrajectorySample       m_samplePosture;
 
+        double m_w_com;
+        double m_w_posture;
+
         tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
         tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
         tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
