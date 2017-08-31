@@ -642,6 +642,20 @@ namespace dynamicgraph
         m_timeLast = iter;
 
         const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+
+        // DEBUG BEGIN
+        const ConstraintLevel & cl1 = hqpData[1];
+        int dummy=0;
+        for(ConstraintLevel::const_iterator it=cl1.begin(); it!=cl1.end(); it++)
+        {
+          const double & w = it->first;
+          const ConstraintBase* constr = it->second;
+          sendMsg("Weight of task "+constr->name()+" is "+toString(w),
+                  MSG_TYPE_DEBUG_STREAM, __FILE__, __LINE__+dummy);
+          dummy++;
+        }
+        // DEBUG END
+
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
@@ -668,7 +682,8 @@ namespace dynamicgraph
           SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
           SEND_DEBUG_STREAM_MSG("q: "+toString(q_sot));
           SEND_DEBUG_STREAM_MSG("v: "+toString(v_sot));
-          s.resize(0);
+          SEND_DEBUG_STREAM_MSG("sol: "+toString(sol.x));
+          s.setZero();
           return s;
         }
 
@@ -682,6 +697,17 @@ namespace dynamicgraph
 //          SEND_MSG("Time "+toString(m_t)+" RF task acc     "+toString(m_taskRF->getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF cont acc     "+toString(m_contactRF->getMotionTask().getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
 //        }
+        const tsid::math::Vector & dv = m_invDyn->getAccelerations(sol);
+        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t));
+        SEND_DEBUG_STREAM_MSG(" com acc     "+toString(m_taskCom->getAcceleration(dv)));
+        SEND_DEBUG_STREAM_MSG(" com acc des "+toString(m_taskCom->getDesiredAcceleration()));
+//        SEND_DEBUG_STREAM_MSG(" active ineq "+toString(sol.activeSet.size()));
+//        SEND_DEBUG_STREAM_MSG(" com pos err "+toString(m_taskCom->position_error()));
+//        SEND_DEBUG_STREAM_MSG(" com vel err "+toString(m_taskCom->velocity_error()));
+//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com pos     "+toString(m_taskCom->position()));
+//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com vel     "+toString(m_taskCom->velocity()));
+//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com pos ref "+toString(m_taskCom->position_ref()));
+//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com vel ref "+toString(m_taskCom->velocity_ref()));
         // DEBUG END
 
         getStatistics().store("active inequalities", sol.activeSet.size());
