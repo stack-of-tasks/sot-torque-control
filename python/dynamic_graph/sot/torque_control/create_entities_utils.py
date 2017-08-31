@@ -168,8 +168,8 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
 
-    estimator_ft.init(dt, conf.DELAY_N*dt, conf.DELAY_N*dt, conf.DELAY_N*dt, conf.DELAY_N*dt, True);
-    estimator_kin.init(dt,NJ, conf.DELAY_N*dt);
+    estimator_ft.init(dt, conf.DELAY_ACC*dt, conf.DELAY_GYRO*dt, conf.DELAY_FORCE*dt, conf.DELAY_CURRENT*dt, True);
+    estimator_kin.init(dt,NJ, conf.DELAY_ENC*dt);
     
     return (estimator_ft, estimator_kin);
         
