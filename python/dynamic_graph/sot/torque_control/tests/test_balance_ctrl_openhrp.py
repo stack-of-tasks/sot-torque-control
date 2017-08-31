@@ -6,17 +6,19 @@
 
 import numpy as np
 from dynamic_graph import plug
+from dynamic_graph.sot.core import Selec_of_vector
 from dynamic_graph.sot.torque_control.create_entities_utils import NJ
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, Bunch
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.create_entities_utils import create_topic
 from dynamic_graph.sot.torque_control.main import main_v3
+from time import sleep
 
 #from dynamic_graph.sot.torque_control.hrp2.sot_utils import config_sot_to_urdf, joints_sot_to_urdf
     
 def get_sim_conf():
     import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as balance_ctrl_conf
-    import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
+    import dynamic_graph.sot.torque_control.hrp2.base_estimator_sim_conf as base_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.control_manager_sim_conf as control_manager_conf
     import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
@@ -41,7 +43,6 @@ def one_foot_balance_test(robot, use_real_vel=False, use_real_base_state=False):
     plug(robot.inv_dyn.tau_des,     robot.ctrl_manager.ctrl_torque);
     
     # CREATE SIGNALS WITH ROBOT STATE WITH CORRECT SIZE (36)
-    from dynamic_graph.sot.core import Selec_of_vector
     robot.q = Selec_of_vector("q");
     plug(robot.device.robotState, robot.q.sin);
     robot.q.selec(0, NJ+6);
@@ -63,15 +64,18 @@ def one_foot_balance_test(robot, use_real_vel=False, use_real_base_state=False):
         plug(robot.dq.sout,             robot.base_estimator.joint_velocities);
 
     # BYPASS BASE ESTIMATOR
+    robot.v = Selec_of_vector("v");
+    plug(robot.device.robotVelocity, robot.v.sin);
+    robot.v.selec(0, NJ+6);
     if(use_real_base_state):
-        robot.v = Selec_of_vector("v");
-        plug(robot.device.robotVelocity, robot.v.sin);
-        robot.v.selec(0, NJ+6);
         plug(robot.q.sout,              robot.inv_dyn.q);
         plug(robot.v.sout,              robot.inv_dyn.v);
-        robot.inv_dyn.v.value = (NJ+6)*(0.0,);
     
     start_sot();
+    
+    # RESET FORCE/TORQUE SENSOR OFFSET
+    sleep(10*robot.timeStep);
+    robot.estimator_ft.setFTsensorOffsets(24*(0.0,));
     
     return robot;
     
