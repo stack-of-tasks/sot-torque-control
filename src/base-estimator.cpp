@@ -40,7 +40,7 @@ namespace dynamicgraph
       {
         const Eigen::Vector3d t_( s1.translation() * alpha+
                                   s2.translation() * (1-alpha));
-                                  
+
         const Eigen::Vector3d w( se3::log3(s1.rotation()) * alpha +
                                  se3::log3(s2.rotation()) * (1-alpha) );
 
@@ -391,7 +391,7 @@ namespace dynamicgraph
         SE3 dummy, dummy1, lfMff, rfMff;
         m_oMrfs = SE3::Identity();
         m_oMlfs = SE3::Identity();
-        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, rfMff, dummy, dummy1); //rfMff is obtain reading oMff becaused oMrfs is here set to Identity 
+        kinematics_estimation(ftrf, m_K_rf, m_oMrfs, m_right_foot_id, rfMff, dummy, dummy1); //rfMff is obtain reading oMff becaused oMrfs is here set to Identity
         kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  lfMff, dummy, dummy1);
 
         // distance from ankle to ground
@@ -523,8 +523,8 @@ namespace dynamicgraph
         // if both weights are zero set them to a small positive value to avoid division by zero
         if(wR==0.0 && wL==0.0)
         {
-            wR = 1e-3;
-            wL = 1e-3;
+          wR = 1e-3;
+          wL = 1e-3;
         }
 
         m_kinematics_computationsSINNER(iter);
@@ -572,67 +572,67 @@ namespace dynamicgraph
           // feedback on feet poses
           if(m_K_fb_feet_posesSIN.isPlugged())
           {
-              const double K_fb = m_K_fb_feet_posesSIN(iter);
-              if (K_fb > 0.0) 
-              {
-                  assert(m_w_imu > 0.0 && "Update of the feet 6d poses should not be done if wIMU = 0.0");
-                  assert(K_fb < 1.0 && "Feedback gain on foot correction should be less than 1.0 (K_fb_feet_poses>1.0)");
-                  //feet positions in the world according to current base estimation
-                  const SE3 oMlfs_est( oMff_est*(lfsMff.inverse()) ); 
-                  const SE3 oMrfs_est( oMff_est*(rfsMff.inverse()) ); 
-                  //error in current foot position
-                  SE3 leftDrift   = m_oMlfs.inverse()*oMlfs_est; 
-                  SE3 rightDrift  = m_oMrfs.inverse()*oMrfs_est; 
+            const double K_fb = m_K_fb_feet_posesSIN(iter);
+            if (K_fb > 0.0)
+            {
+              assert(m_w_imu > 0.0 && "Update of the feet 6d poses should not be done if wIMU = 0.0");
+              assert(K_fb < 1.0 && "Feedback gain on foot correction should be less than 1.0 (K_fb_feet_poses>1.0)");
+              //feet positions in the world according to current base estimation
+              const SE3 oMlfs_est( oMff_est*(lfsMff.inverse()) );
+              const SE3 oMrfs_est( oMff_est*(rfsMff.inverse()) );
+              //error in current foot position
+              SE3 leftDrift   = m_oMlfs.inverse()*oMlfs_est;
+              SE3 rightDrift  = m_oMrfs.inverse()*oMrfs_est;
 
-                  ///apply feedback correction
-                  SE3 leftDrift_delta;
-                  SE3 rightDrift_delta;
-                  se3Interp(leftDrift ,SE3::Identity(),K_fb*wR,leftDrift_delta);
-                  se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
-                  m_oMlfs = m_oMlfs * leftDrift_delta;
-                  m_oMrfs = m_oMrfs * rightDrift_delta;
-                    // dedrift (x, y, z, yaw) using feet pose references
-                  SE3 oMlfs_ref, oMrfs_ref;
-                  if (m_lf_ref_xyzquatSIN.isPlugged() and 
-                      m_rf_ref_xyzquatSIN.isPlugged())
-                  {
-                      ///convert from xyzquat to se3
-                      const Vector7 & lf_ref_xyzquat_vec  = m_lf_ref_xyzquatSIN(iter);
-                      const Vector7 & rf_ref_xyzquat_vec  = m_rf_ref_xyzquatSIN(iter);
-                      const Eigen::Quaterniond ql(m_lf_ref_xyzquatSIN(iter)(3), 
-                                                  m_lf_ref_xyzquatSIN(iter)(4), 
-                                                  m_lf_ref_xyzquatSIN(iter)(5), 
-                                                  m_lf_ref_xyzquatSIN(iter)(6)); 
-                      const Eigen::Quaterniond qr(m_rf_ref_xyzquatSIN(iter)(3), 
-                                                  m_rf_ref_xyzquatSIN(iter)(4), 
-                                                  m_rf_ref_xyzquatSIN(iter)(5), 
-                                                  m_rf_ref_xyzquatSIN(iter)(6)); 
-                      oMlfs_ref = SE3(ql.toRotationMatrix(), lf_ref_xyzquat_vec.head<3>()); 
-                      oMrfs_ref = SE3(qr.toRotationMatrix(), rf_ref_xyzquat_vec.head<3>()); 
-                  }
-                  else
-                  {
-                      oMlfs_ref = m_oMlfs_default_ref;
-                      oMrfs_ref = m_oMrfs_default_ref;
-                  }
-                  ///find translation to apply to both feet to minimise distances to reference positions
-                  const Vector3 translation_feet_drift = 0.5*( ( oMlfs_ref.translation() - m_oMlfs.translation()) + 
-                                                               ( oMrfs_ref.translation() - m_oMrfs.translation()) );
-                  ///two vectors define by left to right feet translation
-                  const Vector3 V_ref =  oMrfs_ref.translation() - oMlfs_ref.translation();
-                  const Vector3 V_est =  m_oMrfs.translation()  - m_oMlfs.translation();
-                  /// angle betwin this two vectors projected in horizontal plane is the yaw drift
-                  const double yaw_drift = (atan2(V_ref(1), V_ref(0)) -
-                                            atan2(V_est(1), V_est(0)));
-                  //~ printf("yaw_drift=%lf\r\n",yaw_drift);
-                  /// apply correction to cancel this drift
-                  const Vector3 rpy_feet_drift(0.,0.,yaw_drift);
-                  Matrix3 rotation_feet_drift;
-                  rpyToMatrix(rpy_feet_drift,rotation_feet_drift);
-                  const SE3 drift_to_ref(rotation_feet_drift , translation_feet_drift);
-                  m_oMlfs = m_oMlfs * drift_to_ref;
-                  m_oMrfs = m_oMrfs * drift_to_ref;
+              ///apply feedback correction
+              SE3 leftDrift_delta;
+              SE3 rightDrift_delta;
+              se3Interp(leftDrift ,SE3::Identity(),K_fb*wR,leftDrift_delta);
+              se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
+              m_oMlfs = m_oMlfs * leftDrift_delta;
+              m_oMrfs = m_oMrfs * rightDrift_delta;
+              // dedrift (x, y, z, yaw) using feet pose references
+              SE3 oMlfs_ref, oMrfs_ref;
+              if (m_lf_ref_xyzquatSIN.isPlugged() and
+                  m_rf_ref_xyzquatSIN.isPlugged())
+              {
+                ///convert from xyzquat to se3
+                const Vector7 & lf_ref_xyzquat_vec  = m_lf_ref_xyzquatSIN(iter);
+                const Vector7 & rf_ref_xyzquat_vec  = m_rf_ref_xyzquatSIN(iter);
+                const Eigen::Quaterniond ql(m_lf_ref_xyzquatSIN(iter)(3),
+                                            m_lf_ref_xyzquatSIN(iter)(4),
+                                            m_lf_ref_xyzquatSIN(iter)(5),
+                                            m_lf_ref_xyzquatSIN(iter)(6));
+                const Eigen::Quaterniond qr(m_rf_ref_xyzquatSIN(iter)(3),
+                                            m_rf_ref_xyzquatSIN(iter)(4),
+                                            m_rf_ref_xyzquatSIN(iter)(5),
+                                            m_rf_ref_xyzquatSIN(iter)(6));
+                oMlfs_ref = SE3(ql.toRotationMatrix(), lf_ref_xyzquat_vec.head<3>());
+                oMrfs_ref = SE3(qr.toRotationMatrix(), rf_ref_xyzquat_vec.head<3>());
               }
+              else
+              {
+                oMlfs_ref = m_oMlfs_default_ref;
+                oMrfs_ref = m_oMrfs_default_ref;
+              }
+              ///find translation to apply to both feet to minimise distances to reference positions
+              const Vector3 translation_feet_drift = 0.5*( ( oMlfs_ref.translation() - m_oMlfs.translation()) +
+                                                           ( oMrfs_ref.translation() - m_oMrfs.translation()) );
+              ///two vectors define by left to right feet translation
+              const Vector3 V_ref =  oMrfs_ref.translation() - oMlfs_ref.translation();
+              const Vector3 V_est =  m_oMrfs.translation()  - m_oMlfs.translation();
+              /// angle betwin this two vectors projected in horizontal plane is the yaw drift
+              const double yaw_drift = (atan2(V_ref(1), V_ref(0)) -
+                                        atan2(V_est(1), V_est(0)));
+              //~ printf("yaw_drift=%lf\r\n",yaw_drift);
+              /// apply correction to cancel this drift
+              const Vector3 rpy_feet_drift(0.,0.,yaw_drift);
+              Matrix3 rotation_feet_drift;
+              rpyToMatrix(rpy_feet_drift,rotation_feet_drift);
+              const SE3 drift_to_ref(rotation_feet_drift , translation_feet_drift);
+              m_oMlfs = m_oMlfs * drift_to_ref;
+              m_oMrfs = m_oMrfs * drift_to_ref;
+            }
           }
           // convert to xyz+quaternion format //Rq: this convertions could be done in outupt signals function?
           m_oMlfs_xyzquat.head<3>() = m_oMlfs.translation();
