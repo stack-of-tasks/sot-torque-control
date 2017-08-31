@@ -99,7 +99,8 @@ namespace dynamicgraph
   << m_contact_pointsSIN \
   << m_contact_normalSIN \
   << m_f_minSIN \
-  << m_f_maxSIN \
+  << m_f_max_right_footSIN \
+  << m_f_max_left_footSIN \
   << m_rotor_inertiasSIN \
   << m_gear_ratiosSIN \
   << m_tau_maxSIN \
@@ -185,7 +186,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(w_forces,                    double)
             ,CONSTRUCT_SIGNAL_IN(mu,                          double)
             ,CONSTRUCT_SIGNAL_IN(f_min,                       double)
-            ,CONSTRUCT_SIGNAL_IN(f_max,                       double)
+            ,CONSTRUCT_SIGNAL_IN(f_max_right_foot,            double)
+            ,CONSTRUCT_SIGNAL_IN(f_max_left_foot,             double)
             ,CONSTRUCT_SIGNAL_IN(dt_joint_pos_limits,         double)
             ,CONSTRUCT_SIGNAL_IN(weight_contact_forces,       dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
@@ -345,14 +347,15 @@ namespace dynamicgraph
         assert(rotor_inertias.size()==m_robot_util->m_nbJoints);
         assert(gear_ratios.size()==m_robot_util->m_nbJoints);
 
-        const double & w_com = m_w_comSIN(0);
-        const double & w_posture = m_w_postureSIN(0);
-        //        const double & w_base_orientation = m_w_base_orientationSIN(0);
-        //        const double & w_torques = m_w_torquesSIN(0);
+        m_w_com = m_w_comSIN(0);
+        m_w_posture = m_w_postureSIN(0);
         const double & w_forces = m_w_forcesSIN(0);
+//      const double & w_base_orientation = m_w_base_orientationSIN(0);
+//      const double & w_torques = m_w_torquesSIN(0);
         const double & mu = m_muSIN(0);
         const double & fMin = m_f_minSIN(0);
-        const double & fMax = m_f_maxSIN(0);
+        const double & fMaxRF = m_f_max_right_footSIN(0);
+        const double & fMaxLF = m_f_max_left_footSIN(0);
 
         try
         {
@@ -387,7 +390,7 @@ namespace dynamicgraph
           m_contactRF = new Contact6d("contact_rfoot", *m_robot, 
 				      m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMax, w_forces);
+                                      mu, fMin, fMaxRF, w_forces);
           m_contactRF->Kp(kp_contact);
           m_contactRF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactRF);
@@ -395,7 +398,7 @@ namespace dynamicgraph
           m_contactLF = new Contact6d("contact_lfoot", *m_robot, 
 				      m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMax, w_forces);
+                                      mu, fMin, fMaxLF, w_forces);
           m_contactLF->Kp(kp_contact);
           m_contactLF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactLF);
@@ -403,7 +406,7 @@ namespace dynamicgraph
           m_taskCom = new TaskComEquality("task-com", *m_robot);
           m_taskCom->Kp(kp_com);
           m_taskCom->Kd(kd_com);
-          m_invDyn->addMotionTask(*m_taskCom, w_com, 1);
+          m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
 
           m_taskRF = new TaskSE3Equality("task-rf", *m_robot, m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_taskRF->Kp(kp_feet);
@@ -416,7 +419,7 @@ namespace dynamicgraph
           m_taskPosture = new TaskJointPosture("task-posture", *m_robot);
           m_taskPosture->Kp(kp_posture);
           m_taskPosture->Kd(kd_posture);
-          m_invDyn->addMotionTask(*m_taskPosture, w_posture, 1);
+          m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
 
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
@@ -548,11 +551,18 @@ namespace dynamicgraph
         const VectorN& kd_pos = m_kd_posSIN(iter);
         assert(kd_pos.size()==m_robot_util->m_nbJoints);
 
-        if(m_contactState == LEFT_SUPPORT)
+        const double & w_com = m_w_comSIN(iter);
+        const double & w_posture = m_w_postureSIN(iter);
+        const double & w_forces = m_w_forcesSIN(iter);
+
+        const double & fMaxRF = m_f_max_right_footSIN(iter);
+        const double & fMaxLF = m_f_max_left_footSIN(iter);
+
+        if(m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION)
         {
-  		  const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
+          const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
           assert(x_rf_ref.size()==12);
-	      const Vector6& dx_rf_ref =  m_rf_ref_velSIN(iter);
+          const Vector6& dx_rf_ref =  m_rf_ref_velSIN(iter);
           assert(dx_rf_ref.size()==6);
           const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
           assert(ddx_rf_ref.size()==6);
@@ -567,7 +577,7 @@ namespace dynamicgraph
           m_taskRF->Kp(kp_feet);
           m_taskRF->Kd(kd_feet);
         }
-        else if(m_contactState==RIGHT_SUPPORT)
+        else if(m_contactState==RIGHT_SUPPORT || m_contactState==RIGHT_SUPPORT_TRANSITION)
         {
           const Eigen::Matrix<double,12,1>& x_lf_ref = m_lf_ref_posSIN(iter);
           assert(x_lf_ref.size()==12);
@@ -599,6 +609,12 @@ namespace dynamicgraph
         m_taskCom->setReference(m_sampleCom);
         m_taskCom->Kp(kp_com);
         m_taskCom->Kd(kd_com);
+        if(m_w_com != w_com)
+        {
+//          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+          m_w_com = w_com;
+          m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
+        }
 
         m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
         m_robot_util->joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
@@ -606,11 +622,19 @@ namespace dynamicgraph
         m_taskPosture->setReference(m_samplePosture);
         m_taskPosture->Kp(kp_posture);
         m_taskPosture->Kd(kd_posture);
+        if(m_w_posture != w_posture)
+        {
+//          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
+          m_w_posture = w_posture;
+          m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
+        }
 
         m_contactLF->Kp(kp_contact);
         m_contactLF->Kd(kd_contact);
+        m_contactLF->setRegularizationTaskWeight(w_forces);
         m_contactRF->Kp(kp_contact);
         m_contactRF->Kd(kd_contact);
+        m_contactRF->setRegularizationTaskWeight(w_forces);
 
         if(m_firstTime)
         {

@@ -124,7 +124,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(contact_points,             dynamicgraph::Matrix);
         DECLARE_SIGNAL_IN(contact_normal,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(f_min,                      double);
-        DECLARE_SIGNAL_IN(f_max,                      double);
+        DECLARE_SIGNAL_IN(f_max_right_foot,           double);
+        DECLARE_SIGNAL_IN(f_max_left_foot,            double);
 
         DECLARE_SIGNAL_IN(rotor_inertias,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(gear_ratios,                dynamicgraph::Vector);
@@ -217,6 +218,9 @@ namespace dynamicgraph {
         tsid::trajectories::TrajectorySample       m_sampleRF;
         tsid::trajectories::TrajectorySample       m_sampleLF;
         tsid::trajectories::TrajectorySample       m_samplePosture;
+
+        double m_w_com;
+        double m_w_posture;
 
         tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
         tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
