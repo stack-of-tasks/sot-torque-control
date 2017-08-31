@@ -1,17 +1,46 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
-robot.timeStep = 0.005;
+robot.timeStep = 0.002;
 ent = one_foot_balance_test(robot, use_real_vel=True, use_real_base_state=False);
-ent.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
+robot.ctrl_manager.setStreamPrintPeriod(0.2);
+ent.ctrl_manager.setCtrlMode('all','torque')
+robot.base_estimator.set_imu_weight(0.0);
+
 create_topic(robot.ros, robot.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
-ent.com_traj_gen.startSinusoid(1, -0.07, 1.0)
+create_topic(robot.ros, robot.inv_dyn.com_ref_pos, 'inv_dyn_com_ref_pos');
+create_topic(robot.ros, robot.inv_dyn.com_ref_vel, 'inv_dyn_com_ref_vel');
+create_topic(robot.ros, robot.inv_dyn.com, 'inv_dyn_com');
+create_topic(robot.ros, robot.inv_dyn.com_vel, 'inv_dyn_com_vel');
+create_topic(robot.ros, robot.base_estimator.q, 'q_est');
+create_topic(robot.ros, robot.q.sout, 'q');
+create_topic(robot.ros, robot.traj_gen.q, 'q_ref');
+create_topic(robot.ros, robot.device.robotVelocity, 'v');
+create_topic(robot.ros, robot.base_estimator.v, 'v_est');
+create_topic(robot.ros, robot.inv_dyn.zmp_des, 'zmp_des');
+create_topic(robot.ros, robot.inv_dyn.zmp, 'zmp');
+create_topic(robot.ros, robot.inv_dyn.f_des_right_foot, 'f_des_right_foot');
+create_topic(robot.ros, robot.inv_dyn.f_des_left_foot, 'f_des_left_foot');
+create_topic(robot.ros, robot.inv_dyn.zmp_left_foot, 'zmp_left_foot');
+create_topic(robot.ros, robot.inv_dyn.zmp_right_foot, 'zmp_right_foot');
+create_topic(robot.ros, robot.device.forceLLEG,       'forceLLEG');
+create_topic(robot.ros, robot.device.forceRLEG,       'forceRLEG');
+create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
+create_topic(robot.ros, robot.device.gyrometer,       'gyro');
+create_topic(robot.ros, robot.device.accelerometer,       'acc');
 
-
-ent.ctrl_manager.setCtrlMode('all','torque')
-
-ent.com_traj_gen.move(1, 0.07, 2.0)
+sleep(5.0)
+ent.com_traj_gen.move(1, 0.07, 1.5)
+sleep(2.0*7)
 ent.com_traj_gen.startSinusoid(1, -0.07, 1.5)
 
+plug(robot.q.sout,              robot.inv_dyn.q);
+plug(robot.v.sout,              robot.inv_dyn.v);
+
+robot.traj_gen.moveJoint('lsp', -1.0, 2.0)
+robot.traj_gen.startSinusoid('lsp', 1.0, 2.0)
+
+ent.ctrl_manager.setCtrlMode('all','torque')
+ent.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
 
 from dynamic_graph.sot.torque_control.main import *
 robot.timeStep = 0.001
