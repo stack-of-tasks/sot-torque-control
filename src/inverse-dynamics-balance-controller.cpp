@@ -586,7 +586,7 @@ namespace dynamicgraph
         m_taskCom->Kd(kd_com);
         if(m_w_com != w_com)
         {
-//          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
           m_w_com = w_com;
           m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
         }
@@ -599,7 +599,7 @@ namespace dynamicgraph
         m_taskPosture->Kd(kd_posture);
         if(m_w_posture != w_posture)
         {
-//          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
+          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
           m_w_posture = w_posture;
           m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
         }
@@ -643,19 +643,6 @@ namespace dynamicgraph
 
         const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
 
-        // DEBUG BEGIN
-        const ConstraintLevel & cl1 = hqpData[1];
-        int dummy=0;
-        for(ConstraintLevel::const_iterator it=cl1.begin(); it!=cl1.end(); it++)
-        {
-          const double & w = it->first;
-          const ConstraintBase* constr = it->second;
-          sendMsg("Weight of task "+constr->name()+" is "+toString(w),
-                  MSG_TYPE_DEBUG_STREAM, __FILE__, __LINE__+dummy);
-          dummy++;
-        }
-        // DEBUG END
-
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
@@ -697,17 +684,6 @@ namespace dynamicgraph
 //          SEND_MSG("Time "+toString(m_t)+" RF task acc     "+toString(m_taskRF->getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF cont acc     "+toString(m_contactRF->getMotionTask().getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
 //        }
-        const tsid::math::Vector & dv = m_invDyn->getAccelerations(sol);
-        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t));
-        SEND_DEBUG_STREAM_MSG(" com acc     "+toString(m_taskCom->getAcceleration(dv)));
-        SEND_DEBUG_STREAM_MSG(" com acc des "+toString(m_taskCom->getDesiredAcceleration()));
-//        SEND_DEBUG_STREAM_MSG(" active ineq "+toString(sol.activeSet.size()));
-//        SEND_DEBUG_STREAM_MSG(" com pos err "+toString(m_taskCom->position_error()));
-//        SEND_DEBUG_STREAM_MSG(" com vel err "+toString(m_taskCom->velocity_error()));
-//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com pos     "+toString(m_taskCom->position()));
-//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com vel     "+toString(m_taskCom->velocity()));
-//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com pos ref "+toString(m_taskCom->position_ref()));
-//        SEND_DEBUG_STREAM_MSG("Time "+toString(m_t)+" com vel ref "+toString(m_taskCom->velocity_ref()));
         // DEBUG END
 
         getStatistics().store("active inequalities", sol.activeSet.size());
@@ -715,7 +691,8 @@ namespace dynamicgraph
         if(ddx_com_ref.norm()>1e-3)
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
-        velocity_urdf_to_sot(m_invDyn->getAccelerations(sol), m_dv_sot);
+        const tsid::math::Vector & dv = m_invDyn->getAccelerations(sol);
+        velocity_urdf_to_sot(dv, m_dv_sot);
         Eigen::Matrix<double,12,1> tmp;
         if(m_invDyn->getContactForces(m_contactRF->name(), sol, tmp))
           m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
