@@ -707,7 +707,7 @@ namespace dynamicgraph
         if(s.size()!=m_robot->nv())
           s.resize(m_robot->nv());
         m_tau_desSOUT(iter);
-		s = m_dv_sot;
+        s = m_dv_sot;
         return s;
       }
 
@@ -726,7 +726,7 @@ namespace dynamicgraph
           s.setZero();
           return s;
         }
-		s = m_f_RF;
+        s = m_f_RF;
         return s;
       }
 
@@ -745,10 +745,7 @@ namespace dynamicgraph
           s.setZero();
           return s;
         }
-
-        const Eigen::MatrixXd & T = m_contactLF->getForceGeneratorMatrix();
-        m_f_LF = T*m_f.tail<12>();
-		s = m_f_LF;
+        s = m_f_LF;
         return s;
       }
 
@@ -772,7 +769,7 @@ namespace dynamicgraph
         else
           m_zmp_des_RF_local.setZero();
 
-		s = m_zmp_des_RF_local.head<2>();
+        s = m_zmp_des_RF_local.head<2>();
         return s;
       }
 
@@ -795,7 +792,7 @@ namespace dynamicgraph
         else
           m_zmp_des_LF_local.setZero();
 
-		s = m_zmp_des_LF_local.head<2>();
+        s = m_zmp_des_LF_local.head<2>();
         return s;
       }
 
