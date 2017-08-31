@@ -36,6 +36,8 @@ def create_base_estimator(robot, dt, urdf, conf):
     plug(robot.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
     
+    base_estimator.K_fb_feet_poses.value = conf.K_fb_feet_poses;
+    
     base_estimator.set_imu_weight(conf.w_imu);
     base_estimator.set_stiffness_right_foot(conf.K);
     base_estimator.set_stiffness_left_foot(conf.K);
