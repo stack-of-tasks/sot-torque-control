@@ -194,6 +194,7 @@ INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/_
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/base_estimator_conf.py
+              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/base_estimator_sim_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/control_manager_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/control_manager_sim_conf.py
               hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/force_torque_estimator_conf.py
