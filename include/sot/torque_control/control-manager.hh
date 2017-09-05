@@ -153,6 +153,7 @@ namespace dynamicgraph {
 	
 	/// Commands related to FootUtil
 	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
+        void setRightFootForceSensorXYZ(const dynamicgraph::Vector &);
 	void setFootFrameName(const std::string &, const std::string &);
 
 	void displayRobotUtil();

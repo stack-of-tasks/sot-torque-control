@@ -36,10 +36,10 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <sot/torque_control/common.hh>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -146,6 +146,8 @@ namespace dynamicgraph {
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_reset_foot_pos;   /// true after the command resetFootPositions is called
         double            m_dt;               /// sampling time step
+        RobotUtil *       m_robot_util;
+
 
         /* Estimator parameters */
         double            m_w_imu;            /// weight of IMU for sensor fusion

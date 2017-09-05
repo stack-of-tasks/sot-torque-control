@@ -19,7 +19,7 @@
 #include <dynamic-graph/factory.h>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 #include <Eigen/Dense>
 
 namespace dynamicgraph
@@ -93,7 +93,7 @@ namespace torque_control
   /* --- COMMANDS ---------------------------------------------------------- */
   /* --- COMMANDS ---------------------------------------------------------- */
   /* --- COMMANDS ---------------------------------------------------------- */
-  void TorqueOffsetEstimator::init(const std::string &urdfFile,
+  void TorqueOffsetEstimator::init(const std::string &robotRef,
                                    const Eigen::Matrix4d& m_torso_X_imu_,
                                    const double& gyro_epsilon_,
                                    const std::string& ffJointName,
@@ -101,7 +101,21 @@ namespace torque_control
   {
     try 
     {
-      se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
+      /* Retrieve m_robot_util  informations */
+      std::string localName(robotRef);
+      if (isNameInRobotUtil(localName))
+      {
+        m_robot_util = getRobotUtil(localName);
+        std::cerr << "m_robot_util:" << m_robot_util << std::endl;
+      }
+      else
+      {
+        SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+        return;
+      }
+
+      se3::urdf::buildModel(m_robot_util->m_urdf_filename,
+                            se3::JointModelFreeFlyer(), m_model);
       // assert(m_model.nq == N_JOINTS+7);
       // assert(m_model.nv == N_JOINTS+6);
             
@@ -113,7 +127,8 @@ namespace torque_control
     catch (const std::exception& e) 
     { 
       std::cout << e.what();
-      return SEND_MSG("Init failed: Could load URDF :" + urdfFile, MSG_TYPE_ERROR);
+      SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
+      return;
     }
     m_data = new se3::Data(m_model);
     m_torso_X_imu.rotation() = m_torso_X_imu_.block<3,3>(0,0);

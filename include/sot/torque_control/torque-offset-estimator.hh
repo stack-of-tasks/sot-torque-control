@@ -41,7 +41,7 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 #include <boost/circular_buffer.hpp>
 #include <Eigen/StdVector>
 
@@ -88,7 +88,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
 
       protected:
-
+        RobotUtil *       m_robot_util;
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider

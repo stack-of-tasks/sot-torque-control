@@ -162,7 +162,10 @@ namespace dynamicgraph {
 
       struct FootUtil
       {
+        /// Position of the foot soles w.r.t. the frame of the foot
 	dynamicgraph::Vector m_Right_Foot_Sole_XYZ;
+        /// Position of the force/torque sensors w.r.t. the frame of the hosting link
+        dynamicgraph::Vector m_Right_Foot_Force_Sensor_XYZ;
 	std::string m_Left_Foot_Frame_Name;
 	std::string m_Right_Foot_Frame_Name;
 	void display(std::ostream & os) const;

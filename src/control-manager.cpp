@@ -628,6 +628,17 @@ namespace dynamicgraph
 	m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ = xyz;
       }
 
+      void ControlManager::setRightFootForceSensorXYZ(const dynamicgraph::Vector &xyz)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot set right foot force sensor XYZ before initialization!");
+          return;
+        }
+
+        m_robot_util->m_foot_util.m_Right_Foot_Force_Sensor_XYZ = xyz;
+      }
+
       void ControlManager::setFootFrameName( const std::string &FootName,
 					     const std::string &FrameName)
       {

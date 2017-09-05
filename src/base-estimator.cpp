@@ -200,31 +200,45 @@ namespace dynamicgraph
                                                     "double")));
       }
 
-      void BaseEstimator::init(const double & dt, const std::string& urdfFile)
+      void BaseEstimator::init(const double & dt, const std::string& robotRef)
       {
         m_dt = dt;
         try
         {
-          se3::urdf::buildModel(urdfFile,se3::JointModelFreeFlyer(),m_model);
-          assert(m_model.nq == N_JOINTS+7);
-          assert(m_model.nv == N_JOINTS+6);
-          assert(m_model.existFrame(LEFT_FOOT_FRAME_NAME));
-          assert(m_model.existFrame(RIGHT_FOOT_FRAME_NAME));
-          m_left_foot_id = m_model.getFrameId(LEFT_FOOT_FRAME_NAME);
-          m_right_foot_id = m_model.getFrameId(RIGHT_FOOT_FRAME_NAME);
+          /* Retrieve m_robot_util  informations */
+          std::string localName(robotRef);
+          if (isNameInRobotUtil(localName))
+          {
+            m_robot_util = getRobotUtil(localName);
+            std::cerr << "m_robot_util:" << m_robot_util << std::endl;
+          }
+          else
+          {
+            SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+            return;
+          }
+
+          se3::urdf::buildModel(m_robot_util->m_urdf_filename,
+                                se3::JointModelFreeFlyer(), m_model);
+
+          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+          m_left_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+          m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_q_pin.setZero(m_model.nq);
           m_q_pin[6]= 1.; // for quaternion
-          m_q_sot.setZero(N_JOINTS+6);
-          m_v_pin.setZero(N_JOINTS+6);
-          m_v_sot.setZero(N_JOINTS+6);
+          m_q_sot.setZero(m_robot_util->m_nbJoints+6);
+          m_v_pin.setZero(m_robot_util->m_nbJoints+6);
+          m_v_sot.setZero(m_robot_util->m_nbJoints+6);
 
           m_sole_M_ftSens = SE3(Matrix3::Identity(),
-                                -Eigen::Map<const Vector3>(RIGHT_FOOT_FORCE_SENSOR_XYZ));
+                                -Eigen::Map<const Vector3>(&m_robot_util->m_foot_util.m_Right_Foot_Force_Sensor_XYZ(0)));
         }
         catch (const std::exception& e)
         {
           std::cout << e.what();
-          return SEND_MSG("Init failed: Could load URDF :" + urdfFile, MSG_TYPE_ERROR);
+          SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
+          return;
         }
         m_data = new se3::Data(m_model);
         m_initSucceeded = true;
@@ -364,7 +378,7 @@ namespace dynamicgraph
         const SE3 ffMo = SE3(se3::exp3(w), 0.5 * (ffMlfa.translation()+ffMrfa.translation()) );
 
         // distance from ankle to ground
-        Eigen::Map<const Eigen::Vector3d> ankle_2_sole_xyz(&RIGHT_FOOT_SOLE_XYZ[0]);
+        const Vector3 & ankle_2_sole_xyz = m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ;
         const SE3 xfaMxfs(Matrix3::Identity(), -1.0*ankle_2_sole_xyz);
 
         m_oMlfs = ffMo.inverse() * ffMlfa * xfaMxfs;
@@ -390,12 +404,12 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& qj= m_joint_positionsSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(qj.size()==N_JOINTS     && "Unexpected size of signal joint_positions");
-        assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
+        assert(qj.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_positions");
+        assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
-        joints_sot_to_urdf(qj, m_q_pin.tail<N_JOINTS>());
-        joints_sot_to_urdf(dq, m_v_pin.tail<N_JOINTS>());
+        m_robot_util->joints_sot_to_urdf(qj, m_q_pin.tail(m_robot_util->m_nbJoints));
+        m_robot_util->joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util->m_nbJoints));
 
         getProfiler().start(PROFILE_BASE_KINEMATICS_COMPUTATION);
 
@@ -417,8 +431,8 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
         
         const Eigen::VectorXd & qj          = m_joint_positionsSIN(iter);     //n+6
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
@@ -438,7 +452,7 @@ namespace dynamicgraph
         else
           wR = m_w_rfSOUT(iter);
 
-        assert(qj.size()==N_JOINTS     && "Unexpected size of signal joint_positions");
+        assert(qj.size()==m_robot_util->m_nbJoints && "Unexpected size of signal joint_positions");
 
         m_kinematics_computationsSINNER(iter);
 
@@ -489,7 +503,7 @@ namespace dynamicgraph
           m_q_pin.head<3>() = ((oMlfa.translation() - pos_lf_ff)*wL +
                                (oMrfa.translation() - pos_rf_ff)*wR) / (wL+wR);
 
-          m_q_sot.tail<N_JOINTS>() = qj;
+          m_q_sot.tail(m_robot_util->m_nbJoints) = qj;
           base_se3_to_sot(m_q_pin.head<3>(), R, m_q_sot.head<6>());
 
           s = m_q_sot;
@@ -506,11 +520,11 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_lf before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
-        s.tail(N_JOINTS) = q.tail(N_JOINTS);
+        s.tail(m_robot_util->m_nbJoints) = q.tail(m_robot_util->m_nbJoints);
         base_se3_to_sot(m_oMff_lf.translation(), m_oMff_lf.rotation(), s.head<6>());
 
         return s;
@@ -523,11 +537,11 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_rf before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
-        s.tail(N_JOINTS) = q.tail(N_JOINTS);
+        s.tail(m_robot_util->m_nbJoints) = q.tail(m_robot_util->m_nbJoints);
         base_se3_to_sot(m_oMff_rf.translation(), m_oMff_rf.rotation(), s.head<6>());
 
         return s;
@@ -540,11 +554,11 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_imu before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
-        s.tail(N_JOINTS) = q.tail(N_JOINTS);
+        s.tail(m_robot_util->m_nbJoints) = q.tail(m_robot_util->m_nbJoints);
 
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
         Eigen::Quaternion<double> quatIMU(quatIMU_vec);
@@ -596,15 +610,15 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=N_JOINTS+6)
-          s.resize(N_JOINTS+6);
+        if(s.size()!=m_robot_util->m_nbJoints+6)
+          s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_BASE_VELOCITY_ESTIMATION);
         {
           const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==N_JOINTS     && "Unexpected size of signal joint_velocities");
+          assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model.frames[m_left_foot_id];
@@ -616,7 +630,7 @@ namespace dynamicgraph
           const Vector6 v_rf = m_data->oMf[m_right_foot_id].act(v_rf_local).toVector();
 
           m_v_sot.head<6>() = - 0.5*(v_lf + v_rf);
-          m_v_sot.tail<N_JOINTS>() = dq;
+          m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
 
           s = m_v_sot;
         }
