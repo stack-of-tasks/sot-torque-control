@@ -1,6 +1,6 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
 robot.timeStep = 0.002;
-ent = one_foot_balance_test(robot, use_real_vel=True, use_real_base_state=False);
+ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False);
 robot.ctrl_manager.setStreamPrintPeriod(0.2);
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(0.0);
@@ -33,6 +33,7 @@ ent.com_traj_gen.move(1, 0.07, 1.5)
 sleep(2.0*7)
 ent.com_traj_gen.startSinusoid(1, -0.07, 1.5)
 
+plug(robot.estimator_kin.dx,    robot.base_estimator.joint_velocities)
 plug(robot.q.sout,              robot.inv_dyn.q);
 plug(robot.v.sout,              robot.inv_dyn.v);
 
