@@ -77,6 +77,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/device-torque-ctrl.hh
   include/sot/torque_control/trace-player.hh
+  include/sot/torque_control/torque-offset-estimator.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
