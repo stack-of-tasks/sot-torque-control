@@ -34,7 +34,7 @@ def get_sim_conf():
     conf.motor_params              = motor_params;
     return conf;
     
-def one_foot_balance_test(robot, use_real_vel=False, use_real_base_state=False):
+def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False):
     # BUILD THE STANDARD GRAPH
     conf = get_sim_conf();
     robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf);
@@ -78,7 +78,3 @@ def one_foot_balance_test(robot, use_real_vel=False, use_real_base_state=False):
     robot.estimator_ft.setFTsensorOffsets(24*(0.0,));
     
     return robot;
-    
-if __name__=='__main__':
-    np.set_printoptions(precision=2, suppress=True);
-    ent = one_foot_balance_test(robot, dt=conf.dt);
