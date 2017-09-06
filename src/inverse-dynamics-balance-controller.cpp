@@ -766,7 +766,7 @@ namespace dynamicgraph
         else
           m_zmp_des_RF_local.setZero();
 
-		s = m_zmp_des_RF_local.head<2>();
+        s = m_zmp_des_RF_local.head<2>();
         return s;
       }
 
@@ -789,7 +789,7 @@ namespace dynamicgraph
         else
           m_zmp_des_LF_local.setZero();
 
-		s = m_zmp_des_LF_local.head<2>();
+        s = m_zmp_des_LF_local.head<2>();
         return s;
       }
 
@@ -815,7 +815,7 @@ namespace dynamicgraph
           m_zmp_des_RF.setZero();
 
         m_zmp_des_RF = H_rf.act(m_zmp_des_RF);
-		s = m_zmp_des_RF.head<2>();
+        s = m_zmp_des_RF.head<2>();
         return s;
       }
 
@@ -841,7 +841,7 @@ namespace dynamicgraph
           m_zmp_des_LF.setZero();
 
         m_zmp_des_LF = H_lf.act(m_zmp_des_LF);
-		s = m_zmp_des_LF.head<2>();
+        s = m_zmp_des_LF.head<2>();
         return s;
       }
 
