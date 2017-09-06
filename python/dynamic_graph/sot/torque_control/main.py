@@ -10,7 +10,8 @@ from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_of
 from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
 from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager, create_ros_topics
 from dynamic_graph.sot.torque_control.create_entities_utils import create_free_flyer_locator, create_flex_estimator, create_floatingBase
-from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, go_to_position, Bunch
+from dynamic_graph.sot.torque_control.create_entities_utils import create_topic
+from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, go_to_position, Bunch, smoothly_set_signal
 
 from time import sleep
 
