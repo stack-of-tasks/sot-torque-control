@@ -715,7 +715,7 @@ namespace dynamicgraph
         s.tail(N_JOINTS) = q.tail(N_JOINTS);
 
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
-        Eigen::Quaternion<double> quatIMU(quatIMU_vec);
+        Eigen::Quaternion<double> quatIMU(quatIMU_vec[0], quatIMU_vec[1], quatIMU_vec[2], quatIMU_vec[3]);
         base_se3_to_sot(q.head<3>(), quatIMU.toRotationMatrix(), s.head<6>());
 
         return s;
