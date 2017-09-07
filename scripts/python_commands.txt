@@ -3,11 +3,10 @@ robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 start_sot()
 np.linalg.norm(robot.device.robotVelocity.value)
-sleep(3)
-robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
+sleep(5)
+ent.ctrl_manager.setCtrlMode('all','torque')
 robot.ctrl_manager.setStreamPrintPeriod(0.2);
 robot.base_estimator.set_imu_weight(0.0);
-robot.device.control.value = 30*(0.,)
 
 create_topic(robot.ros, robot.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
@@ -33,7 +32,7 @@ create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
 
 sleep(5.0)
-ent.com_traj_gen.move(1, 0.01, 1.5)
+ent.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
 ent.com_traj_gen.startSinusoid(1, -0.05, 1.5)
 

@@ -331,8 +331,8 @@ namespace dynamicgraph
         const Eigen::Vector6d& kd_feet = m_kd_feetSIN(0);
         const VectorN& kp_posture = m_kp_postureSIN(0);
         const VectorN& kd_posture = m_kd_postureSIN(0);
-        const VectorN& rotor_inertias = m_rotor_inertiasSIN(0);
-        const VectorN& gear_ratios = m_gear_ratiosSIN(0);
+        const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
+        const VectorN& gear_ratios_sot = m_gear_ratiosSIN(0);
 
 	//TODO: Remove asserts
         assert(contactPoints.rows()==3 && contactPoints.cols()==4);
@@ -347,8 +347,8 @@ namespace dynamicgraph
         assert(kd_feet.size()==6);
         assert(kp_posture.size()==m_robot_util->m_nbJoints);
         assert(kd_posture.size()==m_robot_util->m_nbJoints);
-        assert(rotor_inertias.size()==m_robot_util->m_nbJoints);
-        assert(gear_ratios.size()==m_robot_util->m_nbJoints);
+        assert(rotor_inertias_sot.size()==m_robot_util->m_nbJoints);
+        assert(gear_ratios_sot.size()==m_robot_util->m_nbJoints);
 
         m_w_com = m_w_comSIN(0);
         m_w_posture = m_w_postureSIN(0);
@@ -371,8 +371,12 @@ namespace dynamicgraph
 	  m_robot_util->m_nbJoints = m_robot->nv()-6;
 
 
-          m_robot->rotor_inertias(rotor_inertias);
-          m_robot->gear_ratios(gear_ratios);
+          Vector rotor_inertias_urdf(rotor_inertias_sot.size());
+          Vector gear_ratios_urdf(gear_ratios_sot.size());
+          m_robot_util->joints_sot_to_urdf(rotor_inertias_sot, rotor_inertias_urdf);
+          m_robot_util->joints_sot_to_urdf(gear_ratios_sot, gear_ratios_urdf);
+          m_robot->rotor_inertias(rotor_inertias_urdf);
+          m_robot->gear_ratios(gear_ratios_urdf);
 
 	  const double & w_com = m_w_comSIN(0);
 	  const double & w_posture = m_w_postureSIN(0);
