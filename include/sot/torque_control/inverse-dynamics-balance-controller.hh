@@ -77,7 +77,6 @@ namespace dynamicgraph {
         InverseDynamicsBalanceController( const std::string & name );
 
         void init(const double& dt, 
-		  const std::string& urdfFile,
 		  const std::string& robotRef);
         void removeRightFootContact(const double& transitionTime);
         void removeLeftFootContact(const double& transitionTime);

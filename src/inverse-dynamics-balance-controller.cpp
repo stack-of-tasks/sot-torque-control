@@ -250,10 +250,9 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid3(*this, &InverseDynamicsBalanceController::init,
-                                    docCommandVoid3("Initialize the entity.",
+                   makeCommandVoid2(*this, &InverseDynamicsBalanceController::init,
+                                    docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
-                                                    "URDF file path (string)",
 						    "Robot reference (string)")));
 
         addCommand("removeRightFootContact",
@@ -360,7 +359,7 @@ namespace dynamicgraph
         try
         {
           vector<string> package_dirs;
-          m_robot = new robots::RobotWrapper(urdfFile, 
+          m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
 					     package_dirs, 
 					     se3::JointModelFreeFlyer());
 
@@ -438,7 +437,7 @@ namespace dynamicgraph
         catch (const std::exception& e)
         {
           std::cout << e.what();
-          return SEND_MSG("Init failed: Could load URDF :" + urdfFile, MSG_TYPE_ERROR);
+          return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
         m_dt = dt;
         m_initSucceeded = true;
@@ -462,9 +461,10 @@ namespace dynamicgraph
             /* from all OFF to some ON */
             m_enabled = true ;
 
-              s = active_joints_sot;
+            s = active_joints_sot;
             Eigen::VectorXd active_joints_urdf(m_robot_util->m_nbJoints);
             m_robot_util->joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
+//            joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
 
             m_taskBlockedJoints = new TaskJointPosture("task-posture", *m_robot);
             Eigen::VectorXd blocked_joints(m_robot_util->m_nbJoints);
@@ -687,7 +687,9 @@ namespace dynamicgraph
         {
           SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: "+toString(sol.status));
           SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
-          s.resize(0);
+          SEND_DEBUG_STREAM_MSG("q="+toString(q_sot, ", ", 1,5));
+          SEND_DEBUG_STREAM_MSG("v="+toString(v_sot, ", ", 1,5));
+          s.setZero();
           return s;
         }
 
