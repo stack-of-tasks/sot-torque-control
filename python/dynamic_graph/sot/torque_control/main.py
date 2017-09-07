@@ -10,6 +10,7 @@ from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_of
 from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
 from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager, create_ros_topics
 from dynamic_graph.sot.torque_control.create_entities_utils import create_free_flyer_locator, create_flex_estimator, create_floatingBase
+from dynamic_graph.sot.torque_control.create_entities_utils import connect_ctrl_manager
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, go_to_position, Bunch
 
 from time import sleep
@@ -52,6 +53,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
          0.261799,  0.17453, 0., -0.523599, 0., 0., 0.1);
          
     robot.device.setControlInputType('position');
+    robot.ctrl_manager    = create_ctrl_manager(robot, conf.control_manager, dt);
     
     robot.traj_gen        = create_trajectory_generator(robot.device, dt);
     robot.com_traj_gen    = create_com_traj_gen(dt);
@@ -64,12 +66,12 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.imu_offset_compensation               = create_imu_offset_compensation(robot, dt);
     (robot.estimator_ft, robot.estimator_kin)   = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
     robot.imu_filter                            = create_imu_filter(robot, dt);
-    robot.base_estimator                        = create_base_estimator(robot, dt, conf.balance_ctrl.urdfFileName, conf.base_estimator);
+    robot.base_estimator                        = create_base_estimator(robot, dt, conf.base_estimator);
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
     robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl, dt);
-    robot.ctrl_manager    = create_ctrl_manager(robot, conf.control_manager, dt);
+    connect_ctrl_manager(robot);
         
     robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);

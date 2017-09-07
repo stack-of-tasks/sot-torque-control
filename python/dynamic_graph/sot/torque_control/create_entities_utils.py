@@ -27,7 +27,7 @@ def create_encoders(robot):
     encoders.selec(6,NJ+6);
     return encoders
 
-def create_base_estimator(robot, dt, urdf, conf):    
+def create_base_estimator(robot, dt, conf, robot_name="robot"):    
     from dynamic_graph.sot.torque_control.base_estimator import BaseEstimator
     base_estimator = BaseEstimator('base_estimator');
     plug(robot.encoders.sout,               base_estimator.joint_positions);
@@ -52,7 +52,7 @@ def create_base_estimator(robot, dt, urdf, conf):
     base_estimator.set_right_foot_sizes(conf.RIGHT_FOOT_SIZES)
     base_estimator.set_left_foot_sizes(conf.LEFT_FOOT_SIZES)
     
-    base_estimator.init(dt, urdf);
+    base_estimator.init(dt, robot_name);
     return base_estimator;
     
 def create_imu_offset_compensation(robot, dt):
@@ -208,7 +208,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.init(dt, robot_name);
     return torque_ctrl;
    
-def create_balance_controller(robot, conf, dt=0.001):
+def create_balance_controller(robot, conf, dt, robot_name='robot'):
     from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
@@ -246,8 +246,8 @@ def create_balance_controller(robot, conf, dt=0.001):
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
-    ctrl.f_max.value = conf.fMax;
-#    ctrl.f_max_right_foot.value = conf.fMax;
+    ctrl.f_max_right_foot.value = conf.fMax;
+    ctrl.f_max_left_foot.value =  conf.fMax;
     ctrl.mu.value = conf.mu[0];
     ctrl.weight_contact_forces.value = (1e2, 1e2, 1e0, 1e3, 1e3, 1e3);
     ctrl.kp_com.value = 3*(conf.kp_com,);
@@ -268,7 +268,7 @@ def create_balance_controller(robot, conf, dt=0.001):
     ctrl.w_base_orientation.value = conf.w_base_orientation;
     ctrl.w_torques.value = conf.w_torques;
     
-    ctrl.init(dt, conf.urdfFileName, conf.robot_name);
+    ctrl.init(dt, robot_name);
     
     return ctrl;
     
@@ -304,12 +304,11 @@ def create_inverse_dynamics(robot, gains, dt=0.001):
     inv_dyn_ctrl.init(dt);
     return inv_dyn_ctrl;
         
-def create_ctrl_manager(ent, conf, dt):
+def create_ctrl_manager(ent, conf, dt, robot_name='robot'):
     ctrl_manager = ControlManager("ctrl_man");        
 
 #    plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
     ctrl_manager.tau_predicted.value = NJ*(0.0,);
-#    plug(ent.estimator_ft.jointsTorques,            ctrl_manager.tau);
     ctrl_manager.max_tau.value                              = NJ*(conf.CTRL_MANAGER_TAU_MAX,);
     ctrl_manager.max_current.value                          = NJ*(conf.CTRL_MANAGER_CURRENT_MAX,);
     ctrl_manager.percentageDriverDeadZoneCompensation.value = NJ*(conf.PERCENTAGE_DRIVER_DEAD_ZONE_COMPENSATION,);
@@ -317,14 +316,13 @@ def create_ctrl_manager(ent, conf, dt):
     ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
     ctrl_manager.bemfFactor.value                           = NJ*(0.0,);
     #ctrl_manager.bemfFactor.value = tuple(Kpwm*0.1);
-    
-#    plug(ent.device.robotState,                  ctrl_manager.base6d_encoders);
-#    plug(ctrl_manager.pwmDesSafe,       ent.device.control);
+
+    # connect to device    
+    plug(ent.device.robotState,         ctrl_manager.base6d_encoders);    
     
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    ctrl_manager.init(dt, conf.urdfFileName, conf.CTRL_MANAGER_CURRENT_TO_CONTROL_GAIN,
-                      conf.CTRL_MANAGER_CURRENT_MAX, conf.robot_name)
+    ctrl_manager.init(dt, conf.urdfFileName, conf.CTRL_MANAGER_CURRENT_MAX, robot_name)
 
     # Set the map from joint name to joint ID
     for key in conf.mapJointNameToID:
@@ -351,19 +349,23 @@ def create_ctrl_manager(ent, conf, dt):
     for key in conf.footFrameNames:
       ctrl_manager.setFootFrameName(key,conf.footFrameNames[key])
 
-    ctrl_manager.setRightFootSoleXYZ(conf.rightFootSensorXYZ)
+    ctrl_manager.setRightFootForceSensorXYZ(conf.rightFootSensorXYZ);
+    ctrl_manager.setRightFootSoleXYZ(conf.rightFootSoleXYZ);
     ctrl_manager.setDefaultMaxCurrent(conf.CTRL_MANAGER_CURRENT_MAX)
-    
-#    plug(ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
-#    ctrl_manager.addCtrlMode("pos");
-#    ctrl_manager.addCtrlMode("torque");    
-#    plug(ent.estimator_kin.dx,    ctrl_manager.dq);
-#    plug(ent.torque_ctrl.controlCurrent,    ctrl_manager.ctrl_torque);
-#    plug(ent.pos_ctrl.pwmDes,               ctrl_manager.ctrl_pos);
-#    plug(ctrl_manager.joints_ctrl_mode_torque,  ent.inv_dyn.active_joints);
-#    ctrl_manager.setCtrlMode("all", "pos");
-    
     return ctrl_manager;
+
+def connect_ctrl_manager(ent):    
+    plug(ent.estimator_kin.dx,              ent.ctrl_manager.dq);
+    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
+    plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);    
+    ent.ctrl_manager.addCtrlMode("pos");
+    ent.ctrl_manager.addCtrlMode("torque");    
+    plug(ent.torque_ctrl.controlCurrent,        ent.ctrl_manager.ctrl_torque);
+    plug(ent.pos_ctrl.pwmDes,                   ent.ctrl_manager.ctrl_pos);
+    plug(ent.ctrl_manager.joints_ctrl_mode_torque,  ent.inv_dyn.active_joints);
+    ent.ctrl_manager.setCtrlMode("all", "pos");
+    plug(ent.ctrl_manager.pwmDesSafe,               ent.device.control);
+    return;
 
 def create_admittance_ctrl(robot, dt=0.001):
     admit_ctrl = AdmittanceController("adm_ctrl");

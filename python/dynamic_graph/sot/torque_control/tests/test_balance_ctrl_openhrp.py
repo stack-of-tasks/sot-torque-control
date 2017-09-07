@@ -8,7 +8,7 @@ import numpy as np
 from dynamic_graph import plug
 from dynamic_graph.sot.core import Selec_of_vector
 from dynamic_graph.sot.torque_control.create_entities_utils import NJ
-from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, Bunch
+from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, stop_sot, Bunch
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.create_entities_utils import create_topic
 from dynamic_graph.sot.torque_control.main import main_v3
@@ -71,10 +71,10 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
         plug(robot.q.sout,              robot.inv_dyn.q);
         plug(robot.v.sout,              robot.inv_dyn.v);
     
-    start_sot();
-    
-    # RESET FORCE/TORQUE SENSOR OFFSET
-    sleep(10*robot.timeStep);
-    robot.estimator_ft.setFTsensorOffsets(24*(0.0,));
+#    start_sot();
+#    
+#    # RESET FORCE/TORQUE SENSOR OFFSET
+#    sleep(10*robot.timeStep);
+#    robot.estimator_ft.setFTsensorOffsets(24*(0.0,));
     
     return robot;
