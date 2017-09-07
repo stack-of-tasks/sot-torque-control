@@ -293,14 +293,16 @@ namespace dynamicgraph
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
           if(transitionTime>m_dt)
+          {
             m_contactState = RIGHT_SUPPORT_TRANSITION;
+            m_contactTransitionTime = m_t + transitionTime;
+          }
           else
             m_contactState = RIGHT_SUPPORT;
         }
       }
 
       void InverseDynamicsBalanceController::init(const double& dt, 
-						  const std::string& urdfFile,
 						  const std::string& robotRef)
       {
         if(dt<=0.0)
