@@ -198,7 +198,7 @@ namespace dynamicgraph
         m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
         m_currentErrIntegral.setZero(m_robot_util->m_nbJoints);
         m_qDes_for_position_controlled_joints.setZero(m_robot_util->m_nbJoints);
-        m_activeJoints.setOnes();
+        m_activeJoints.setOnes(m_robot_util->m_nbJoints);
         updateActiveJointsString();
       }
 
