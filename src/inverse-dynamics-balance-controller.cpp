@@ -133,7 +133,8 @@ namespace dynamicgraph
   << m_base_orientationSOUT \
   << m_right_foot_posSOUT \
   << m_left_foot_posSOUT \
-  << m_dv_desSOUT
+  << m_dv_desSOUT \
+  << m_MSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -223,6 +224,7 @@ namespace dynamicgraph
                                                                           m_zmp_left_footSOUT<<
                                                                           m_zmp_right_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(dv_des,                     dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(M,                          dg::Matrix, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com,                        dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_vel,                    dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
@@ -716,6 +718,20 @@ namespace dynamicgraph
 
         s = m_tau_sot;
 
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(M,dynamicgraph::Matrix)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal M before initialization!");
+          return s;
+        }
+        if(s.cols()!=m_robot->nv() || s.rows()!=m_robot->nv())
+          s.resize(m_robot->nv(), m_robot->nv());
+        m_tau_desSOUT(iter);
+        s = m_robot->mass(m_invDyn->data());
         return s;
       }
 
