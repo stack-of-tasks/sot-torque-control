@@ -163,6 +163,7 @@ namespace dynamicgraph {
 	void setJoints(const dynamicgraph::Vector &);
 
         void setStreamPrintPeriod(const double & s);
+        void setSleepTime(const double &seconds);
         void addEmergencyStopSIN(const std::string& name);
 
         /* --- ENTITY INHERITANCE --- */
@@ -184,6 +185,7 @@ namespace dynamicgraph {
         double  m_maxCurrent;       /// control limit in Ampers
         bool    m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or by control limit violation
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
+        double  m_sleep_time;       /// time to sleep at every iteration (to slow down simulation)
         std::vector<bool>         m_signIsPos;      /// Control sign filtered for deadzone compensation
         std::vector<unsigned int> m_changeSignCpt;  /// Cpt to filter the control sign
         std::vector<unsigned int> m_winSizeAdapt;   /// Variable windows filter size used to be more reactibe if last changing sign event is dating a bit (see graph)

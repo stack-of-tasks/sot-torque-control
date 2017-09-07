@@ -81,6 +81,7 @@ namespace dynamicgraph
         ,m_emergency_stop_triggered(false)
         ,m_maxCurrent(DEFAULT_MAX_CURRENT)
         ,m_is_first_iter(true)
+        ,m_sleep_time(0.0)
       {
 
         Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT <<
@@ -162,8 +163,12 @@ namespace dynamicgraph
 	
 	addCommand("setRightFootSoleXYZ",
 		   makeCommandVoid1(*this, &ControlManager::setRightFootSoleXYZ,
-                                    docCommandVoid1("Set the right foot sole XYZ.",
-                                                    "Vector of double")));
+                                    docCommandVoid1("Set the right foot sole 3d position.",
+                                                    "Vector of 3 doubles")));
+        addCommand("setRightFootForceSensorXYZ",
+                   makeCommandVoid1(*this, &ControlManager::setRightFootForceSensorXYZ,
+                                    docCommandVoid1("Set the right foot sensor 3d position.",
+                                                    "Vector of 3 doubles")));
 
 	addCommand("setFootFrameName",
                    makeCommandVoid2(*this, &ControlManager::setFootFrameName,
@@ -179,6 +184,11 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &ControlManager::setStreamPrintPeriod,
                                     docCommandVoid1("Set the period used for printing in streaming.",
                                                     "Print period in seconds (double)")));
+
+        addCommand("setSleepTime",
+                   makeCommandVoid1(*this, &ControlManager::setSleepTime,
+                                    docCommandVoid1("Set the time to sleep at every iteration (to slow down simulation).",
+                                                    "Sleep time in seconds (double)")));
 
         addCommand("addEmergencyStopSIN",
                    makeCommandVoid1(*this, &ControlManager::addEmergencyStopSIN,
@@ -205,13 +215,13 @@ namespace dynamicgraph
 	
 	std::string localName(robotRef);
 	if (!isNameInRobotUtil(localName))
-	  {
-	    m_robot_util = createRobotUtil(localName);
-	  }
-	else
-	  {
-	    m_robot_util = getRobotUtil(localName);
-	  }
+        {
+          m_robot_util = createRobotUtil(localName);
+        }
+        else
+        {
+          m_robot_util = getRobotUtil(localName);
+        }
 
 	m_robot_util->m_urdf_filename = urdfFile;
 
@@ -272,12 +282,16 @@ namespace dynamicgraph
             }
 
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
+            assert(ctrl.size()==m_robot_util->m_nbJoints);
+
             if(m_jointCtrlModesCountDown[i]==0)
               s(i) = ctrl(i);
             else
             {
               cm_id_prev = m_jointCtrlModes_previous[i].id;
               const dynamicgraph::Vector& ctrl_prev = (*m_ctrlInputsSIN[cm_id_prev])(iter);
+              assert(ctrl_prev.size()==m_robot_util->m_nbJoints);
+
               double alpha = m_jointCtrlModesCountDown[i]/CTRL_MODE_TRANSITION_TIME_STEP;
 //              SEND_MSG("Joint "+toString(i)+" changing ctrl mode from "+toString(cm_id_prev)+
 //                       " to "+toString(cm_id)+" alpha="+toString(alpha),MSG_TYPE_DEBUG);
@@ -294,6 +308,16 @@ namespace dynamicgraph
           }
         }
         getProfiler().stop(PROFILE_PWM_DESIRED_COMPUTATION);
+
+        usleep(1e6*m_sleep_time);
+        if(m_sleep_time>=0.1)
+        {
+          for(unsigned int i=0; i<m_ctrlInputsSIN.size(); i++)
+          {
+            const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[i])(iter);
+            SEND_MSG(toString(iter)+") tau =" +toString(ctrl," ",1,4)+m_ctrlModes[i], MSG_TYPE_ERROR);
+          }
+        }
 
         return s;
       }
@@ -514,25 +538,27 @@ namespace dynamicgraph
 
       void ControlManager::setCtrlMode(const int jid, const CtrlMode& cm)
       {
-        if(m_jointCtrlModesCountDown[jid]==0 && cm.id!=m_jointCtrlModes_current[jid].id)
+        if(m_jointCtrlModesCountDown[jid]!=0)
+          return SEND_MSG("Cannot change control mode of joint "+m_robot_util->get_name_from_id(jid)+
+                          " because its previous ctrl mode transition has not terminated yet: "+
+                          toString(m_jointCtrlModesCountDown[jid]), MSG_TYPE_ERROR);
+
+        if(cm.id==m_jointCtrlModes_current[jid].id)
+          return SEND_MSG("Cannot change control mode of joint "+m_robot_util->get_name_from_id(jid)+
+                          " because it has already the specified ctrl mode", MSG_TYPE_ERROR);
+
+        if(m_jointCtrlModes_current[jid].id<0)
         {
-          if(m_jointCtrlModes_current[jid].id<0)
-          {
-            // first setting of the control mode
-            m_jointCtrlModes_previous[jid] = cm;
-            m_jointCtrlModes_current[jid]  = cm;
-          }
-          else
-          {
-            m_jointCtrlModesCountDown[jid] = CTRL_MODE_TRANSITION_TIME_STEP;
-            m_jointCtrlModes_previous[jid] = m_jointCtrlModes_current[jid];
-            m_jointCtrlModes_current[jid]  = cm;
-          }
+          // first setting of the control mode
+          m_jointCtrlModes_previous[jid] = cm;
+          m_jointCtrlModes_current[jid]  = cm;
         }
         else
-          SEND_MSG("Cannot change control mode of joint "+m_robot_util->get_name_from_id(jid)+
-                   " because either it has already the specified ctrl mode or its previous"+
-                   " ctrl mode transition has not terminated yet", MSG_TYPE_ERROR);
+        {
+          m_jointCtrlModesCountDown[jid] = CTRL_MODE_TRANSITION_TIME_STEP;
+          m_jointCtrlModes_previous[jid] = m_jointCtrlModes_current[jid];
+          m_jointCtrlModes_current[jid]  = cm;
+        }
       }
 
       void ControlManager::getCtrlMode(const std::string& jointName)
@@ -570,6 +596,13 @@ namespace dynamicgraph
       void ControlManager::setStreamPrintPeriod(const double & s)
       {
         getLogger().setStreamPrintPeriod(s);
+      }
+
+      void ControlManager::setSleepTime(const double &seconds)
+      {
+        if(seconds<0.0)
+          return SEND_MSG("Sleep time cannot be negative!", MSG_TYPE_ERROR);
+        m_sleep_time = seconds;
       }
 
       void ControlManager::addEmergencyStopSIN(const string& name)
