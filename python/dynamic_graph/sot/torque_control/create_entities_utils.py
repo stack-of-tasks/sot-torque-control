@@ -71,9 +71,8 @@ def create_imu_filter(robot, dt):
     plug(robot.imu_offset_compensation.gyrometer_out,     imu_filter.gyroscope);
     return imu_filter;
 
-def create_com_traj_gen(dt=0.001):
+def create_com_traj_gen(conf, dt):
     com_traj_gen = NdTrajectoryGenerator("com_traj_gen");
-    import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as conf
     com_traj_gen.initial_value.value = conf.COM_DES;
     com_traj_gen.init(dt,3);
     return com_traj_gen ;

@@ -56,7 +56,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.ctrl_manager    = create_ctrl_manager(conf.control_manager, dt);
     
     robot.traj_gen        = create_trajectory_generator(robot.device, dt);
-    robot.com_traj_gen    = create_com_traj_gen(dt);
+    robot.com_traj_gen    = create_com_traj_gen(conf.balance_ctrl, dt);
     robot.rf_traj_gen     = SE3TrajectoryGenerator("tg_rf");
     robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
     robot.rf_traj_gen.init(dt);
