@@ -213,11 +213,11 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
     try:
-        plug(robot.ff_locator.base6dFromFoot_encoders, ctrl.q);
-        plug(robot.ff_locator.v, ctrl.v);
-    except:
         plug(robot.base_estimator.q, ctrl.q);
         plug(robot.base_estimator.v, ctrl.v);
+    except:        
+        plug(robot.ff_locator.base6dFromFoot_encoders, ctrl.q);
+        plug(robot.ff_locator.v, ctrl.v);
 
     plug(robot.estimator_ft.contactWrenchRightSole, ctrl.wrench_right_foot);
     plug(robot.estimator_ft.contactWrenchLeftSole,  ctrl.wrench_left_foot);
@@ -241,8 +241,13 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
     plug(robot.com_traj_gen.dx,                   ctrl.com_ref_vel);
     plug(robot.com_traj_gen.ddx,                  ctrl.com_ref_acc);
 
-    ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
-    ctrl.gear_ratios.value = conf.GEAR_RATIOS;
+    # rather than giving to the controller the values of gear ratios and rotor inertias
+    # it is better to compute directly their product in python and pass the result
+    # to the C++ entity, because otherwise we get a loss of precision
+#    ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
+#    ctrl.gear_ratios.value = conf.GEAR_RATIOS;
+    ctrl.rotor_inertias.value = tuple([g*g*r for (g,r) in zip(conf.GEAR_RATIOS, conf.ROTOR_INERTIAS)])
+    ctrl.gear_ratios.value = NJ*(1.0,);
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
     ctrl.f_min.value = conf.fMin;
@@ -304,7 +309,7 @@ def create_inverse_dynamics(robot, gains, dt=0.001):
     inv_dyn_ctrl.init(dt);
     return inv_dyn_ctrl;
         
-def create_ctrl_manager(ent, conf, dt, robot_name='robot'):
+def create_ctrl_manager(conf, dt, robot_name='robot'):
     ctrl_manager = ControlManager("ctrl_man");        
 
 #    plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
@@ -316,9 +321,6 @@ def create_ctrl_manager(ent, conf, dt, robot_name='robot'):
     ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
     ctrl_manager.bemfFactor.value                           = NJ*(0.0,);
     #ctrl_manager.bemfFactor.value = tuple(Kpwm*0.1);
-
-    # connect to device    
-    plug(ent.device.robotState,         ctrl_manager.base6d_encoders);    
     
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
@@ -355,6 +357,8 @@ def create_ctrl_manager(ent, conf, dt, robot_name='robot'):
     return ctrl_manager;
 
 def connect_ctrl_manager(ent):    
+    # connect to device    
+    plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
     plug(ent.estimator_kin.dx,              ent.ctrl_manager.dq);
     plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
     plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);    
