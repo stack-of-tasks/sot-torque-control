@@ -130,6 +130,8 @@ namespace dynamicgraph
   << m_zmpSOUT \
   << m_comSOUT \
   << m_com_velSOUT \
+  << m_com_accSOUT \
+  << m_com_acc_desSOUT \
   << m_base_orientationSOUT \
   << m_right_foot_posSOUT \
   << m_left_foot_posSOUT \
@@ -227,6 +229,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(M,                          dg::Matrix, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com,                        dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_vel,                    dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(com_acc,                    dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(com_acc_des,                dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
@@ -706,7 +710,8 @@ namespace dynamicgraph
         if(ddx_com_ref.norm()>1e-3)
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
-        m_robot_util->velocity_urdf_to_sot(m_invDyn->getAccelerations(sol), m_dv_sot);
+        m_dv_urdf = m_invDyn->getAccelerations(sol);
+        m_robot_util->velocity_urdf_to_sot(m_dv_urdf, m_dv_sot);
         Eigen::Matrix<double,12,1> tmp;
         if(m_invDyn->getContactForces(m_contactRF->name(), sol, tmp))
           m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
@@ -788,6 +793,34 @@ namespace dynamicgraph
           return s;
         }
         s = m_f_LF;
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(com_acc_des, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal com_acc_des before initialization!");
+          return s;
+        }
+        if(s.size()!=3)
+          s.resize(3);
+        m_tau_desSOUT(iter);
+        s = m_taskCom->getDesiredAcceleration();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(com_acc, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal com_acc before initialization!");
+          return s;
+        }
+        if(s.size()!=3)
+          s.resize(3);
+        m_tau_desSOUT(iter);
+        s = m_taskCom->getAcceleration(m_dv_urdf);
         return s;
       }
 

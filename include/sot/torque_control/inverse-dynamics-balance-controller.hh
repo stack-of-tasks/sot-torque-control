@@ -159,6 +159,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(zmp,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(com,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(com_vel,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(com_acc,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(com_acc_des,               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(base_orientation,          dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_pos,             dynamicgraph::Vector);
@@ -223,6 +225,7 @@ namespace dynamicgraph {
         double m_w_posture;
 
         tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
+        tsid::math::Vector  m_dv_urdf;             /// desired accelerations (urdf order)
         tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
         tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
         tsid::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
