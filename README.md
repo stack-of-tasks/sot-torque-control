@@ -10,7 +10,7 @@ This project depends on:
 * sot-core
 * pinocchio >= 1.2
 * metapod
-* [tsid](https://github.com/stack-of-tasks/tsid)
+* [PinInvDyn](https://github.com/stack-of-tasks/invdyn)
 
 All of these packages (except PinInvDyn) can be installed through [robotpkg](http://robotpkg.openrobots.org/).
 In particular, you can find them in [robotpkg-wip](http://robotpkg.openrobots.org/robotpkg-wip.html) (work in progress), a subset of robotpkg.
