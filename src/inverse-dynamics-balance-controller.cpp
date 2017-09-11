@@ -19,8 +19,8 @@
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <tsid/utils/stop-watch.hpp>
-#include <tsid/utils/statistics.hpp>
+#include <pininvdyn/utils/stop-watch.hpp>
+#include <pininvdyn/utils/statistics.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -34,14 +34,12 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
-      using namespace tsid;
-      using namespace tsid::robots;
-      using namespace tsid::formulations;
-      using namespace tsid::trajectories;
-      using namespace tsid::math;
-      using namespace tsid::contacts;
-      using namespace tsid::tasks;
-      using namespace tsid::solvers;
+      using namespace pininvdyn;
+      using namespace pininvdyn::trajectories;
+      using namespace pininvdyn::math;
+      using namespace pininvdyn::contacts;
+      using namespace pininvdyn::tasks;
+      using namespace pininvdyn::solvers;
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
@@ -641,7 +639,7 @@ namespace dynamicgraph
         // DEBUG START
 //        if(m_contactState == LEFT_SUPPORT_TRANSITION && fabs(m_t-m_contactTransitionTime)<0.1)
 //        {
-//          const tsid::math::Vector & dv = m_invDyn->getAccelerations(sol);
+//          const pininvdyn::math::Vector & dv = m_invDyn->getAccelerations(sol);
 //          SEND_MSG("Contact transition time "+toString(m_contactTransitionTime), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF task acc des "+toString(m_taskRF->getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
 //          SEND_MSG("Time "+toString(m_t)+" RF cont acc des "+toString(m_contactRF->getMotionTask().getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
