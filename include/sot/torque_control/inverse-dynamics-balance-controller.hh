@@ -122,8 +122,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(contact_points,             ml::Matrix);
         DECLARE_SIGNAL_IN(contact_normal,             ml::Vector);
         DECLARE_SIGNAL_IN(f_min,                      double);
-        DECLARE_SIGNAL_IN(f_max_right_foot,           double);
-        DECLARE_SIGNAL_IN(f_max_left_foot,            double);
+        DECLARE_SIGNAL_IN(f_max,                      double);
 
         DECLARE_SIGNAL_IN(rotor_inertias,             ml::Vector);
         DECLARE_SIGNAL_IN(gear_ratios,                ml::Vector);
