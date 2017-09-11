@@ -33,8 +33,9 @@ namespace dynamicgraph
       using namespace std;
       using namespace Eigen;
 
-#define PROFILE_POSITION_DESIRED_COMPUTATION "TrajGen: reference joint traj computation"
-#define PROFILE_FORCE_DESIRED_COMPUTATION    "TrajGen: reference force computation"
+//Size to be aligned                         "-------------------------------------------------------"
+#define PROFILE_POSITION_DESIRED_COMPUTATION "TrajGen: reference joint traj computation              "
+#define PROFILE_FORCE_DESIRED_COMPUTATION    "TrajGen: reference force computation                   "
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.

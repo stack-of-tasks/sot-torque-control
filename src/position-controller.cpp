@@ -33,8 +33,8 @@ namespace dynamicgraph
       using namespace dg::command;
       using namespace std;
       using namespace metapod;
-
-#define PROFILE_PWM_DES_COMPUTATION "PositionController: desired pwm computation"
+//Size to be aligned                "-------------------------------------------------------"
+#define PROFILE_PWM_DES_COMPUTATION "PositionController: desired pwm computation            "
 
 #define GAIN_SIGNALS      m_KpSIN << m_KdSIN << m_KiSIN
 #define REF_JOINT_SIGNALS m_qRefSIN << m_dqRefSIN

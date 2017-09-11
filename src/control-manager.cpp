@@ -33,9 +33,9 @@ namespace dynamicgraph
       using namespace dg::command;
       using namespace std;
       using namespace dg::sot::torque_control;
-
-#define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager"
-#define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period"
+//Size to be aligned                          "-------------------------------------------------------"
+#define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
+#define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
 
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_emergencyStopSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << m_bemfFactorSIN

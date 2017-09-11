@@ -57,9 +57,10 @@ namespace dynamicgraph
                            << m_ftSensRightFootPredictionSOUT << m_currentFilteredSOUT \
                            << m_dynamicsErrorSOUT
 
-#define PROFILE_JOINTS_TORQUES_COMPUTATION           "ForceTorqueEst: tau computation"
-#define PROFILE_JOINTS_TORQUES_MOTOR_COMPUTATION     "ForceTorqueEst: tau from motor model computation"
-#define PROFILE_JOINTS_TORQUES_INERTIAL_COMPUTATION  "ForceTorqueEst: tau from inertial model computation"
+//Size to be aligned                                 "-------------------------------------------------------"
+#define PROFILE_JOINTS_TORQUES_COMPUTATION           "ForceTorqueEst: tau computation                        "
+#define PROFILE_JOINTS_TORQUES_MOTOR_COMPUTATION     "ForceTorqueEst: tau from motor model computation       "
+#define PROFILE_JOINTS_TORQUES_INERTIAL_COMPUTATION  "ForceTorqueEst: tau from inertial model computation    "
 
       namespace dg = ::dynamicgraph;
       using namespace dg;
