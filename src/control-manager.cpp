@@ -80,7 +80,6 @@ namespace dynamicgraph
         m_signIsPos.resize(N_JOINTS, false);
         m_changeSignCpt.resize(N_JOINTS, 0);
         m_winSizeAdapt.resize(N_JOINTS, 0);
-        m_currentWarningZone.resize(N_JOINTS, false);
 
         Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT << m_signOfControlFilteredSOUT << m_signOfControlSOUT);
 
@@ -148,9 +147,6 @@ namespace dynamicgraph
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
 
-        if(m_emergency_stop_triggered)
-          return s;
-
         getProfiler().start(PROFILE_PWM_DESIRED_COMPUTATION);
         {
           // trigger computation of all ctrl inputs
@@ -196,7 +192,7 @@ namespace dynamicgraph
           return s;
         }
 
-//        const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
+        const ml::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
         const ml::Vector& pwmDes          = m_pwmDesSOUT(iter);
         const ml::Vector& tau_max         = m_max_tauSIN(iter);
         const ml::Vector& tau             = m_tauSIN(iter);
@@ -208,14 +204,16 @@ namespace dynamicgraph
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
         
-        if(m_emergencyStopSIN.isPlugged() && m_emergencyStopSIN(iter))
-        {
-          m_emergency_stop_triggered = true;
-          SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
-        }
-
         if(!m_emergency_stop_triggered)
         {
+          int cm_id;
+          stringstream ss;
+          if(m_emergencyStopSIN.isPlugged())
+          {
+            if (m_emergencyStopSIN(iter))
+              m_emergency_stop_triggered = true;
+              SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
+          }
           for(unsigned int i=0; i<N_JOINTS; i++)
           {
             //Trigger sign filter**********************
@@ -238,6 +236,7 @@ namespace dynamicgraph
             }
             if (m_changeSignCpt[i] > m_winSizeAdapt[i]) 
             {
+              
               m_signIsPos[i] = !m_signIsPos[i];//let's change our mind
               m_changeSignCpt[i] = 0; //we just agreed
               m_winSizeAdapt[i]  = signWindowsFilterSize(i); //be not so reactive for next event (set a large windows size)
@@ -273,7 +272,7 @@ namespace dynamicgraph
               break;
             }
 
-            /// if the signal is plugged, read max current from the associated signal
+            /// if the signal is plugged, read maxPwm from the associated signal
             /// if not use the default value
             if(m_max_currentSIN.isPlugged())
               m_maxCurrent = m_max_currentSIN(iter)(i);
@@ -289,19 +288,6 @@ namespace dynamicgraph
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               break;
-            }
-
-            if(m_currentWarningZone[i]==false && fabs(pwmDes(i)) > 0.8*m_maxCurrent)
-            {
-              m_currentWarningZone[i] = true;
-              SEND_MSG("Joint "+JointUtil::get_name_from_id(i)+" desired current close to max current: "+
-                       toString(pwmDes(i))+"A > 0.8*"+toString(m_maxCurrent)+"A", MSG_TYPE_WARNING);
-            }
-            else if(m_currentWarningZone[i] && fabs(pwmDes(i)) < 0.8*m_maxCurrent)
-            {
-              m_currentWarningZone[i] = false;
-              SEND_MSG("Joint "+JointUtil::get_name_from_id(i)+" desired current no longer close to max current: "+
-                       toString(pwmDes(i))+"A < 0.8*"+toString(m_maxCurrent)+"A", MSG_TYPE_INFO);
             }
           }
         }
