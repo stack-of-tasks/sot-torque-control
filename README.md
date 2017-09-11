@@ -12,7 +12,7 @@ This project depends on:
 * metapod
 * [tsid](https://github.com/stack-of-tasks/tsid)
 
-All of these packages can be installed through [robotpkg](http://robotpkg.openrobots.org/).
+All of these packages (except PinInvDyn) can be installed through [robotpkg](http://robotpkg.openrobots.org/).
 In particular, you can find them in [robotpkg-wip](http://robotpkg.openrobots.org/robotpkg-wip.html) (work in progress), a subset of robotpkg.
 Pay attention not to install ROS using robotpkg though, because it would install the latest version, which may not be what you need
 (e.g. currently on HRP-2 we are using ROS indigo).
