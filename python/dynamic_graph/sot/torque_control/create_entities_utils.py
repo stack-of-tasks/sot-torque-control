@@ -336,8 +336,8 @@ def create_ros_topics(ent):
     
     try:
         create_topic(ros, ent.estimator.jointsVelocities,               'jointsVelocities');
-        create_topic(ros, ent.estimator.contactWrenchLeftSole,          'f_LeftSole');
-        create_topic(ros, ent.estimator.contactWrenchRightSole,         'f_RightSole');
+        create_topic(ros, ent.estimator.contactWrenchLeftSole,          'contactWrenchLeftSole');
+        create_topic(ros, ent.estimator.contactWrenchRightSole,         'contactWrenchRightSole');
         create_topic(ros, ent.estimator.jointsTorques,                  'jointsTorques');
 #        create_topic(ros, ent.estimator.jointsTorquesFromInertiaModel,  'jointsTorquesFromInertiaModel');
 #        create_topic(ros, ent.estimator.jointsTorquesFromMotorModel,    'jointsTorquesFromMotorModel');
