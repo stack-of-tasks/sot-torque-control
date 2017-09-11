@@ -20,13 +20,38 @@ import time
 from pinocchio_inv_dyn.simulator import Simulator
 from pinocchio_inv_dyn.robot_wrapper import RobotWrapper
 import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as conf
-from dynamic_graph.sot.torque_control.hrp2.sot_utils import config_sot_to_urdf, joints_sot_to_urdf
 from pinocchio.utils import zero as mat_zeros
 from pinocchio import Quaternion
 from pinocchio.rpy import rpyToMatrix
 
 def to_tuple(x):
     return tuple(np.asarray(x).squeeze());
+
+def config_sot_to_urdf(q):
+    # GEPETTO VIEWER Free flyer 0-6, CHEST HEAD 7-10, LARM 11-17, RARM 18-24, LLEG 25-30, RLEG 31-36
+    # ROBOT VIEWER # Free flyer0-5, RLEG 6-11, LLEG 12-17, CHEST HEAD 18-21, RARM 22-28, LARM 29-35
+    qUrdf = mat_zeros(37);
+    qUrdf[:3,0] = q[:3,0];
+    quatMat = rpyToMatrix(q[3:6,0]);
+    quatVec = Quaternion(quatMat);
+    qUrdf[3:7,0]   = quatVec.coeffs();
+    qUrdf[7:11,0]  = q[18:22,0]; # chest-head
+    qUrdf[11:18,0] = q[29:,0]; # larm
+    qUrdf[18:25,0] = q[22:29,0]; # rarm
+    qUrdf[25:31,0] = q[12:18,0]; # lleg
+    qUrdf[31:,0]   = q[6:12,0]; # rleg
+    return qUrdf;
+    
+def joints_sot_to_urdf(q):
+    # GEPETTO VIEWER Free flyer 0-6, CHEST HEAD 7-10, LARM 11-17, RARM 18-24, LLEG 25-30, RLEG 31-36
+    # ROBOT VIEWER # Free flyer0-5, RLEG 6-11, LLEG 12-17, CHEST HEAD 18-21, RARM 22-28, LARM 29-35
+    qUrdf = mat_zeros(30);
+    qUrdf[:4,0]  = q[12:16,0]; # chest-head
+    qUrdf[4:11,0] = q[23:,0]; # larm
+    qUrdf[11:18,0] = q[16:23,0]; # rarm
+    qUrdf[18:24,0] = q[6:12,0]; # lleg
+    qUrdf[24:,0]   = q[:6,0]; # rleg
+    return qUrdf;
 
 def create_device(q=None):
     device = RobotSimu("device");
@@ -57,9 +82,6 @@ def create_device_torque_ctrl(dt, urdfFilename, q=None):
     return device;
     
 def main_new(dt=0.001, delay=0.01):
-    ''' This method does not work yet because we don't have a proper Device to use
-        in simulation.
-    '''
     COM_DES_1 = (0.012, 0.1, 0.81);
     COM_DES_2 = (0.012, -0.1, 0.81);
     dt = conf.dt;
