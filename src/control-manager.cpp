@@ -37,7 +37,7 @@ namespace dynamicgraph
 #define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager"
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period"
 
-#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
+#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_emergencyStopSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << m_bemfFactorSIN
 
       /// Define EntityClassName here rather than in the header file
@@ -64,6 +64,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(max_tau,ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,ml::Vector)
             ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, ml::Vector)
+            ,CONSTRUCT_SIGNAL_IN(emergencyStop, ml::Vector)
             ,CONSTRUCT_SIGNAL_OUT(pwmDes,               ml::Vector, m_base6d_encodersSIN)
             ,CONSTRUCT_SIGNAL_OUT(signOfControl,        ml::Vector, m_pwmDesSOUT)
             ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,ml::Vector, m_pwmDesSafeSOUT)
@@ -112,11 +113,6 @@ namespace dynamicgraph
         addCommand("resetProfiler",
                    makeCommandVoid0(*this, &ControlManager::resetProfiler,
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
-
-        addCommand("addEmergencyStopSIN",
-                   makeCommandVoid1(*this, &ControlManager::addEmergencyStopSIN,
-                                    docCommandVoid1("Add emergency signal input from another entity that can stop the control if necessary.",
-                                                    "(string) signal name : 'emergencyStop_' + name")));
       }
 
       void ControlManager::init(const double& dt)
@@ -211,13 +207,11 @@ namespace dynamicgraph
         const ml::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
         if(s.size()!=N_JOINTS)
           s.resize(N_JOINTS);
-
-        for(int i=0;i<m_emergencyStopSIN.size();i++)
+        
+        if(m_emergencyStopSIN.isPlugged() && m_emergencyStopSIN(iter))
         {
-          if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter)) {
-            m_emergency_stop_triggered = true;
-            SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
-          }
+          m_emergency_stop_triggered = true;
+          SEND_MSG("Emergency Stop has been triggered by an external entity",MSG_TYPE_ERROR);
         }
 
         if(!m_emergency_stop_triggered)
@@ -464,19 +458,6 @@ namespace dynamicgraph
       {
         getProfiler().reset_all();
         getStatistics().reset_all();
-      }
-
-      void ControlManager::addEmergencyStopSIN(const string& name)
-      {
-          SEND_MSG("New emergency signal input emergencyStop_" + name + " created",MSG_TYPE_INFO);
-        // create a new input signal
-        m_emergencyStopSIN.push_back(new SignalPtr<bool, int>(NULL,
-          getClassName()+"("+getName()+")::input(bool)::emergencyStop_"+name));
-
-        // register the new signals and add the new signal dependecy
-        unsigned int i = m_emergencyStopSIN.size()-1;
-        m_pwmDesSafeSOUT.addDependency(*m_emergencyStopSIN[i]);
-        Entity::signalRegistration(*m_emergencyStopSIN[i]);
       }
 
       /* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
