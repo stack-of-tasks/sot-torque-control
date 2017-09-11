@@ -464,12 +464,12 @@ namespace dynamicgraph
         if(m_contactState == RIGHT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime)
         {
           m_contactState = RIGHT_SUPPORT;
-          SEND_MSG("Time "+toString(m_t)+" right foot contact removed", MSG_TYPE_INFO);
+          SEND_MSG("Right foot contact removed", MSG_TYPE_INFO);
         }
         else if(m_contactState == LEFT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime)
         {
           m_contactState = LEFT_SUPPORT;
-          SEND_MSG("Time "+toString(m_t)+" left foot contact removed", MSG_TYPE_INFO);
+          SEND_MSG("Left foot contact removed", MSG_TYPE_INFO);
         }
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
@@ -514,7 +514,7 @@ namespace dynamicgraph
         const double & fMaxRF = m_f_max_right_footSIN(0);
         const double & fMaxLF = m_f_max_left_footSIN(0);
 
-        if(m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION)
+        if(m_contactState == LEFT_SUPPORT)
         {
           EIGEN_CONST_VECTOR_FROM_SIGNAL(x_rf_ref,   m_rf_ref_posSIN(iter));
           assert(x_rf_ref.size()==12);
@@ -533,7 +533,7 @@ namespace dynamicgraph
           m_taskRF->Kp(kp_feet);
           m_taskRF->Kd(kd_feet);
         }
-        else if(m_contactState==RIGHT_SUPPORT || m_contactState==RIGHT_SUPPORT_TRANSITION)
+        else if(m_contactState==RIGHT_SUPPORT)
         {
           EIGEN_CONST_VECTOR_FROM_SIGNAL(x_lf_ref,   m_lf_ref_posSIN(iter));
           assert(x_lf_ref.size()==12);
@@ -635,18 +635,6 @@ namespace dynamicgraph
           s.resize(0);
           return s;
         }
-
-        // DEBUG START
-//        if(m_contactState == LEFT_SUPPORT_TRANSITION && fabs(m_t-m_contactTransitionTime)<0.1)
-//        {
-//          const pininvdyn::math::Vector & dv = m_invDyn->getAccelerations(sol);
-//          SEND_MSG("Contact transition time "+toString(m_contactTransitionTime), MSG_TYPE_DEBUG);
-//          SEND_MSG("Time "+toString(m_t)+" RF task acc des "+toString(m_taskRF->getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
-//          SEND_MSG("Time "+toString(m_t)+" RF cont acc des "+toString(m_contactRF->getMotionTask().getDesiredAcceleration().transpose()), MSG_TYPE_DEBUG);
-//          SEND_MSG("Time "+toString(m_t)+" RF task acc     "+toString(m_taskRF->getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
-//          SEND_MSG("Time "+toString(m_t)+" RF cont acc     "+toString(m_contactRF->getMotionTask().getAcceleration(dv).transpose()), MSG_TYPE_DEBUG);
-//        }
-        // DEBUG END
 
         getStatistics().store("active inequalities", sol.activeSet.size());
         getStatistics().store("solver iterations", sol.iterations);
