@@ -10,9 +10,9 @@ and torques starting from the following sensor data: f/t sensors, encoders, acce
 USE_ROBOT_VIEWER = False;
 PLOT_SENSOR_DATA = False;
 
+from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
 from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference as VelAccEstimator
-from load_hrpsys_log import load_hrpsys_log_astate
 import numpy as np
 import dynamic_graph.sot.torque_control.utils.plot_utils as plut
 import matplotlib.pyplot as plt
@@ -36,7 +36,7 @@ def compute_delta_q_components(enc, delta_q, dq, delta_q_ff, qRef, dqRef, k_tau,
 
 def set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensor_data):
     estimator_ft.base6d_encoders.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
-    estimator_kin.x.value = tuple(sensor_data['enc'][:30].tolist());
+    estimator_kin.x.value              = tuple(sensor_data['enc'][:30].tolist());
     estimator_ft.accelerometer.value   = tuple(sensor_data['acc'][0:3]);
     estimator_ft.gyroscope.value       = tuple(sensor_data['gyro']);
     estimator_ft.ftSensRightFoot.value = tuple(sensor_data['forceRL']);
@@ -53,11 +53,13 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
     # Create and initialize estimator
     estimator_ft = ForceTorqueEstimator("estimator_ft"+str(np.random.rand()));
     estimator_kin = VelAccEstimator("estimator_kin"+str(np.random.rand()));
+    plug(estimator_kin.x,   estimator_ft.q_filtered);
+    plug(estimator_kin.dx,  estimator_ft.dq_filtered);
+    plug(estimator_kin.ddx, estimator_ft.ddq_filtered);
     estimator_ft.dqRef.value = NJ*(0.0,);
     estimator_ft.ddqRef.value = NJ*(0.0,);
     #Only use inertia model (not current) to estimate torques.
     estimator_ft.wCurrentTrust.value     = NJ*(0.0,);
-    estimator_ft.currentMeasure.value    = NJ*(0.0,);
     estimator_ft.currentMeasure.value    = NJ*(0.0,);
     estimator_ft.saturationCurrent.value = NJ*(0.0,);
     estimator_ft.motorParameterKt_p.value  = tuple(30*[1.,])
@@ -76,13 +78,12 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
         estimator_ft.init(dt,delay,delay,delay,delay,True);
     else:
         estimator_ft.init(dt,delay,delay,delay,delay,False);
+        estimator_ft.setFTsensorOffsets(tuple(ftSensorOffsets));
     estimator_kin.init(dt,NJ, delay);
-    estimator_ft.setFTsensorOffsets(tuple(ftSensorOffsets));
     estimator_ft.setUseRawEncoders(False);
     estimator_ft.setUseRefJointVel(False);
     estimator_ft.setUseRefJointAcc(False);
     estimator_ft.setUseFTsensors(USE_FT_SENSORS);
-
     
     torques = np.zeros((m,NJ));
     dq      = np.zeros((m,NJ));
@@ -111,6 +112,7 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
     
     
 if __name__=='__main__':
+    from load_hrpsys_log import load_hrpsys_log_astate
     sensors = load_hrpsys_log_astate('/home/adelpret/devel/yarp_gazebo/src/motorFrictionIdentification/data/20140807-legTorqueId/legTorqueId_pos1-astate.log',
                                      'rad');
 #    sensors = sensors[:2000];
