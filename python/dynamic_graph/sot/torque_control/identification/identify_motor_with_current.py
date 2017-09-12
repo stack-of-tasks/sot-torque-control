@@ -4,14 +4,16 @@ from scipy import ndimage
 import numpy as np
 import sys
 from IPython import embed
-from dynamic_graph.sot.torque_control.utils.plot_utils import plot3d
-from dynamic_graph.sot.torque_control.utils.plot_utils import plot_x_vs_y
-from dynamic_graph.sot.torque_control.utils.plot_utils import saveCurrentFigure
+#from dynamic_graph.sot.torque_control.utils.plot_utils import plot3d
+#from dynamic_graph.sot.torque_control.utils.plot_utils import plot_x_vs_y
+#from dynamic_graph.sot.torque_control.utils.plot_utils import saveCurrentFigure
 import dynamic_graph.sot.torque_control.utils.plot_utils as plot_utils
+import matplotlib as mpl
+mpl.rcParams['lines.linewidth']     = 4;
 import matplotlib.pyplot as plt
 from motor_model import Motor_model
 from scipy.cluster.vq import kmeans
-import dynamic_graph.sot.torque_control.hrp2.motors_parameters
+from dynamic_graph.sot.torque_control.hrp2.control_manager_conf import IN_OUT_GAIN
 
 '''
 motor model :
@@ -97,22 +99,23 @@ SHOW_THRESHOLD_EFFECT = True
 
 USING_CONTROL_AS_CURRENT_MEASURE = False
 INVERT_CURRENT = False
+result_dir = '../../../../../results/hrp2_motor_identification/'
 
 #~ JOINT_NAME = 'rhy';  
 #~ JOINT_NAME = 'rhr'; 
 #~ JOINT_NAME = 'rhp'; 
-#~ JOINT_NAME = 'rk'; 
+JOINT_NAME = 'rk'; 
 #~ JOINT_NAME = 'rap'; 
 #~ JOINT_NAME = 'rar'; 
 
 #~ JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
 #~ JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
 #~ JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
-JOINT_NAME = 'lk';  # 9 ok
+#JOINT_NAME = 'lk';  # 9 ok
 #~ JOINT_NAME = 'lap'; # 10 ok
 #~ JOINT_NAME = 'lar'; # 11 ok
 
-#~ IDENTIFICATION_MODE='static'
+IDENTIFICATION_MODE='static'
 IDENTIFICATION_MODE='vel'
 #~ IDENTIFICATION_MODE='acc'
 
@@ -122,11 +125,12 @@ IDENTIFICATION_MODE='vel'
 #~ data_folder='../../results/20161114_151812_rhp_vel/'
 #~ data_folder='../../results/20170203_164133_com_sin_z_001/'
 #Compare Model Vs Measurment
-#~ IDENTIFICATION_MODE='test_model'
+#IDENTIFICATION_MODE='test_model'
 #~ JOINT_NAME = 'rhp'
 #~ data_folder='../../results/20170203_164133_com_sin_z_001/'
 #~ data_folder= '../../results/20161114_152706_rk_acc/' ; INVERT_CURRENT = True
-result_dir = '../../../../../../../results/'
+#data_folder = result_dir + '../20170911172000_com_sin_3cm/';
+
 if (IDENTIFICATION_MODE != 'test_model') :
     Nvel = 10
     if(JOINT_NAME == 'rhy' ):
@@ -329,7 +333,7 @@ if(IDENTIFICATION_MODE=='low_level'):
     
     DZ = 0.4
     K3 = 1.0#1.06
-    mask=abs(K3*ctrl/102.4-current)<DZ
+    mask=abs(K3*ctrl/IN_OUT_GAIN-current)<DZ
     times = np.arange(len(enc))*0.001
     plt.figure()
     
@@ -350,8 +354,8 @@ if(IDENTIFICATION_MODE=='low_level'):
     plt.title('ctrl')
     
     plt.subplot(414)
-    plt.plot(times,K3*ctrl/102.4-current            ,'.')
-    plt.plot(times[mask],K3*ctrl[mask]/102.4-current[mask],'.')
+    plt.plot(times,K3*ctrl/IN_OUT_GAIN-current            ,'.')
+    plt.plot(times[mask],K3*ctrl[mask]/IN_OUT_GAIN-current[mask],'.')
     plt.title(ctrl)
     plt.title('ctrl-current ')
     
@@ -374,7 +378,7 @@ if(IDENTIFICATION_MODE=='low_level'):
             #~ if i == 50: embed()
             DZ=lDZs[i]
             K3=lK3s[j]
-            mask=abs(K3*ctrl/102.4-current) < DZ
+            mask=abs(K3*ctrl/IN_OUT_GAIN-current) < DZ
             not_mask = np.logical_not(mask)           
             #plt.plot(current[mask],dq[mask],'.')
             cost[i,j]=-np.corrcoef(current[mask],dq[mask])[0,1]            #* np.sum(not_mask) / (np.sum(mask) + np.sum(not_mask))
@@ -399,7 +403,7 @@ if(IDENTIFICATION_MODE=='low_level'):
     #plot a particular case
     DZ=0.4
     K3=1.0
-    mask=abs(K3*ctrl/102.4-current) < DZ
+    mask=abs(K3*ctrl/IN_OUT_GAIN-current) < DZ
     plt.xlabel('current') 
     plt.ylabel('dq') 
     plt.plot(current[mask],dq[mask],'.')
@@ -411,7 +415,7 @@ if(IDENTIFICATION_MODE=='low_level'):
     K3=lK3s[iK3]
     print 'DZ = ' + str(DZ)
     print 'K3 = ' + str(K3)
-    mask=abs(K3*ctrl/102.4-current) < DZ
+    mask=abs(K3*ctrl/IN_OUT_GAIN-current) < DZ
     plt.xlabel('current') 
     plt.ylabel('dq') 
     plt.plot(current[mask],dq[mask],'.')
@@ -446,50 +450,50 @@ if(IDENTIFICATION_MODE=='static'):
         plt.plot(q_const); plt.ylabel('q_const')
         
     # plot dead zone effect ********************************************
+#    IN_OUT_GAIN = 90.0;
+    plt.figure()
+    plt.plot(current, label='current')
+    plt.plot(ctrl/IN_OUT_GAIN, label='control')
+    plt.legend()
     
-    #~ plt.figure()
-    #~ plt.plot(current)
-    #~ plt.plot(ctrl/102.4)
-    #~ 
-    #~ 
-    #~ plt.figure()
-    #~ y = current
-    #~ y_label = r'$i(t)$'
-    #~ x = ctrl/102.4 - current
-    #~ x_label =r'$ctrl(t)-i(t)$'
-    #~ plt.ylabel(y_label)
-    #~ plt.xlabel(x_label)    
-    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    #~ plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
-    #~ plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
-    #~ 
-    #~ plt.figure()
-    #~ y = ctrl/102.4
-    #~ y_label = r'$ctrl(t)$'
-    #~ x = ctrl/102.4 - current
-    #~ x_label =r'$ctrl(t)-i(t)$'
-    #~ plt.ylabel(y_label)
-    #~ plt.xlabel(x_label)    
-    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    #~ plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1); 
-    #~ plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1); 
-    #~ 
-    #~ plt.figure()
-    #~ y = ctrl/102.4
-    #~ y_label = r'$ctrl(t)$'
-    #~ x = current
-    #~ x_label =r'$i(t)$'
-    #~ plt.ylabel(y_label)
-    #~ plt.xlabel(x_label)    
-    #~ plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    #~ plt.plot([-3,3],[-3,3]);  
-    #~ 
-    #~ 
-    #~ plt.show()
-    #~ embed()
-    #~ y = a. x   +  b
-    #~ i = Kt.tau + Kf
-    #~ 
+    plt.figure()
+    y = current
+#    y_label = r'$i(t)$'
+    x = ctrl/IN_OUT_GAIN - current
+#    x_label =r'$ctrl(t)-i(t)$'
+    plt.ylabel(r'$i(t)$')
+    plt.xlabel(r'$ctrl(t)-i(t)$')
+    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1, label='pos vel'); 
+    plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1, label='neg vel'); 
+    plt.legend()
+    
+    plt.figure()
+    y = ctrl/IN_OUT_GAIN
+    y_label = r'$ctrl(t)$'
+    x = ctrl/IN_OUT_GAIN - current
+    x_label =r'$ctrl(t)-i(t)$'
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)    
+    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    plt.plot(x[maskConstPosAng],y[maskConstPosAng],'rx',lw=3,markersize=1, label='pos vel'); 
+    plt.plot(x[maskConstNegAng],y[maskConstNegAng],'bx',lw=3,markersize=1, label='neg vel'); 
+    plt.legend()
+    
+    plt.figure()
+    y = ctrl/IN_OUT_GAIN
+    y_label = r'$ctrl(t)$'
+    x = current
+    x_label =r'$i(t)$'
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)    
+    plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
+    plt.plot([-3,3],[-3,3]);  
+    
+    plt.show()
+#    y = a. x   +  b
+#    i = Kt.tau + Kf
+    
     # Identification ***************************************************
     y = current
     y_label = r'$i(t)$'
@@ -730,6 +734,7 @@ if(IDENTIFICATION_MODE=='acc'):
 #model vs measurement
 if (IDENTIFICATION_MODE=='test_model'):
     #load motor parameters
+    import dynamic_graph.sot.torque_control.hrp2.motors_parameters as hrp2_motors_parameters
     Kt_p = hrp2_motors_parameters.Kt_p
     Kt_n = hrp2_motors_parameters.Kt_n
     
@@ -746,32 +751,40 @@ if (IDENTIFICATION_MODE=='test_model'):
                         Kf_p[JOINT_ID], Kf_n[JOINT_ID],
                         Kv_p[JOINT_ID], Kv_n[JOINT_ID],
                         Ka_p[JOINT_ID], Ka_n[JOINT_ID],0.01)
-    tau_motor=np.zeros(len(tau))
-    i_motor=np.zeros(len(current))
     
+    tau_motor=np.zeros(len(tau))
+    tau_motor_current=np.zeros(len(tau))
+    tau_motor_vel=np.zeros(len(tau))
+    tau_motor_acc=np.zeros(len(tau))
+    i_motor=np.zeros(len(current))
     for idx in range(len(tau)):
-        tau_motor[idx]=motor.getTorque    (current[idx], dq[idx], ddq[idx])
-        i_motor[idx]  =motor.getCurrent   (tau[idx],     dq[idx], ddq[idx])
+        tau_motor[idx]          =motor.getTorque    (current[idx], dq[idx], ddq[idx])
+        tau_motor_current[idx]  =motor.getTorque    (current[idx], 0.0,     0.0)
+        tau_motor_vel[idx]      =motor.getTorque    (0.0,          dq[idx], 0.0)
+        tau_motor_acc[idx]      =motor.getTorque    (0.0,          0.0,     ddq[idx])
+        i_motor[idx]            =motor.getCurrent   (tau[idx],     dq[idx], ddq[idx])
     
 
     plt.figure()
-    plt.plot(tau)
-    plt.plot(tau_motor)
-    plt.legend(['Estimated torque with dynamic model','Estimated torque with motor model'])
+    alpha = 0.7
+    plt.plot(tau,               alpha=alpha, label='torque from dynamic model')
+    plt.plot(tau_motor,         alpha=alpha, label='torque from motor model')
+    plt.plot(tau_motor_current, alpha=alpha, label='torque from motor model (cur only)')
+    plt.plot(tau_motor_vel,     alpha=alpha, label='torque from motor model (vel only)')
+    plt.plot(tau_motor_acc,     alpha=alpha, label='torque from motor model (acc only)')
+    plt.legend()
     
     plt.figure()
-    
     plt.subplot(211)
-    plt.plot(dq)
+    plt.plot(dq, label='dq')
+    plt.legend()
     plt.subplot(212)
     plt.plot(current)
     plt.plot(i_motor)
-    plt.legend(['measured current','Estimated current with model'])
-    
-    
-    
+    plt.legend(['measured current','Estimated current with model'])    
     
     plt.figure()
-    plt.plot(current)
-    plt.plot(ctrl/102.4)
+    plt.plot(current, label='current')
+    plt.plot(ctrl/102.4, label='ctrl')
+    plt.legend()
     plt.show()
