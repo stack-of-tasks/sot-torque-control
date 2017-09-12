@@ -319,6 +319,7 @@ def create_ctrl_manager(conf, dt, robot_name='robot'):
     ctrl_manager.signWindowsFilterSize.value                = NJ*(conf.SIGN_WINDOW_FILTER_SIZE,);
     ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
     ctrl_manager.bemfFactor.value                           = NJ*(0.0,);
+    ctrl_manager.currents.value                             = NJ*(0.0,);
     #ctrl_manager.bemfFactor.value = tuple(Kpwm*0.1);
     
     # Init should be called before addCtrlMode 
@@ -358,8 +359,9 @@ def create_ctrl_manager(conf, dt, robot_name='robot'):
 def connect_ctrl_manager(ent):    
     # connect to device    
     plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
+    plug(ent.device.currents,               ent.ctrl_manager.currents);
     plug(ent.estimator_kin.dx,              ent.ctrl_manager.dq);
-    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
+    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);    
     plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);    
     ent.ctrl_manager.addCtrlMode("pos");
     ent.ctrl_manager.addCtrlMode("torque");    

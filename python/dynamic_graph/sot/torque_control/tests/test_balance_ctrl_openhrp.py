@@ -39,6 +39,9 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     conf = get_sim_conf();
     robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf);
     
+    # force current measurements to zero
+    robot.ctrl_manager.currents.value = NJ*(0.0,);
+    
     # BYPASS TORQUE CONTROLLER
     plug(robot.inv_dyn.tau_des,     robot.ctrl_manager.ctrl_torque);
     

@@ -45,7 +45,7 @@ namespace dynamicgraph
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
                        SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << \
-                       m_bemfFactorSIN << m_in_out_gainSIN
+                       m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -66,6 +66,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(in_out_gain,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(currents,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
@@ -331,9 +332,10 @@ namespace dynamicgraph
         }
 
         // const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-        const dynamicgraph::Vector& pwmDes          = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& u               = m_pwmDesSOUT(iter);
         const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
         const dynamicgraph::Vector& tau             = m_tauSIN(iter);
+        const dynamicgraph::Vector& currents        = m_currentsSIN(iter);
         const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
         const dynamicgraph::Vector& dq              = m_dqSIN(iter);
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
@@ -361,8 +363,8 @@ namespace dynamicgraph
                             __________________________________
                output______|                                  |_____________
             */
-            if (( (pwmDes(i) > 0) && (!m_signIsPos[i]) )   
-              ||( (pwmDes(i) < 0) && ( m_signIsPos[i]) ))  //If not the same sign
+            if (( (u(i)-currents(i) > 0) && (!m_signIsPos[i]) )
+              ||( (u(i)-currents(i) < 0) && ( m_signIsPos[i]) ))  //If not the same sign
             {
               m_changeSignCpt[i]++; //cpt the straight-times we disagree on sign
               //if (i == 2) printf("inc cpt=%d \t pos=%d\r\n", m_changeSignCpt[i],m_signIsPos[i]);
@@ -383,12 +385,12 @@ namespace dynamicgraph
             }
             //*****************************************
 
-            if (pwmDes(i) == 0)
+            if (u(i) == 0)
               s(i) = 0;
             else if (m_signIsPos[i])
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
             else
-              s(i) = (pwmDes(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
 
             if(fabs(tau(i)) > tau_max(i))
             {
@@ -396,7 +398,7 @@ namespace dynamicgraph
               SEND_MSG("Estimated torque "+toString(tau(i))+" > max torque "+toString(tau_max(i))+
                        " for joint "+ m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
-              SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
+              SEND_MSG(", and current "+toString(u(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
             }
 
@@ -406,7 +408,7 @@ namespace dynamicgraph
               SEND_MSG("Predicted torque "+toString(tau_predicted(i))+" > max torque "+toString(tau_max(i))+
                        " for joint "+m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
-              SEND_MSG(", and current "+toString(pwmDes(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
+              SEND_MSG(", and current "+toString(u(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
             }
 
@@ -415,12 +417,12 @@ namespace dynamicgraph
             if(m_max_currentSIN.isPlugged())
               m_maxCurrent = m_max_currentSIN(iter)(i);
 
-            if( (fabs(pwmDes(i)) > m_maxCurrent) || 
-                (fabs(s(i))      > m_maxCurrent * in_out_gain(i)) )
+            if( (fabs(u(i)) > m_maxCurrent) ||
+                (fabs(s(i)) > m_maxCurrent * in_out_gain(i)) )
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+
-                       toString(pwmDes(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
+                       toString(u(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
               break;
@@ -436,14 +438,14 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
       {
-        const dynamicgraph::Vector& pwmDes = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& u = m_pwmDesSOUT(iter);
         if(s.size()!=(Eigen::VectorXd::Index)m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
         {
-          if (pwmDes(i)>0)
+          if (u(i)>0)
             s(i)= 1;
-          else if (pwmDes(i)<0)
+          else if (u(i)<0)
             s(i)=-1;
           else 
             s(i)=0;
@@ -454,12 +456,12 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(signOfControlFiltered,dynamicgraph::Vector)
       {
 
-        const dynamicgraph::Vector& pwmDesSafe = m_pwmDesSafeSOUT(iter);
+        const dynamicgraph::Vector& uSafe = m_pwmDesSafeSOUT(iter);
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
         {
-          if (pwmDesSafe(i)==0) 
+          if (uSafe(i)==0)
             s(i)=0;
           else if (m_signIsPos[i])
             s(i)=1;
