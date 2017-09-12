@@ -10,32 +10,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 #from plot_utils import *
 from dynamic_graph.sot.torque_control.utils.plot_utils import *
-try:
-    from compute_estimates_from_sensors import compute_estimates_from_sensors
-except ImportError:
-    print 'Could not import "compute_estimates_from_sensors": '
-    
+from compute_estimates_from_sensors import compute_estimates_from_sensors    
 import sys
 
 
 def main():
-    FOLDER_ID = 1;
     EST_DELAY = 0.1;        ''' delay introduced by the estimation in seconds '''
     NJ = 30;                ''' number of joints '''
     DT = 0.001;             ''' sampling period '''
-    PLOT_DATA = False;
+    PLOT_DATA = True;
     FORCE_ESTIMATE_RECOMPUTATION = True;
     NEGLECT_GYROSCOPE = True;
     NEGLECT_ACCELEROMETER = False;
     SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO = False;
     USE_FT_SENSORS = True
-    #~ JOINT_ID = np.array(range(12)); ''' IDs of the joints to save '''
-
-    data_folder = '../../results/20160923_165916_Joint2_id_Kt/';
-    JOINT_ID = np.array([2]);
+    
+    data_folder = '../../../../results/20160923_165916_Joint2_id_Kt/';
+    JOINT_ID = np.array([2]); # IDs of joints to save
     
     if (len(sys.argv) >= 3):
-        data_folder = sys.argv[1]
+        data_folder = '../../../../../results/'+sys.argv[1]
         JOINT_ID    = np.array([int(sys.argv[2])])
         print ('Going to decompress data in folder "' + data_folder + '"')
         print ("Joint ID = " + str(JOINT_ID[0]))
@@ -45,9 +39,8 @@ def main():
     if data_folder[-1] != '/' : data_folder = data_folder + '/'
     FILE_READ_SUCCEEDED = False;    
     DATA_FILE_NAME = 'data';
-    TEXT_DATA_FILE_NAME = 'data.txt';
     N_DELAY = int(EST_DELAY/DT);
-
+    
     file_name_ctrl    = 'dg_HRP2LAAS-control.dat';
     file_name_enc     = 'dg_HRP2LAAS-robotState.dat';
     file_name_acc     = 'dg_HRP2LAAS-accelerometer.dat';
@@ -68,13 +61,13 @@ def main():
         forceRA = data['forceRA'];
         forceLL = data['forceLL'];
         forceRL = data['forceRL'];
-
+    
         N = acc.shape[0];    
         ctrl = np.empty((N,len(JOINT_ID)));
         dq = np.empty((N,len(JOINT_ID)));
         ddq = np.empty((N,len(JOINT_ID)));
         tau = np.empty((N,len(JOINT_ID)));
-
+    
     #    ptorques = np.empty((N,len(JOINT_ID)));
     #    p_gains = np.empty((N,len(JOINT_ID)));
         current = np.empty((N,len(JOINT_ID)));
@@ -91,7 +84,7 @@ def main():
                 dq [:,i] = data['dq'];
                 ddq[:,i] = data['ddq'];
                 tau[:,i] = data['tau'];
-
+    
     except (IOError, KeyError):
         print 'Gonna read text files...'
         
@@ -113,7 +106,7 @@ def main():
         if(n_acc!=n_enc):
             print "Reducing size of signals from %d to %d" % (n_acc, n_enc);
         N = np.min([n_enc,n_acc]);
-
+    
         time = enc[:N,0];
         ctrl = ctrl[:N,1:];
         current = current[:N,1:];
@@ -154,8 +147,8 @@ def main():
                  forceRA=forceRA.reshape(N,6), 
                  forceLL=forceLL.reshape(N,6), 
                  forceRL=forceRL.reshape(N,6));
-
-
+    
+    
     N = len(enc[:,0]);
     if(FORCE_ESTIMATE_RECOMPUTATION or FILE_READ_SUCCEEDED==False):
         print 'Gonna estimate dq, ddq, tau';
@@ -174,7 +167,7 @@ def main():
         a['forceLL']  = forceLL;
         a['forceRL']  = forceRL;
         
-
+    
         if(SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO):
             a['forceRL'][:,2] = 0.0;
         if(NEGLECT_ACCELEROMETER):
@@ -184,7 +177,8 @@ def main():
         if(NEGLECT_GYROSCOPE==False):
             a['gyro']     = gyro;
         a['time']     = np.squeeze(time*DT);
-        (tau, dq, ddq) = compute_estimates_from_sensors(a, EST_DELAY, USE_FT_SENSORS=USE_FT_SENSORS);
+        (tau, dq, ddq) = compute_estimates_from_sensors(a, EST_DELAY, ftSensorOffsets=24*(0.,),
+                                                        USE_FT_SENSORS=USE_FT_SENSORS);
         
         # shift estimate backward in time to compensate for estimation delay
         dq[:-N_DELAY,:]  = dq[N_DELAY::,:];
@@ -203,8 +197,8 @@ def main():
             np.savez(data_folder+DATA_FILE_NAME+'_j'+str(JOINT_ID[i])+'.npz', ctrl=ctrl[:,i], 
                      enc=enc[:,JOINT_ID[i]], tau=tau[:,i], dq=dq[:,i], ddq=ddq[:,i], current=current[:,i]);
                      #, ptorque=ptorques[:,i], p_gain=p_gains[:,i]);
-
-
+    
+    
     #embed()
     if(PLOT_DATA):
         ''' Plot data '''
@@ -213,25 +207,23 @@ def main():
         if(NEGLECT_GYROSCOPE==False):
             plt.figure(); plt.plot(gyro); plt.title('Gyro');
         #~ plt.figure(); plt.plot(forceLA); plt.title('Force Left Arm');
-        plt.figure(); plt.plot(forceRA); plt.title('Force Right Arm'); plt.legend(['fx','fy','fz','mx','my','mz']);
-        plt.plot(enc[:,JOINT_ID[i]], '--');
+#        plt.figure(); plt.plot(forceRA); plt.title('Force Right Arm'); plt.legend(['fx','fy','fz','mx','my','mz']);
+#        plt.plot(enc[:,JOINT_ID[i]], '--');
         #~ plt.figure(); plt.plot(forceLL); plt.title('Force Left Leg');
         #~ plt.figure(); plt.plot(forceRL); plt.title('Force Right Leg');
         
         for i in range(len(JOINT_ID)):
-    #        plt.figure(); plt.plot(enc[:,JOINT_ID[i]]-ctrl[:,i]); plt.title('Delta_q '+str(JOINT_ID[i]));
             plt.figure(); plt.plot(dq[:,i]); plt.title('Joint velocity '+str(JOINT_ID[i]));
             plt.figure(); plt.plot(ddq[:,i]); plt.title('Joint acceleration '+str(JOINT_ID[i]));
             plt.figure(); plt.plot(tau[:,i]); plt.title('Joint torque '+str(JOINT_ID[i]));
-            plt.figure(); plt.plot(tau[:,i], ctrl[:,i], 'b. '); plt.title('Torque VS pwm '+str(JOINT_ID[i]));
-            plt.figure(); plt.plot(tau[:,i], current[:,i],'.'); plt.title('Torque VS current '+str(JOINT_ID[i]));
+            plt.figure(); plt.plot(current[:,i], ctrl[:,i], 'b. '); plt.title('Current VS ctrl '+str(JOINT_ID[i]));
             plt.figure(); plt.plot(tau[:,i], current[:,i],'.'); plt.title('Torque VS current '+str(JOINT_ID[i]));
             plt.figure(); plt.plot(dq[:,i], current[:,i],'.'); plt.title('Velocity VS current '+str(JOINT_ID[i]));
-            plt.figure(); plt.plot(ddq[:,i], current[:,i],'.'); plt.title('Velocity VS current '+str(JOINT_ID[i]));
-    #        plt.figure(); plt.plot(p_gains[:,i]); plt.title('Proportional gain '+str(JOINT_ID[i]));
+            plt.figure(); plt.plot(ddq[:,i], current[:,i],'.'); plt.title('Acceleration VS current '+str(JOINT_ID[i]));
             plt.show(); 
 
     return 0
+    
 if __name__ == '__main__':
-	main()
+	main();
 
