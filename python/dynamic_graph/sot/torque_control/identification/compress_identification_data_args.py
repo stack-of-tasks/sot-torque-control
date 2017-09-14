@@ -18,10 +18,10 @@ def main():
     EST_DELAY = 0.1;        ''' delay introduced by the estimation in seconds '''
     NJ = 30;                ''' number of joints '''
     DT = 0.001;             ''' sampling period '''
-    PLOT_DATA = True;
+    PLOT_DATA = False;
     FORCE_ESTIMATE_RECOMPUTATION = True;
     NEGLECT_GYROSCOPE = True;
-    NEGLECT_ACCELEROMETER = False;
+    NEGLECT_ACCELEROMETER = True;
     SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO = False;
     USE_FT_SENSORS = True
     
@@ -177,8 +177,7 @@ def main():
         if(NEGLECT_GYROSCOPE==False):
             a['gyro']     = gyro;
         a['time']     = np.squeeze(time*DT);
-        (tau, dq, ddq) = compute_estimates_from_sensors(a, EST_DELAY, ftSensorOffsets=24*(0.,),
-                                                        USE_FT_SENSORS=USE_FT_SENSORS);
+        (tau, dq, ddq) = compute_estimates_from_sensors(a, EST_DELAY, USE_FT_SENSORS=USE_FT_SENSORS); #ftSensorOffsets=24*(0.,),
         
         # shift estimate backward in time to compensate for estimation delay
         dq[:-N_DELAY,:]  = dq[N_DELAY::,:];

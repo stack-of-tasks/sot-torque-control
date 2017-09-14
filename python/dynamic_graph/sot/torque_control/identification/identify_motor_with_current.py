@@ -19,9 +19,9 @@ i(t) = Kt*tau(t) + Kv*dq(t) + Ka*ddq(t) + Kf*Sign(dq)
 #~ DZ=70
 DZ                                  = 0.0
 dt                                  = 0.001
-ZERO_VELOCITY_THRESHOLD             = 0.1
-ZERO_VELOCITY_THRESHOLD_SMALL       = 0.001
-ZERO_ACCELERATION_THRESHOLD         = 1.
+ZERO_VEL_THRESHOLD                  = 0.1
+POSITIVE_VEL_THRESHOLD              = 0.001
+ZERO_ACC_THRESHOLD                  = 1.
 ZERO_JERK_THRESHOLD                 = 3.0
 CURRENT_SATURATION                  = 9.5
 Nvel                                = 10
@@ -30,31 +30,31 @@ USING_CONTROL_AS_CURRENT_MEASURE    = False
 INVERT_CURRENT                      = False
 result_dir                          = '../../../../../results/hrp2_motor_identification/'
 IDENTIFICATION_MODE ='static'
-#IDENTIFICATION_MODE ='vel'
+IDENTIFICATION_MODE ='vel'
 #IDENTIFICATION_MODE ='acc'
 #IDENTIFICATION_MODE ='test_model' #Compare Model Vs Measurment
 
-#~ JOINT_NAME = 'rhy';  
-#~ JOINT_NAME = 'rhr'; 
-#~ JOINT_NAME = 'rhp'; 
-JOINT_NAME = 'rk'; 
-#~ JOINT_NAME = 'rap'; 
-#~ JOINT_NAME = 'rar'; 
+#JOINT_NAME = 'rhy';  
+#JOINT_NAME = 'rhr'; 
+#JOINT_NAME = 'rhp'; 
+#JOINT_NAME = 'rk'; 
+#JOINT_NAME = 'rap'; 
+#JOINT_NAME = 'rar'; 
 
-#~ JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
-#~ JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
-#~ JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
-#JOINT_NAME = 'lk';  # 9 ok
-#~ JOINT_NAME = 'lap'; # 10 ok
-#~ JOINT_NAME = 'lar'; # 11 ok
+#JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
+#JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
+#JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
+JOINT_NAME = 'lk';  # 9 ok
+#JOINT_NAME = 'lap'; # 10 ok
+#JOINT_NAME = 'lar'; # 11 ok
 
-#~ data_folder='../../results/20161114_153220_rk_vel/'
-#~ data_folder='../../results/20161114_151812_rhp_vel/'
-#~ data_folder='../../results/20170203_164133_com_sin_z_001/'
+#data_folder='../../results/20161114_153220_rk_vel/'
+#data_folder='../../results/20161114_151812_rhp_vel/'
+#data_folder='../../results/20170203_164133_com_sin_z_001/'
 
-#~ JOINT_NAME = 'rhp'
-#~ data_folder='../../results/20170203_164133_com_sin_z_001/'
-#~ data_folder= '../../results/20161114_152706_rk_acc/' ; INVERT_CURRENT = True
+#JOINT_NAME = 'rhp'
+#data_folder='../../results/20170203_164133_com_sin_z_001/'
+#data_folder= '../../results/20161114_152706_rk_acc/' ; INVERT_CURRENT = True
 #data_folder = result_dir + '../20170911172000_com_sin_3cm/';
 
 if (IDENTIFICATION_MODE != 'test_model') :
@@ -138,8 +138,6 @@ maskSaturation=np.logical_and( (current>-CURRENT_SATURATION) , (current<CURRENT_
 if USING_CONTROL_AS_CURRENT_MEASURE:
     maskCtrlNotInDZ = np.logical_and( ctrl >= (DZ *0.8) ,ctrl <= -(DZ*0.8)  )
     maskSaturation=np.logical_or(maskSaturation, maskCtrlNotInDZ)
-maskPosVel=(dq> ZERO_VELOCITY_THRESHOLD_SMALL)
-maskNegVel=(dq<-ZERO_VELOCITY_THRESHOLD_SMALL)
 
 if INVERT_CURRENT:
     current = - current
@@ -150,8 +148,6 @@ ddq     = ddq    [maskSaturation];
 tau     = tau    [maskSaturation];
 ctrl    = ctrl   [maskSaturation];
 current = current[maskSaturation];
-maskPosVel = maskPosVel[maskSaturation]
-maskNegVel = maskNegVel[maskSaturation]
    
 if USING_CONTROL_AS_CURRENT_MEASURE:
     current_est = current.copy()
@@ -169,10 +165,10 @@ if(IDENTIFICATION_MODE=='low_level'):
     
 #Ktau,Tau0 Identification
 if(IDENTIFICATION_MODE=='static'):
-    (Ktp, Ktn) = identify_motor_static(enc, dq, ctrl, current, tau, JOINT_ID, JOINT_NAME, 
-                                       ZERO_VELOCITY_THRESHOLD, SHOW_THRESHOLD_EFFECT);
+    (Ktp, Ktn, Ks, DZ) = identify_motor_static(enc, dq, ctrl, current, tau, JOINT_ID, JOINT_NAME, ZERO_VEL_THRESHOLD, 
+                                               POSITIVE_VEL_THRESHOLD, SHOW_THRESHOLD_EFFECT);
     #save parameters for next identification level**********************
-    np.savez(data_folder+'motor_param_'+JOINT_NAME+'.npz',Ktp=Ktp,Ktn=Ktn)
+    np.savez(data_folder+'motor_param_'+JOINT_NAME+'.npz',Ktp=Ktp, Ktn=Ktn, Ks=Ks, DZ=DZ)
     plt.savefig(data_folder+"static_"+JOINT_NAME+".jpg")
     plt.show()
 
@@ -180,17 +176,18 @@ if(IDENTIFICATION_MODE=='vel' or IDENTIFICATION_MODE=='acc'):
     #load parameters from last identification level*********************
     try:
         data_motor_param = np.load(data_folder_static+'motor_param_'+JOINT_NAME+'.npz')
-        Kt_p=(data_motor_param['Ktp'].item())
-        Kt_n=(data_motor_param['Ktn'].item())
+        Ktp=(data_motor_param['Ktp'].item())
+        Ktn=(data_motor_param['Ktn'].item())
     except IOError:
         print "Impossible to read data file %s" % (data_folder_static+'motor_param_'+JOINT_NAME+'.npz');
         sys.exit("Run identification on static experiments.");
 
 #Kd Identification         
 if(IDENTIFICATION_MODE=='vel'):
-    (Kvp, Kvn, Kfp, Kfn, DeadZone, Kpwm) = identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Kt_p, Kt_n, 
-                                                              ZERO_VELOCITY_THRESHOLD, ZERO_VELOCITY_THRESHOLD_SMALL, 
-                                                              ZERO_ACCELERATION_THRESHOLD, Nvel, SHOW_THRESHOLD_EFFECT);
+    Ks =(data_motor_param['Ks'].item())
+    (Kvp, Kvn, Kfp, Kfn, DeadZone, Kpwm) = identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks,
+                                                              ZERO_VEL_THRESHOLD, ZERO_ACC_THRESHOLD, 
+                                                              Nvel, SHOW_THRESHOLD_EFFECT);
     np.savez(data_folder+'motor_param_'+JOINT_NAME+'.npz', Ktp=Ktp, Ktn=Ktn, Kvp=Kvp, Kvn=Kvn,
              Kfp=Kfp, Kfn=Kfn, DeadZone=DeadZone, Kpwm=Kpwm)
     warning = ""
@@ -199,8 +196,8 @@ if(IDENTIFICATION_MODE=='vel'):
         
     print "deadzone[%d] = %f #Using %s"% (JOINT_ID, DeadZone, data_folder_vel + warning);
     print "Kpwm[%d]     = %f # in Amp / Rad.s-1"% (JOINT_ID, Kpwm);
-    print 'Kt_p[%d]     = %f #Using %s' % (JOINT_ID, Kt_p, data_folder_static + warning);
-    print 'Kt_n[%d]     = %f #Using %s' % (JOINT_ID, Kt_n, data_folder_static + warning);
+    print 'Kt_p[%d]     = %f #Using %s' % (JOINT_ID, Ktp, data_folder_static + warning);
+    print 'Kt_n[%d]     = %f #Using %s' % (JOINT_ID, Ktn, data_folder_static + warning);
     print 'Kv_p[%d]     = %f #Using %s' % (JOINT_ID, Kvp, data_folder_vel + warning);
     print 'Kv_n[%d]     = %f #Using %s' % (JOINT_ID, Kvn, data_folder_vel + warning);
     print 'Kf_p[%d]     = %f #Using %s' % (JOINT_ID, Kfp, data_folder_vel + warning);
@@ -210,9 +207,9 @@ if(IDENTIFICATION_MODE=='vel'):
     
 #J Identification
 if(IDENTIFICATION_MODE=='acc'):
-    Kv_p=(data_motor_param['Kvp'].item())
-    (Kap, Kan, Kfp, Kfn) = identify_motor_acc(dt, dq, ddq, current, tau, Kt_p, Kv_p, 
-                                              ZERO_VELOCITY_THRESHOLD_SMALL, ZERO_JERK_THRESHOLD, 
+    Kvp=(data_motor_param['Kvp'].item())
+    (Kap, Kan, Kfp, Kfn) = identify_motor_acc(dt, dq, ddq, current, tau, Ktp, Kvp, 
+                                              POSITIVE_VEL_THRESHOLD, ZERO_JERK_THRESHOLD, 
                                               SHOW_THRESHOLD_EFFECT);
     print 'Ka_p[%d] = %f' % (JOINT_ID,Kap);
     print 'Ka_n[%d] = %f' % (JOINT_ID,Kan);
