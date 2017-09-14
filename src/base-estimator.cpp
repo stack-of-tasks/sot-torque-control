@@ -745,6 +745,7 @@ namespace dynamicgraph
 
         const Vector6 & wrench                = m_forceLLEGSIN(iter);
         Vector2 zmp;
+        zmp.setZero();
         compute_zmp(wrench, zmp);
         double w_zmp = compute_zmp_weight(zmp, m_left_foot_sizes,
                                           m_zmp_std_dev_lf, m_zmp_margin_lf);
@@ -763,6 +764,7 @@ namespace dynamicgraph
 
         const Vector6 & wrench                = m_forceRLEGSIN(iter);
         Vector2 zmp;
+        zmp.setZero();
         compute_zmp(wrench, zmp);
         double w_zmp = compute_zmp_weight(zmp, m_right_foot_sizes,
                                           m_zmp_std_dev_rf, m_zmp_margin_rf);
