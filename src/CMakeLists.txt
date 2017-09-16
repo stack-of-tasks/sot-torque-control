@@ -51,6 +51,7 @@ SET(plugins
   #hrp2-device-torque-ctrl
   free-flyer-locator
   numerical-difference
+  filter-differentiator
   device-torque-ctrl
   trace-player
   imu_offset_compensation
