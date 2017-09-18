@@ -52,7 +52,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
          0.261799, -0.17453, 0., -0.523599, 0., 0., 0.1,
          0.261799,  0.17453, 0., -0.523599, 0., 0., 0.1);
          
-    robot.device.setControlInputType('position');
+    robot.device.setControlInputType('noInteg');
     robot.ctrl_manager    = create_ctrl_manager(conf.control_manager, dt);
     
     robot.traj_gen        = create_trajectory_generator(robot.device, dt);
