@@ -80,7 +80,6 @@ namespace dynamicgraph
 #define PROFILE_BASE_VELOCITY_ESTIMATION    "base-est velocity estimation"
 #define PROFILE_BASE_KINEMATICS_COMPUTATION "base-est kinematics computation"
 
-#define IMU_JOINT_NAME "CHEST_JOINT1"
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
@@ -539,22 +538,40 @@ namespace dynamicgraph
           kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, oMlfa, lfsMff);
 
           // get rpy
-          Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu;
-          matrixToRpy(m_oMff_lf.rotation(), rpy_ff_lf);
-          matrixToRpy(m_oMff_rf.rotation(), rpy_ff_rf);
+          const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);  // transform between freeflyer and body attached to IMU sensor 
+          const SE3 chestMff(ffMchest.inverse());          // transform between body attached to IMU sensor and freeflyer
+          
+          //~ Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu; //not to be used
+          Vector3 rpy_chest, rpy_chest_lf, rpy_chest_rf, rpy_chest_imu; // orientation of the body that imu is attached to. (fusion, from left kine, from right kine, from imu)
+          
+          //~ matrixToRpy(m_oMff_lf.rotation(), rpy_ff_lf); //not to be used
+          //~ matrixToRpy(m_oMff_rf.rotation(), rpy_ff_rf);
+          matrixToRpy((m_oMff_lf*ffMchest).rotation(), rpy_chest_lf);
+          matrixToRpy((m_oMff_rf*ffMchest).rotation(), rpy_chest_rf);
           Eigen::Quaternion<double> quatIMU(quatIMU_vec[0], quatIMU_vec[1], quatIMU_vec[2], quatIMU_vec[3]);
-          matrixToRpy(quatIMU.toRotationMatrix(), rpy_ff_imu); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
+          //~ matrixToRpy(quatIMU.toRotationMatrix(), rpy_ff_imu); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
+          matrixToRpy(quatIMU.toRotationMatrix(), rpy_chest_imu); // THIS IS TRUE !
 
           // average (we do not take into account the IMU yaw)
           double wSum = wL + wR + m_w_imu;
-          rpy_ff(0) = (rpy_ff_lf[0]*wL + rpy_ff_rf[0]*wR + rpy_ff_imu[0]*m_w_imu) / wSum;
-          rpy_ff(1) = (rpy_ff_lf[1]*wL + rpy_ff_rf[1]*wR + rpy_ff_imu[1]*m_w_imu) / wSum;
-          rpy_ff(2) = (rpy_ff_lf[2]*wL + rpy_ff_rf[2]*wR )                 / (wL+wR);
-          Matrix3 R;
-          rpyToMatrix(rpy_ff, R);
+          //~ rpy_ff(0) = (rpy_ff_lf[0]*wL + rpy_ff_rf[0]*wR + rpy_ff_imu[0]*m_w_imu) / wSum;
+          //~ rpy_ff(1) = (rpy_ff_lf[1]*wL + rpy_ff_rf[1]*wR + rpy_ff_imu[1]*m_w_imu) / wSum;
+          //~ rpy_ff(2) = (rpy_ff_lf[2]*wL + rpy_ff_rf[2]*wR )                 / (wL+wR);
+          rpy_chest(0) = (rpy_chest_lf[0]*wL + rpy_chest_rf[0]*wR + rpy_chest_imu[0]*m_w_imu) / wSum;
+          rpy_chest(1) = (rpy_chest_lf[1]*wL + rpy_chest_rf[1]*wR + rpy_chest_imu[1]*m_w_imu) / wSum;
+          rpy_chest(2) = (rpy_chest_lf[2]*wL + rpy_chest_rf[2]*wR )                 / (wL+wR);
+          
+          
+          
+          Matrix3 oRchest,R;
+          //~ rpyToMatrix(rpy_ff, R);
+          rpyToMatrix(rpy_chest, oRchest);
+          R = oRchest * chestMff.rotation();
 
           // translation to get foot at the right position
           // evaluate Mrl Mlf for q with the good orientation and zero translation for freeflyer
+          //~ const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
+          //~ const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
           const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
           const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
           // get average translation

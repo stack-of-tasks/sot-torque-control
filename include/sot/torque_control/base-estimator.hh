@@ -193,6 +193,7 @@ namespace dynamicgraph {
 
         unsigned int      m_right_foot_id;
         unsigned int      m_left_foot_id;
+        unsigned int      m_IMU_body_id;
 
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
