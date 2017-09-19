@@ -39,7 +39,7 @@
 
 /* HELPER */
 #include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <tsid/utils/stop-watch.hpp>
 #include <sot/torque_control/utils/causal-filter.hh>
 #include <sot/torque_control/utils/logger.hh>
 
