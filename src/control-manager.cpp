@@ -44,7 +44,7 @@ namespace dynamicgraph
 
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
-                       SAFETY_SIGNALS << m_signWindowsFilterSizeSIN << m_dqSIN << \
+                       SAFETY_SIGNALS << m_iMaxDeadZoneCompensationSIN << m_dqSIN << \
                        m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN
 
       /// Define EntityClassName here rather than in the header file
@@ -72,21 +72,19 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_IN(signWindowsFilterSize, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(iMaxDeadZoneCompensation, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
-        ,CONSTRUCT_SIGNAL_OUT(signOfControl,        dynamicgraph::Vector, m_pwmDesSOUT)
-        ,CONSTRUCT_SIGNAL_OUT(signOfControlFiltered,dynamicgraph::Vector, m_pwmDesSafeSOUT)
         ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
         ,m_robot_util(RefVoidRobotUtil())
         ,m_initSucceeded(false)
         ,m_emergency_stop_triggered(false)
         ,m_maxCurrent(DEFAULT_MAX_CURRENT)
         ,m_is_first_iter(true)
+        ,m_iter(0)
         ,m_sleep_time(0.0)
       {
 
-        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT <<
-                                    m_signOfControlFilteredSOUT << m_signOfControlSOUT);
+        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT);
 
         /* Commands. */
         addCommand("init",
@@ -232,14 +230,12 @@ namespace dynamicgraph
                                                     "Vector of integer for mapping")));
 	
 	m_robot_util->m_nbJoints = m_robot->nv()-6;
-
+ 
+        m_currents.setZero(m_robot_util->m_nbJoints);
+        m_current_offsets.setZero(m_robot_util->m_nbJoints);
 	m_jointCtrlModes_current.resize(m_robot_util->m_nbJoints);
 	m_jointCtrlModes_previous.resize(m_robot_util->m_nbJoints);
         m_jointCtrlModesCountDown.resize(m_robot_util->m_nbJoints,0);
-        m_signIsPos.resize(m_robot_util->m_nbJoints, false);
-        m_changeSignCpt.resize(m_robot_util->m_nbJoints, 0);
-        m_winSizeAdapt.resize(m_robot_util->m_nbJoints, 0);
-
       }
 
 
@@ -335,14 +331,13 @@ namespace dynamicgraph
         const dynamicgraph::Vector& u               = m_pwmDesSOUT(iter);
         const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
         const dynamicgraph::Vector& tau             = m_tauSIN(iter);
-        const dynamicgraph::Vector& currents        = m_currentsSIN(iter);
+        m_currents                                  = m_currentsSIN(iter);
         const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
         const dynamicgraph::Vector& dq              = m_dqSIN(iter);
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
         const dynamicgraph::Vector& in_out_gain     = m_in_out_gainSIN(iter);
-        const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
-//        const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
-        const dynamicgraph::Vector& iMaxDeadZoneCompensation               = m_signWindowsFilterSizeSIN(iter);
+        const dynamicgraph::Vector& percentageDriverDeadZoneCompensation   = m_percentageDriverDeadZoneCompensationSIN(iter);
+        const dynamicgraph::Vector& iMaxDeadZoneCompensation               = m_iMaxDeadZoneCompensationSIN(iter);
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
@@ -353,34 +348,26 @@ namespace dynamicgraph
             SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
           }
         }
+
+        // Compute and compensate for current sensor offsets
+        if(m_iter<CURRENT_OFFSET_ITERS)
+          m_current_offsets += m_currents;
+        else if(m_iter==CURRENT_OFFSET_ITERS)
+        {
+          m_current_offsets /= CURRENT_OFFSET_ITERS;
+          m_currents -= m_current_offsets;
+          SEND_MSG("Current sensor offsets: "+toString(m_current_offsets), MSG_TYPE_INFO);
+        }
+        else
+          m_currents -= m_current_offsets;
+        m_iter++;
         
         if(!m_emergency_stop_triggered)
         {
           dynamicgraph::Vector dzCompCoeff(m_robot_util->m_nbJoints);
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
-            //Trigger sign filter**********************
-            /*              _    _   _________________________    _
-               input ______| |__| |_|                         |__| |________
-                                         ______________________________
-               output___________________|                              |____
-            */
-            /*if (( (u(i)-currents(i) > 0) && (!m_signIsPos[i]) )
-              ||( (u(i)-currents(i) < 0) && ( m_signIsPos[i]) ))  //If not the same sign
-            {
-              m_changeSignCpt[i]++; //cpt the straight-times we disagree on sign
-            }
-            else
-            { 
-              m_changeSignCpt[i] = 0; //we agree
-            }
-            if (m_changeSignCpt[i] > signWindowsFilterSize(i)) 
-            {
-              m_signIsPos[i] = !m_signIsPos[i];//let's change our mind
-              m_changeSignCpt[i] = 0; //we just agreed
-            }*/
-
-            double err = u(i)-currents(i);
+            double err = u(i)-m_currents(i);
             if( err > iMaxDeadZoneCompensation(i) )
               dzCompCoeff(i) = 1.0;
             else if( err < -iMaxDeadZoneCompensation(i) )
@@ -389,17 +376,8 @@ namespace dynamicgraph
               dzCompCoeff(i) = err / iMaxDeadZoneCompensation(i);
               
             //*****************************************
+            s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + dzCompCoeff(i) * percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
 
-            if (u(i) == 0)
-              s(i) = 0;
-            else 
-              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + dzCompCoeff(i) * percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-/*
-            else if (m_signIsPos[i])
-              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-            else
-              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-*/
             if(fabs(tau(i)) > tau_max(i))
             {
               m_emergency_stop_triggered = true;
@@ -438,48 +416,11 @@ namespace dynamicgraph
           }
         }
 
-        if(m_emergency_stop_triggered)
-          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
-            s(i) = 0.0;
+        // when estimating current offset set ctrl to zero
+        if(m_emergency_stop_triggered || m_iter<CURRENT_OFFSET_ITERS)
+          s.setZero();
         return s;
       }
-
-      DEFINE_SIGNAL_OUT_FUNCTION(signOfControl,dynamicgraph::Vector)
-      {
-        const dynamicgraph::Vector& u = m_pwmDesSOUT(iter);
-        if(s.size()!=(Eigen::VectorXd::Index)m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
-        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
-        {
-          if (u(i)>0)
-            s(i)= 1;
-          else if (u(i)<0)
-            s(i)=-1;
-          else 
-            s(i)=0;
-        }
-        return s;
-      }
-
-      DEFINE_SIGNAL_OUT_FUNCTION(signOfControlFiltered,dynamicgraph::Vector)
-      {
-
-        const dynamicgraph::Vector& uSafe = m_pwmDesSafeSOUT(iter);
-        if(s.size()!=m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
-        for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
-        {
-          if (uSafe(i)==0)
-            s(i)=0;
-          else if (m_signIsPos[i])
-            s(i)=1;
-          else 
-            s(i)=-1;
-
-        }
-        return s;
-      }
-
 
       /* --- COMMANDS ---------------------------------------------------------- */
 

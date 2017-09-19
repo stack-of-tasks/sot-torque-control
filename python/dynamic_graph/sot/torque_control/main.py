@@ -82,7 +82,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
         start_sot();
 
         if(go_half_sitting):
-            print "Gonna go to half sitting";
+            print "Gonna go to half sitting in 1 sec";
             sleep(1.0);
             go_to_position(robot.traj_gen, robot.halfSitting[6:], 10.0);
 
