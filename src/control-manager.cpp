@@ -420,13 +420,14 @@ namespace dynamicgraph
           return s;
         }
 
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+
         m_currents                                  = m_currentsSIN(iter);
         const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
 
         m_currents = m_currents.cwiseProduct(cur_sens_gains);
 
-        if(s.size()!=m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
 
         // Compute and compensate for current sensor offsets
         if(m_iter<CURRENT_OFFSET_ITERS)
@@ -441,6 +442,7 @@ namespace dynamicgraph
           m_currents -= m_current_offsets;
         m_iter++;
 
+        s = m_currents;
         return s;
       }
 
