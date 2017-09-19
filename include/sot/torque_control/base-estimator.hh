@@ -71,7 +71,13 @@ namespace dynamicgraph {
 
       /**  Convert from Transformation Matrix to Roll, Pitch, Yaw */
       void matrixToRpy(const Eigen::Matrix3d & M, Eigen::Vector3d & rpy);
-
+      
+      /** Multiply to quaternions stored in (w,x,y,z) format */
+      void quanternionMult(const Eigen::Vector4d & q1, const Eigen::Vector4d & q2,  Eigen::Vector4d & q12);
+      
+      /** Rotate a point or a vector by a quaternion stored in (w,x,y,z) format */
+      void pointRotationByQuaternion(const Eigen::Vector3d & point,const Eigen::Vector4d & quat, Eigen::Vector3d & rotatedPoint);
+      
       class SOTBASEESTIMATOR_EXPORT BaseEstimator
           :public::dynamicgraph::Entity
       {
@@ -129,6 +135,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(K_fb_feet_poses,            double);  /// feed back gain to correct feet position according to last base estimation and kinematic
         DECLARE_SIGNAL_IN(lf_ref_xyzquat,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(rf_ref_xyzquat,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(accelerometer,              dynamicgraph::Vector);
 
         DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
 
@@ -199,6 +206,11 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
+
+        /* Filter buffers*/
+        Vector3 m_last_vel;
+        Vector3 m_last_DCvel;
+        Vector3 m_last_DCacc;
 
       }; // class BaseEstimator
       

@@ -75,6 +75,26 @@ namespace dynamicgraph
           rpy(0) = atan2(M(2,1), M(2,2));  // gamma
         }
       }
+      
+      void quanternionMult(const Eigen::Vector4d & q1, const Eigen::Vector4d & q2,  Eigen::Vector4d & q12)
+      {
+        q12(0) = q2(0)*q1(0)-q2(1)*q1(1)-q2(2)*q1(2)-q2(3)*q1(3);
+        q12(1) = q2(0)*q1(1)+q2(1)*q1(0)-q2(2)*q1(3)+q2(3)*q1(2);
+        q12(2) = q2(0)*q1(2)+q2(1)*q1(3)+q2(2)*q1(0)-q2(3)*q1(1);
+        q12(3) = q2(0)*q1(3)-q2(1)*q1(2)+q2(2)*q1(1)+q2(3)*q1(0);
+      }
+
+      void pointRotationByQuaternion(const Eigen::Vector3d & point,const Eigen::Vector4d & quat, Eigen::Vector3d & rotatedPoint)
+      {
+            const Eigen::Vector4d p4(0.0, point(0),point(1),point(2));
+            const Eigen::Vector4d quat_conj(quat(0),-quat(1),-quat(2),-quat(3));
+            Eigen::Vector4d q_tmp1,q_tmp2;
+            quanternionMult(quat,p4,q_tmp1);
+            quanternionMult(q_tmp1,quat_conj,q_tmp2);
+            rotatedPoint(0) = q_tmp2(1);
+            rotatedPoint(1) = q_tmp2(2);
+            rotatedPoint(2) = q_tmp2(3);
+      }
 
 #define PROFILE_BASE_POSITION_ESTIMATION    "base-est position estimation"
 #define PROFILE_BASE_VELOCITY_ESTIMATION    "base-est velocity estimation"
@@ -83,7 +103,7 @@ namespace dynamicgraph
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
-                          m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN
+                          m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN << m_accelerometerSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
                           m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT
 
@@ -111,6 +131,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN( K_fb_feet_poses,            double)
         ,CONSTRUCT_SIGNAL_IN( lf_ref_xyzquat,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( rf_ref_xyzquat,             dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN( accelerometer,              dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, m_joint_positionsSIN
                                                                               <<m_joint_velocitiesSIN)
         ,CONSTRUCT_SIGNAL_OUT(q,                          dynamicgraph::Vector, m_kinematics_computationsSINNER
@@ -125,7 +146,7 @@ namespace dynamicgraph
                                                                               <<m_w_rfSOUT
                                                                               <<m_lf_ref_xyzquatSIN
                                                                               <<m_rf_ref_xyzquatSIN)
-        ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER << m_accelerometerSIN)
         ,CONSTRUCT_SIGNAL_OUT(lf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(rf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector, m_qSOUT)
@@ -247,9 +268,13 @@ namespace dynamicgraph
           m_q_sot.setZero(m_robot_util->m_nbJoints+6);
           m_v_pin.setZero(m_robot_util->m_nbJoints+6);
           m_v_sot.setZero(m_robot_util->m_nbJoints+6);
-
+          
           m_sole_M_ftSens = SE3(Matrix3::Identity(),
                                 -Eigen::Map<const Vector3>(&m_robot_util->m_foot_util.m_Right_Foot_Force_Sensor_XYZ(0)));
+        
+          m_last_vel.setZero();
+          m_last_DCvel.setZero();
+          m_last_DCacc.setZero(); //this is to replace by acceleration at 1st iteration
         }
         catch (const std::exception& e)
         {
@@ -541,28 +566,19 @@ namespace dynamicgraph
           const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);  // transform between freeflyer and body attached to IMU sensor 
           const SE3 chestMff(ffMchest.inverse());          // transform between body attached to IMU sensor and freeflyer
           
-          //~ Vector3 rpy_ff, rpy_ff_lf, rpy_ff_rf, rpy_ff_imu; //not to be used
-          Vector3 rpy_chest, rpy_chest_lf, rpy_chest_rf, rpy_chest_imu; // orientation of the body that imu is attached to. (fusion, from left kine, from right kine, from imu)
-          
-          //~ matrixToRpy(m_oMff_lf.rotation(), rpy_ff_lf); //not to be used
-          //~ matrixToRpy(m_oMff_rf.rotation(), rpy_ff_rf);
+          Vector3 rpy_chest, rpy_chest_lf, rpy_chest_rf, rpy_chest_imu; // orientation of the body which imu is attached to. (fusion, from left kine, from right kine, from imu)
+
           matrixToRpy((m_oMff_lf*ffMchest).rotation(), rpy_chest_lf);
           matrixToRpy((m_oMff_rf*ffMchest).rotation(), rpy_chest_rf);
           Eigen::Quaternion<double> quatIMU(quatIMU_vec[0], quatIMU_vec[1], quatIMU_vec[2], quatIMU_vec[3]);
-          //~ matrixToRpy(quatIMU.toRotationMatrix(), rpy_ff_imu); // THIS IS FALSE ! IMU IS NOT LOCATED ON FREEFLYER
-          matrixToRpy(quatIMU.toRotationMatrix(), rpy_chest_imu); // THIS IS TRUE !
+          matrixToRpy(quatIMU.toRotationMatrix(), rpy_chest_imu); 
 
           // average (we do not take into account the IMU yaw)
           double wSum = wL + wR + m_w_imu;
-          //~ rpy_ff(0) = (rpy_ff_lf[0]*wL + rpy_ff_rf[0]*wR + rpy_ff_imu[0]*m_w_imu) / wSum;
-          //~ rpy_ff(1) = (rpy_ff_lf[1]*wL + rpy_ff_rf[1]*wR + rpy_ff_imu[1]*m_w_imu) / wSum;
-          //~ rpy_ff(2) = (rpy_ff_lf[2]*wL + rpy_ff_rf[2]*wR )                 / (wL+wR);
           rpy_chest(0) = (rpy_chest_lf[0]*wL + rpy_chest_rf[0]*wR + rpy_chest_imu[0]*m_w_imu) / wSum;
           rpy_chest(1) = (rpy_chest_lf[1]*wL + rpy_chest_rf[1]*wR + rpy_chest_imu[1]*m_w_imu) / wSum;
           rpy_chest(2) = (rpy_chest_lf[2]*wL + rpy_chest_rf[2]*wR )                 / (wL+wR);
-          
-          
-          
+
           Matrix3 oRchest,R;
           //~ rpyToMatrix(rpy_ff, R);
           rpyToMatrix(rpy_chest, oRchest);
@@ -570,8 +586,6 @@ namespace dynamicgraph
 
           // translation to get foot at the right position
           // evaluate Mrl Mlf for q with the good orientation and zero translation for freeflyer
-          //~ const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
-          //~ const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
           const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
           const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
           // get average translation
@@ -804,7 +818,9 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_BASE_VELOCITY_ESTIMATION);
         {
-          const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
+          const Eigen::VectorXd& dq = m_joint_velocitiesSIN(iter);
+          const Eigen::Vector3d& acc_imu = m_accelerometerSIN(iter);
+          const Eigen::Vector4d& quatIMU_vec = m_imu_quaternionSIN(iter);
           assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
@@ -816,7 +832,43 @@ namespace dynamicgraph
           const Motion v_rf_local = f_rf.placement.actInv(m_data->v[f_rf.parent]);
           const Vector6 v_rf = m_data->oMf[m_right_foot_id].act(v_rf_local).toVector();
 
-          m_v_sot.head<6>() = - 0.5*(v_lf + v_rf);
+          const Vector6 v_kin = - 0.5*(v_lf + v_rf);
+
+          /* Get an estimate of linear velocities from filtered accelerometer integration */
+          
+          /* rotate acceleration to express it in the world frame */
+          Vector3 acc_world;
+          pointRotationByQuaternion(acc_imu,quatIMU_vec,acc_world);
+          //~ sendMsg("acc in IMU frame :\n"+toString(acc_imu), MSG_TYPE_INFO);
+          //~ sendMsg("acc in WLD frame :\n\n"+toString(acc_world), MSG_TYPE_INFO);
+          /* now, the acceleration is expressed in the world frame, 
+           * so it can be written as the sum of the proper acceleration and the 
+           * constant gravity vector. We could remove this assuming a [0,0,9.81]
+           * but we prefer to filter this signal with low frequency high pass 
+           * filter since it is robust to gravity norm error, and we know that 
+           * globaly the robot can not accelerate continuously. */
+          
+          /* Extract DC component by low pass filter and remove it*/
+          const double r1 = 1-0.0005;
+          if (iter==0) m_last_DCacc = acc_world; // Copy the first acceleration data
+          const Vector3 DCacc = acc_world * (1-r1) + m_last_DCacc * (r1);
+          m_last_DCacc = DCacc;
+          const Vector3 ACacc = acc_world - DCacc;
+          
+          /* Then this acceleration is integrated. Note that an epsilon is applied to 
+           * remain numericaly stable. In practice, this does not affect the results */
+          const Vector3 vel = m_last_vel*0.99999 + ACacc * m_dt;
+          m_last_vel = vel;
+          
+          /* To stabilise the integrated velocity, we add the 
+           * asumption that globaly, velocity is zero. So we remove DC again */
+          const double r2 = 1-0.001;
+          const Vector3 DCvel = vel * (1-r2) + m_last_DCvel * (r2);
+          m_last_DCvel = DCvel;
+          const Vector3 ACvel = vel - DCvel;
+
+          m_v_sot.head<6>() = v_kin;
+          m_v_sot.head<3>() = ACvel; /*This overwrite kinematic velocity estimation*/
           m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
 
           s = m_v_sot;
