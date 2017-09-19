@@ -341,7 +341,8 @@ namespace dynamicgraph
         const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
         const dynamicgraph::Vector& in_out_gain     = m_in_out_gainSIN(iter);
         const dynamicgraph::Vector& percentageDriverDeadZoneCompensation = m_percentageDriverDeadZoneCompensationSIN(iter);
-        const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+//        const dynamicgraph::Vector& signWindowsFilterSize                = m_signWindowsFilterSizeSIN(iter);
+        const dynamicgraph::Vector& iMaxDeadZoneCompensation               = m_signWindowsFilterSizeSIN(iter);
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
@@ -355,43 +356,50 @@ namespace dynamicgraph
         
         if(!m_emergency_stop_triggered)
         {
+          dynamicgraph::Vector dzCompCoeff(m_robot_util->m_nbJoints);
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
             //Trigger sign filter**********************
             /*              _    _   _________________________    _
                input ______| |__| |_|                         |__| |________
-                            __________________________________
-               output______|                                  |_____________
+                                         ______________________________
+               output___________________|                              |____
             */
-            if (( (u(i)-currents(i) > 0) && (!m_signIsPos[i]) )
+            /*if (( (u(i)-currents(i) > 0) && (!m_signIsPos[i]) )
               ||( (u(i)-currents(i) < 0) && ( m_signIsPos[i]) ))  //If not the same sign
             {
               m_changeSignCpt[i]++; //cpt the straight-times we disagree on sign
-              //if (i == 2) printf("inc cpt=%d \t pos=%d\r\n", m_changeSignCpt[i],m_signIsPos[i]);
             }
             else
             { 
               m_changeSignCpt[i] = 0; //we agree
-              //if (i == 2) printf("rst cpt=%d \t pos=%d \t win=%d\r\n", m_changeSignCpt[i],m_signIsPos[i],m_winSizeAdapt[i]);
-              if (m_winSizeAdapt[i]>0) m_winSizeAdapt[i]--;  //decrese reactivity (set a smaller windows)
             }
-            if (m_changeSignCpt[i] > m_winSizeAdapt[i]) 
+            if (m_changeSignCpt[i] > signWindowsFilterSize(i)) 
             {
-              
               m_signIsPos[i] = !m_signIsPos[i];//let's change our mind
               m_changeSignCpt[i] = 0; //we just agreed
-              m_winSizeAdapt[i]  = signWindowsFilterSize(i); //be not so reactive for next event (set a large windows size)
-              //if (i == 2) printf("toogle signIsPos=%d\r\n", m_signIsPos[i]);
-            }
+            }*/
+
+            double err = u(i)-currents(i);
+            if( err > iMaxDeadZoneCompensation(i) )
+              dzCompCoeff(i) = 1.0;
+            else if( err < -iMaxDeadZoneCompensation(i) )
+              dzCompCoeff(i) = -1.0;
+            else
+              dzCompCoeff(i) = err / iMaxDeadZoneCompensation(i);
+              
             //*****************************************
 
             if (u(i) == 0)
               s(i) = 0;
+            else 
+              s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + dzCompCoeff(i) * percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+/*
             else if (m_signIsPos[i])
               s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
             else
               s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) - percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
-
+*/
             if(fabs(tau(i)) > tau_max(i))
             {
               m_emergency_stop_triggered = true;
