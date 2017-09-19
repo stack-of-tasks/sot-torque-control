@@ -67,7 +67,10 @@ namespace dynamicgraph {
 
 ///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
 #define DEAD_ZONE_OFFSET 40
+// max motor current
 #define DEFAULT_MAX_CURRENT 8
+// number of iterations used to compute current offset at the beginning
+#define CURRENT_OFFSET_ITERS 100
 
       class CtrlMode
       {
@@ -121,11 +124,9 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
-        DECLARE_SIGNAL_IN(signWindowsFilterSize,                 dynamicgraph::Vector);  /// windows size to detect changing of control sign (to then apply motor driver dead zone compensation) 0 is no filter. 1,2,3...
+        DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
-        DECLARE_SIGNAL_OUT(signOfControlFiltered,                dynamicgraph::Vector);  /// sign of control filtered (indicating dead zone compensation applyed)
-        DECLARE_SIGNAL_OUT(signOfControl,                        dynamicgraph::Vector);  /// sign of control without filtered (indicating what would be the dead zone compensation applyed if no filtering on sign)
 
 
 
@@ -186,10 +187,11 @@ namespace dynamicgraph {
         double  m_maxCurrent;       /// control limit in Ampers
         bool    m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or by control limit violation
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
+        int     m_iter;
         double  m_sleep_time;       /// time to sleep at every iteration (to slow down simulation)
-        std::vector<bool>         m_signIsPos;      /// Control sign filtered for deadzone compensation
-        std::vector<unsigned int> m_changeSignCpt;  /// Cpt to filter the control sign
-        std::vector<unsigned int> m_winSizeAdapt;   /// Variable windows filter size used to be more reactibe if last changing sign event is dating a bit (see graph)
+
+        dynamicgraph::Vector m_currents;
+        dynamicgraph::Vector m_current_offsets;
         /*
                         _    _   _________________________    _
            input ______| |__| |_|                         |__| |________
