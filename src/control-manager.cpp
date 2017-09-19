@@ -45,7 +45,8 @@ namespace dynamicgraph
 #define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
                        SAFETY_SIGNALS << m_iMaxDeadZoneCompensationSIN << m_dqSIN << \
-                       m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN
+                       m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN << \
+                       m_dead_zone_offsetsSIN << m_cur_sens_gainsSIN
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -66,6 +67,8 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(dq,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(bemfFactor,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(in_out_gain,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(cur_sens_gains,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(dead_zone_offsets,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(currents,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
@@ -73,8 +76,9 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(iMaxDeadZoneCompensation, dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_OUT(pwmDes,               dynamicgraph::Vector, m_base6d_encodersSIN)
-        ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(pwmDes,         dynamicgraph::Vector, m_base6d_encodersSIN)
+        ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,     dynamicgraph::Vector, INPUT_SIGNALS << m_pwmDesSOUT << m_currents_outSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(currents_out,   dynamicgraph::Vector, m_currentsSIN << m_cur_sens_gainsSIN)
         ,m_robot_util(RefVoidRobotUtil())
         ,m_initSucceeded(false)
         ,m_emergency_stop_triggered(false)
@@ -84,7 +88,8 @@ namespace dynamicgraph
         ,m_sleep_time(0.0)
       {
 
-        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT);
+        Entity::signalRegistration( INPUT_SIGNALS << m_pwmDesSOUT << m_pwmDesSafeSOUT
+                                    << m_currents_outSOUT);
 
         /* Commands. */
         addCommand("init",
@@ -257,8 +262,6 @@ namespace dynamicgraph
           getProfiler().stop(PROFILE_DYNAMIC_GRAPH_PERIOD);
         getProfiler().start(PROFILE_DYNAMIC_GRAPH_PERIOD);
 
-        //const Eigen::VectorXd& base6d_encoders = m_base6d_encodersSIN(iter);
-
         if(s.size()!=(Eigen::VectorXd::Index) m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
@@ -327,17 +330,17 @@ namespace dynamicgraph
           return s;
         }
 
-        // const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-        const dynamicgraph::Vector& u               = m_pwmDesSOUT(iter);
-        const dynamicgraph::Vector& tau_max         = m_max_tauSIN(iter);
-        const dynamicgraph::Vector& tau             = m_tauSIN(iter);
-        m_currents                                  = m_currentsSIN(iter);
-        const dynamicgraph::Vector& tau_predicted   = m_tau_predictedSIN(iter);
-        const dynamicgraph::Vector& dq              = m_dqSIN(iter);
-        const dynamicgraph::Vector& bemfFactor      = m_bemfFactorSIN(iter);        
-        const dynamicgraph::Vector& in_out_gain     = m_in_out_gainSIN(iter);
-        const dynamicgraph::Vector& percentageDriverDeadZoneCompensation   = m_percentageDriverDeadZoneCompensationSIN(iter);
-        const dynamicgraph::Vector& iMaxDeadZoneCompensation               = m_iMaxDeadZoneCompensationSIN(iter);
+        const dynamicgraph::Vector& u                         = m_pwmDesSOUT(iter);
+        const dynamicgraph::Vector& tau_max                   = m_max_tauSIN(iter);
+        const dynamicgraph::Vector& tau                       = m_tauSIN(iter);
+        const dynamicgraph::Vector& currents                  = m_currents_outSOUT(iter);
+        const dynamicgraph::Vector& tau_predicted             = m_tau_predictedSIN(iter);
+        const dynamicgraph::Vector& dq                        = m_dqSIN(iter);
+        const dynamicgraph::Vector& bemfFactor                = m_bemfFactorSIN(iter);
+        const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
+        const dynamicgraph::Vector& dead_zone_offsets         = m_dead_zone_offsetsSIN(iter);
+        const dynamicgraph::Vector& dead_zone_comp_perc       = m_percentageDriverDeadZoneCompensationSIN(iter);
+        const dynamicgraph::Vector& iMaxDeadZoneCompensation  = m_iMaxDeadZoneCompensationSIN(iter);
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
@@ -348,35 +351,22 @@ namespace dynamicgraph
             SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
           }
         }
-
-        // Compute and compensate for current sensor offsets
-        if(m_iter<CURRENT_OFFSET_ITERS)
-          m_current_offsets += m_currents;
-        else if(m_iter==CURRENT_OFFSET_ITERS)
-        {
-          m_current_offsets /= CURRENT_OFFSET_ITERS;
-          m_currents -= m_current_offsets;
-          SEND_MSG("Current sensor offsets: "+toString(m_current_offsets), MSG_TYPE_INFO);
-        }
-        else
-          m_currents -= m_current_offsets;
-        m_iter++;
         
         if(!m_emergency_stop_triggered)
         {
-          dynamicgraph::Vector dzCompCoeff(m_robot_util->m_nbJoints);
+          dynamicgraph::Vector dz_coeff(m_robot_util->m_nbJoints);
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
-            double err = u(i)-m_currents(i);
+            double err = u(i)-currents(i);
             if( err > iMaxDeadZoneCompensation(i) )
-              dzCompCoeff(i) = 1.0;
+              dz_coeff(i) = 1.0;
             else if( err < -iMaxDeadZoneCompensation(i) )
-              dzCompCoeff(i) = -1.0;
+              dz_coeff(i) = -1.0;
             else
-              dzCompCoeff(i) = err / iMaxDeadZoneCompensation(i);
+              dz_coeff(i) = err / iMaxDeadZoneCompensation(i);
               
             //*****************************************
-            s(i) = (u(i) + bemfFactor(i)*dq(i) ) * in_out_gain(i) + dzCompCoeff(i) * percentageDriverDeadZoneCompensation(i) * DEAD_ZONE_OFFSET;
+            s(i) = (u(i) + bemfFactor(i)*dq(i) + dz_coeff(i)*dead_zone_comp_perc(i)*dead_zone_offsets(i)) * in_out_gain(i);
 
             if(fabs(tau(i)) > tau_max(i))
             {
@@ -419,6 +409,38 @@ namespace dynamicgraph
         // when estimating current offset set ctrl to zero
         if(m_emergency_stop_triggered || m_iter<CURRENT_OFFSET_ITERS)
           s.setZero();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(currents_out,dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal currents_out before initialization!");
+          return s;
+        }
+
+        m_currents                                  = m_currentsSIN(iter);
+        const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
+
+        m_currents = m_currents.cwiseProduct(cur_sens_gains);
+
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+
+        // Compute and compensate for current sensor offsets
+        if(m_iter<CURRENT_OFFSET_ITERS)
+          m_current_offsets += m_currents;
+        else if(m_iter==CURRENT_OFFSET_ITERS)
+        {
+          m_current_offsets /= CURRENT_OFFSET_ITERS;
+          m_currents -= m_current_offsets;
+          SEND_MSG("Current sensor offsets: "+toString(m_current_offsets), MSG_TYPE_INFO);
+        }
+        else
+          m_currents -= m_current_offsets;
+        m_iter++;
+
         return s;
       }
 

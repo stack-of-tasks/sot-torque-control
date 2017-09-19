@@ -65,8 +65,6 @@ namespace dynamicgraph {
 ///             to the [-2048 ; 2048] 12bit DAC register
 //#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
 
-///offset to apply to compensate motor driver dead-zone (+-0.2V -> +-0.4A -> "+-(int)40.96) 
-#define DEAD_ZONE_OFFSET 40
 // max motor current
 #define DEFAULT_MAX_CURRENT 8
 // number of iterations used to compute current offset at the beginning
@@ -116,8 +114,10 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
-        DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link betwin velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
+        DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link between velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
         DECLARE_SIGNAL_IN(in_out_gain,                           dynamicgraph::Vector);  /// gain from input to output control values
+        DECLARE_SIGNAL_IN(cur_sens_gains,                        dynamicgraph::Vector);  /// gains of current sensors
+        DECLARE_SIGNAL_IN(dead_zone_offsets,                     dynamicgraph::Vector);  /// current control dead zone offsets
         DECLARE_SIGNAL_IN(currents,                              dynamicgraph::Vector);  /// motor currents
         DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
         DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
@@ -125,8 +125,10 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
+
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
+        DECLARE_SIGNAL_OUT(currents_out,                         dynamicgraph::Vector);  /// current measurements after gain and offset compensation
 
 
 
