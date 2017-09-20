@@ -325,7 +325,7 @@ def create_ctrl_manager(conf, dt, robot_name='robot'):
     
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    ctrl_manager.init(dt, conf.urdfFileName, conf.CTRL_MANAGER_CURRENT_MAX, robot_name)
+    ctrl_manager.init(dt, conf.urdfFileName, conf.CTRL_MANAGER_CURRENT_MAX, robot_name, conf.CURRENT_OFFSET_ITERS)
 
     # Set the map from joint name to joint ID
     for key in conf.mapJointNameToID:
@@ -351,7 +351,10 @@ def create_ctrl_manager(conf, dt, robot_name='robot'):
     # Set the foot frame name
     for key in conf.footFrameNames:
       ctrl_manager.setFootFrameName(key,conf.footFrameNames[key])
-
+    
+    # Set IMU hosting joint name
+    ctrl_manager.setImuJointName(conf.ImuJointName)
+    
     ctrl_manager.setRightFootForceSensorXYZ(conf.rightFootSensorXYZ);
     ctrl_manager.setRightFootSoleXYZ(conf.rightFootSoleXYZ);
     ctrl_manager.setDefaultMaxCurrent(conf.CTRL_MANAGER_CURRENT_MAX)

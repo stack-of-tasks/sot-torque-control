@@ -261,8 +261,12 @@ namespace dynamicgraph
 
           assert(m_model.existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
-          m_left_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+          assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+          m_left_foot_id  = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
           m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
+          m_IMU_body_id   = m_model.getFrameId(m_robot_util->m_imu_joint_name);
+          sendMsg("m_IMU_body_id="+toString(m_IMU_body_id)+"\n" , MSG_TYPE_INFO);
+          
           m_q_pin.setZero(m_model.nq);
           m_q_pin[6]= 1.; // for quaternion
           m_q_sot.setZero(m_robot_util->m_nbJoints+6);

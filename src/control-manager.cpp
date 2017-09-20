@@ -88,13 +88,13 @@ namespace dynamicgraph
 
         /* Commands. */
         addCommand("init",
-                   makeCommandVoid4(*this, &ControlManager::init,
-                                    docCommandVoid4("Initialize the entity.",
+                   makeCommandVoid5(*this, &ControlManager::init,
+                                    docCommandVoid5("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "URDF file path (string)",
 						    "Max current (double)",
-						    "Robot reference (string)")));
-        
+						    "Robot reference (string)",
+						    "Number of iterations while control is disabled to calibrate current sensors (int)")));     
         addCommand("addCtrlMode",
                    makeCommandVoid1(*this, &ControlManager::addCtrlMode,
                                     docCommandVoid1("Create an input signal with name 'ctrl_x' where x is the specified name.",
@@ -174,6 +174,13 @@ namespace dynamicgraph
                                     docCommandVoid2("Set the Frame Name for the Foot Name.",
                                                     "(string) Foot name",
                                                     "(string) Frame name")));
+	addCommand("setImuJointName",
+                   makeCommandVoid1(*this, &ControlManager::setImuJointName,
+                                    docCommandVoid1("Set the Joint Name wich IMU is attached to.",
+                                                    "(string) Joint name")));
+                                                    
+                                                    
+                                                    
 		   
         addCommand("displayRobotUtil",
                    makeCommandVoid0(*this, &ControlManager::displayRobotUtil,
@@ -198,16 +205,17 @@ namespace dynamicgraph
       void ControlManager::init(const double & dt,
                                 const std::string & urdfFile,
                                 const double & lmax_current,
-				const std::string &robotRef)
+				const std::string &robotRef,
+                const unsigned int & currentOffsetIters )
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
-
 	m_maxCurrent = lmax_current;
 
         m_dt = dt;
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
+        m_currentOffsetIters = currentOffsetIters;
 	vector<string> package_dirs;
 
 	m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
@@ -350,17 +358,20 @@ namespace dynamicgraph
         }
 
         // Compute and compensate for current sensor offsets
-        if(m_iter<CURRENT_OFFSET_ITERS)
-          m_current_offsets += m_currents;
-        else if(m_iter==CURRENT_OFFSET_ITERS)
+        if (m_currentOffsetIters > 0)
         {
-          m_current_offsets /= CURRENT_OFFSET_ITERS;
-          m_currents -= m_current_offsets;
-          SEND_MSG("Current sensor offsets: "+toString(m_current_offsets), MSG_TYPE_INFO);
+          if(m_iter<m_currentOffsetIters)
+            m_current_offsets += m_currents;
+          else if(m_iter==m_currentOffsetIters)
+          {
+            m_current_offsets /= m_currentOffsetIters;
+            m_currents -= m_current_offsets;
+            SEND_MSG("Current sensor offsets: "+toString(m_current_offsets), MSG_TYPE_INFO);
+          }
+          else
+            m_currents -= m_current_offsets;
+          m_iter++;
         }
-        else
-          m_currents -= m_current_offsets;
-        m_iter++;
         
         if(!m_emergency_stop_triggered)
         {
@@ -417,7 +428,7 @@ namespace dynamicgraph
         }
 
         // when estimating current offset set ctrl to zero
-        if(m_emergency_stop_triggered || m_iter<CURRENT_OFFSET_ITERS)
+        if(m_emergency_stop_triggered || m_iter<m_currentOffsetIters)
           s.setZero();
         return s;
       }
@@ -666,6 +677,18 @@ namespace dynamicgraph
 	else 
 	  SEND_WARNING_STREAM_MSG("Did not understand the foot name !" + FootName);
       }
+      
+      void ControlManager::setImuJointName(const std::string &JointName)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot set IMU joint name!");
+          return;
+        }
+        m_robot_util->m_imu_joint_name = JointName;
+      } 
+      
+      
       
       void ControlManager::displayRobotUtil()
       {

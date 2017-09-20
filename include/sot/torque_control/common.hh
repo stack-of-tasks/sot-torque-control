@@ -198,6 +198,9 @@ namespace dynamicgraph {
 	/// The joint limits map.
 	std::map<Index,JointLimits> m_limits_map;
 
+    /// The name of the joint IMU is attached to
+    std::string m_imu_joint_name;
+
 	/// This method creates the map between id and name.
 	/// It is called each time a new link between id and name is inserted 
 	/// (i.e. when set_name_to_id is called).

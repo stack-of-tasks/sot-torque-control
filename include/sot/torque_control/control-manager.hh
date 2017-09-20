@@ -69,8 +69,7 @@ namespace dynamicgraph {
 #define DEAD_ZONE_OFFSET 40
 // max motor current
 #define DEFAULT_MAX_CURRENT 8
-// number of iterations used to compute current offset at the beginning
-#define CURRENT_OFFSET_ITERS 100
+
 
       class CtrlMode
       {
@@ -103,11 +102,13 @@ namespace dynamicgraph {
 	/// @param dt: control interval
 	/// @param urdfFile: path to the URDF model of the robot
 	/// @param maxCurrent: default maximum current for each motor. 
+	/// @param currentOffsetIters: number of iterations while control is disabled to calibrate current sensors. 
 	/// The recommended way is to use the signal max_current.
         void init(const double & dt,
                   const std::string & urdfFile,
                   const double & maxCurrent,
-                  const std::string & robotRef);
+                  const std::string & robotRef,
+                  const unsigned int & currentOffsetIters);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
@@ -159,7 +160,7 @@ namespace dynamicgraph {
 	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
         void setRightFootForceSensorXYZ(const dynamicgraph::Vector &);
 	void setFootFrameName(const std::string &, const std::string &);
-
+    void setImuJointName(const std::string &);
 	void displayRobotUtil();
 	/// Set the mapping between urdf and sot.
 	void setJoints(const dynamicgraph::Vector &);
@@ -189,7 +190,7 @@ namespace dynamicgraph {
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
         int     m_iter;
         double  m_sleep_time;       /// time to sleep at every iteration (to slow down simulation)
-
+        unsigned int m_currentOffsetIters;
         dynamicgraph::Vector m_currents;
         dynamicgraph::Vector m_current_offsets;
         /*
