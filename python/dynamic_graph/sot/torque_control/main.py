@@ -54,7 +54,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
          0.261799,  0.17453, 0., -0.523599, 0., 0., 0.1);
          
     robot.device.setControlInputType('noInteg');
-    robot.ctrl_manager    = create_ctrl_manager(conf.control_manager, dt);
+    robot.ctrl_manager    = create_ctrl_manager(conf.control_manager, conf.motor_params, dt);
     
     robot.traj_gen        = create_trajectory_generator(robot.device, dt);
     robot.com_traj_gen    = create_com_traj_gen(conf.balance_ctrl, dt);

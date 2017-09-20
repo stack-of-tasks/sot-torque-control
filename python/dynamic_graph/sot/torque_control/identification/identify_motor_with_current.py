@@ -25,7 +25,7 @@ ZERO_ACC_THRESHOLD                  = 1.
 ZERO_JERK_THRESHOLD                 = 3.0
 CURRENT_SATURATION                  = 9.5
 Nvel                                = 10
-SHOW_THRESHOLD_EFFECT               = False
+SHOW_THRESHOLD_EFFECT               = True
 USING_CONTROL_AS_CURRENT_MEASURE    = False
 INVERT_CURRENT                      = False
 result_dir                          = '../../../../../results/hrp2_motor_identification/'
@@ -39,12 +39,12 @@ IDENTIFICATION_MODE ='vel'
 #JOINT_NAME = 'rhp'; 
 #JOINT_NAME = 'rk'; 
 #JOINT_NAME = 'rap'; 
-#JOINT_NAME = 'rar'; 
+JOINT_NAME = 'rar'; 
 
 #JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
 #JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
 #JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
-JOINT_NAME = 'lk';  # 9 ok
+#JOINT_NAME = 'lk';  # 9 ok
 #JOINT_NAME = 'lap'; # 10 ok
 #JOINT_NAME = 'lar'; # 11 ok
 
@@ -77,6 +77,7 @@ if (IDENTIFICATION_MODE != 'test_model') :
     if(JOINT_NAME == 'rk' ):
         INVERT_CURRENT = True
         data_folder_static = result_dir+'20161114_152140_rk_static/';
+#        data_folder_static = result_dir+'../20170918_180023_rk_current_chirp/'
         data_folder_vel    = result_dir+'20161114_153220_rk_vel/';
         data_folder_acc    = result_dir+'20161114_152706_rk_acc/';
     if(JOINT_NAME == 'rap' ):
@@ -185,23 +186,25 @@ if(IDENTIFICATION_MODE=='vel' or IDENTIFICATION_MODE=='acc'):
 #Kd Identification         
 if(IDENTIFICATION_MODE=='vel'):
     Ks =(data_motor_param['Ks'].item())
-    (Kvp, Kvn, Kfp, Kfn, DeadZone, Kpwm) = identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks,
+    (Kvp, Kvn, Kfp, Kfn, DeadZone, K_bemf) = identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks,
                                                               ZERO_VEL_THRESHOLD, ZERO_ACC_THRESHOLD, 
                                                               Nvel, SHOW_THRESHOLD_EFFECT);
     np.savez(data_folder+'motor_param_'+JOINT_NAME+'.npz', Ktp=Ktp, Ktn=Ktn, Kvp=Kvp, Kvn=Kvn,
-             Kfp=Kfp, Kfn=Kfn, DeadZone=DeadZone, Kpwm=Kpwm)
+             Kfp=Kfp, Kfn=Kfn, DeadZone=DeadZone, K_bemf=K_bemf)
     warning = ""
     if USING_CONTROL_AS_CURRENT_MEASURE :
         warning = " (Current sensor not used)"
-        
-    print "deadzone[%d] = %f #Using %s"% (JOINT_ID, DeadZone, data_folder_vel + warning);
-    print "Kpwm[%d]     = %f # in Amp / Rad.s-1"% (JOINT_ID, Kpwm);
-    print 'Kt_p[%d]     = %f #Using %s' % (JOINT_ID, Ktp, data_folder_static + warning);
-    print 'Kt_n[%d]     = %f #Using %s' % (JOINT_ID, Ktn, data_folder_static + warning);
-    print 'Kv_p[%d]     = %f #Using %s' % (JOINT_ID, Kvp, data_folder_vel + warning);
-    print 'Kv_n[%d]     = %f #Using %s' % (JOINT_ID, Kvn, data_folder_vel + warning);
-    print 'Kf_p[%d]     = %f #Using %s' % (JOINT_ID, Kfp, data_folder_vel + warning);
-    print 'Kf_n[%d]     = %f #Using %s' % (JOINT_ID, Kfn, data_folder_vel + warning);
+    
+    print "cur_sens_gain[%d] = %f #Using %s"% (JOINT_ID, Ks, data_folder_static.split('/')[-2] + warning);    
+    print "deadzone[%d]      = %f #Using %s"% (JOINT_ID, data_motor_param['DZ'].item(), data_folder_static.split('/')[-2] + warning);    
+    print "deadzone[%d]      = %f #Using %s"% (JOINT_ID, DeadZone, data_folder_vel.split('/')[-2] + warning);
+    print "K_bemf[%d]        = %f # [Amp/Rad.s-1] Using %s"% (JOINT_ID, K_bemf, data_folder_vel.split('/')[-2] + warning);
+    print 'Kt_p[%d]          = %f #Using %s' % (JOINT_ID, Ktp, data_folder_static.split('/')[-2] + warning);
+    print 'Kt_n[%d]          = %f #Using %s' % (JOINT_ID, Ktn, data_folder_static.split('/')[-2] + warning);
+    print 'Kv_p[%d]          = %f #Using %s' % (JOINT_ID, Kvp, data_folder_vel.split('/')[-2] + warning);
+    print 'Kv_n[%d]          = %f #Using %s' % (JOINT_ID, Kvn, data_folder_vel.split('/')[-2] + warning);
+    print 'Kf_p[%d]          = %f #Using %s' % (JOINT_ID, Kfp, data_folder_vel.split('/')[-2] + warning);
+    print 'Kf_n[%d]          = %f #Using %s' % (JOINT_ID, Kfn, data_folder_vel.split('/')[-2] + warning);
 
     plt.savefig(data_folder+"vel_"+JOINT_NAME+".jpg")
     

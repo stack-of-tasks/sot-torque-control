@@ -309,7 +309,7 @@ def create_inverse_dynamics(robot, gains, dt=0.001):
     inv_dyn_ctrl.init(dt);
     return inv_dyn_ctrl;
         
-def create_ctrl_manager(conf, dt, robot_name='robot'):
+def create_ctrl_manager(conf, motor_params, dt, robot_name='robot'):
     ctrl_manager = ControlManager("ctrl_man");        
 
 #    plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
@@ -319,9 +319,10 @@ def create_ctrl_manager(conf, dt, robot_name='robot'):
     ctrl_manager.percentageDriverDeadZoneCompensation.value = NJ*(conf.PERCENTAGE_DRIVER_DEAD_ZONE_COMPENSATION,);
     ctrl_manager.iMaxDeadZoneCompensation.value             = NJ*(conf.I_MAX_DEAD_ZONE_COMPENSATION,);
     ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
-    ctrl_manager.bemfFactor.value                           = NJ*(0.0,);
+    ctrl_manager.bemfFactor.value                           = 0.01*motor_params.K_bemf;
+    ctrl_manager.dead_zone_offsets.value                    = motor_params.deadzone;
+    ctrl_manager.cur_sens_gains.value                       = motor_params.cur_sens_gains;
     ctrl_manager.currents.value                             = NJ*(0.0,);
-    #ctrl_manager.bemfFactor.value = tuple(Kpwm*0.1);
     
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.

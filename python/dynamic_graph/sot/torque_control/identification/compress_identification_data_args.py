@@ -116,17 +116,16 @@ def main():
         
         print 'JOINT_ID :'
         print JOINT_ID
-        #~ if (JOINT_ID == 4): 
-            #~ current = current[:,5].reshape(N,1);
-        #~ elif (JOINT_ID == 5):
-            #~ current = current[:,4].reshape(N,1);
-        #~ elif (JOINT_ID == 11):
-            #~ current = current[:,10].reshape(N,1); #OK
-        #~ elif (JOINT_ID == 10):
-            #~ current = current[:,11].reshape(N,1); #OK               
-        #~ else:
-            #~ current = current[:,JOINT_ID].reshape(N,len(JOINT_ID));
-        current = current[:,JOINT_ID].reshape(N,len(JOINT_ID))
+        if (JOINT_ID == 4): 
+           current = current[:,5].reshape(N,1);
+        elif (JOINT_ID == 5):
+            current = current[:,4].reshape(N,1);
+        elif (JOINT_ID == 11):
+            current = current[:,10].reshape(N,1); #OK
+        elif (JOINT_ID == 10):
+            current = current[:,11].reshape(N,1); #OK               
+        else:
+            current = current[:,JOINT_ID].reshape(N,len(JOINT_ID));
         enc  = enc[:N,7:];
         acc  = acc[:N,1:];
         gyro = gyro[:N,1:];

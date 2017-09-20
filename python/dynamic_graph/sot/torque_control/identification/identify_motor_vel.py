@@ -73,7 +73,7 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
     a=(an+ap)/2
     b=(-bp+bn)/2
     DeadZone = b/a ; #the half of the total dead zone
-    Kpwm = 1.0/a;
+    K_bemf = 1.0/a;
     
     x=av_delta_i
     plt.plot([-b/a,b/a],[0. ,0.          ],'g:',lw=3)    
@@ -152,5 +152,5 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
 
     plt.show()
     
-    return (Kvp, Kvn, Kfp, Kfn, DeadZone, Kpwm)
+    return (Kvp, Kvn, Kfp, Kfn, DeadZone, K_bemf)
     
