@@ -26,30 +26,28 @@ Filter data with an IIR or FIR filter.
 Filter a data sequence, x, using a digital filter. The filter is a direct form II transposed implementation of the standard difference equation.
 This means that the filter implements:
 
-a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
-                      - a[1]*y[n-1] - ... - a[N]*y[n-N]
+a[0]*y[N] = b[0]*x[N] + b[1]*x[N-1] + ... + b[m-1]*x[N-(m-1)]
+                      - a[1]*y[N-1] - ... - a[n-1]*y[N-(n-1)]
 
-where M is the degree of the numerator, N is the degree of the denominator, and n is the sample number
+where m is the degree of the numerator, n is the degree of the denominator, and N is the sample number
 
 */
 
 CausalFilter::CausalFilter(const double &timestep,
                            const int& xSize,
-                           const int& filter_order_m,
-                           const int& filter_order_n,
                            const Eigen::VectorXd& filter_numerator,
                            const Eigen::VectorXd& filter_denominator)
   
   : m_dt(timestep)
   , m_x_size(xSize)
-  , m_filter_order_m(filter_order_m)
-  , m_filter_order_n(filter_order_n)
+  , m_filter_order_m(filter_numerator.size())
+  , m_filter_order_n(filter_denominator.size())
   , m_filter_numerator(filter_numerator)
   , m_filter_denominator(filter_denominator)
   , pt_numerator(0)
   , pt_denominator(0)
-  , input_buffer(Eigen::MatrixXd::Zero(xSize, filter_order_m))
-  , output_buffer(Eigen::MatrixXd::Zero(xSize, filter_order_n-1))
+  , input_buffer(Eigen::MatrixXd::Zero(xSize, filter_numerator.size()))
+  , output_buffer(Eigen::MatrixXd::Zero(xSize, filter_denominator.size()-1))
 {
   assert(timestep>0.0 && "Timestep should be > 0");
   assert(m_filter_numerator.size() == m_filter_order_m);
@@ -84,11 +82,11 @@ void CausalFilter::get_x_dx(const Eigen::VectorXd& base_x,
 
 
 
-void CausalFilter::switch_filter(const int& filter_order_m,
-                                 const int& filter_order_n,
-                                 const Eigen::VectorXd& filter_numerator,
+void CausalFilter::switch_filter(const Eigen::VectorXd& filter_numerator,
                                  const Eigen::VectorXd& filter_denominator)
 {
+  int filter_order_m = filter_numerator.size();
+  int filter_order_n = filter_denominator.size();
   if(filter_order_m > m_filter_order_m)
   {
     input_buffer.conservativeResize(Eigen::NoChange, filter_order_m);
