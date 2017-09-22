@@ -71,7 +71,6 @@ namespace dynamicgraph
         addCommand("setBeta",
                    makeCommandVoid1(*this, &MadgwickAHRS::set_beta,
                                     docCommandVoid1("Set the filter parameter beta", "double")));
-
       }
 
       void MadgwickAHRS::init(const double& dt)
