@@ -49,17 +49,17 @@ namespace dynamicgraph
       SE3TrajectoryGenerator::
           SE3TrajectoryGenerator(const std::string& name)
             : Entity(name)
-            ,CONSTRUCT_SIGNAL_IN(initial_value,ml::Vector)
-            ,CONSTRUCT_SIGNAL(x,   OUT, ml::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(dx,  ml::Vector, m_xSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(ddx, ml::Vector, m_xSOUT)
+            ,CONSTRUCT_SIGNAL_IN(initial_value,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL(x,   OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_OUT(dx,  dynamicgraph::Vector, m_xSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
             ,m_np(12)
             ,m_nv(6)
             ,m_iterLast(0)
       {
-        BIND_SIGNAL_TO_FUNCTION(x,   OUT, ml::Vector);
+        BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
         Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN);
 
@@ -155,7 +155,7 @@ namespace dynamicgraph
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(x, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(x, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -171,7 +171,7 @@ namespace dynamicgraph
           // at first iteration store initial values
           if(m_firstIter)
           {
-            const ml::Vector& initial_value = m_initial_valueSIN(iter);
+            const dynamicgraph::Vector& initial_value = m_initial_valueSIN(iter);
             if(initial_value.size()!=m_np)
             {
               SEND_ERROR_STREAM_MSG("Unexpected size of input signal initial_value: "+toString(initial_value.size()));
@@ -233,7 +233,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(dx, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(dx, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -241,7 +241,7 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& x = m_xSOUT(iter);
+        const dynamicgraph::Vector& x = m_xSOUT(iter);
 
         if(s.size()!=m_nv)
           s.resize(m_nv);
@@ -257,7 +257,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(ddx, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(ddx, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -265,7 +265,7 @@ namespace dynamicgraph
           return s;
         }
 
-        const ml::Vector& x = m_xSOUT(iter);
+        const dynamicgraph::Vector& x = m_xSOUT(iter);
 
         if(s.size()!=m_nv)
           s.resize(m_nv);
@@ -456,7 +456,7 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop value before initialization!",MSG_TYPE_ERROR);
 
-        const ml::Vector& initial_value = m_initial_valueSIN.accessCopy();
+        const dynamicgraph::Vector& initial_value = m_initial_valueSIN.accessCopy();
         if(id==-1) //Stop entire vector
         {
           for(unsigned int i=0; i<m_np; i++)

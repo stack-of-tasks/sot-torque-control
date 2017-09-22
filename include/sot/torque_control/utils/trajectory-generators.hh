@@ -113,9 +113,9 @@ namespace dynamicgraph {
         double          m_traj_time;  /// time to go from x_init to x_final (sec)
         double          m_dt;         /// control dt (sampling period of the trajectory)
         double          m_t;          /// current time
-        int             m_size;
+	Eigen::VectorXd::Index        m_size;
 
-        virtual void resizeAllData(unsigned int size)
+        virtual void resizeAllData(Eigen::VectorXd::Index size)
         {
           m_size      = size;
           m_x.setZero(size);
@@ -132,7 +132,8 @@ namespace dynamicgraph {
 
       public:
 
-        AbstractTrajectoryGenerator(double dt, double traj_time, int size)
+        AbstractTrajectoryGenerator(double dt, double traj_time, 
+				    Eigen::VectorXd::Index size)
         {
           m_t         = 0.0;
           m_dt        = dt;
@@ -238,7 +239,7 @@ namespace dynamicgraph {
         Eigen::MatrixXd m_accTraj;
 
       public:
-        TextFileTrajectoryGenerator(double dt, double size):
+        TextFileTrajectoryGenerator(double dt, Eigen::VectorXd::Index size):
           AbstractTrajectoryGenerator(dt, 1.0, size)
         {}
 
@@ -252,7 +253,7 @@ namespace dynamicgraph {
             return false;
           }
 
-          m_traj_time = m_dt*data.rows();
+          m_traj_time = m_dt*(double)data.rows();
           m_t = 0.0;
 
           m_posTraj = data.leftCols(m_size);
@@ -266,7 +267,7 @@ namespace dynamicgraph {
 
         virtual const Eigen::VectorXd& compute_next_point()
         {
-          unsigned int i = std::floor(m_t/m_dt);
+	  Eigen::VectorXd::Index i = (Eigen::VectorXd::Index)std::floor(m_t/m_dt);
           if(i<m_posTraj.rows())
           {
             m_x   = m_posTraj.row(i);

@@ -41,77 +41,60 @@ SET(PKG_CONFIG_ADDITIONAL_VARIABLES
 
 SETUP_PROJECT()
 
+OPTION (INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
+IF(INITIALIZE_WITH_NAN)
+  MESSAGE(STATUS "Initialize with NaN all the Eigen entries.")
+  ADD_DEFINITIONS(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
+ENDIF(INITIALIZE_WITH_NAN)
+
 PKG_CONFIG_APPEND_LIBS("sot-torque-control")
 
 # Search for dependencies.
 # Boost
-SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex )
+SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex python)
 SEARCH_FOR_BOOST()
 
 SEARCH_FOR_EIGEN()
 
-ADD_REQUIRED_DEPENDENCY("jrl-mal >= 1.8.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 1.0.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph-python")
-ADD_REQUIRED_DEPENDENCY("sot-core")
+ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 3.0.0")
+ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
+ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
-ADD_REQUIRED_DEPENDENCY("PinInvDyn")
-
-# METAPOD configuration
-ADD_REQUIRED_DEPENDENCY("metapod >= 1.0.7")
-SET(robot_name "robot_hrp2_14")
-SET(lib_robot_name "metapod_hrp2_14")
-#SET(METAPODFROMURDF_EXECUTABLE $ENV{ROS_WORKSPACE}/install/bin/metapodfromurdf)
-#SET(dir_robot ${PROJECT_BINARY_DIR}/include/metapod/models/hrp2_14)
-SET(robot_name_sources
-  hrp2-torque-control/include/metapod/models/hrp2_14/config.hh
-  hrp2-torque-control/include/metapod/models/hrp2_14/hrp2_14.hh
-  hrp2-torque-control/src/hrp2_14.cc
-  )
-#SET(data_robot_dir ${PROJECT_SOURCE_DIR}/share/metapod/data/hrp2_14)
-#SET(config_file_robot  ${data_robot_dir}/hrp2_14.config)
-#SET(license_file_robot ${data_robot_dir}/hrp2_14_license_file.txt)
-#SET(urdf_file_robot $ENV{ROS_WORKSPACE}/stacks/hrp2/hrp2_14_description/urdf/hrp2_14_reduced_no_fixed.urdf)
-#message (STATUS ${METAPODFROMURDF_EXECUTABLE} " --name " hrp2_14 " --libname " ${lib_robot_name} " --directory " ${dir_robot} " --config-file " ${config_file_robot} " --license-file " ${license_file_robot} " " ${urdf_file_robot})
-include_directories(hrp2-torque-control/include)
-ADD_LIBRARY(${lib_robot_name} SHARED ${robot_name_sources})
-# Install the generated files
-INSTALL(FILES ${robot_name_sources} DESTINATION include/metapod/models/hrp2_14)
-INSTALL(TARGETS ${lib_robot_name} DESTINATION lib)
-# END of METAPOD configuration
+ADD_REQUIRED_DEPENDENCY("tsid")
 
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
-
 SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/joint-torque-controller.hh
-  include/sot/torque_control/force-torque-estimator.hh
+  include/sot/torque_control/base-estimator.hh
+  include/sot/torque_control/numerical-difference.hh
+  include/sot/torque_control/filter-differentiator.hh
   include/sot/torque_control/motor-model.hh
   include/sot/torque_control/joint-trajectory-generator.hh
   include/sot/torque_control/nd-trajectory-generator.hh
   include/sot/torque_control/se3-trajectory-generator.hh
   include/sot/torque_control/free-flyer-locator.hh
-  include/sot/torque_control/inverse-dynamics-controller.hh
   include/sot/torque_control/inverse-dynamics-balance-controller.hh
   include/sot/torque_control/position-controller.hh
-  include/sot/torque_control/admittance-controller.hh
   include/sot/torque_control/control-manager.hh
-  hrp2-torque-control/include/sot/torque_control/hrp2-common.hh
-  include/sot/torque_control/hrp2-device-pos-ctrl.hh
-  #include/sot/torque_control/hrp2-device-torque-ctrl.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
+  include/sot/torque_control/common.hh
   include/sot/torque_control/madgwickahrs.hh
+  include/sot/torque_control/device-torque-ctrl.hh
+  include/sot/torque_control/trace-player.hh
+  include/sot/torque_control/torque-offset-estimator.hh
+  include/sot/torque_control/imu_offset_compensation.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
   include/sot/torque_control/utils/quad-estimator.hh
-#  include/sot/torque_control/utils/Stdafx.hh
-#  include/sot/torque_control/utils/stop-watch.hh
+  include/sot/torque_control/utils/causal-filter.hh
+  include/sot/torque_control/utils/Stdafx.hh
+  include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
-  include/sot/torque_control/utils/metapod-helper.hh
   )
 
 #INSTALL(FILES ${${LIBRARY_NAME}_HEADERS}
@@ -124,9 +107,10 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/lin-estimator.cpp
     src/poly-estimator.cpp
     src/quad-estimator.cpp
-#    src/stop-watch.cpp
-    hrp2-torque-control/src/hrp2-common.cpp
+    src/causal-filter.cpp
+    src/stop-watch.cpp
     src/motor-model.cpp
+    src/common.cpp
 )
 
 SET(${LIBRARY_NAME}_PYTHON_FILES python/*.py)
@@ -138,15 +122,12 @@ SET_TARGET_PROPERTIES(${LIBRARY_NAME}
   SOVERSION ${PROJECT_VERSION}
   INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} jrl-mal)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} metapod)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} PinInvDyn)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} tsid)
 
-TARGET_LINK_LIBRARIES(${LIBRARY_NAME} metapod_hrp2_14)
 
 IF(UNIX)
   TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${CMAKE_DL_LIBS})
@@ -161,6 +142,7 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_LIBRARIES})
 INSTALL(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 FINDPYTHON()
+
 INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
               python/dynamic_graph/sot/torque_control/main.py
               python/dynamic_graph/sot/torque_control/create_entities_utils.py
@@ -174,19 +156,40 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/identification/__init__.py
 INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
               python/dynamic_graph/sot/torque_control/utils/plot_utils.py
               python/dynamic_graph/sot/torque_control/utils/sot_utils.py
+              python/dynamic_graph/sot/torque_control/utils/filter_utils.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
+              python/dynamic_graph/sot/torque_control/tests/robot_data_test.py
+              python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
+              python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
-INSTALL(FILES hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/__init__.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/motors_parameters.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/joint_pos_ctrl_gains.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_conf.py
-              hrp2-torque-control/python/dynamic_graph/sot/torque_control/hrp2/balance_ctrl_sim_conf.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/hrp2)
-
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(unitTesting)
+
+# *****************************
+# Common-sot-py PYTHON module *
+# *****************************
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIR})
+PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
+TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+TARGET_LINK_BOOST_PYTHON(common_sot_py)
+TARGET_LINK_LIBRARIES(common_sot_py ${LIBRARY_NAME})
+
+SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
+INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
+
+
+IF(TALOS_DATA_FOUND)
+  FOREACH(py_filename test_torque_offset_estimator)
+    CONFIGURE_FILE(
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      )
+    ENDFOREACH(py_filename)
+ENDIF(TALOS_DATA_FOUND)
+
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()

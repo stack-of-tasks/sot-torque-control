@@ -40,6 +40,7 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <map>
 #include <initializer_list>
+#include <iomanip> // std::setprecision
 #include "boost/assign.hpp"
 
 
@@ -112,13 +113,24 @@ namespace dynamicgraph {
         return ss.str();
       }
 
-      template<typename T>
-      std::string toString(const Eigen::Matrix<T, -1, 1, 0, -1, 1>& v, const std::string separator=", ")
+      template<typename T, int N>
+      std::string toString(const Eigen::Matrix<T, N, 1, 0, N, 1>& v, const std::string separator=", ",
+                           const int precision=3, const int width=-1)
       {
         std::stringstream ss;
-        for(int i=0; i<v.size()-1; i++)
-          ss<<v[i]<<separator;
-        ss<<v[v.size()-1];
+        if(width>precision)
+        {
+          for(int i=0; i<v.size()-1; i++)
+            ss<<std::fixed<<std::setw(width)<<std::setprecision(precision)<<v[i]<<separator;
+          ss<<std::fixed<<std::setw(width)<<std::setprecision(precision)<<v[v.size()-1];
+        }
+        else
+        {
+          for(int i=0; i<v.size()-1; i++)
+            ss<<std::fixed<<std::setprecision(precision)<<v[i]<<separator;
+          ss<<std::setprecision(precision)<<v[v.size()-1];
+        }
+
         return ss.str();
       }
 

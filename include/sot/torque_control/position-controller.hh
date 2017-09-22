@@ -39,19 +39,10 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
+#include <sot/torque_control/common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
-
-/* Metapod */
-#include <metapod/models/hrp2_14/hrp2_14.hh>
-#include <metapod/algos/rnea.hh>
-#include <metapod/algos/jac.hh>
-#include <metapod/tools/jcalc.hh>
-#include <metapod/tools/bcalc.hh>
-#include <metapod/tools/print.hh>
-#include <metapod/tools/initconf.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -73,22 +64,22 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         PositionController( const std::string & name );
 
-        void init(const double& dt);
+        void init(const double& dt,const std::string &robotRef);
 
         void resetIntegral();
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,  ml::Vector);
-        DECLARE_SIGNAL_IN(jointsVelocities, ml::Vector);
-        DECLARE_SIGNAL_IN(qRef,             ml::Vector);
-        DECLARE_SIGNAL_IN(dqRef,            ml::Vector);
-        DECLARE_SIGNAL_IN(Kp,               ml::Vector);  /// joint proportional gains
-        DECLARE_SIGNAL_IN(Kd,               ml::Vector);  /// joint derivative gains
-        DECLARE_SIGNAL_IN(Ki,               ml::Vector);  /// joint integral gains
+        DECLARE_SIGNAL_IN(base6d_encoders,  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(jointsVelocities, dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(qRef,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dqRef,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(Kp,               dynamicgraph::Vector);  /// joint proportional gains
+        DECLARE_SIGNAL_IN(Kd,               dynamicgraph::Vector);  /// joint derivative gains
+        DECLARE_SIGNAL_IN(Ki,               dynamicgraph::Vector);  /// joint integral gains
 
-        DECLARE_SIGNAL_OUT(pwmDes,      ml::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
+        DECLARE_SIGNAL_OUT(pwmDes,      dynamicgraph::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
         // DEBUG SIGNALS
-        DECLARE_SIGNAL_OUT(qError,      ml::Vector);  /// qRef-q
+        DECLARE_SIGNAL_OUT(qError,      dynamicgraph::Vector);  /// qRef-q
 
 
         /* --- COMMANDS --- */
@@ -104,6 +95,7 @@ namespace dynamicgraph {
         }
         
       protected:
+	RobotUtil *       m_robot_util;        /// Robot Util
         Eigen::VectorXd   m_pwmDes;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         double            m_dt;               /// control loop time period

@@ -1,6 +1,7 @@
 import time
 import sys
 from subprocess import call
+import numpy as np
 
 jID = { "rhy" : 0,
         "rhr" : 1,
@@ -33,6 +34,20 @@ jID = { "rhy" : 0,
         "lwp" : 28,
         "lh"  : 29 }
 
+''' Solve the least square problem:
+    solve   y=ax+b in L2 norm
+'''
+def solve1stOrderLeastSquare(x,y):
+    Q=np.vstack([np.ones(len(x)),x])
+    coef = solveLeastSquare(Q.T,y)
+    (a,b)=coef[1,0],coef[0,0]
+    return (a,b);
+
+''' Solve the least square problem:
+    minimize   || A*x-b ||^2
+'''
+def solveLeastSquare(A, b):
+    return np.linalg.pinv(A)*np.matrix(b).T;
 
 ''' Stop the joint when vel is low'''
 def gentleStop(traj_gen,joint):

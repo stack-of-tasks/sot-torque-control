@@ -36,10 +36,11 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <dynamic-graph/linear-algebra.h>
+#include <sot/torque_control/common.hh>
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -78,20 +79,25 @@ namespace dynamicgraph {
 
         /* --- CONSTRUCTOR ---- */
         FreeFlyerLocator( const std::string & name );
+        ~FreeFlyerLocator();
 
-        void init(const std::string& urdfFile);
+        void init(const std::string &robotRef);
 
-        void resetIntegral();
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(base6d_encoders,            ml::Vector);
-        DECLARE_SIGNAL_IN(joint_velocities,           ml::Vector);
-        DECLARE_SIGNAL_INNER(kinematics_computations, ml::Vector);
-        DECLARE_SIGNAL_OUT(freeflyer_aa,              ml::Vector);  /// freeflyer position with angle axis format
-        DECLARE_SIGNAL_OUT(base6dFromFoot_encoders,   ml::Vector);  /// base6d_encoders with base6d in RPY
-        DECLARE_SIGNAL_OUT(v,                         ml::Vector);  /// n+6 robot velocities
+        DECLARE_SIGNAL_IN(base6d_encoders,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(joint_velocities,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
+	/// freeflyer position with angle axis format
+        DECLARE_SIGNAL_OUT(freeflyer_aa,              dynamicgraph::Vector);
+	/// base6d_encoders with base6d in RPY
+        DECLARE_SIGNAL_OUT(base6dFromFoot_encoders,   dynamicgraph::Vector);
+	/// n+6 robot velocities
+        DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  
 
         /* --- COMMANDS --- */
+	void displayRobotUtil();
+
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
         virtual void commandLine(const std::string& cmdLine,
@@ -102,20 +108,23 @@ namespace dynamicgraph {
         {
           getLogger().sendMsg("[FreeFlyerLocator-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
+        
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
-        se3::Model        m_model;            /// Pinocchio robot model
+        se3::Model        *m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data 
         se3::SE3          m_Mff;               /// SE3 Transform from center of feet to base
         se3::SE3          m_w_M_lf;
         se3::SE3          m_w_M_rf;
-        unsigned int      m_right_foot_id;
-        unsigned int      m_left_foot_id;
+        long unsigned int      m_right_foot_id;
+        long unsigned int      m_left_foot_id;
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
+
+	RobotUtil * m_robot_util;
 
       }; // class FreeFlyerLocator
       

@@ -51,12 +51,11 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
 
-#define betaDef		0.1f		// 2 * proportional g
+#define betaDef		0.01f		// 2 * proportional g
 
 namespace dynamicgraph {
   namespace sot {
@@ -67,7 +66,7 @@ namespace dynamicgraph {
       /* --------------------------------------------------------------------- */
 
       class SOTMADGWICKAHRS_EXPORT MadgwickAHRS
-    :public::dynamicgraph::Entity
+          :public::dynamicgraph::Entity
       {
         typedef MadgwickAHRS EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
@@ -79,14 +78,14 @@ namespace dynamicgraph {
         MadgwickAHRS( const std::string & name );
 
         void init(const double& dt);
+        void set_beta(const double & beta);
+
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(accelerometer,              ml::Vector);  /// ax ay az in m.s-2
-        DECLARE_SIGNAL_IN(gyroscope,                  ml::Vector);  /// gx gy gz in rad.s-1
-        DECLARE_SIGNAL(imu_quat, OUT,                 ml::Vector);  /// Estimated orientation of IMU as a quaternion
+        DECLARE_SIGNAL_IN(accelerometer,              dynamicgraph::Vector);  /// ax ay az in m.s-2
+        DECLARE_SIGNAL_IN(gyroscope,                  dynamicgraph::Vector);  /// gx gy gz in rad.s-1
+        DECLARE_SIGNAL_OUT(imu_quat,                  dynamicgraph::Vector);  /// Estimated orientation of IMU as a quaternion
 
       protected:
-        DECLARE_SIGNAL_OUT_FUNCTION(imu_quat,         ml::Vector);
-
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
@@ -108,17 +107,9 @@ namespace dynamicgraph {
         volatile float    m_q0 = 1.0f, m_q1 = 0.0f, m_q2 = 0.0f, m_q3 = 0.0f;	/// quaternion of sensor frame
         float             m_sampleFreq = 512.0f;		                        /// sample frequency in Hz
 
-
       }; // class MadgwickAHRS
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph
 
-
-
 #endif // #ifndef __sot_torque_control_madgwickahrs_H__
-
-
-
-
-

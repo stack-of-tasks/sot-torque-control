@@ -53,13 +53,10 @@ namespace dynamicgraph
                                 m_predictedPwmSOUT << m_predictedPwm_tauSOUT << \
                                 m_pwm_ffSOUT << m_pwm_fbSOUT << m_pwm_frictionSOUT << m_smoothSignDqSOUT
 
-#define N_JOINTS 30
-
-      namespace dg = ::dynamicgraph;
-      using namespace dg;
-      using namespace dg::command;
+      namespace dynamicgraph = ::dynamicgraph;
+      using namespace dynamicgraph;
+      using namespace dynamicgraph::command;
       using namespace std;
-      using namespace metapod;
       using namespace Eigen;
 
       /// Define EntityClassName here rather than in the header file
@@ -75,55 +72,55 @@ namespace dynamicgraph
       JointTorqueController::
       JointTorqueController( const std::string & name )
         : Entity(name),
-         CONSTRUCT_SIGNAL_IN(base6d_encoders,        ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(pwm,                    ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(jointsVelocities,       ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(jointsAccelerations,    ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(jointsTorques,          ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(jointsTorquesDesired,   ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(measuredCurrent,        ml::Vector) 
-        ,CONSTRUCT_SIGNAL_IN(KpTorque,                     ml::Vector)   // proportional gain for torque feedback controller
-        ,CONSTRUCT_SIGNAL_IN(KiTorque,                     ml::Vector)   // integral gain for torque feedback controller
-        ,CONSTRUCT_SIGNAL_IN(KpCurrent,                     ml::Vector)  // proportional gain for current feedback controller
-        ,CONSTRUCT_SIGNAL_IN(KiCurrent,                     ml::Vector)  // integral gain for current feedback controller  
-        ,CONSTRUCT_SIGNAL_IN(k_tau,                  ml::Vector)// to be del
-        ,CONSTRUCT_SIGNAL_IN(k_v,                    ml::Vector)// to be del
-        ,CONSTRUCT_SIGNAL_IN(frictionCompensationPercentage, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_p, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_n, ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(polySignDq        , ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(tauFF,                  ml::Vector)
-        ,CONSTRUCT_SIGNAL_IN(tauFB,                  ml::Vector)
-        ,CONSTRUCT_SIGNAL_OUT(desiredCurrent,        ml::Vector,   ESTIMATOR_INPUT_SIGNALS <<
+         CONSTRUCT_SIGNAL_IN(base6d_encoders,        dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(pwm,                    dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(jointsVelocities,       dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(jointsAccelerations,    dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(jointsTorques,          dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(jointsTorquesDesired,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(measuredCurrent,        dynamicgraph::Vector) 
+        ,CONSTRUCT_SIGNAL_IN(KpTorque,                     dynamicgraph::Vector)   // proportional gain for torque feedback controller
+        ,CONSTRUCT_SIGNAL_IN(KiTorque,                     dynamicgraph::Vector)   // integral gain for torque feedback controller
+        ,CONSTRUCT_SIGNAL_IN(KpCurrent,                     dynamicgraph::Vector)  // proportional gain for current feedback controller
+        ,CONSTRUCT_SIGNAL_IN(KiCurrent,                     dynamicgraph::Vector)  // integral gain for current feedback controller  
+        ,CONSTRUCT_SIGNAL_IN(k_tau,                  dynamicgraph::Vector)// to be del
+        ,CONSTRUCT_SIGNAL_IN(k_v,                    dynamicgraph::Vector)// to be del
+        ,CONSTRUCT_SIGNAL_IN(frictionCompensationPercentage, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKf_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKv_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_p, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(motorParameterKa_n, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(polySignDq        , dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(tauFF,                  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(tauFB,                  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_OUT(desiredCurrent,        dynamicgraph::Vector,   ESTIMATOR_INPUT_SIGNALS <<
                                                                    TORQUE_CONTROL_INPUT_SIGNALS <<
                                                                    MODEL_INPUT_SIGNALS )
 
-        ,CONSTRUCT_SIGNAL_OUT(controlCurrent,        ml::Vector,   m_desiredCurrentSOUT <<
+        ,CONSTRUCT_SIGNAL_OUT(controlCurrent,        dynamicgraph::Vector,   m_desiredCurrentSOUT <<
                                                                    CURRENT_CONTROL_INPUT_SIGNALS )
-        ,CONSTRUCT_SIGNAL_OUT(predictedJointsTorques,  ml::Vector, m_pwmSIN<<
+        ,CONSTRUCT_SIGNAL_OUT(predictedJointsTorques,  dynamicgraph::Vector, m_pwmSIN<<
                                                                    m_jointsVelocitiesSIN<<
                                                                    m_k_tauSIN<<
                                                                    m_k_vSIN)
-        ,CONSTRUCT_SIGNAL_OUT(predictedPwm,            ml::Vector, ESTIMATOR_INPUT_SIGNALS <<
+        ,CONSTRUCT_SIGNAL_OUT(predictedPwm,            dynamicgraph::Vector, ESTIMATOR_INPUT_SIGNALS <<
                                                                    MODEL_INPUT_SIGNALS)
-        ,CONSTRUCT_SIGNAL_OUT(predictedPwm_tau,        ml::Vector, ESTIMATOR_INPUT_SIGNALS <<
+        ,CONSTRUCT_SIGNAL_OUT(predictedPwm_tau,        dynamicgraph::Vector, ESTIMATOR_INPUT_SIGNALS <<
                                                                    MODEL_INPUT_SIGNALS)
-        ,CONSTRUCT_SIGNAL_OUT(pwm_ff,              ml::Vector, m_tauFFSIN <<
+        ,CONSTRUCT_SIGNAL_OUT(pwm_ff,              dynamicgraph::Vector, m_tauFFSIN <<
                                                                   m_k_tauSIN)
-        ,CONSTRUCT_SIGNAL_OUT(pwm_fb,              ml::Vector, m_tauFBSIN <<
+        ,CONSTRUCT_SIGNAL_OUT(pwm_fb,              dynamicgraph::Vector, m_tauFBSIN <<
                                                                   m_jointsTorquesSIN <<
                                                                   m_jointsTorquesDesiredSIN <<
                                                                   m_k_tauSIN <<
                                                                   m_KpTorqueSIN)
-        ,CONSTRUCT_SIGNAL_OUT(pwm_friction,        ml::Vector, m_jointsVelocitiesSIN <<
+        ,CONSTRUCT_SIGNAL_OUT(pwm_friction,        dynamicgraph::Vector, m_jointsVelocitiesSIN <<
                                                                   m_k_vSIN)
-        ,CONSTRUCT_SIGNAL_OUT(smoothSignDq,        ml::Vector, m_jointsVelocitiesSIN )
+        ,CONSTRUCT_SIGNAL_OUT(smoothSignDq,        dynamicgraph::Vector, m_jointsVelocitiesSIN )
 
 
       {
@@ -136,9 +133,10 @@ namespace dynamicgraph
         addCommand("getActiveJoints", makeDirectGetter(*this,&m_activeJointsString,
                                       docDirectGetter("Active joints","bool")));
 
-        addCommand("init", makeCommandVoid1(*this, &JointTorqueController::init,
-                              docCommandVoid1("Initialize the controller.",
-                                              "Control timestep [s].")));
+        addCommand("init", makeCommandVoid2(*this, &JointTorqueController::init,
+                              docCommandVoid2("Initialize the controller.",
+                                              "Control timestep [s].",
+					      "Robot reference (string)")));
         addCommand("activate",
                    makeCommandVoid1(*this, &JointTorqueController::activate,
                                     docCommandVoid1("Activate torque control of the specified joint.",
@@ -153,7 +151,8 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void JointTorqueController::init(const double &timestep)
+      void JointTorqueController::init(const double &timestep,
+				       const std::string &robot_ref)
       {
         assert(timestep>0.0 && "Timestep should be > 0");
         if(!m_base6d_encodersSIN.isPlugged())
@@ -176,17 +175,30 @@ namespace dynamicgraph
           return SEND_MSG("Init failed: signal m_KpCurrentSIN is not plugged", MSG_TYPE_ERROR);
         if(!m_KiCurrentSIN.isPlugged())
           return SEND_MSG("Init failed: signal m_KiCurrentSIN is not plugged", MSG_TYPE_ERROR);
+
+	/* Retrieve m_robot_util  informations */
+	std::string localName(robot_ref);
+	if (isNameInRobotUtil(localName))
+	  {	      
+	    m_robot_util = getRobotUtil(localName);
+	  }
+	else 
+	  {
+	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    return;
+	  }
+	
         m_dt = timestep;
         m_firstIter = true;
-        m_tau_star.setZero(N_JOINTS);
-        m_current_star.setZero(N_JOINTS);
-        m_f.setZero(N_JOINTS);
-        m_g.setZero(N_JOINTS);
-        m_current_des.setZero(N_JOINTS);
-        m_tauErrIntegral.setZero(N_JOINTS);
-        m_currentErrIntegral.setZero(N_JOINTS);
-        m_qDes_for_position_controlled_joints.setZero(N_JOINTS);
-        m_activeJoints.resize(N_JOINTS,true);
+        m_tau_star.setZero(m_robot_util->m_nbJoints);
+        m_current_star.setZero(m_robot_util->m_nbJoints);
+        m_f.setZero(m_robot_util->m_nbJoints);
+        m_g.setZero(m_robot_util->m_nbJoints);
+        m_current_des.setZero(m_robot_util->m_nbJoints);
+        m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
+        m_currentErrIntegral.setZero(m_robot_util->m_nbJoints);
+        m_qDes_for_position_controlled_joints.setZero(m_robot_util->m_nbJoints);
+        m_activeJoints.setOnes(m_robot_util->m_nbJoints);
         updateActiveJointsString();
       }
 
@@ -196,10 +208,10 @@ namespace dynamicgraph
         if(convertJointNameToJointId(jointName,i)==false)
           return;
 
-        if(m_activeJoints[i]==false)
+        if(m_activeJoints[i]==0)
         {
           SEND_MSG("Activate joint "+jointName, MSG_TYPE_INFO);
-          m_activeJoints[i] = true;
+          m_activeJoints[i] = 1;
           updateActiveJointsString();
         }
         else
@@ -212,12 +224,12 @@ namespace dynamicgraph
         if(convertJointNameToJointId(jointName,i)==false)
           return;
 
-        if(m_activeJoints[i]==true)
+        if(m_activeJoints[i]==1)
         {
           SEND_MSG("Deactivate joint "+jointName, MSG_TYPE_INFO);
-          const ml::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
+          const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
           m_qDes_for_position_controlled_joints[i] = base6d_encoders(6+i);
-          m_activeJoints[i] = false;
+          m_activeJoints[i] = 0;
           updateActiveJointsString();
         }
         else
@@ -228,44 +240,44 @@ namespace dynamicgraph
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
 
-      DEFINE_SIGNAL_OUT_FUNCTION(desiredCurrent, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(desiredCurrent, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(q,             m_base6d_encodersSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,            m_jointsVelocitiesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq,           m_jointsAccelerationsSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau,           m_jointsTorquesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau_d,         m_jointsTorquesDesiredSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(kp,            m_KpTorqueSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(ki,            m_KiTorqueSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,         m_k_tauSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_v,           m_k_vSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(frictionCompensationPercentage, m_frictionCompensationPercentageSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKt_p, m_motorParameterKt_pSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKt_n, m_motorParameterKt_nSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKf_p, m_motorParameterKf_pSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKf_n, m_motorParameterKf_nSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKv_p, m_motorParameterKv_pSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKv_n, m_motorParameterKv_nSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKa_p, m_motorParameterKa_pSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(motorParameterKa_n, m_motorParameterKa_nSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(polySignDq        , m_polySignDqSIN(iter));
+        const Eigen::VectorXd& q =             m_base6d_encodersSIN(iter);
+        const Eigen::VectorXd& dq =            m_jointsVelocitiesSIN(iter);
+        const Eigen::VectorXd& ddq =           m_jointsAccelerationsSIN(iter);
+        const Eigen::VectorXd& tau =           m_jointsTorquesSIN(iter);
+        const Eigen::VectorXd& tau_d =         m_jointsTorquesDesiredSIN(iter);
+        const Eigen::VectorXd& kp =            m_KpTorqueSIN(iter);
+        const Eigen::VectorXd& ki =            m_KiTorqueSIN(iter);
+        const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
+        const Eigen::VectorXd& k_v =           m_k_vSIN(iter);
+        const Eigen::VectorXd& frictionCompensationPercentage = m_frictionCompensationPercentageSIN(iter);
+        const Eigen::VectorXd& motorParameterKt_p = m_motorParameterKt_pSIN(iter);
+        const Eigen::VectorXd& motorParameterKt_n = m_motorParameterKt_nSIN(iter);
+        const Eigen::VectorXd& motorParameterKf_p = m_motorParameterKf_pSIN(iter);
+        const Eigen::VectorXd& motorParameterKf_n = m_motorParameterKf_nSIN(iter);
+        const Eigen::VectorXd& motorParameterKv_p = m_motorParameterKv_pSIN(iter);
+        const Eigen::VectorXd& motorParameterKv_n = m_motorParameterKv_nSIN(iter);
+        const Eigen::VectorXd& motorParameterKa_p = m_motorParameterKa_pSIN(iter);
+        const Eigen::VectorXd& motorParameterKa_n = m_motorParameterKa_nSIN(iter);
+        const Eigen::VectorXd& polySignDq         = m_polySignDqSIN(iter);
 
 
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(activeJoints,  m_activeJointsSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq,           m_jointsAccelerationsSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_thr,        m_dq_thresholdSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_thr,       m_ddq_thresholdSIN(iter));
+//        const Eigen::VectorXd& activeJoints =  m_activeJointsSIN(iter);
+//        const Eigen::VectorXd& ddq =           m_jointsAccelerationsSIN(iter);
+//        const Eigen::VectorXd& dq_thr =        m_dq_thresholdSIN(iter);
+//        const Eigen::VectorXd& ddq_thr =       m_ddq_thresholdSIN(iter);
 
         if(m_firstIter)
         {
-          m_qDes_for_position_controlled_joints = q.tail<N_JOINTS>();
+          m_qDes_for_position_controlled_joints = q.tail(m_robot_util->m_nbJoints);
           m_firstIter = false;
         }
 
         m_tauErrIntegral += m_dt * ki.cwiseProduct(tau_d-tau);
         m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + m_tauErrIntegral;
-        if(dq.size()==N_JOINTS)
-            for(int i=0; i<N_JOINTS; i++)
+        if(dq.size()==(int)m_robot_util->m_nbJoints)
+	  for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
             {
                 m_current_des(i) = motorModel.getCurrent(m_tau_star(i), dq(i), ddq(i),
                                                          motorParameterKt_p(i), motorParameterKt_n(i),
@@ -273,8 +285,8 @@ namespace dynamicgraph
                                                          motorParameterKv_p(i), motorParameterKv_n(i),
                                                          motorParameterKa_p(i), motorParameterKa_n(i) , polySignDq(i));
             }
-        else if(dq.size()==N_JOINTS+6)
-            for(int i=0; i<N_JOINTS; i++)
+        else if(dq.size()==(int)(m_robot_util->m_nbJoints+6))
+	  for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
             {
                 m_current_des(i) = motorModel.getCurrent(m_tau_star(i), dq(i+6), ddq(i+6),
                                                          motorParameterKt_p(i), motorParameterKt_n(i),
@@ -285,19 +297,11 @@ namespace dynamicgraph
             else
           SEND_ERROR_STREAM_MSG("Unexpected size of signal dq: "+toString(dq.size()));
 
-//        compute_f(m_tau_star, dq, dq_thr, iter, m_f);
-//        compute_g(dq, ddq, ddq_thr, iter, m_g);
-//        m_q_des = q.tail<N_JOINTS>() + m_f + m_g;
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-        {
-          if(m_activeJoints[i]==false)
-            s(i) = 0.0;
-          else
-            s(i) = m_current_des(i);
-        }
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = m_activeJoints.select(m_current_des,0.0).matrix();
+	
 //        SEND_MSG("qDes = "+toString(s), MSG_TYPE_DEBUG_STREAM);
 
 //        const int JID = 1;
@@ -309,110 +313,98 @@ namespace dynamicgraph
       }
 
 
- DEFINE_SIGNAL_OUT_FUNCTION(controlCurrent, ml::Vector)
+ DEFINE_SIGNAL_OUT_FUNCTION(controlCurrent, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(current,       m_measuredCurrentSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(current_d,     m_desiredCurrentSOUT(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(kp,            m_KpCurrentSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(ki,            m_KiCurrentSIN(iter));
+        const Eigen::VectorXd& current =       m_measuredCurrentSIN(iter);
+        const Eigen::VectorXd& current_d =     m_desiredCurrentSOUT(iter);
+        const Eigen::VectorXd& kp =            m_KpCurrentSIN(iter);
+        const Eigen::VectorXd& ki =            m_KiCurrentSIN(iter);
 
         m_currentErrIntegral += m_dt * ki.cwiseProduct(current_d-current);
         m_current_star = current_d + kp.cwiseProduct(current_d - current) + m_currentErrIntegral;
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-        {
-          if(m_activeJoints[i]==false)
-            s(i) = 0.0;
-          else if (false) //TODO check saturation
-            s(i) = 0.0;
-          else
-            s(i) = m_current_star(i);
-        }
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = m_activeJoints.select(m_current_star,0.0).matrix(); //TODO check saturation
         return s;
       }
 
 
 
-      DEFINE_SIGNAL_OUT_FUNCTION(predictedPwm, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(predictedPwm, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,      m_jointsVelocitiesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau,     m_jointsTorquesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,         m_k_tauSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_v,           m_k_vSIN(iter));
+        const Eigen::VectorXd& dq =      m_jointsVelocitiesSIN(iter);
+        const Eigen::VectorXd& tau =     m_jointsTorquesSIN(iter);
+        const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
+        const Eigen::VectorXd& k_v =           m_k_vSIN(iter);
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = k_tau(i)*tau(i) + k_v(i)*dq(i);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = k_tau.cwiseProduct(tau) + k_v.cwiseProduct(dq);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(predictedPwm_tau, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(predictedPwm_tau, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau,     m_jointsTorquesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,         m_k_tauSIN(iter));
+        const Eigen::VectorXd& tau =     m_jointsTorquesSIN(iter);
+        const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
 
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = k_tau(i)*tau(i);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = k_tau.cwiseProduct(tau);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwm_ff, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwm_ff, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tauFF,         m_tauFFSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,         m_k_tauSIN(iter));
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = k_tau[i] * tauFF[i];
+        const Eigen::VectorXd& tauFF =         m_tauFFSIN(iter);
+        const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = k_tau.cwiseProduct(tauFF);
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwm_fb, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwm_fb, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau,           m_jointsTorquesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau_d,         m_jointsTorquesDesiredSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(tauFB,         m_tauFBSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,         m_k_tauSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_p,           m_KpTorqueSIN(iter));
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = k_tau[i] * (tauFB[i] + k_p[i]*(tau_d[i]-tau[i]));
+        const Eigen::VectorXd& tau =           m_jointsTorquesSIN(iter);
+        const Eigen::VectorXd& tau_d =         m_jointsTorquesDesiredSIN(iter);
+        const Eigen::VectorXd& tauFB =         m_tauFBSIN(iter);
+        const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
+        const Eigen::VectorXd& k_p =           m_KpTorqueSIN(iter);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = k_tau.cwiseProduct(tauFB + k_p.cwiseProduct(tau_d-tau));
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(pwm_friction, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(pwm_friction, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_v,         m_k_vSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,          m_jointsVelocitiesSIN(iter));
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = k_v[i] * dq[i];
+        const Eigen::VectorXd& k_v =         m_k_vSIN(iter);
+        const Eigen::VectorXd& dq =          m_jointsVelocitiesSIN(iter);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	s = k_v.cwiseProduct(dq);
         return s;
       }
 
 
-      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDq, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDq, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,            m_jointsVelocitiesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(polySignDq,    m_polySignDqSIN(iter));
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
-        for(int i=0; i<N_JOINTS; i++)
-          s(i) = motorModel.smoothSign(dq[i], 0.1, polySignDq[i]);
+        const Eigen::VectorXd& dq =            m_jointsVelocitiesSIN(iter);
+        const Eigen::VectorXd& polySignDq =    m_polySignDqSIN(iter);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+	
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
+          s(i) = motorModel.smoothSign(dq[i], 0.1, polySignDq[i]); //TODO Use Eigen binaryexpr
         return s;
       }
 
 
-//      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDq, ml::Vector)
+//      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDq, dynamicgraph::Vector)
 //      {
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,      m_jointsVelocitiesSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq_thr,  m_dq_thresholdSIN(iter));
+//        const Eigen::VectorXd dq =      m_jointsVelocitiesSIN(iter);
+//        const Eigen::VectorXd dq_thr =  m_dq_thresholdSIN(iter);
 
 //        if(s.size()!=N_JOINTS)
 //          s.resize(N_JOINTS);
@@ -428,10 +420,10 @@ namespace dynamicgraph
 //        return s;
 //      }
 
-//      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDdq, ml::Vector)
+//      DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDdq, dynamicgraph::Vector)
 //      {
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq,      m_jointsAccelerationsSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(ddq_thr,  m_ddq_thresholdSIN(iter));
+//        const Eigen::VectorXd ddq =      m_jointsAccelerationsSIN(iter);
+//        const Eigen::VectorXd ddq_thr =  m_ddq_thresholdSIN(iter);
 
 //        if(s.size()!=N_JOINTS)
 //          s.resize(N_JOINTS);
@@ -447,18 +439,19 @@ namespace dynamicgraph
 //        return s;
 //      }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(predictedJointsTorques, ml::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(predictedJointsTorques, dynamicgraph::Vector)
       {
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(pwm,       m_pwmSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq,        m_jointsVelocitiesSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_tau,     m_k_tauSIN(iter));
-        EIGEN_CONST_VECTOR_FROM_SIGNAL(k_v,       m_k_vSIN(iter));
+        const Eigen::VectorXd& pwm =       m_pwmSIN(iter);
+        const Eigen::VectorXd& dq =        m_jointsVelocitiesSIN(iter);
+        const Eigen::VectorXd& k_tau =     m_k_tauSIN(iter);
+        const Eigen::VectorXd& k_v =       m_k_vSIN(iter);
 
         /// k_tau^{-1}*(delta_q - k_v*dq)
-        if(s.size()!=N_JOINTS)
-          s.resize(N_JOINTS);
+        if(s.size()!=(int)m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
 
-        for(int i=0; i<N_JOINTS; i++)
+        //TODO: Use Eigen cwise operations
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
           if(k_tau(i)!=0.0)
             s(i) = (pwm(i) - k_v(i)*dq(i))/k_tau(i);
           else
@@ -469,22 +462,22 @@ namespace dynamicgraph
 
 //      void JointTorqueController::compute_f(const VectorXd &tau, const_SigVectorXd &dq, const_SigVectorXd &dq_thr, int iter, VectorXd &f)
 //      {
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k1p, m_f_k1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k2p, m_f_k2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k3p, m_f_k3pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k1n, m_f_k1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k2n, m_f_k2nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k3n, m_f_k3nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q1p, m_f_q1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q2p, m_f_q2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q3p, m_f_q3pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q1n, m_f_q1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q2n, m_f_q2nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q3n, m_f_q3nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau1p, m_f_tau1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau2p, m_f_tau2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau1n, m_f_tau1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(tau2n, m_f_tau2nSIN(iter));
+//        const Eigen::VectorXd& k1p = m_f_k1pSIN(iter);
+//        const Eigen::VectorXd& k2p = m_f_k2pSIN(iter);
+//        const Eigen::VectorXd& k3p = m_f_k3pSIN(iter);
+//        const Eigen::VectorXd& k1n = m_f_k1nSIN(iter);
+//        const Eigen::VectorXd& k2n = m_f_k2nSIN(iter);
+//        const Eigen::VectorXd& k3n = m_f_k3nSIN(iter);
+//        const Eigen::VectorXd& q1p = m_f_q1pSIN(iter);
+//        const Eigen::VectorXd& q2p = m_f_q2pSIN(iter);
+//        const Eigen::VectorXd& q3p = m_f_q3pSIN(iter);
+//        const Eigen::VectorXd& q1n = m_f_q1nSIN(iter);
+//        const Eigen::VectorXd& q2n = m_f_q2nSIN(iter);
+//        const Eigen::VectorXd& q3n = m_f_q3nSIN(iter);
+//        const Eigen::VectorXd& tau1p = m_f_tau1pSIN(iter);
+//        const Eigen::VectorXd& tau2p = m_f_tau2pSIN(iter);
+//        const Eigen::VectorXd& tau1n = m_f_tau1nSIN(iter);
+//        const Eigen::VectorXd& tau2n = m_f_tau2nSIN(iter);
 
 //        for(int i=0; i<N_JOINTS; i++)
 //        {
@@ -508,22 +501,22 @@ namespace dynamicgraph
 
 //      void JointTorqueController::compute_g(const_SigVectorXd &dq, const_SigVectorXd &ddq, const_SigVectorXd &ddq_thr, int iter, VectorXd &g)
 //      {
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k1p, m_g_k1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k2p, m_g_k2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k3p, m_g_k3pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k1n, m_g_k1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k2n, m_g_k2nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(k3n, m_g_k3nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q1p, m_g_q1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q2p, m_g_q2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q3p, m_g_q3pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q1n, m_g_q1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q2n, m_g_q2nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(q3n, m_g_q3nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq1p, m_g_dq1pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq2p, m_g_dq2pSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq1n, m_g_dq1nSIN(iter));
-//        EIGEN_CONST_VECTOR_FROM_SIGNAL(dq2n, m_g_dq2nSIN(iter));
+//        const Eigen::VectorXd& k1p = m_g_k1pSIN(iter);
+//        const Eigen::VectorXd& k2p = m_g_k2pSIN(iter);
+//        const Eigen::VectorXd& k3p = m_g_k3pSIN(iter);
+//        const Eigen::VectorXd& k1n = m_g_k1nSIN(iter);
+//        const Eigen::VectorXd& k2n = m_g_k2nSIN(iter);
+//        const Eigen::VectorXd& k3n = m_g_k3nSIN(iter);
+//        const Eigen::VectorXd& q1p = m_g_q1pSIN(iter);
+//        const Eigen::VectorXd& q2p = m_g_q2pSIN(iter);
+//        const Eigen::VectorXd& q3p = m_g_q3pSIN(iter);
+//        const Eigen::VectorXd& q1n = m_g_q1nSIN(iter);
+//        const Eigen::VectorXd& q2n = m_g_q2nSIN(iter);
+//        const Eigen::VectorXd& q3n = m_g_q3nSIN(iter);
+//        const Eigen::VectorXd& dq1p = m_g_dq1pSIN(iter);
+//        const Eigen::VectorXd& dq2p = m_g_dq2pSIN(iter);
+//        const Eigen::VectorXd& dq1n = m_g_dq1nSIN(iter);
+//        const Eigen::VectorXd& dq2n = m_g_dq2nSIN(iter);
 
 //        for(int i=0; i<N_JOINTS; i++)
 //        {
@@ -558,12 +551,14 @@ namespace dynamicgraph
       bool JointTorqueController::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        int jid = JointUtil::get_id_from_name(name);
+        int jid = (int)m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(map<string, unsigned int>::const_iterator it = JointUtil::name_2_id.begin(); it != JointUtil::name_2_id.end(); it++)
+          for(map<string, Index>::const_iterator 
+		it = m_robot_util->m_name_to_id.begin(); 
+	      it != m_robot_util->m_name_to_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;

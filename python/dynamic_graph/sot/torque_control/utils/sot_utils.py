@@ -3,8 +3,6 @@
 2014, LAAS/CNRS
 @author: Andrea Del Prete
 """
-
-from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer
 import numpy as np
 from time import sleep
 import os
@@ -30,8 +28,9 @@ def start_sot():
 def stop_sot():
     os.system('rosservice call /stop_dynamic_graph');
 
-def start_tracer(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl):
-    tracer = create_tracer(robot.device, traj_gen, estimator, inv_dyn, torque_ctrl);
+def start_tracer(robot, estimator_ft, estimator_kin, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, adm_ctrl):
+    from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer
+    tracer = create_tracer(robot.device, traj_gen, estimator_ft, estimator_kin, inv_dyn, torque_ctrl);
     tracer.start();
     return tracer;
 
@@ -135,4 +134,4 @@ def dump_signal_to_file(sig_list, index, filename, T, dt):
         f.write('\n');
         sleep(dt);
     f.close();
-    
+

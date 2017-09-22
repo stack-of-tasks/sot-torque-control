@@ -39,7 +39,6 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/hrp2-common.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 #include <map>
 #include <initializer_list>
@@ -67,13 +66,13 @@ namespace dynamicgraph {
         void init(const double& dt, const unsigned int& n);
 
         /* --- SIGNALS --- */
-        DECLARE_SIGNAL_IN(initial_value,  ml::Vector);
-        DECLARE_SIGNAL(x,      OUT,       ml::Vector);
-        DECLARE_SIGNAL_OUT(dx,            ml::Vector);
-        DECLARE_SIGNAL_OUT(ddx,           ml::Vector);
+        DECLARE_SIGNAL_IN(initial_value,  dynamicgraph::Vector);
+        DECLARE_SIGNAL(x,      OUT,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(dx,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(ddx,           dynamicgraph::Vector);
 
       protected:
-        DECLARE_SIGNAL_OUT_FUNCTION(x,    ml::Vector);
+        DECLARE_SIGNAL_OUT_FUNCTION(x,    dynamicgraph::Vector);
 
       public:
 
