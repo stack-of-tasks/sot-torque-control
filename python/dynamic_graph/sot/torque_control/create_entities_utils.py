@@ -313,13 +313,17 @@ def create_ctrl_manager(conf, motor_params, dt, robot_name='robot'):
     ctrl_manager = ControlManager("ctrl_man");        
 
 #    plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
-    ctrl_manager.tau_predicted.value = NJ*(0.0,);
+    ctrl_manager.tau_predicted.value                        = NJ*(0.0,);
     ctrl_manager.max_tau.value                              = NJ*(conf.CTRL_MANAGER_TAU_MAX,);
     ctrl_manager.max_current.value                          = NJ*(conf.CTRL_MANAGER_CURRENT_MAX,);
     ctrl_manager.percentageDriverDeadZoneCompensation.value = NJ*(conf.PERCENTAGE_DRIVER_DEAD_ZONE_COMPENSATION,);
+    ctrl_manager.percentage_bemf_compensation.value         = conf.percentage_bemf_compensation;
+    ctrl_manager.current_sensor_offsets_low_level.value     = conf.current_sensor_offsets_low_level;
     ctrl_manager.iMaxDeadZoneCompensation.value             = NJ*(conf.I_MAX_DEAD_ZONE_COMPENSATION,);
     ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
-    ctrl_manager.bemfFactor.value                           = 0.01*motor_params.K_bemf;
+    ctrl_manager.kp_current.value                           = conf.kp_current;
+    ctrl_manager.ki_current.value                           = conf.ki_current;
+    ctrl_manager.bemfFactor.value                           = motor_params.K_bemf;
     ctrl_manager.dead_zone_offsets.value                    = motor_params.deadzone;
     ctrl_manager.cur_sens_gains.value                       = motor_params.cur_sens_gains;
     ctrl_manager.currents.value                             = NJ*(0.0,);
@@ -366,8 +370,8 @@ def connect_ctrl_manager(ent):
     plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
     plug(ent.device.currents,               ent.ctrl_manager.currents);
     plug(ent.estimator_kin.dx,              ent.ctrl_manager.dq);
-    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);    
-    plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);    
+    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
+    plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
     ent.ctrl_manager.addCtrlMode("pos");
     ent.ctrl_manager.addCtrlMode("torque");    
     plug(ent.torque_ctrl.controlCurrent,        ent.ctrl_manager.ctrl_torque);
