@@ -13,13 +13,14 @@
  * have received a copy of the GNU Lesser General Public License along
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <sot/torque_control/joint-trajectory-generator.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
 
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
+
+#include "../include/sot/torque_control/stc-commands.hh"
 
 namespace dynamicgraph
 {
@@ -93,6 +94,11 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::getJoint,
                                     docCommandVoid1("Get the current angle of the specified joint.",
                                                     "Joint name (string)")));
+
+        //const std::string& docstring = ;
+
+        addCommand("isTrajectoryEnded",
+                   new command::IsTrajectoryEnded(*this, "Return whether all joint trajectories have ended"));
 
         addCommand("playTrajectoryFile",
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::playTrajectoryFile,
@@ -438,6 +444,38 @@ namespace dynamicgraph
           return;
         const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
         SEND_MSG("Current angle of joint "+jointName+" is "+toString(base6d_encoders(6+i)), MSG_TYPE_INFO);
+      }
+
+      bool JointTrajectoryGenerator::isTrajectoryEnded()
+      {
+        bool output=true;
+        if(m_status[0]==JTG_TEXT_FILE)
+        {
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
+          {
+            if(!m_textFileTrajGen->isTrajectoryEnded())
+            {
+              output=false;
+              SEND_MSG("Text file trajectory ended.", MSG_TYPE_INFO);
+              return output;
+            }
+          }
+        }
+        else
+        {
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
+          {
+            if(!m_currentTrajGen[i]->isTrajectoryEnded())
+            {
+              output=false;
+              SEND_MSG("Trajectory of joint "+
+                       m_robot_util->get_name_from_id(i)+
+                       " ended.", MSG_TYPE_INFO);
+              return output;
+            }
+          }
+        }
+        return output;
       }
 
       void JointTrajectoryGenerator::playTrajectoryFile(const std::string& fileName)

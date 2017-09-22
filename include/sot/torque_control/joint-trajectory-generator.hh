@@ -91,6 +91,9 @@ namespace dynamicgraph {
         /** Print the current angle of the specified joint. */
         void getJoint(const std::string& jointName);
 
+        /** Returns whether all given trajectories have ended **/
+        bool isTrajectoryEnded();
+
         /** Move a joint to a position with a minimum-jerk trajectory.
          * @param jointName The short name of the joint.
          * @param qFinal The desired final position of the joint [rad].
