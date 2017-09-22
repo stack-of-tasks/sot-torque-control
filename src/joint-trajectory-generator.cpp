@@ -456,7 +456,7 @@ namespace dynamicgraph
             if(!m_textFileTrajGen->isTrajectoryEnded())
             {
               output=false;
-              SEND_MSG("Text file trajectory ended.", MSG_TYPE_INFO);
+              SEND_MSG("Text file trajectory not ended.", MSG_TYPE_INFO);
               return output;
             }
           }
@@ -470,7 +470,7 @@ namespace dynamicgraph
               output=false;
               SEND_MSG("Trajectory of joint "+
                        m_robot_util->get_name_from_id(i)+
-                       " ended.", MSG_TYPE_INFO);
+                       "not ended.", MSG_TYPE_INFO);
               return output;
             }
           }
