@@ -156,6 +156,7 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/identification/__init__.py
 INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
               python/dynamic_graph/sot/torque_control/utils/plot_utils.py
               python/dynamic_graph/sot/torque_control/utils/sot_utils.py
+              python/dynamic_graph/sot/torque_control/utils/filter_utils.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
