@@ -14,6 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define LOGFILE "/tmp/fd_log.dat"
+
+#define LOG(x) { std::ofstream LogFile;	\
+    LogFile.open(LOGFILE,std::ofstream::app); \
+    LogFile << x << std::endl;		\
+    LogFile.close();}
+
+
 #include <sot/torque_control/filter-differentiator.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
@@ -64,19 +72,15 @@ namespace dynamicgraph
         addCommand("getSize",
                    makeDirectGetter(*this,&m_x_size,
                                     docDirectGetter("Size of the x signal","int")));
-        addCommand("init", makeCommandVoid6(*this, &FilterDifferentiator::init,
-                              docCommandVoid6("Initialize the filter.",
+        addCommand("init", makeCommandVoid4(*this, &FilterDifferentiator::init,
+                              docCommandVoid4("Initialize the filter.",
                                               "Control timestep [s].",
                                               "Size of the input signal x",
-                                              "Filter order Numerator",
-                                              "Filter order Denominator",
                                               "Numerator of the filter",
                                               "Denominator of the filter")));
         addCommand("switch_filter",
-                   makeCommandVoid4(*this, &FilterDifferentiator::switch_filter,
-                                    docCommandVoid4("Switch Filter.",
-                                                    "Filter order Numerator",
-                                                    "Filter order Denominator",
+                   makeCommandVoid2(*this, &FilterDifferentiator::switch_filter,
+                                    docCommandVoid2("Switch Filter.",
                                                     "Numerator of the filter",
                                                     "Denominator of the filter")));
 
@@ -87,27 +91,29 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       void FilterDifferentiator::init(const double &timestep,
-                               const int& xSize,
-                               const int& filter_order_m,
-                               const int& filter_order_n,
-                               const Eigen::VectorXd& filter_numerator,
-                               const Eigen::VectorXd& filter_denominator)
+                                      const int& xSize,
+                                      const Eigen::VectorXd& filter_numerator,
+                                      const Eigen::VectorXd& filter_denominator)
       {
         m_x_size = xSize;
         m_dt = timestep;
         m_filter = new CausalFilter(timestep, xSize,
-                                    filter_order_m, filter_order_n,
                                     filter_numerator, filter_denominator);
+
+        LOG("Filtering started with "<<
+            "Numerator "<< filter_numerator<<std::endl<<
+            "Denominator"<<filter_denominator<<std::endl);
         return;
       }
 
-      void FilterDifferentiator::switch_filter(const int& filter_order_m,
-                                        const int& filter_order_n,
-                                        const Eigen::VectorXd& filter_numerator,
-                                        const Eigen::VectorXd& filter_denominator)
+      void FilterDifferentiator::switch_filter(const Eigen::VectorXd& filter_numerator,
+                                               const Eigen::VectorXd& filter_denominator)
       {
-        m_filter->switch_filter(filter_order_m, filter_order_n,
-                                filter_numerator, filter_denominator);
+        LOG("Filter switched with "<<
+            "Numerator "<< filter_numerator<<std::endl<<
+            "Denominator"<<filter_denominator<<std::endl<<
+            "at time"<<m_xSIN.getTime());
+        m_filter->switch_filter(filter_numerator, filter_denominator);
       }
       
 
@@ -115,11 +121,6 @@ namespace dynamicgraph
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
 
-      /** Signal Filtering and Differentiation.
-          a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
-          - a[1]*y[n-1] - ... - a[N]*y[n-N]
-          for the sample number n
-      */
       DEFINE_SIGNAL_INNER_FUNCTION(x_dx, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute x_dx inner signal "<<iter<<std::endl;
@@ -127,6 +128,7 @@ namespace dynamicgraph
           s.resize(2*m_x_size);
         // read encoders
         const dynamicgraph::Vector& base_x = m_xSIN(iter);
+        assert(base_x.size() == m_x_size);
         m_filter->get_x_dx(base_x, s);
         return s;
       }

@@ -95,14 +95,10 @@ namespace dynamicgraph {
          */
         void init(const double &timestep,
                   const int& xSize,
-                  const int& filter_order_m,
-                  const int& filter_order_n,
                   const Eigen::VectorXd& filter_numerator,
                   const Eigen::VectorXd& filter_denominator);
 
-        void switch_filter(const int& filter_order_m,
-                           const int& filter_order_n,
-                           const Eigen::VectorXd& filter_numerator,
+        void switch_filter(const Eigen::VectorXd& filter_numerator,
                            const Eigen::VectorXd& filter_denominator);
 
 
