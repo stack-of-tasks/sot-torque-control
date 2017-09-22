@@ -43,10 +43,6 @@ SET(plugins
   nd-trajectory-generator
   se3-trajectory-generator
   madgwickahrs
-<<<<<<< HEAD
-  inverse-dynamics-controller
-=======
->>>>>>> devel
   inverse-dynamics-balance-controller
   position-controller
   control-manager
