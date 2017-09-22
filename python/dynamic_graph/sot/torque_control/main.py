@@ -4,6 +4,7 @@
 @author: Andrea Del Prete
 """
 
+from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_generator, create_com_traj_gen, create_encoders
 from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_offset_compensation, create_estimators, create_imu_filter
@@ -11,8 +12,10 @@ from dynamic_graph.sot.torque_control.create_entities_utils import create_base_e
 from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager, create_ros_topics
 from dynamic_graph.sot.torque_control.create_entities_utils import create_free_flyer_locator, create_flex_estimator, create_floatingBase
 from dynamic_graph.sot.torque_control.create_entities_utils import connect_ctrl_manager
-from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer
+from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer, create_topic
+from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, stop_sot, go_to_position, Bunch
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4, create_butter_lp_filter_Wn_05_N_3
 
 from time import sleep
 
@@ -73,7 +76,22 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
     robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl, dt);
     connect_ctrl_manager(robot);
-        
+
+    # create low-pass filter for motor currents
+    robot.current_filter = create_butter_lp_filter_Wn_05_N_3('current_filter', dt, conf.motor_params.NJ)
+    plug(robot.device.currents,           robot.current_filter.x)
+    plug(robot.current_filter.x_filtered, robot.ctrl_manager.currents)
+
+    # create low-pass filter for computing joint velocities
+    robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4('encoder_filter', dt, conf.motor_params.NJ)
+    plug(robot.encoders.sout,             robot.encoder_filter.x)
+    plug(robot.encoder_filter.dx,         robot.ctrl_manager.dq);
+    plug(robot.encoder_filter.dx,         robot.torque_ctrl.jointsVelocities);
+    plug(robot.encoder_filter.dx,         robot.base_estimator.joint_velocities);
+
+    robot.ros = RosPublish('rosPublish');
+    robot.device.after.addDownsampledSignal('rosPublish.trigger',1);
+
     robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
