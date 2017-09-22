@@ -126,6 +126,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(percentage_bemf_compensation,          dynamicgraph::Vector);  /// percentatge in [0;1] of the motor back-EMF that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
         DECLARE_SIGNAL_IN(current_sensor_offsets_low_level,      dynamicgraph::Vector);  /// offset of the current sensors seen by the low level
+        DECLARE_SIGNAL_IN(current_sensor_offsets_real_in,        dynamicgraph::Vector);  /// real offset of the current sensors
         DECLARE_SIGNAL_IN(kp_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
         DECLARE_SIGNAL_IN(ki_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
 
@@ -133,6 +134,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
         DECLARE_SIGNAL_OUT(currents_real,                        dynamicgraph::Vector);  /// current measurements after gain and offset compensation
         DECLARE_SIGNAL_OUT(currents_low_level,                   dynamicgraph::Vector);  /// current measurements as seen by low-level ctrl
+        DECLARE_SIGNAL_OUT(current_sensor_offsets_real_out,      dynamicgraph::Vector);  /// real offset of the current sensors
         DECLARE_SIGNAL_OUT(dead_zone_compensation,               dynamicgraph::Vector);  /// dead-zone compensation current applied by the controller
         DECLARE_SIGNAL_OUT(current_errors,                       dynamicgraph::Vector);  /// current tracking error
         DECLARE_SIGNAL_OUT(current_errors_ll_wo_bemf,            dynamicgraph::Vector);  /// current tracking error without BEMF effect

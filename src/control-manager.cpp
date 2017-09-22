@@ -47,9 +47,10 @@ namespace dynamicgraph
                        SAFETY_SIGNALS << m_iMaxDeadZoneCompensationSIN << m_dqSIN << \
                        m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN << \
                        m_dead_zone_offsetsSIN << m_cur_sens_gainsSIN << m_current_sensor_offsets_low_levelSIN << \
-                       m_kp_currentSIN << m_ki_currentSIN << m_percentage_bemf_compensationSIN
+                       m_current_sensor_offsets_real_inSIN << m_kp_currentSIN << m_ki_currentSIN << m_percentage_bemf_compensationSIN
 #define OUTPUT_SIGNALS m_pwmDesSOUT << m_pwmDesSafeSOUT << m_currents_realSOUT << m_currents_low_levelSOUT << \
-                       m_dead_zone_compensationSOUT << m_current_errorsSOUT << m_current_errors_ll_wo_bemfSOUT
+                       m_dead_zone_compensationSOUT << m_current_errorsSOUT << m_current_errors_ll_wo_bemfSOUT << \
+                       m_current_sensor_offsets_real_outSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -81,6 +82,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(percentage_bemf_compensation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(iMaxDeadZoneCompensation, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(current_sensor_offsets_low_level, dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(current_sensor_offsets_real_in, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(kp_current, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(ki_current, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(pwmDes,                    dynamicgraph::Vector, m_base6d_encodersSIN)
@@ -93,6 +95,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(currents_low_level,        dynamicgraph::Vector, m_currentsSIN << 
                                                                                m_cur_sens_gainsSIN << 
                                                                                m_current_sensor_offsets_low_levelSIN)
+        ,CONSTRUCT_SIGNAL_OUT(current_sensor_offsets_real_out, dynamicgraph::Vector, m_cur_sens_gainsSIN)
         ,CONSTRUCT_SIGNAL_OUT(dead_zone_compensation,    dynamicgraph::Vector, m_pwmDesSafeSOUT << 
                                                                                m_dead_zone_offsetsSIN)
         ,CONSTRUCT_SIGNAL_OUT(current_errors,            dynamicgraph::Vector, m_current_errorsSOUT << 
@@ -146,49 +149,49 @@ namespace dynamicgraph
                    makeCommandVoid0(*this, &ControlManager::resetProfiler,
                                     docCommandVoid0("Reset the statistics computed by the profiler (print this entity to see them).")));
 
-	addCommand("setDefaultMaxCurrent",
-		   makeCommandVoid1(*this,&ControlManager::setDefaultMaxCurrent,
-				    docCommandVoid1("Set the default max current",
-						    "(double) max current >0")));
+        addCommand("setDefaultMaxCurrent",
+                   makeCommandVoid1(*this,&ControlManager::setDefaultMaxCurrent,
+                                    docCommandVoid1("Set the default max current",
+                                                    "(double) max current >0")));
 
-	addCommand("getDefaultMaxCurrent",
-		   makeDirectGetter(*this,&m_maxCurrent,
-				    docCommandVoid0("Get the default max current")));
+        addCommand("getDefaultMaxCurrent",
+                   makeDirectGetter(*this,&m_maxCurrent,
+                                    docCommandVoid0("Get the default max current")));
 
-	addCommand("setNameToId",
-		   makeCommandVoid2(*this,&ControlManager::setNameToId,
-				    docCommandVoid2("Set map for a name to an Id",
-						    "(string) joint name",
-						    "(double) joint id")));
+        addCommand("setNameToId",
+                   makeCommandVoid2(*this,&ControlManager::setNameToId,
+                                    docCommandVoid2("Set map for a name to an Id",
+                                                    "(string) joint name",
+                                                    "(double) joint id")));
 
-	addCommand("setForceNameToForceId",
-		   makeCommandVoid2(*this,&ControlManager::setForceNameToForceId,
-				    docCommandVoid2("Set map from a force sensor name to a force sensor Id",
-						    "(string) force sensor name",
-						    "(double) force sensor id")));
+        addCommand("setForceNameToForceId",
+                   makeCommandVoid2(*this,&ControlManager::setForceNameToForceId,
+                                    docCommandVoid2("Set map from a force sensor name to a force sensor Id",
+                                                    "(string) force sensor name",
+                                                    "(double) force sensor id")));
 
 
-	addCommand("setJointLimitsFromId",
-		   makeCommandVoid3(*this,&ControlManager::setJointLimitsFromId,
-				    docCommandVoid3("Set the joint limits for a given joint ID",
-						    "(double) joint id",
-						    "(double) lower limit",
-						    "(double) uppper limit")));
+        addCommand("setJointLimitsFromId",
+                   makeCommandVoid3(*this,&ControlManager::setJointLimitsFromId,
+                                    docCommandVoid3("Set the joint limits for a given joint ID",
+                                                    "(double) joint id",
+                                                    "(double) lower limit",
+                                                    "(double) uppper limit")));
 
-	addCommand("setForceLimitsFromId",
-		   makeCommandVoid3(*this,&ControlManager::setForceLimitsFromId,
-				    docCommandVoid3("Set the force limits for a given force sensor ID",
-						    "(double) force sensor id",
-						    "(double) lower limit",
-						    "(double) uppper limit")));
+        addCommand("setForceLimitsFromId",
+                   makeCommandVoid3(*this,&ControlManager::setForceLimitsFromId,
+                                    docCommandVoid3("Set the force limits for a given force sensor ID",
+                                                    "(double) force sensor id",
+                                                    "(double) lower limit",
+                                                    "(double) uppper limit")));
 
-	addCommand("setJointsUrdfToSot",
-		   makeCommandVoid1(*this, &ControlManager::setJoints,
+        addCommand("setJointsUrdfToSot",
+                   makeCommandVoid1(*this, &ControlManager::setJoints,
                                     docCommandVoid1("Map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
-	
-	addCommand("setRightFootSoleXYZ",
-		   makeCommandVoid1(*this, &ControlManager::setRightFootSoleXYZ,
+
+        addCommand("setRightFootSoleXYZ",
+                   makeCommandVoid1(*this, &ControlManager::setRightFootSoleXYZ,
                                     docCommandVoid1("Set the right foot sole 3d position.",
                                                     "Vector of 3 doubles")));
         addCommand("setRightFootForceSensorXYZ",
@@ -196,19 +199,15 @@ namespace dynamicgraph
                                     docCommandVoid1("Set the right foot sensor 3d position.",
                                                     "Vector of 3 doubles")));
 
-	addCommand("setFootFrameName",
+        addCommand("setFootFrameName",
                    makeCommandVoid2(*this, &ControlManager::setFootFrameName,
                                     docCommandVoid2("Set the Frame Name for the Foot Name.",
                                                     "(string) Foot name",
                                                     "(string) Frame name")));
-	addCommand("setImuJointName",
+        addCommand("setImuJointName",
                    makeCommandVoid1(*this, &ControlManager::setImuJointName,
                                     docCommandVoid1("Set the Joint Name wich IMU is attached to.",
                                                     "(string) Joint name")));
-                                                    
-                                                    
-                                                    
-		   
         addCommand("displayRobotUtil",
                    makeCommandVoid0(*this, &ControlManager::displayRobotUtil,
                                     docCommandVoid0("Display the current robot util data set.")));
@@ -232,47 +231,47 @@ namespace dynamicgraph
       void ControlManager::init(const double & dt,
                                 const std::string & urdfFile,
                                 const double & lmax_current,
-				const std::string &robotRef,
+                                const std::string &robotRef,
                                 const unsigned int & currentOffsetIters )
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
-	m_maxCurrent = lmax_current;
+        m_maxCurrent = lmax_current;
 
         m_dt = dt;
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
         m_currentOffsetIters = currentOffsetIters;
-	vector<string> package_dirs;
+        vector<string> package_dirs;
 
-	m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
-	
-	std::string localName(robotRef);
-	if (!isNameInRobotUtil(localName))
+        m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+
+        std::string localName(robotRef);
+        if (!isNameInRobotUtil(localName))
         {
-          m_robot_util = createRobotUtil(localName);
+            m_robot_util = createRobotUtil(localName);
         }
         else
         {
-          m_robot_util = getRobotUtil(localName);
+            m_robot_util = getRobotUtil(localName);
         }
 
-	m_robot_util->m_urdf_filename = urdfFile;
+        m_robot_util->m_urdf_filename = urdfFile;
 
-	addCommand("getJointsUrdfToSot",
-		   makeDirectGetter(*this, &m_robot_util->m_dgv_urdf_to_sot,
+        addCommand("getJointsUrdfToSot",
+                   makeDirectGetter(*this, &m_robot_util->m_dgv_urdf_to_sot,
                                     docDirectSetter("Display map Joints From URDF to SoT.",
                                                     "Vector of integer for mapping")));
-	
-	m_robot_util->m_nbJoints = m_robot->nv()-6;
- 
+
+        m_robot_util->m_nbJoints = m_robot->nv()-6;
+
         m_cur_offsets_real.setZero(m_robot_util->m_nbJoints);
         m_cur_err_integr.setZero(m_robot_util->m_nbJoints);
         m_dz_coeff.setZero(m_robot_util->m_nbJoints);
         m_avg_cur_err_pos.setZero(m_robot_util->m_nbJoints);
         m_avg_cur_err_neg.setZero(m_robot_util->m_nbJoints);
-	m_jointCtrlModes_current.resize(m_robot_util->m_nbJoints);
-	m_jointCtrlModes_previous.resize(m_robot_util->m_nbJoints);
+        m_jointCtrlModes_current.resize(m_robot_util->m_nbJoints);
+        m_jointCtrlModes_previous.resize(m_robot_util->m_nbJoints);
         m_jointCtrlModesCountDown.resize(m_robot_util->m_nbJoints,0);
       }
 
@@ -485,7 +484,10 @@ namespace dynamicgraph
                 }
               }
             }
-            s -= m_cur_offsets_real;
+            if(m_current_sensor_offsets_real_inSIN.isPlugged())
+              s -= m_current_sensor_offsets_real_inSIN(iter);
+            else
+              s -= m_cur_offsets_real;
           }
         }
         m_iter++;
@@ -510,6 +512,18 @@ namespace dynamicgraph
         // Compensate for the current sensor gains
         const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
         s = s.cwiseProduct(cur_sens_gains);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(current_sensor_offsets_real_out,dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal current_sensor_offsets_real_out before initialization!");
+          return s;
+        }
+        const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
+        s = m_cur_offsets_real.cwiseProduct(cur_sens_gains);
         return s;
       }
 
