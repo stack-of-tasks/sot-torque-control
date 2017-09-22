@@ -61,13 +61,11 @@ namespace dynamicgraph {
 /// Number of time step to transition from one ctrl mode to another
 #define CTRL_MODE_TRANSITION_TIME_STEP 1000.0
 
-///factor to go from a [-20.0 ; 20.0] Ampers value 
-///             to the [-2048 ; 2048] 12bit DAC register
-//#define FROM_CURRENT_TO_12_BIT_CTRL 102.4
-
 // max motor current
 #define DEFAULT_MAX_CURRENT 8
 
+// number of iterations used to compute current offset at the beginning
+#define CURRENT_OFFSET_ITERS 200
 
       class CtrlMode
       {
@@ -125,12 +123,19 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
+        DECLARE_SIGNAL_IN(percentage_bemf_compensation,          dynamicgraph::Vector);  /// percentatge in [0;1] of the motor back-EMF that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
+        DECLARE_SIGNAL_IN(current_sensor_offsets_low_level,      dynamicgraph::Vector);  /// offset of the current sensors seen by the low level
+        DECLARE_SIGNAL_IN(kp_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
+        DECLARE_SIGNAL_IN(ki_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
 
         DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
-        DECLARE_SIGNAL_OUT(currents_out,                         dynamicgraph::Vector);  /// current measurements after gain and offset compensation
-
+        DECLARE_SIGNAL_OUT(currents_real,                        dynamicgraph::Vector);  /// current measurements after gain and offset compensation
+        DECLARE_SIGNAL_OUT(currents_low_level,                   dynamicgraph::Vector);  /// current measurements as seen by low-level ctrl
+        DECLARE_SIGNAL_OUT(dead_zone_compensation,               dynamicgraph::Vector);  /// dead-zone compensation current applied by the controller
+        DECLARE_SIGNAL_OUT(current_errors,                       dynamicgraph::Vector);  /// current tracking error
+        DECLARE_SIGNAL_OUT(current_errors_ll_wo_bemf,            dynamicgraph::Vector);  /// current tracking error without BEMF effect
 
 
         /* --- COMMANDS --- */
@@ -192,16 +197,17 @@ namespace dynamicgraph {
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
         int     m_iter;
         double  m_sleep_time;       /// time to sleep at every iteration (to slow down simulation)
-        unsigned int m_currentOffsetIters;
-        dynamicgraph::Vector m_currents;
-        dynamicgraph::Vector m_current_offsets;
-        /*
-                        _    _   _________________________    _
-           input ______| |__| |_|                         |__| |________
-                        __________________________________
-           output______|                                  |_____________
 
-        */
+        unsigned int m_currentOffsetIters;
+//        dynamicgraph::Vector m_currents;
+//        dynamicgraph::Vector m_current_offsets;
+        dynamicgraph::Vector m_cur_offsets_real;
+        dynamicgraph::Vector m_cur_err_integr;
+
+        dynamicgraph::Vector m_dz_coeff;
+
+        dynamicgraph::Vector m_avg_cur_err_pos;
+        dynamicgraph::Vector m_avg_cur_err_neg;
 
         std::vector<std::string>  m_ctrlModes;                /// existing control modes
         std::vector<CtrlMode>     m_jointCtrlModes_current;   /// control mode of the joints
