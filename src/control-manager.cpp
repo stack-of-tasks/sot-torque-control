@@ -503,12 +503,13 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal current_sensor_offsets_real_out before initialization!");
           return s;
         }
-        const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
+        const dynamicgraph::Vector& currents = m_currentsSIN(iter);
+
         // Compute current sensor offsets
         if (m_currentOffsetIters > 0)
         {
           if(m_iter<m_currentOffsetIters)
-            m_cur_offsets_real += (s-m_cur_offsets_real)/(m_iter+1);
+            m_cur_offsets_real += (currents-m_cur_offsets_real)/(m_iter+1);
           else if(m_iter==m_currentOffsetIters)
           {
             SEND_MSG("Current sensor offsets computed in "+toString(m_iter)+" iterations: "+toString(m_cur_offsets_real), MSG_TYPE_INFO);
