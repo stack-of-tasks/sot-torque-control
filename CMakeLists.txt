@@ -163,6 +163,7 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
               python/dynamic_graph/sot/torque_control/tests/robot_data_test.py
               python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
               python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
+              python/dynamic_graph/sot/torque_control/tests/test_velocity_filters.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
          
 ADD_SUBDIRECTORY(src)

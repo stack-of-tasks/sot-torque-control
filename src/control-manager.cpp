@@ -89,7 +89,8 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(pwmDesSafe,                dynamicgraph::Vector, INPUT_SIGNALS << 
                                                                                m_pwmDesSOUT << 
                                                                                m_currents_realSOUT << 
-                                                                               m_currents_low_levelSOUT)
+                                                                               m_currents_low_levelSOUT <<
+                                                                               m_current_sensor_offsets_real_outSOUT)
         ,CONSTRUCT_SIGNAL_OUT(currents_real,             dynamicgraph::Vector, m_currentsSIN << 
                                                                                m_cur_sens_gainsSIN)
         ,CONSTRUCT_SIGNAL_OUT(currents_low_level,        dynamicgraph::Vector, m_currentsSIN << 
@@ -368,6 +369,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& i_real                    = m_currents_realSOUT(iter);
         const dynamicgraph::Vector& i_ll                      = m_currents_low_levelSOUT(iter);
         const dynamicgraph::Vector& cur_sens_gains            = m_cur_sens_gainsSIN(iter);
+        const dynamicgraph::Vector& i_offset_real             = m_current_sensor_offsets_real_outSOUT(iter);
         const dynamicgraph::Vector& tau_predicted             = m_tau_predictedSIN(iter);
         const dynamicgraph::Vector& dq                        = m_dqSIN(iter);
         const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
@@ -396,7 +398,7 @@ namespace dynamicgraph
         {
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
           {
-            s(i) = u(i) + cur_sens_gains(i)*m_cur_offsets_real(i) + 
+            s(i) = u(i) + cur_sens_gains(i)*i_offset_real(i) + 
                    bemf_comp_perc(i)*bemfFactor(i)*dq(i) + 
                    kp(i)*(u(i)-i_real(i)) + m_cur_err_integr(i);
 
@@ -523,7 +525,7 @@ namespace dynamicgraph
           return s;
         }
         const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
-        s = m_cur_offsets_real.cwiseProduct(cur_sens_gains);
+        s = m_cur_offsets_real; //.cwiseProduct(cur_sens_gains);
         return s;
       }
 
