@@ -92,16 +92,18 @@ namespace dynamicgraph
                                                                                m_currents_low_levelSOUT <<
                                                                                m_current_sensor_offsets_real_outSOUT)
         ,CONSTRUCT_SIGNAL_OUT(currents_real,             dynamicgraph::Vector, m_currentsSIN << 
-                                                                               m_cur_sens_gainsSIN)
+                                                                               m_cur_sens_gainsSIN <<
+                                                                               m_current_sensor_offsets_real_outSOUT)
         ,CONSTRUCT_SIGNAL_OUT(currents_low_level,        dynamicgraph::Vector, m_currentsSIN << 
                                                                                m_cur_sens_gainsSIN << 
                                                                                m_current_sensor_offsets_low_levelSIN)
-        ,CONSTRUCT_SIGNAL_OUT(current_sensor_offsets_real_out, dynamicgraph::Vector, m_cur_sens_gainsSIN)
+        ,CONSTRUCT_SIGNAL_OUT(current_sensor_offsets_real_out, dynamicgraph::Vector, m_currentsSIN <<
+                                                                                     m_current_sensor_offsets_real_inSIN)
         ,CONSTRUCT_SIGNAL_OUT(dead_zone_compensation,    dynamicgraph::Vector, m_pwmDesSafeSOUT << 
                                                                                m_dead_zone_offsetsSIN)
-        ,CONSTRUCT_SIGNAL_OUT(current_errors,            dynamicgraph::Vector, m_current_errorsSOUT << 
+        ,CONSTRUCT_SIGNAL_OUT(current_errors,            dynamicgraph::Vector, m_currents_realSOUT <<
                                                                                m_pwmDesSOUT)
-        ,CONSTRUCT_SIGNAL_OUT(current_errors_ll_wo_bemf, dynamicgraph::Vector, m_current_errorsSOUT << 
+        ,CONSTRUCT_SIGNAL_OUT(current_errors_ll_wo_bemf, dynamicgraph::Vector, m_currents_realSOUT <<
                                                                                m_pwmDesSOUT << 
                                                                                m_percentage_bemf_compensationSIN <<
                                                                                m_dqSIN <<
@@ -466,34 +468,11 @@ namespace dynamicgraph
         }
         s = m_currentsSIN(iter);
 
-        // Compute and compensate for current sensor offsets
-        if (m_currentOffsetIters > 0)
-        {
-          if(m_iter<m_currentOffsetIters)
-            m_cur_offsets_real += (s-m_cur_offsets_real)/(m_iter+1);
-          else 
-          {
-            if(m_iter==m_currentOffsetIters)
-            {
-              SEND_MSG("Current sensor offsets: "+toString(m_cur_offsets_real), MSG_TYPE_INFO);
-              for(int i=0; i<s.size(); i++)
-              {
-                if(fabs(m_cur_offsets_real(i))>0.6)
-                {
-                  SEND_MSG("Current offset for joint "+m_robot_util->get_name_from_id(i)+ 
-                         " is too large, suggesting that the sensor may be broken: "+toString(m_cur_offsets_real(i)), MSG_TYPE_WARNING);
-                  m_cur_offsets_real(i) = 0.0;
-                }
-              }
-            }
-            if(m_current_sensor_offsets_real_inSIN.isPlugged())
-              s -= m_current_sensor_offsets_real_inSIN(iter);
-            else
-              s -= m_cur_offsets_real;
-          }
-        }
-        m_iter++;
+        // compensate for current sensor offsets
+        const dynamicgraph::Vector& offset = m_current_sensor_offsets_real_outSOUT(iter);
+        s -= offset;
 
+        // compensate for current sensor gains
         const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
         s = s.cwiseProduct(cur_sens_gains);
 
@@ -517,7 +496,7 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(current_sensor_offsets_real_out,dynamicgraph::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(current_sensor_offsets_real_out, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
@@ -525,7 +504,30 @@ namespace dynamicgraph
           return s;
         }
         const dynamicgraph::Vector& cur_sens_gains  = m_cur_sens_gainsSIN(iter);
-        s = m_cur_offsets_real; //.cwiseProduct(cur_sens_gains);
+        // Compute current sensor offsets
+        if (m_currentOffsetIters > 0)
+        {
+          if(m_iter<m_currentOffsetIters)
+            m_cur_offsets_real += (s-m_cur_offsets_real)/(m_iter+1);
+          else if(m_iter==m_currentOffsetIters)
+          {
+            SEND_MSG("Current sensor offsets computed in "+toString(m_iter)+" iterations: "+toString(m_cur_offsets_real), MSG_TYPE_INFO);
+            for(int i=0; i<s.size(); i++)
+              if(fabs(m_cur_offsets_real(i))>0.6)
+              {
+                SEND_MSG("Current offset for joint "+m_robot_util->get_name_from_id(i)+ 
+                         " is too large, suggesting that the sensor may be broken: "+toString(m_cur_offsets_real(i)), MSG_TYPE_WARNING);
+                m_cur_offsets_real(i) = 0.0;
+              }
+          }
+        }
+        m_iter++;
+
+        if(m_current_sensor_offsets_real_inSIN.isPlugged())
+          s = m_current_sensor_offsets_real_inSIN(iter);
+        else
+          s = m_cur_offsets_real;
+
         return s;
       }
 
