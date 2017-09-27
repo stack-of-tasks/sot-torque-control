@@ -277,7 +277,7 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
     
     return ctrl;
     
-def create_inverse_dynamics(robot, gains, dt=0.001):
+def create_inverse_dynamics(robot, conf, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
     plug(robot.device.robotState,             inv_dyn_ctrl.base6d_encoders);
     plug(robot.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
@@ -301,10 +301,12 @@ def create_inverse_dynamics(robot, gains, dt=0.001):
     plug(robot.estimator_ft.dynamicsError,       inv_dyn_ctrl.dynamicsError);
     
     inv_dyn_ctrl.dynamicsErrorGain.value = (NJ+6)*(0.0,);
-    inv_dyn_ctrl.Kp.value = tuple(gains.k_s); # joint proportional gains
-    inv_dyn_ctrl.Kd.value = tuple(gains.k_d); # joint derivative gains
-    inv_dyn_ctrl.Kf.value = tuple(gains.k_f); # force proportional gains
-    inv_dyn_ctrl.Ki.value = tuple(gains.k_i); # force integral gains
+    inv_dyn_ctrl.Kp.value = tuple(conf.k_s); # joint proportional conf
+    inv_dyn_ctrl.Kd.value = tuple(conf.k_d); # joint derivative conf
+    inv_dyn_ctrl.Kf.value = tuple(conf.k_f); # force proportional conf
+    inv_dyn_ctrl.Ki.value = tuple(conf.k_i); # force integral conf
+    inv_dyn_ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
+    inv_dyn_ctrl.gear_ratios.value    = conf.GEAR_RATIOS;
     inv_dyn_ctrl.controlledJoints.value = NJ*(1.0,);
     inv_dyn_ctrl.init(dt);
     return inv_dyn_ctrl;
@@ -407,9 +409,11 @@ def create_admittance_ctrl(robot, dt=0.001):
     admit_ctrl.init(dt);
     return admit_ctrl;
 
-def create_topic(ros_import, signal, name, data_type='vector', sleep_time=0.1):
+def create_topic(ros_import, signal, name, robot=None, entity=None, data_type='vector', sleep_time=0.1):
     ros_import.add(data_type, name+'_ros', name);
     plug(signal, ros_import.signal(name+'_ros'));
+    if(entity is not None and robot is not None):
+        robot.device.before.addDownsampledSignal(entity.name+'.'+signal.name.split('::')[-1], 1);
     from time import sleep
     sleep(sleep_time);
     
