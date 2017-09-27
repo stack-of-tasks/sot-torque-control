@@ -43,9 +43,10 @@ private:
   int m_x_size;
   int m_filter_order_m;
   int m_filter_order_n;
-  
+
   Eigen::VectorXd m_filter_numerator;
   Eigen::VectorXd m_filter_denominator;
+  bool first_sample;
   int pt_numerator;
   int pt_denominator;
   Eigen::MatrixXd input_buffer;
