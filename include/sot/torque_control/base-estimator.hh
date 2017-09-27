@@ -100,6 +100,8 @@ namespace dynamicgraph {
         BaseEstimator( const std::string & name );
 
         void init(const double & dt, const std::string& urdfFile);
+        void set_alpha_DC_acc(const double & a);
+        void set_alpha_DC_vel(const double & a);
         void reset_foot_positions();
         void set_imu_weight(const double & w);
         void set_zmp_std_dev_right_foot(const double & std_dev);
@@ -136,6 +138,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(lf_ref_xyzquat,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(rf_ref_xyzquat,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(accelerometer,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(gyroscope,                  dynamicgraph::Vector);
 
         DECLARE_SIGNAL_INNER(kinematics_computations, dynamicgraph::Vector);
 
@@ -184,6 +187,10 @@ namespace dynamicgraph {
         Vector6           m_K_rf;             /// 6d stiffness of right foot spring
         Vector6           m_K_lf;             /// 6d stiffness of left foot spring
 
+        double            m_alpha_DC_acc;     /// alpha parameter for DC blocker filter on acceleration data
+        double            m_alpha_DC_vel;     /// alpha parameter for DC blocker filter on velocity data
+        
+        
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data
         se3::SE3          m_oMff_lf;          /// world-to-base transformation obtained through left foot
@@ -195,6 +202,8 @@ namespace dynamicgraph {
         SE3               m_oMlfs_default_ref;/// Default reference for left foot pose to use if no ref is pluged 
         SE3               m_oMrfs_default_ref;/// Default reference for right foot pose to use if no ref is pluged 
         normal            m_normal;           /// Normal distribution
+        
+        bool              m_isFirstIterFlag;  /// flag to detect first iteration and initialise velocity filters
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation
 
@@ -206,7 +215,8 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
-
+        Matrix3           m_oRchest;          /// chest orientation in the world from angular fusion
+        
         /* Filter buffers*/
         Vector3 m_last_vel;
         Vector3 m_last_DCvel;
