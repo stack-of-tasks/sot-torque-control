@@ -6,7 +6,7 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
-from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference as VelAccEstimator
+from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
 from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTrajectoryGenerator
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
@@ -18,6 +18,7 @@ from dynamic_graph.sot.torque_control.position_controller import PositionControl
 from dynamic_graph.tracer_real_time import TracerRealTime
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
+from dynamic_graph.sot.torque_control.utils.sot_utils import Bunch
 #from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
 def create_encoders(robot):
@@ -33,7 +34,7 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     plug(robot.encoders.sout,               base_estimator.joint_positions);
     plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
     plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
-    plug(robot.estimator_kin.dx,            base_estimator.joint_velocities);
+    plug(robot.filters.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
     plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
     
@@ -82,7 +83,7 @@ def create_free_flyer_locator(ent, robot_name="robot"):
     from dynamic_graph.sot.torque_control.free_flyer_locator import FreeFlyerLocator
     ff_locator = FreeFlyerLocator("ffLocator");
     plug(ent.device.robotState,             ff_locator.base6d_encoders);
-    plug(ent.estimator_kin.dx,              ff_locator.joint_velocities);
+    plug(ent.filters.estimator_kin.dx,              ff_locator.joint_velocities);
     try:
         plug(ff_locator.base6dFromFoot_encoders, ent.dynamic.position);
     except:
@@ -125,7 +126,7 @@ def create_position_controller(robot, gains, dt=0.001, robot_name="robot"):
     try:  # this works only in simulation
         plug(robot.device.jointsVelocities,    posCtrl.jointsVelocities);
     except:
-        plug(robot.estimator_kin.dx, posCtrl.jointsVelocities);
+        plug(robot.filters.estimator_kin.dx, posCtrl.jointsVelocities);
         pass;
     plug(posCtrl.pwmDes,                robot.device.control);
     try:
@@ -142,22 +143,42 @@ def create_trajectory_generator(device, dt=0.001, robot_name="robot"):
     return jtg;
 
 def create_estimators(robot, conf, motor_params, dt):
-    estimator_kin = VelAccEstimator("estimator_kin");
+    filters = Bunch()
+
     estimator_ft = ForceTorqueEstimator("estimator_ft");
+    filters.current_filter = NumericalDifference("current_filter");
+    filters.ft_RF_filter = NumericalDifference("ft_RF_filter");
+    filters.ft_LF_filter = NumericalDifference("ft_LF_filter");
+    filters.ft_RH_filter = NumericalDifference("ft_RH_filter");
+    filters.ft_LH_filter = NumericalDifference("ft_LH_filter");
+    filters.acc_filter = NumericalDifference("dv_filter");
+    filters.gyro_filter = NumericalDifference("w_filter");
 
-    plug(robot.encoders.sout,                             estimator_kin.x);
+    filters.estimator_kin = NumericalDifference("estimator_kin");
+
+    plug(robot.encoders.sout,                             filters.estimator_kin.x);
     plug(robot.device.robotState,                         estimator_ft.base6d_encoders);
-    plug(robot.imu_offset_compensation.accelerometer_out, estimator_ft.accelerometer);
-    plug(robot.imu_offset_compensation.gyrometer_out,     estimator_ft.gyroscope);
-    plug(robot.device.forceRLEG,                          estimator_ft.ftSensRightFoot);
-    plug(robot.device.forceLLEG,                          estimator_ft.ftSensLeftFoot);
-    plug(robot.device.forceRARM,                          estimator_ft.ftSensRightHand);
-    plug(robot.device.forceLARM,                          estimator_ft.ftSensLeftHand);
-    plug(robot.device.currents,                           estimator_ft.currentMeasure);
 
-    plug(estimator_kin.x_filtered, estimator_ft.q_filtered);
-    plug(estimator_kin.dx,         estimator_ft.dq_filtered);
-    plug(estimator_kin.ddx,        estimator_ft.ddq_filtered);
+    plug(robot.imu_offset_compensation.accelerometer_out, filters.acc_filter.x);
+    plug(robot.imu_offset_compensation.gyrometer_out,     filters.gyro_filter.x);
+    plug(robot.device.forceRLEG,                          filters.ft_RF_filter.x);
+    plug(robot.device.forceLLEG,                          filters.ft_LF_filter.x);
+    plug(robot.device.forceRARM,                          filters.ft_RH_filter.x);
+    plug(robot.device.forceLARM,                          filters.ft_LH_filter.x);
+    plug(robot.device.currents,                           filters.current_filter.x);
+
+    plug(filters.acc_filter.x_filtered,                   estimator_ft.accelerometerFiltered);
+    plug(filters.gyro_filter.x_filtered,                  estimator_ft.gyroscopeFiltered);
+    plug(filters.gyro_filter.dx,                          estimator_ft.gyroscopeDerivativeFiltered);
+    plug(filters.ft_RF_filter.x_filtered,                 estimator_ft.ftSensRightFootFiltered);
+    plug(filters.ft_LF_filter.x_filtered,                 estimator_ft.ftSensLeftFootFiltered);
+    plug(filters.ft_RH_filter.x_filtered,                 estimator_ft.ftSensRightHandFiltered);
+    plug(filters.ft_LH_filter.x_filtered,                 estimator_ft.ftSensLeftHandFiltered);
+    plug(filters.current_filter.x_filtered,               estimator_ft.currentFiltered);
+
+    plug(filters.estimator_kin.x_filtered, estimator_ft.q_filtered);
+    plug(filters.estimator_kin.dx,         estimator_ft.dq_filtered);
+    plug(filters.estimator_kin.ddx,        estimator_ft.ddq_filtered);
     try:
         plug(robot.traj_gen.dq,       estimator_ft.dqRef);
         plug(robot.traj_gen.ddq,      estimator_ft.ddqRef);
@@ -175,18 +196,26 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
 
-    estimator_ft.init(dt, conf.DELAY_ACC*dt, conf.DELAY_GYRO*dt, conf.DELAY_FORCE*dt, conf.DELAY_CURRENT*dt, True);
-    estimator_kin.init(dt,NJ, conf.DELAY_ENC*dt);
-    
-    return (estimator_ft, estimator_kin);
+    estimator_ft.init(True);
+    filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
+    filters.ft_RF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+    filters.ft_LF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+    filters.ft_RH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+    filters.ft_LH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+    filters.gyro_filter.init(dt, 3, conf.DELAY_GYRO*dt,1)
+    filters.acc_filter.init(dt, 3, conf.DELAY_ACC*dt,1)
+
+    filters.estimator_kin.init(dt,NJ, conf.DELAY_ENC*dt,2);
+
+    return (estimator_ft, filters);
         
 def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="robot"):
     torque_ctrl = JointTorqueController("jtc");
     plug(robot.device.robotState,               torque_ctrl.base6d_encoders);
-    plug(robot.estimator_kin.dx,                torque_ctrl.jointsVelocities);
-    plug(robot.estimator_kin.ddx,               torque_ctrl.jointsAccelerations);
+    plug(robot.filters.estimator_kin.dx,                torque_ctrl.jointsVelocities);
+    plug(robot.filters.estimator_kin.ddx,               torque_ctrl.jointsAccelerations);
     plug(robot.estimator_ft.jointsTorques,      torque_ctrl.jointsTorques);
-    plug(robot.estimator_ft.currentFiltered,    torque_ctrl.measuredCurrent);
+    plug(robot.filters.current_filter.x_filtered, torque_ctrl.measuredCurrent);
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
     torque_ctrl.KiTorque.value                          = NJ*(0.0,);
@@ -280,7 +309,7 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
 def create_inverse_dynamics(robot, conf, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
     plug(robot.device.robotState,             inv_dyn_ctrl.base6d_encoders);
-    plug(robot.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
+    plug(robot.filters.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
     plug(robot.traj_gen.q,                    inv_dyn_ctrl.qRef);
     plug(robot.traj_gen.dq,                   inv_dyn_ctrl.dqRef);
     plug(robot.traj_gen.ddq,                  inv_dyn_ctrl.ddqRef);
@@ -371,7 +400,7 @@ def connect_ctrl_manager(ent):
     # connect to device    
     plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
     plug(ent.device.currents,               ent.ctrl_manager.currents);
-    plug(ent.estimator_kin.dx,              ent.ctrl_manager.dq);
+    plug(ent.filters.estimator_kin.dx,      ent.ctrl_manager.dq);
     plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
     plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
     ent.ctrl_manager.addCtrlMode("pos");
@@ -386,7 +415,7 @@ def connect_ctrl_manager(ent):
 def create_admittance_ctrl(robot, dt=0.001):
     admit_ctrl = AdmittanceController("adm_ctrl");
     plug(robot.device.robotState,             admit_ctrl.base6d_encoders);
-    plug(robot.estimator_kin.dx,    admit_ctrl.jointsVelocities);
+    plug(robot.filters.estimator_kin.dx,    admit_ctrl.jointsVelocities);
     plug(robot.estimator_ft.contactWrenchRightSole,   admit_ctrl.fRightFoot);
     plug(robot.estimator_ft.contactWrenchLeftSole,    admit_ctrl.fLeftFoot);
     plug(robot.estimator_ft.contactWrenchRightHand,   admit_ctrl.fRightHand);
@@ -435,7 +464,7 @@ def create_ros_topics(robot):
         pass;
     
     try:
-        create_topic(ros, robot.estimator_kin.dx,                            'jointsVelocities');
+        create_topic(ros, robot.filters.estimator_kin.dx,                            'jointsVelocities');
         create_topic(ros, robot.estimator_ft.contactWrenchLeftSole,          'contactWrenchLeftSole');
         create_topic(ros, robot.estimator_ft.contactWrenchRightSole,         'contactWrenchRightSole');
         create_topic(ros, robot.estimator_ft.jointsTorques,                  'jointsTorques');
@@ -515,16 +544,16 @@ def create_tracer(device, traj_gen=None, estimator_ft=None, estimator_kin=None,
         
     with open('/tmp/dg_info.dat', 'a') as f:
         if(estimator_ft!=None):
-            f.write('Estimator F/T sensors delay: {0}\n'.format(robot.estimator_ft.getDelayFTsens()));
+            #f.write('Estimator F/T sensors delay: {0}\n'.format(robot.estimator_ft.getDelayFTsens()));
             f.write('Estimator use reference velocities: {0}\n'.format(robot.estimator_ft.getUseRefJointVel()));
             f.write('Estimator use reference accelerations: {0}\n'.format(robot.estimator_ft.getUseRefJointAcc()));
-            f.write('Estimator accelerometer delay: {0}\n'.format(robot.estimator_ft.getDelayAcc()));
-            f.write('Estimator gyroscope delay: {0}\n'.format(robot.estimator_ft.getDelayGyro()));
+            #f.write('Estimator accelerometer delay: {0}\n'.format(robot.estimator_ft.getDelayAcc()));
+            #f.write('Estimator gyroscope delay: {0}\n'.format(robot.estimator_ft.getDelayGyro()));
             f.write('Estimator use raw encoders: {0}\n'.format(robot.estimator_ft.getUseRawEncoders()));
             f.write('Estimator use f/t sensors: {0}\n'.format(robot.estimator_ft.getUseFTsensors()));
             f.write('Estimator f/t sensor offsets: {0}\n'.format(robot.estimator_ft.getFTsensorOffsets()));
         if(estimator_kin!=None):
-            f.write('Estimator encoder delay: {0}\n'.format(robot.estimator_kin.getDelay()));
+            f.write('Estimator encoder delay: {0}\n'.format(robot.filters.estimator_kin.getDelay()));
         if(inv_dyn!=None):
             f.write('Inv dyn Ks: {0}\n'.format(inv_dyn.Kp.value));
             f.write('Inv dyn Kd: {0}\n'.format(inv_dyn.Kd.value));
