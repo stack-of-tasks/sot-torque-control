@@ -48,6 +48,7 @@ CausalFilter::CausalFilter(const double &timestep,
   , pt_denominator(0)
   , input_buffer(Eigen::MatrixXd::Zero(xSize, filter_numerator.size()))
   , output_buffer(Eigen::MatrixXd::Zero(xSize, filter_denominator.size()-1))
+  , first_sample(true)
 {
   assert(timestep>0.0 && "Timestep should be > 0");
   assert(m_filter_numerator.size() == m_filter_order_m);
@@ -59,6 +60,15 @@ void CausalFilter::get_x_dx(const Eigen::VectorXd& base_x,
                             Eigen::VectorXd& x_output_dx)
 {
   //const dynamicgraph::Vector &base_x = m_xSIN(iter);
+  if(first_sample)
+  {
+    for(int i=0;i<m_filter_order_m; i++)
+      input_buffer.col(i) = base_x;
+    for(int i=0;i<m_filter_order_n-1; i++)
+      output_buffer.col(i) = base_x*m_filter_numerator.sum()/m_filter_denominator.sum(); 
+    first_sample = false;
+  }
+
   input_buffer.col(pt_numerator) = base_x;
   
   Eigen::VectorXd b(m_filter_order_m);
@@ -87,87 +97,29 @@ void CausalFilter::switch_filter(const Eigen::VectorXd& filter_numerator,
 {
   int filter_order_m = filter_numerator.size();
   int filter_order_n = filter_denominator.size();
-  if(filter_order_m > m_filter_order_m)
-  {
-    input_buffer.conservativeResize(Eigen::NoChange, filter_order_m);
-    input_buffer.rightCols(filter_order_m - m_filter_order_m).setZero();
-    Eigen::MatrixXd _tmp(m_x_size, m_filter_order_m - pt_numerator -1);
-    _tmp = input_buffer.block(0, pt_numerator+1, m_x_size, m_filter_order_m - pt_numerator -1);
-    input_buffer.rightCols(m_filter_order_m - pt_numerator -1) = _tmp;
-    
-    m_filter_numerator.resize(filter_order_m);
-    m_filter_order_m = filter_order_m;
-    m_filter_numerator = filter_numerator;
-  }
-  else if (filter_order_m == m_filter_order_m)
-  {
-    m_filter_numerator = filter_numerator;          
-  }
-  else
-  {
-    if (filter_order_m < pt_numerator+1)
-    {
-      Eigen::MatrixXd _tmp(input_buffer.block(0,pt_numerator-filter_order_m+1,
-                                              m_x_size, filter_order_m));
-      input_buffer.conservativeResize(Eigen::NoChange, filter_order_m);
-      input_buffer = _tmp;
-      pt_numerator = filter_order_m-1;
-    }
-    else if (filter_order_m == pt_numerator+1)
-    {
-      input_buffer.conservativeResize(Eigen::NoChange, filter_order_m);
-    }
-    else
-    {
-      Eigen::MatrixXd _tmp(input_buffer.rightCols(m_filter_order_m-pt_numerator-1));
-      input_buffer.conservativeResize(Eigen::NoChange, filter_order_m);
-      input_buffer.rightCols(m_filter_order_m-pt_numerator-1) = _tmp;
-    }
-    m_filter_order_m = filter_order_m;
-    m_filter_numerator.resize(filter_order_m);
-    m_filter_numerator = filter_numerator;
-  }
-  
-  if(filter_order_n > m_filter_order_n)
-  {
-    output_buffer.conservativeResize(Eigen::NoChange, filter_order_n-1);
-    output_buffer.rightCols(filter_order_n - m_filter_order_n).setZero();
-    Eigen::MatrixXd _tmp(m_x_size, m_filter_order_n - pt_denominator -2);
-    _tmp = 
-      output_buffer.block(0, pt_denominator+1, m_x_size, m_filter_order_n - pt_denominator -2);
-    output_buffer.rightCols(m_filter_order_n - pt_denominator -2) = _tmp;
-    
-    m_filter_denominator.resize(filter_order_n);
-    m_filter_order_n = filter_order_n;
-    m_filter_denominator = filter_denominator;
-  }
-  else if (filter_order_n == m_filter_order_n)
-  {
-    m_filter_denominator = filter_denominator;          
-  }
-  else
-  {
-    if (filter_order_n < pt_denominator+2)
-    {
-      Eigen::MatrixXd _tmp(output_buffer.block(0,pt_denominator-filter_order_n+2,
-                                               m_x_size, filter_order_n-1));
-      output_buffer.conservativeResize(Eigen::NoChange, filter_order_n-1);
-      output_buffer = _tmp;
-      pt_denominator = filter_order_n-2;
-    }
-    else if (filter_order_n == pt_denominator+2)
-    {
-      output_buffer.conservativeResize(Eigen::NoChange, filter_order_n-1);
-    }
-    else
-    {
-      Eigen::MatrixXd _tmp(output_buffer.rightCols(m_filter_order_n-pt_denominator-2));
-      output_buffer.conservativeResize(Eigen::NoChange, filter_order_n-1);
-      output_buffer.rightCols(m_filter_order_n-pt_denominator-2) = _tmp;
-    }
-    m_filter_order_n = filter_order_n;
-    m_filter_denominator.resize(filter_order_n);
-    m_filter_denominator = filter_denominator;
-  }
+
+  Eigen::VectorXd current_x(input_buffer.col(pt_numerator));
+
+  input_buffer.resize(Eigen::NoChange, filter_order_m);
+  output_buffer.resize(Eigen::NoChange, filter_order_n-1);
+
+  for(int i=0;i<filter_order_m; i++)
+    input_buffer.col(i) = current_x;
+
+  for(int i=0;i<filter_order_n-1; i++)
+    output_buffer.col(i) = current_x*filter_numerator.sum()/filter_denominator.sum(); 
+
+
+  m_filter_order_m = filter_order_m;
+  m_filter_numerator.resize(filter_order_m);
+  m_filter_numerator = filter_numerator;
+
+  m_filter_order_n = filter_order_n;
+  m_filter_denominator.resize(filter_order_n);
+  m_filter_denominator = filter_denominator;
+
+  pt_numerator = 0;
+  pt_denominator = 0;
+
   return;
 }
