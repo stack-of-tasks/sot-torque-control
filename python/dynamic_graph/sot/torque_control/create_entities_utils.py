@@ -196,6 +196,9 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
 
+    estimator_ft.rotor_inertias.value = conf.ROTOR_INERTIAS;
+    estimator_ft.gear_ratios.value    = conf.GEAR_RATIOS;
+
     estimator_ft.init(True);
     filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
     filters.ft_RF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
