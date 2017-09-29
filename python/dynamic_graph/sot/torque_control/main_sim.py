@@ -337,13 +337,13 @@ def main(task='', dt=0.001, delay=0.01):
     np.set_printoptions(precision=2, suppress=True);
     device          = create_device(list(1.0/k_tau));
     traj_gen        = create_trajectory_generator(device, dt);
-    (estimator_ft, estimator_kin)       = create_estimators(device, dt, delay, traj_gen);
+    (estimator_ft, filters)       = create_estimators(device, dt, delay, traj_gen);
     torque_ctrl     = create_torque_controller(device);
     pos_ctrl        = create_position_controller(device, dt);
     inv_dyn         = create_inverse_dynamics(device, dt);
     ctrl_manager    = create_ctrl_manager(device, dt);
     adm_ctrl        = create_admittance_ctrl(device, dt);
-    tracer          = create_tracer(device, traj_gen, estimator_ft, estimator_kin, inv_dyn, torque_ctrl);
+    tracer          = create_tracer(device, traj_gen, estimator_ft, filters.estimator_kin, inv_dyn, torque_ctrl);
 #    tracer.start();
 
     torque_ctrl.KpTorque.value = tuple(k_p);
@@ -374,7 +374,7 @@ def main(task='', dt=0.001, delay=0.01):
         
 #    tracer.stop();
 #    tracer.dump();
-    return (device,estimator_ft, estimator_kin,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer);
+    return (device,estimator_ft, filters.estimator_kin,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer);
     
 if __name__=='__main__':
     (device,estimator_ft,estimator_kin,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl,adm_ctrl,tracer) = main('none',0.001,0.01);

@@ -106,10 +106,12 @@ namespace dynamicgraph {
          * @param sigSize  Size of the input signal.
          * @param delay    Delay (in seconds) introduced by the estimation.
          *                 This should be a multiple of timestep.
+         * @param polyOrder Order of the approximation polynomial. int 1 or 2.
          * @note The estimationDelay is half of the length of the window used for the
          * polynomial fitting. The larger the delay, the smoother the estimations.
          */
-        void init(const double &timestep, const int& sigSize, const double &delay);
+        void init(const double &timestep, const int& sigSize,
+                  const double &delay, const int& polyOrder);
 
       protected:
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
