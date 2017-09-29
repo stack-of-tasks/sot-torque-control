@@ -88,6 +88,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.device.after.addDownsampledSignal('rosPublish.trigger',1);
 
     robot.estimator_ft.dgyro.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";

@@ -42,7 +42,7 @@ namespace dynamicgraph
 #define PROFILE_PWM_DESIRED_COMPUTATION       "Control manager                                        "
 #define PROFILE_DYNAMIC_GRAPH_PERIOD          "Control period                                         "
 
-#define SAFETY_SIGNALS m_max_currentSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN
+#define SAFETY_SIGNALS m_max_currentSIN << m_max_ctrlSIN << m_max_tauSIN << m_tauSIN << m_tau_predictedSIN << m_ctrl_saturationSIN
 #define INPUT_SIGNALS  m_base6d_encodersSIN << m_percentageDriverDeadZoneCompensationSIN << \
                        SAFETY_SIGNALS << m_iMaxDeadZoneCompensationSIN << m_dqSIN << \
                        m_bemfFactorSIN << m_in_out_gainSIN << m_currentsSIN << \
@@ -77,7 +77,9 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(tau,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tau_predicted,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(max_current,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(max_ctrl,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(max_tau,dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(ctrl_saturation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(percentageDriverDeadZoneCompensation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(percentage_bemf_compensation,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(iMaxDeadZoneCompensation, dynamicgraph::Vector)
@@ -367,6 +369,8 @@ namespace dynamicgraph
 
         const dynamicgraph::Vector& u                         = m_pwmDesSOUT(iter);
         const dynamicgraph::Vector& tau_max                   = m_max_tauSIN(iter);
+        const dynamicgraph::Vector& ctrl_max                  = m_max_ctrlSIN(iter);
+        const dynamicgraph::Vector& ctrl_saturation           = m_ctrl_saturationSIN(iter);
         const dynamicgraph::Vector& tau                       = m_tauSIN(iter);
         const dynamicgraph::Vector& i_real                    = m_currents_realSOUT(iter);
         const dynamicgraph::Vector& i_ll                      = m_currents_low_levelSOUT(iter);
@@ -420,8 +424,6 @@ namespace dynamicgraph
               m_emergency_stop_triggered = true;
               SEND_MSG("Estimated torque "+toString(tau(i))+" > max torque "+toString(tau_max(i))+
                        " for joint "+ m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
-              SEND_MSG(", but predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
-              SEND_MSG(", and current "+toString(u(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
             }
 
@@ -430,8 +432,6 @@ namespace dynamicgraph
               m_emergency_stop_triggered = true;
               SEND_MSG("Predicted torque "+toString(tau_predicted(i))+" > max torque "+toString(tau_max(i))+
                        " for joint "+m_robot_util->get_name_from_id(i), MSG_TYPE_ERROR);
-              SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
-              SEND_MSG(", and current "+toString(u(i))+"A < "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
               break;
             }
 
@@ -439,17 +439,28 @@ namespace dynamicgraph
             /// if not use the default value
             if(m_max_currentSIN.isPlugged())
               m_maxCurrent = m_max_currentSIN(iter)(i);
+            if( (fabs(i_real(i)) > m_maxCurrent))
+            {
+              m_emergency_stop_triggered = true;
+              SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" measured current is too large: "+
+                       toString(i_real(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
+              break;
+            }
 
-            if( (fabs(u(i)) > m_maxCurrent) ||
-                (fabs(s(i)) > m_maxCurrent * in_out_gain(i)) )
+            if( (fabs(u(i)) > ctrl_max(i)) ||
+                (fabs(s(i)) > ctrl_max(i) * in_out_gain(i)) )
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+
-                       toString(u(i))+"A > "+toString(m_maxCurrent)+"A", MSG_TYPE_ERROR);
-              SEND_MSG(", but estimated torque "+toString(tau(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
-              SEND_MSG(", and predicted torque "+toString(tau_predicted(i))+" < "+toString(tau_max(i)), MSG_TYPE_ERROR);
+                       toString(s(i))+"A > "+toString(ctrl_max)+"A", MSG_TYPE_ERROR);
               break;
             }
+
+            // saturate control signal
+            if(s(i) > ctrl_saturation(i))
+              s(i) = ctrl_saturation(i);
+            else if(s(i) < - ctrl_saturation(i))
+              s(i) = - ctrl_saturation(i);
           }
         }
 
