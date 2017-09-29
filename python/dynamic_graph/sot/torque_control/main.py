@@ -74,7 +74,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
-    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl, dt);
+    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl,conf.motor_params,dt);
     connect_ctrl_manager(robot);
 
     # create low-pass filter for motor currents

@@ -94,7 +94,7 @@ def setup_velocity_filter(robot, conf, filter_b, filter_a):
   robot.estimator_fd = FilterDifferentiator("fd_filter")
   dt = robot.timeStep
   robot.estimator_fd.init(dt, NJ, filter_b, filter_a)
-  robot.inv_dyn_ctrl = create_inverse_dynamics(robot, conf.inv_dyn_gains, dt=dt);
+  robot.inv_dyn_ctrl = create_inverse_dynamics(robot, conf.inv_dyn_gains, conf.motor_params, dt=dt);
   replug_inv_dyn(robot, robot.inv_dyn_ctrl)
   replug_estimator_kin(robot, robot.estimator_fd)
 

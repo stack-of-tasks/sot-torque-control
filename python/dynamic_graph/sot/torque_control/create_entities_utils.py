@@ -196,8 +196,8 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     estimator_ft.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
 
-    estimator_ft.rotor_inertias.value = conf.ROTOR_INERTIAS;
-    estimator_ft.gear_ratios.value    = conf.GEAR_RATIOS;
+    estimator_ft.rotor_inertias.value = motor_params.ROTOR_INERTIAS;
+    estimator_ft.gear_ratios.value    = motor_params.GEAR_RATIOS;
 
     estimator_ft.init(True);
     filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
@@ -240,7 +240,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.init(dt, robot_name);
     return torque_ctrl;
    
-def create_balance_controller(robot, conf, dt, robot_name='robot'):
+def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot'):
     from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
     ctrl = InverseDynamicsBalanceController("invDynBalCtrl");
 
@@ -278,7 +278,8 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
     # to the C++ entity, because otherwise we get a loss of precision
 #    ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
 #    ctrl.gear_ratios.value = conf.GEAR_RATIOS;
-    ctrl.rotor_inertias.value = tuple([g*g*r for (g,r) in zip(conf.GEAR_RATIOS, conf.ROTOR_INERTIAS)])
+    ctrl.rotor_inertias.value = tuple([g*g*r for (g,r) in
+                                       zip(motor_params.GEAR_RATIOS, motor_params.ROTOR_INERTIAS)])
     ctrl.gear_ratios.value = NJ*(1.0,);
     ctrl.contact_normal.value = conf.FOOT_CONTACT_NORMAL;
     ctrl.contact_points.value = conf.RIGHT_FOOT_CONTACT_POINTS;
@@ -309,7 +310,7 @@ def create_balance_controller(robot, conf, dt, robot_name='robot'):
     
     return ctrl;
     
-def create_inverse_dynamics(robot, conf, dt=0.001):
+def create_inverse_dynamics(robot, conf, motor_params, dt=0.001):
     inv_dyn_ctrl = InverseDynamicsController("inv_dyn");
     plug(robot.device.robotState,             inv_dyn_ctrl.base6d_encoders);
     plug(robot.filters.estimator_kin.dx,              inv_dyn_ctrl.jointsVelocities);
@@ -337,8 +338,8 @@ def create_inverse_dynamics(robot, conf, dt=0.001):
     inv_dyn_ctrl.Kd.value = tuple(conf.k_d); # joint derivative conf
     inv_dyn_ctrl.Kf.value = tuple(conf.k_f); # force proportional conf
     inv_dyn_ctrl.Ki.value = tuple(conf.k_i); # force integral conf
-    inv_dyn_ctrl.rotor_inertias.value = conf.ROTOR_INERTIAS;
-    inv_dyn_ctrl.gear_ratios.value    = conf.GEAR_RATIOS;
+    inv_dyn_ctrl.rotor_inertias.value = motor_params.ROTOR_INERTIAS;
+    inv_dyn_ctrl.gear_ratios.value    = motor_params.GEAR_RATIOS;
     inv_dyn_ctrl.controlledJoints.value = NJ*(1.0,);
     inv_dyn_ctrl.init(dt);
     return inv_dyn_ctrl;
