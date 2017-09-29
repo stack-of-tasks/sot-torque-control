@@ -15,7 +15,7 @@ from dynamic_graph.sot.torque_control.create_entities_utils import connect_ctrl_
 from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer, create_topic
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, stop_sot, go_to_position, Bunch
-from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4, create_butter_lp_filter_Wn_05_N_3
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4
 
 from time import sleep
 
@@ -76,11 +76,6 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
     robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl,conf.motor_params,dt);
     connect_ctrl_manager(robot);
-
-    # create low-pass filter for motor currents
-    #robot.current_filter = create_butter_lp_filter_Wn_05_N_3('current_filter', dt, conf.motor_params.NJ)
-    #plug(robot.device.currents,           robot.current_filter.x)
-    #plug(robot.current_filter.x_filtered, robot.ctrl_manager.currents)
 
     # create low-pass filter for computing joint velocities
     robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4('encoder_filter', dt, conf.motor_params.NJ)

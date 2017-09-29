@@ -19,6 +19,7 @@ from dynamic_graph.tracer_real_time import TracerRealTime
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import NJ
 from dynamic_graph.sot.torque_control.hrp2.motors_parameters import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import Bunch
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
 #from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
 def create_encoders(robot):
@@ -146,7 +147,11 @@ def create_estimators(robot, conf, motor_params, dt):
     filters = Bunch()
 
     estimator_ft = ForceTorqueEstimator("estimator_ft");
-    filters.current_filter = NumericalDifference("current_filter");
+
+    # create low-pass filter for motor currents
+    filters.current_filter = create_butter_lp_filter_Wn_05_N_3('current_filter', dt, NJ)
+
+    #filters.current_filter = NumericalDifference("current_filter");
     filters.ft_RF_filter = NumericalDifference("ft_RF_filter");
     filters.ft_LF_filter = NumericalDifference("ft_LF_filter");
     filters.ft_RH_filter = NumericalDifference("ft_RH_filter");
@@ -200,7 +205,7 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.gear_ratios.value    = motor_params.GEAR_RATIOS;
 
     estimator_ft.init(True);
-    filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
+    #filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
     filters.ft_RF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
     filters.ft_LF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
     filters.ft_RH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
@@ -403,7 +408,8 @@ def create_ctrl_manager(conf, motor_params, dt, robot_name='robot'):
 def connect_ctrl_manager(ent):    
     # connect to device    
     plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
-    plug(ent.device.currents,               ent.ctrl_manager.currents);
+    plug(ent.filters.current_filter.x_filtered, ent.ctrl_manager.currents)
+    #plug(ent.device.currents,               ent.ctrl_manager.currents);
     plug(ent.filters.estimator_kin.dx,      ent.ctrl_manager.dq);
     plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
     plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
