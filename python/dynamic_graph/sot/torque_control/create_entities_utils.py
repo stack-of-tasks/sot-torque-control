@@ -167,14 +167,14 @@ def create_estimators(robot, conf, motor_params, dt):
     plug(robot.device.forceLARM,                          filters.ft_LH_filter.x);
     plug(robot.device.currents,                           filters.current_filter.x);
 
-    plug(filters.acc_filter.x_filtered,                   estimator_ft.accelerometerFiltered);
-    plug(filters.gyro_filter.x_filtered,                  estimator_ft.gyroscopeFiltered);
-    plug(filters.gyro_filter.dx,                          estimator_ft.gyroscopeDerivativeFiltered);
-    plug(filters.ft_RF_filter.x_filtered,                 estimator_ft.ftSensRightFootFiltered);
-    plug(filters.ft_LF_filter.x_filtered,                 estimator_ft.ftSensLeftFootFiltered);
-    plug(filters.ft_RH_filter.x_filtered,                 estimator_ft.ftSensRightHandFiltered);
-    plug(filters.ft_LH_filter.x_filtered,                 estimator_ft.ftSensLeftHandFiltered);
-    plug(filters.current_filter.x_filtered,               estimator_ft.currentFiltered);
+    plug(filters.acc_filter.x_filtered,                   estimator_ft.accelerometer);
+    plug(filters.gyro_filter.x_filtered,                  estimator_ft.gyro);
+    plug(filters.gyro_filter.dx,                          estimator_ft.dgyro);
+    plug(filters.ft_RF_filter.x_filtered,                 estimator_ft.ftSensRightFoot);
+    plug(filters.ft_LF_filter.x_filtered,                 estimator_ft.ftSensLeftFoot);
+    plug(filters.ft_RH_filter.x_filtered,                 estimator_ft.ftSensRightHand);
+    plug(filters.ft_LH_filter.x_filtered,                 estimator_ft.ftSensLeftHand);
+    plug(filters.current_filter.x_filtered,               estimator_ft.current);
 
     plug(filters.estimator_kin.x_filtered, estimator_ft.q_filtered);
     plug(filters.estimator_kin.dx,         estimator_ft.dq_filtered);
