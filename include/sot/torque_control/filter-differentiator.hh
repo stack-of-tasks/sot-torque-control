@@ -60,6 +60,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(x,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(x_filtered,       dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(dx,               dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(ddx,              dynamicgraph::Vector);
 
         /// The following inner signals are used because this entity has some output signals
         /// whose related quantities are computed at the same time by the same algorithm
@@ -69,7 +70,7 @@ namespace dynamicgraph {
         /// Inner signals are not exposed, so that nobody can access them.
 
         /// This signal contains the estimated positions, velocities and accelerations.
-        DECLARE_SIGNAL_INNER(x_dx,              dynamicgraph::Vector);
+        DECLARE_SIGNAL_INNER(x_dx_ddx,              dynamicgraph::Vector);
         
       protected:
       

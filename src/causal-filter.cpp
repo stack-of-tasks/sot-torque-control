@@ -56,8 +56,8 @@ CausalFilter::CausalFilter(const double &timestep,
 }
 
 
-void CausalFilter::get_x_dx(const Eigen::VectorXd& base_x,
-                            Eigen::VectorXd& x_output_dx)
+void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
+                                Eigen::VectorXd& x_output_dx_ddx)
 {
   //const dynamicgraph::Vector &base_x = m_xSIN(iter);
   if(first_sample)
@@ -80,13 +80,16 @@ void CausalFilter::get_x_dx(const Eigen::VectorXd& base_x,
   a.head(pt_denominator+1) = m_filter_denominator.segment(1, pt_denominator+1).reverse();
   a.tail(m_filter_order_n-pt_denominator-2) =
     m_filter_denominator.tail(m_filter_order_n-pt_denominator-2).reverse();
-  x_output_dx.head(m_x_size) = (input_buffer*b-output_buffer*a)/m_filter_denominator[0];
+  x_output_dx_ddx.head(m_x_size) = (input_buffer*b-output_buffer*a)/m_filter_denominator[0];
 
   //Finite Difference
-  x_output_dx.tail(m_x_size) = (x_output_dx.head(m_x_size)-output_buffer.col(pt_denominator))/m_dt;
+  int pt_denominator_prev = (pt_denominator == 0) ? m_filter_order_n-2 : pt_denominator-1;  
+  x_output_dx_ddx.segment(m_x_size,m_x_size) = (x_output_dx_ddx.head(m_x_size)-output_buffer.col(pt_denominator))/m_dt;
+  x_output_dx_ddx.tail(m_x_size) = (x_output_dx_ddx.head(m_x_size)-2*output_buffer.col(pt_denominator)+output_buffer.col(pt_denominator_prev))/m_dt/m_dt;
+
   pt_numerator = (pt_numerator+1) < m_filter_order_m ? (pt_numerator+1) : 0;
   pt_denominator = (pt_denominator+1) < m_filter_order_n-1 ? (pt_denominator+1) : 0;
-  output_buffer.col(pt_denominator) = x_output_dx.head(m_x_size);
+  output_buffer.col(pt_denominator) = x_output_dx_ddx.head(m_x_size);
   return;
 }
 
