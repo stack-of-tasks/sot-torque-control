@@ -32,8 +32,8 @@ public:
                const Eigen::VectorXd& filter_numerator,
                const Eigen::VectorXd& filter_denominator);
   
-  void get_x_dx(const Eigen::VectorXd& base_x,
-                Eigen::VectorXd& x_output_dx);
+  void get_x_dx_ddx(const Eigen::VectorXd& base_x,
+                Eigen::VectorXd& x_output_dx_ddx);
   
   void switch_filter(const Eigen::VectorXd& filter_numerator,
                      const Eigen::VectorXd& filter_denominator);
@@ -43,9 +43,10 @@ private:
   int m_x_size;
   int m_filter_order_m;
   int m_filter_order_n;
-  
+
   Eigen::VectorXd m_filter_numerator;
   Eigen::VectorXd m_filter_denominator;
+  bool first_sample;
   int pt_numerator;
   int pt_denominator;
   Eigen::MatrixXd input_buffer;

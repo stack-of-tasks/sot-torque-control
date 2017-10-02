@@ -68,11 +68,12 @@ namespace dynamicgraph
         addCommand("getSize",
                    makeDirectGetter(*this,&x_size,
                                     docDirectGetter("Size of the x signal","int")));
-        addCommand("init", makeCommandVoid3(*this, &NumericalDifference::init,
-                              docCommandVoid3("Initialize the estimator.",
+        addCommand("init", makeCommandVoid4(*this, &NumericalDifference::init,
+                              docCommandVoid4("Initialize the estimator.",
                                               "Control timestep [s].",
                                               "Size of the input signal x",
-                                              "Estimation delay for signal x")));
+                                              "Estimation delay for signal x",
+                                              "Polynomial order")));
       }
 
 
@@ -80,7 +81,7 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       void NumericalDifference::init(const double &timestep, const int& xSize,
-                                     const double& delay)
+                                     const double& delay, const int& polyOrder)
       {
         assert(timestep>0.0 && "Timestep should be > 0");
         assert(delay>=1.5*timestep && "Estimation delay should be >= 1.5*timestep");
@@ -90,8 +91,12 @@ namespace dynamicgraph
         int winSizeEnc     = (int)(2*delay/m_dt);
         assert(winSizeEnc>=3 && "Estimation-window's length should be >= 3");
 
-        m_filter         = new QuadEstimator(winSizeEnc, x_size, m_dt);
-
+        if (polyOrder==1)
+          m_filter       = new LinEstimator(winSizeEnc, x_size, m_dt);
+        else if(polyOrder==2)
+          m_filter       = new QuadEstimator(winSizeEnc, x_size, m_dt);
+        else
+          SEND_MSG("Only polynomial orders 1 and 2 allowed. Reinitialize the filter", MSG_TYPE_INFO);
         m_ddx_filter_std.resize(x_size);
         m_dx_filter_std.resize(x_size);
         m_x_filter_std.resize(x_size);

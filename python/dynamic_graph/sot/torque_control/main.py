@@ -15,7 +15,7 @@ from dynamic_graph.sot.torque_control.create_entities_utils import connect_ctrl_
 from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer, create_topic
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, stop_sot, go_to_position, Bunch
-from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4, create_butter_lp_filter_Wn_05_N_3
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4
 
 from time import sleep
 
@@ -68,19 +68,14 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     
     robot.encoders                              = create_encoders(robot);
     robot.imu_offset_compensation               = create_imu_offset_compensation(robot, dt);
-    (robot.estimator_ft, robot.estimator_kin)   = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
+    (robot.estimator_ft, robot.filters)   = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
     robot.imu_filter                            = create_imu_filter(robot, dt);
     robot.base_estimator                        = create_base_estimator(robot, dt, conf.base_estimator);
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
-    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl, dt);
+    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl,conf.motor_params,dt);
     connect_ctrl_manager(robot);
-
-    # create low-pass filter for motor currents
-    robot.current_filter = create_butter_lp_filter_Wn_05_N_3('current_filter', dt, conf.motor_params.NJ)
-    plug(robot.device.currents,           robot.current_filter.x)
-    plug(robot.current_filter.x_filtered, robot.ctrl_manager.currents)
 
     # create low-pass filter for computing joint velocities
     robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4('encoder_filter', dt, conf.motor_params.NJ)
@@ -92,7 +87,8 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     robot.ros = RosPublish('rosPublish');
     robot.device.after.addDownsampledSignal('rosPublish.trigger',1);
 
-    robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.dgyro.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";
@@ -123,7 +119,7 @@ def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
     robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
     robot.rf_traj_gen.init(dt);
     robot.lf_traj_gen.init(dt);
-    (robot.estimator_ft, robot.estimator_kin)       = create_estimators(robot, dt, delay);
+    (robot.estimator_ft, robot.filters)       = create_estimators(robot, dt, delay);
 
     robot.ff_locator      = create_free_flyer_locator(robot, urdfFileName);
     robot.flex_est        = create_flex_estimator(robot, dt);
@@ -135,7 +131,7 @@ def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
     robot.inv_dyn         = create_balance_controller(robot, urdfFileName, dt);
     robot.ctrl_manager    = create_ctrl_manager(robot, dt);
     
-    robot.estimator_ft.gyroscope.value = (0.0, 0.0, 0.0);
+    robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0);
 #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";

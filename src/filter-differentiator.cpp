@@ -38,7 +38,7 @@ namespace dynamicgraph
 
 #define ALL_INPUT_SIGNALS m_xSIN
 
-#define ALL_OUTPUT_SIGNALS  m_x_filteredSOUT << m_dxSOUT
+#define ALL_OUTPUT_SIGNALS  m_x_filteredSOUT << m_dxSOUT << m_ddxSOUT
 
       namespace dynamicgraph = ::dynamicgraph;
       using namespace dynamicgraph;
@@ -59,9 +59,10 @@ namespace dynamicgraph
       FilterDifferentiator( const std::string & name )
         : Entity(name),
           CONSTRUCT_SIGNAL_IN(x,                dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_OUT(x_filtered,       dynamicgraph::Vector, m_x_dxSINNER)
-        ,CONSTRUCT_SIGNAL_OUT(dx,               dynamicgraph::Vector, m_x_dxSINNER)
-        ,CONSTRUCT_SIGNAL_INNER(x_dx,       dynamicgraph::Vector, m_xSIN)
+        ,CONSTRUCT_SIGNAL_OUT(x_filtered,       dynamicgraph::Vector, m_x_dx_ddxSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(dx,               dynamicgraph::Vector, m_x_dx_ddxSINNER)
+        ,CONSTRUCT_SIGNAL_OUT(ddx,               dynamicgraph::Vector, m_x_dx_ddxSINNER)
+        ,CONSTRUCT_SIGNAL_INNER(x_dx_ddx,       dynamicgraph::Vector, m_xSIN)
       {
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
 
@@ -121,15 +122,15 @@ namespace dynamicgraph
       /* --- SIGNALS ---------------------------------------------------------- */
       /* --- SIGNALS ---------------------------------------------------------- */
 
-      DEFINE_SIGNAL_INNER_FUNCTION(x_dx, dynamicgraph::Vector)
+      DEFINE_SIGNAL_INNER_FUNCTION(x_dx_ddx, dynamicgraph::Vector)
       {
         sotDEBUG(15)<<"Compute x_dx inner signal "<<iter<<std::endl;
-        if(s.size()!=2*m_x_size)
-          s.resize(2*m_x_size);
+        if(s.size()!=3*m_x_size)
+          s.resize(3*m_x_size);
         // read encoders
         const dynamicgraph::Vector& base_x = m_xSIN(iter);
         assert(base_x.size() == m_x_size);
-        m_filter->get_x_dx(base_x, s);
+        m_filter->get_x_dx_ddx(base_x, s);
         return s;
       }
 
@@ -144,10 +145,10 @@ namespace dynamicgraph
       {
         sotDEBUG(15)<<"Compute x_filtered output signal "<<iter<<std::endl;
 
-        const dynamicgraph::Vector &x_dx = m_x_dxSINNER(iter);
+        const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
         if(s.size()!=m_x_size)
           s.resize(m_x_size);
-	s = x_dx.head(m_x_size);
+	s = x_dx_ddx.head(m_x_size);
         return s;
       }
 
@@ -155,10 +156,21 @@ namespace dynamicgraph
       {
         sotDEBUG(15)<<"Compute dx output signal "<<iter<<std::endl;
 
-        const dynamicgraph::Vector &x_dx = m_x_dxSINNER(iter);
+        const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
         if(s.size()!=m_x_size)
 	  s.resize(m_x_size);
-	s = x_dx.tail(m_x_size);
+	s = x_dx_ddx.segment(m_x_size, m_x_size);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(ddx, dynamicgraph::Vector)
+      {
+        sotDEBUG(15)<<"Compute ddx output signal "<<iter<<std::endl;
+
+        const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
+        if(s.size()!=m_x_size)
+	  s.resize(m_x_size);
+	s = x_dx_ddx.tail(m_x_size);
         return s;
       }
 

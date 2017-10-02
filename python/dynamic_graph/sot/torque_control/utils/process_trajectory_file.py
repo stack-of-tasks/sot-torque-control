@@ -10,19 +10,19 @@ to make at at 1 ms, compute first 2 derivatives, write a new trajectory file.
 import numpy as np
 import plot_utils
 import matplotlib.pyplot as plt
-import robotviewer
+#import robotviewer
 from estimate_velocity import estimateVelocity
 from time import sleep
 
 USE_ROBOT_VIEWER = False;
 DO_PLOTS = True;
-SAVE_FILE = False;
+SAVE_FILE = True;
 FILE_NAME = 'climbing32.pos';
-NEW_FILE_NAME = 'climbing32_1ms.pos'
-FILE_PATH = '../share/joint_traj/';
+NEW_FILE_NAME = 'climbing32_1.25ms.pos'
+FILE_PATH = '../../../../../share/';
 NJ = 30;
 WS = 21;
-DT_DES = 0.001;
+DT_DES = 0.00125;
 VIEWER_PERIOD = 50;
 MAX_LENGTH = 8.0; #15.5;
 

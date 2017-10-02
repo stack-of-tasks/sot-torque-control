@@ -121,7 +121,9 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
         DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
         DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
+        DECLARE_SIGNAL_IN(max_ctrl,                              dynamicgraph::Vector);  /// max desired current allowed before stopping the controller (in Ampers)
         DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
+        DECLARE_SIGNAL_IN(ctrl_saturation,                       dynamicgraph::Vector);  /// values at which to saturate the control (in bits)
         DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(percentage_bemf_compensation,          dynamicgraph::Vector);  /// percentatge in [0;1] of the motor back-EMF that we should compensate 0 is none, 1 is all of it
         DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
