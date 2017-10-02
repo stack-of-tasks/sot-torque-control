@@ -452,7 +452,7 @@ namespace dynamicgraph
             {
               m_emergency_stop_triggered = true;
               SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" desired current is too large: "+
-                       toString(s(i))+"A > "+toString(ctrl_max)+"A", MSG_TYPE_ERROR);
+                       toString(s(i)/in_out_gain(i))+"A > "+toString(ctrl_max(i))+"A", MSG_TYPE_ERROR);
               break;
             }
 
