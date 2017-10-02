@@ -274,8 +274,10 @@ namespace dynamicgraph
           assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_left_foot_id  = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
           m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
-          m_IMU_body_id   = m_model.getJointId(m_robot_util->m_imu_joint_name);
+          m_IMU_body_id   = m_model.getFrameId(m_robot_util->m_imu_joint_name);
           sendMsg("m_IMU_body_id="+toString(m_IMU_body_id)+"\n" , MSG_TYPE_INFO);
+          sendMsg("m_left_foot_id="+toString(m_left_foot_id)+"\n" , MSG_TYPE_INFO);
+          sendMsg("m_right_foot_id="+toString(m_right_foot_id)+"\n" , MSG_TYPE_INFO);
           sendMsg("m_model="+toString(m_model)+"\n" , MSG_TYPE_INFO);
 
           m_q_pin.setZero(m_model.nq);
@@ -540,6 +542,7 @@ namespace dynamicgraph
         /* Compute kinematics assuming world is at free-flyer frame */
         m_q_pin.head<6>().setZero();
         m_q_pin(6) = 1.0;
+        m_v_pin.head<6>().setZero();
         se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
         se3::framesForwardKinematics(m_model, *m_data);
 
@@ -613,26 +616,24 @@ namespace dynamicgraph
           rpy_chest(1) = (rpy_chest_lf[1]*wL + rpy_chest_rf[1]*wR + rpy_chest_imu[1]*m_w_imu) / wSum;
           rpy_chest(2) = (rpy_chest_lf[2]*wL + rpy_chest_rf[2]*wR )                 / (wL+wR);
 
-          Matrix3 R;
-          //~ rpyToMatrix(rpy_ff, R);
           rpyToMatrix(rpy_chest, m_oRchest);
-          R = m_oRchest * chestMff.rotation();
+          m_oRff = m_oRchest * chestMff.rotation();
 
           // translation to get foot at the right position
           // evaluate Mrl Mlf for q with the good orientation and zero translation for freeflyer
-          const Vector3 pos_lf_ff = R * m_data->oMf[m_left_foot_id].translation();
-          const Vector3 pos_rf_ff = R * m_data->oMf[m_right_foot_id].translation();
+          const Vector3 pos_lf_ff = m_oRff * m_data->oMf[m_left_foot_id].translation();
+          const Vector3 pos_rf_ff = m_oRff * m_data->oMf[m_right_foot_id].translation();
           // get average translation
           m_q_pin.head<3>() = ((oMlfa.translation() - pos_lf_ff)*wL +
                                (oMrfa.translation() - pos_rf_ff)*wR) / (wL+wR);
 
           m_q_sot.tail(m_robot_util->m_nbJoints) = qj;
-          base_se3_to_sot(m_q_pin.head<3>(), R, m_q_sot.head<6>());
+          base_se3_to_sot(m_q_pin.head<3>(), m_oRff, m_q_sot.head<6>());
 
           s = m_q_sot;
           
           // store estimation of the base pose in SE3 format
-          const SE3 oMff_est(R, m_q_pin.head<3>());
+          const SE3 oMff_est(m_oRff, m_q_pin.head<3>());
           
           // feedback on feet poses
           if(m_K_fb_feet_posesSIN.isPlugged())
@@ -859,16 +860,22 @@ namespace dynamicgraph
           assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
+          
           const Frame & f_lf = m_model.frames[m_left_foot_id];
-          const Motion v_lf_local = f_lf.placement.actInv(m_data->v[f_lf.parent]);
-          const Vector6 v_lf = m_data->oMf[f_lf.parent].act(v_lf_local).toVector();
+          const Motion v_lf_local = m_data->v[f_lf.parent];
+          const SE3 oMlf = m_data->oMi[f_lf.parent];
+          Vector6 v_kin_l = -oMlf.act(v_lf_local).toVector();
+          v_kin_l.head<3>() = m_oRff * v_kin_l.head<3>();
 
           const Frame & f_rf = m_model.frames[m_right_foot_id];
-          const Motion v_rf_local = f_rf.placement.actInv(m_data->v[f_rf.parent]);
-          const Vector6 v_rf = m_data->oMf[f_rf.parent].act(v_rf_local).toVector();
-
-          const Vector6 v_kin = - 0.5*(v_lf_local.toVector() + v_rf_local.toVector());
-          //~ const Vector6 v_kin = - 0.5*(v_lf + v_rf);
+          const Motion v_rf_local = m_data->v[f_rf.parent];
+          const SE3 oMrf = m_data->oMi[f_rf.parent];
+          Vector6 v_kin_r = -oMrf.act(v_rf_local).toVector();
+          v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
+          
+          const Vector6 v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
+          
+          /// TODO express it in the frame of the world
 
           /* Get an estimate of linear velocities from filtered accelerometer integration */
           
@@ -877,8 +884,8 @@ namespace dynamicgraph
           //~ pointRotationByQuaternion(acc_imu,quatIMU_vec,acc_world); //this is false because yaw from imuquat is drifting
           
           const Vector3 acc_world = m_oRchest * acc_imu;
-          sendMsg("acc in IMU frame :"+toString(acc_imu)+"\n", MSG_TYPE_INFO);
-          sendMsg("acc in WLD frame :"+toString(acc_world)+"\n", MSG_TYPE_INFO);
+          //~ sendMsg("acc in IMU frame :"+toString(acc_imu)+"\n", MSG_TYPE_INFO);
+          //~ sendMsg("acc in WLD frame :"+toString(acc_world)+"\n", MSG_TYPE_INFO);
           /* now, the acceleration is expressed in the world frame, 
            * so it can be written as the sum of the proper acceleration and the 
            * constant gravity vector. We could remove this assuming a [0,0,9.81]
@@ -886,7 +893,7 @@ namespace dynamicgraph
            * filter since it is robust to gravity norm error, and we know that 
            * globaly the robot can not accelerate continuously. */
           
-          /* Extract DC component by low pass filter and remove it*/
+          ///* Extract DC component by low pass filter and remove it*/
           if (m_isFirstIterFlag) 
           {
             m_last_DCacc = acc_world; // Copy the first acceleration data
@@ -896,23 +903,24 @@ namespace dynamicgraph
           const Vector3 DCacc = acc_world * (1-m_alpha_DC_acc) + m_last_DCacc * (m_alpha_DC_acc);
           m_last_DCacc = DCacc;
           const Vector3 ACacc = acc_world - DCacc;
-          sendMsg("ACacc            :"+toString(ACacc)+"\n", MSG_TYPE_INFO);
+          //~ sendMsg("ACacc            :"+toString(ACacc)+"\n", MSG_TYPE_INFO);
           /* Then this acceleration is integrated.  */
           const Vector3 vel = m_last_vel + ACacc * m_dt;
           m_last_vel = vel;
-          sendMsg("vel              :"+toString(vel)+"\n", MSG_TYPE_INFO);
+          //~ sendMsg("vel              :"+toString(vel)+"\n", MSG_TYPE_INFO);
           /* To stabilise the integrated velocity, we add the 
            * asumption that globaly, velocity is zero. So we remove DC again */
           const Vector3 DCvel = vel * (1-m_alpha_DC_vel) + m_last_DCvel * (m_alpha_DC_vel);
           m_last_DCvel = DCvel;
           const Vector3 ACvel = vel - DCvel;
-          sendMsg("ACvel            :"+toString(ACvel)+"\n", MSG_TYPE_INFO);
+          //~ sendMsg("ACvel            :"+toString(ACvel)+"\n", MSG_TYPE_INFO);
           
           /* Express back velocity in the imu frame to get a full 6d velocity with the gyro*/
           const Vector3 imuVimu = m_oRchest.transpose() * ACvel;
           /* Here we could remove dc from gyrometer to remove bias*/  ///TODO 
           const Motion imuWimu(imuVimu,gyr_imu);
-          const Motion ffWchest = m_data->v[m_IMU_body_id];
+          const Frame & f_imu = m_model.frames[m_IMU_body_id];
+          const Motion ffWchest = m_data->v[f_imu.parent];
           const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);
           const SE3 chestMimu(Matrix3::Identity(), +1.0*Vector3(-0.13, 0.0,  0.118)); ///TODO Read this transform from setable parameter /// TODO chesk the sign of the translation
           const SE3 ffMimu = ffMchest * chestMimu;

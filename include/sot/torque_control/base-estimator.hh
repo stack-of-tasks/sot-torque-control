@@ -216,6 +216,7 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
         Matrix3           m_oRchest;          /// chest orientation in the world from angular fusion
+        Matrix3           m_oRff;             /// base orientation in the world
         
         /* Filter buffers*/
         Vector3 m_last_vel;
