@@ -27,10 +27,17 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
     
     if SHOW_THRESHOLD_EFFECT :
         plt.figure()
+        time = np.arange(0, dt*ddq.shape[0], dt);
+        plt.plot(time, ddq, label='ddq'); plt.ylabel('ddq');
+        plt.plot(time[maskConstVel], ddq[maskConstVel], 'rx ', label='ddq const vel');
+        plt.legend();
+        
+        plt.figure()
         plt.plot(dq); plt.ylabel('dq')
         dq_const=dq.copy()
         dq_const[np.logical_not(maskConstVel)]=np.nan
         plt.plot(dq_const); plt.ylabel('dq_const')
+        plt.show()
 
     # Identification of BEMF effect ************************************
     times = np.arange(len(dq))*dt
@@ -138,11 +145,11 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
 #    plt.ylabel(r'$i(t)-{K_t}{\tau(t)}$')
 #    plt.xlabel(r'$\dot{q}(t)$')
 #    plt.title('Variable Kt identification')
-
-    # Plot to compare identification with variable/fixed Kt *****************************
+#
+##     Plot to compare identification with variable/fixed Kt *****************************
 #    plt.figure()
 #    plt.plot(Ks*current, label='current');
-#    plt.plot(tau, '--', label='Ktp*tau')
+#    plt.plot(Ktp*tau, '--', label='Ktp*tau')
 #    plt.plot(Kvp*dq,   '--', label='Kvp*dq');
 #    plt.plot(Ktp*tau+Kvp*dq+Kfp, label='Ktp*tau+Kvp*dq+Kfp');
 #    plt.plot(Ktn*tau+Kvn*dq-Kfn, label='Ktn*tau+Kvn*dq-Kfn');

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import sys
-import dynamic_graph.sot.torque_control.utils.plot_utils as plot_utils
+#import dynamic_graph.sot.torque_control.utils.plot_utils as plot_utils
 import matplotlib as mpl
 mpl.rcParams['lines.linewidth']     = 4;
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ DZ                                  = 0.0
 dt                                  = 0.001
 ZERO_VEL_THRESHOLD                  = 0.1
 POSITIVE_VEL_THRESHOLD              = 0.001
-ZERO_ACC_THRESHOLD                  = 1.
+ZERO_ACC_THRESHOLD                  = 0.2
 ZERO_JERK_THRESHOLD                 = 3.0
 CURRENT_SATURATION                  = 9.5
 Nvel                                = 10
@@ -39,11 +39,11 @@ IDENTIFICATION_MODE ='vel'
 #JOINT_NAME = 'rhp'; 
 #JOINT_NAME = 'rk'; 
 #JOINT_NAME = 'rap'; 
-JOINT_NAME = 'rar'; 
+#JOINT_NAME = 'rar'; 
 
-#JOINT_NAME = 'lhy';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 6   
-#JOINT_NAME = 'lhr';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
-#JOINT_NAME = 'lhp';  USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
+#JOINT_NAME = 'lhy'; #USING_CONTROL_AS_CURRENT_MEASURE = True  # 6
+#JOINT_NAME = 'lhr';  #USING_CONTROL_AS_CURRENT_MEASURE = True  # 7   
+JOINT_NAME = 'lhp';  #USING_CONTROL_AS_CURRENT_MEASURE = True  # 8 
 #JOINT_NAME = 'lk';  # 9 ok
 #JOINT_NAME = 'lap'; # 10 ok
 #JOINT_NAME = 'lar'; # 11 ok
@@ -91,16 +91,16 @@ if (IDENTIFICATION_MODE != 'test_model') :
         data_folder_acc    = result_dir+'20161114_155545_rar_acc/';
 
     if(JOINT_NAME == 'lhy' ):
-        data_folder_static = result_dir+'20170113_144220_lhy_static/';
-        data_folder_vel    = result_dir+'/';
+        data_folder_static = result_dir+'20171002_163413_lhy_static/';
+        data_folder_vel    = result_dir+'/20171002_151718_lhy_vel/';
         data_folder_acc    = result_dir+'20170113_144710_lhy_const_acc/';
     if(JOINT_NAME == 'lhr' ):
-        data_folder_static = result_dir+'20170113_145227_lhr_static/';
-        data_folder_vel    = result_dir+'20170113_150215_lhr_const_vel/';
+        data_folder_static = result_dir+'20171002_164436_lhr_static/';
+        data_folder_vel    = result_dir+'20171002_153334_lhr_vel/';
         data_folder_acc    = result_dir+'20170113_145826_lhr_const_acc/';
     if(JOINT_NAME == 'lhp' ):
-        data_folder_static = result_dir+'20170113_150628_lhp_static/';
-        data_folder_vel    = result_dir+'20170113_151433_lhp_const_vel/';
+        data_folder_static = result_dir+'20171002_165335_lhp_static/';
+        data_folder_vel    = result_dir+'20171002_154449_lhp_vel/';
         data_folder_acc    = result_dir+'20170113_151103_lhp_const_acc/';
     if(JOINT_NAME == 'lk' ):
         data_folder_static = result_dir+'20170113_151748_lk_static/';
@@ -195,7 +195,7 @@ if(IDENTIFICATION_MODE=='vel'):
     if USING_CONTROL_AS_CURRENT_MEASURE :
         warning = " (Current sensor not used)"
     
-    print "cur_sens_gain[%d] = %f #Using %s"% (JOINT_ID, Ks, data_folder_static.split('/')[-2] + warning);    
+    print "cur_sens_gains[%d]= %f #Using %s"% (JOINT_ID, Ks, data_folder_static.split('/')[-2] + warning);    
     print "deadzone[%d]      = %f #Using %s"% (JOINT_ID, data_motor_param['DZ'].item(), data_folder_static.split('/')[-2] + warning);    
     print "deadzone[%d]      = %f #Using %s"% (JOINT_ID, DeadZone, data_folder_vel.split('/')[-2] + warning);
     print "K_bemf[%d]        = %f # [Amp/Rad.s-1] Using %s"% (JOINT_ID, K_bemf, data_folder_vel.split('/')[-2] + warning);
