@@ -53,11 +53,7 @@ from dynamic_graph.sot.torque_control.main import *
 robot.timeStep = 0.001
 ent = main_v3(robot, delay=0.1, startSoT=True, go_half_sitting=True)
 
-(estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,pos_ctrl) = main_pre_start_pwm(robot,dt=0.001,delay=0.01);
 dump_signal_to_file([robot.device.currents, estimator.jointsTorques, robot.device.control], 16, 'signals.txt', 100, 0.1)
-ros = main_post_start(robot, estimator, torque_ctrl, traj_gen, ctrl_manager, inv_dyn, None);
-
-robot.device.control.value = 30*(0.0,)
 
 j = 8
 kp_pos[:] = 0
@@ -71,12 +67,6 @@ pos_ctrl.Kp.value = tuple(kp_pos)
 q[6+j]+=0.05
 pos_ctrl.base6d_encoders.value = tuple(q)
 
-
-from dynamic_graph.sot.torque_control.test_estimator import *
-(estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,adm_ctrl) = main_pre_start('',robot,0.001,0.04);
-(estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,adm_ctrl) = main_pre_start('torque_ctrl',robot,0.001,0.04);
-(estimator,torque_ctrl,traj_gen,ctrl_manager,inv_dyn,adm_ctrl) = main_pre_start('identification',robot,0.001,0.1);
-# main_pre_start(task,robot,dt=0.001,delay=0.01):
 
 move_to_initial_configuration(traj_gen);
 start_admittance_ctrl_RL(ctrl_manager);
@@ -95,18 +85,6 @@ traj_gen.startLinChirp('rhp', -1.0, 0.3, 0.7, 40)
 estimator.setUseFTsensors(True);
 traj_gen.moveJoint('rhp',-1.5,3)
 
-ctrl_manager.max_delta_q.value=30*(10000000,)
-tauDes = 30*[0.0,];
-torque_ctrl.jointsTorquesDesired.value = tuple(tauDes);
-torque_ctrl.Kp.value = tuple(k_p);
-
-# conservative, very stable
-k_p[:] = 5.0;
-estimator.init(0.001,0.04,0.04,0.04,0.04,True);
-
-# more performant, less stable
-k_p[:] = 10.0;
-estimator.init(0.001,0.05,0.05,0.05,0.05,False);
 
 # FORCE CONTROL EXPERIMENT
 k_s[:6] = array([  9.6875,  69.375 ,  12.5   ,  40.8125,  11.875 ,   8.6875])
