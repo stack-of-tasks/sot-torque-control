@@ -33,8 +33,10 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     from dynamic_graph.sot.torque_control.base_estimator import BaseEstimator
     base_estimator = BaseEstimator('base_estimator');
     plug(robot.encoders.sout,               base_estimator.joint_positions);
-    plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
-    plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
+    #plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
+    #plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
+    plug(robot.filters.ft_LF_filter.x_filtered, robot.base_estimator.forceLLEG)
+    plug(robot.filters.ft_RF_filter.x_filtered, robot.base_estimator.forceRLEG)
     plug(robot.filters.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
     plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
