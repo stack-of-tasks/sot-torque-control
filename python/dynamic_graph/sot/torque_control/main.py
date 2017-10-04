@@ -68,7 +68,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     
     robot.encoders                              = create_encoders(robot);
     robot.imu_offset_compensation               = create_imu_offset_compensation(robot, dt);
-    (robot.estimator_ft, robot.filters)   = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
+    (robot.estimator_ft, robot.filters)         = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
     robot.imu_filter                            = create_imu_filter(robot, dt);
     robot.base_estimator                        = create_base_estimator(robot, dt, conf.base_estimator);
 
