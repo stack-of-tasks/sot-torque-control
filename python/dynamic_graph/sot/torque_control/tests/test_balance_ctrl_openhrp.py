@@ -20,6 +20,7 @@ def get_sim_conf():
     import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as balance_ctrl_conf
     import dynamic_graph.sot.torque_control.hrp2.base_estimator_sim_conf as base_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.control_manager_sim_conf as control_manager_conf
+    import dynamic_graph.sot.torque_control.hrp2.current_controller_sim_conf as current_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains_sim as pos_ctrl_gains
@@ -28,6 +29,7 @@ def get_sim_conf():
     conf.balance_ctrl              = balance_ctrl_conf;
     conf.base_estimator            = base_estimator_conf;
     conf.control_manager           = control_manager_conf;
+    conf.current_ctrl              = current_controller_conf;
     conf.force_torque_estimator    = force_torque_estimator_conf;
     conf.joint_torque_controller   = joint_torque_controller_conf;
     conf.pos_ctrl_gains            = pos_ctrl_gains;
@@ -40,7 +42,8 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf);
     
     # force current measurements to zero
-    robot.ctrl_manager.currents.value = NJ*(0.0,);
+    robot.ctrl_manager.i_measured.value = NJ*(0.0,);
+    robot.current_ctrl.i_measured.value = NJ*(0.0,);
     robot.filters.current_filter.x.value = NJ*(0.0,);
     
     # BYPASS TORQUE CONTROLLER
@@ -53,7 +56,6 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     plug(robot.q.sout,              robot.pos_ctrl.base6d_encoders);
     plug(robot.q.sout,              robot.traj_gen.base6d_encoders);
     plug(robot.q.sout,              robot.estimator_ft.base6d_encoders);
-    plug(robot.q.sout,              robot.ctrl_manager.base6d_encoders);
     plug(robot.q.sout,              robot.torque_ctrl.base6d_encoders);
     
     robot.ros = RosPublish('rosPublish');

@@ -78,6 +78,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/inverse-dynamics-balance-controller.hh
   include/sot/torque_control/position-controller.hh
   include/sot/torque_control/control-manager.hh
+  include/sot/torque_control/current-controller.hh
   include/sot/torque_control/commands-helper.hh
   include/sot/torque_control/signal-helper.hh
   include/sot/torque_control/common.hh

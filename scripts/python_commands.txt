@@ -1,7 +1,7 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
 robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False);
-plug(robot.inv_dyn.tau_des, robot.ctrl_manager.currents)
+robot.ctrl_manager.setStreamPrintPeriod(0.5);
 start_sot()
 np.linalg.norm(robot.device.robotVelocity.value)
 sleep(5)
@@ -11,12 +11,12 @@ robot.base_estimator.set_imu_weight(0.0);
 
 create_topic(robot.ros, robot.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
-create_topic(robot.ros, robot.inv_dyn.com_ref_pos,  'inv_dyn_com_ref_pos');
-create_topic(robot.ros, robot.inv_dyn.com_ref_vel,  'inv_dyn_com_ref_vel');
-create_topic(robot.ros, robot.inv_dyn.com,          'inv_dyn_com');
-create_topic(robot.ros, robot.inv_dyn.com_vel,      'inv_dyn_com_vel');
-create_topic(robot.ros, robot.inv_dyn.com_acc,      'inv_dyn_com_acc');
-create_topic(robot.ros, robot.inv_dyn.com_acc_des,  'inv_dyn_com_acc_des');
+create_topic(robot.ros, robot.inv_dyn.com_ref_pos,  'com_ref_pos');
+create_topic(robot.ros, robot.inv_dyn.com_ref_vel,  'com_ref_vel');
+create_topic(robot.ros, robot.inv_dyn.com,          'com');
+create_topic(robot.ros, robot.inv_dyn.com_vel,      'com_vel');
+create_topic(robot.ros, robot.inv_dyn.com_acc,      'com_acc');
+create_topic(robot.ros, robot.inv_dyn.com_acc_des,  'com_acc_des');
 create_topic(robot.ros, robot.base_estimator.q, 'q_est');
 create_topic(robot.ros, robot.q.sout, 'q');
 create_topic(robot.ros, robot.traj_gen.q, 'q_ref');
@@ -35,9 +35,9 @@ create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
 
 sleep(5.0)
-ent.com_traj_gen.move(1, 0.05, 1.5)
+robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
-ent.com_traj_gen.startSinusoid(1, -0.05, 1.5)
+robot.com_traj_gen.startSinusoid(1, -0.05, 1.5)
 
 plug(robot.estimator_kin.dx,    robot.base_estimator.joint_velocities)
 plug(robot.q.sout,              robot.inv_dyn.q);

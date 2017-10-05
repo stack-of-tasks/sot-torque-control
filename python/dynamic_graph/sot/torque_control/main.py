@@ -11,7 +11,7 @@ from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_of
 from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
 from dynamic_graph.sot.torque_control.create_entities_utils import create_balance_controller, create_ctrl_manager, create_ros_topics
 from dynamic_graph.sot.torque_control.create_entities_utils import create_free_flyer_locator, create_flex_estimator, create_floatingBase
-from dynamic_graph.sot.torque_control.create_entities_utils import connect_ctrl_manager
+from dynamic_graph.sot.torque_control.create_entities_utils import create_current_controller, connect_ctrl_manager
 from dynamic_graph.sot.torque_control.create_entities_utils import create_tracer, create_topic
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.utils.sot_utils import start_sot, stop_sot, go_to_position, Bunch
@@ -23,6 +23,7 @@ def get_default_conf():
     import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_conf as balance_ctrl_conf
     import dynamic_graph.sot.torque_control.hrp2.base_estimator_conf as base_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.control_manager_conf as control_manager_conf
+    import dynamic_graph.sot.torque_control.hrp2.current_controller_conf as current_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.force_torque_estimator_conf as force_torque_estimator_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains as pos_ctrl_gains
@@ -31,6 +32,7 @@ def get_default_conf():
     conf.balance_ctrl              = balance_ctrl_conf;
     conf.base_estimator            = base_estimator_conf;
     conf.control_manager           = control_manager_conf;
+    conf.current_ctrl              = current_controller_conf;
     conf.force_torque_estimator    = force_torque_estimator_conf;
     conf.joint_torque_controller   = joint_torque_controller_conf;
     conf.pos_ctrl_gains            = pos_ctrl_gains;
@@ -55,7 +57,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
          # Arms
          0.261799, -0.17453, 0., -0.523599, 0., 0., 0.1,
          0.261799,  0.17453, 0., -0.523599, 0., 0., 0.1);
-         
+    
     robot.device.setControlInputType('noInteg');
     robot.ctrl_manager    = create_ctrl_manager(conf.control_manager, conf.motor_params, dt);
     
@@ -74,13 +76,14 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);
-    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl,conf.motor_params,dt);
+    robot.inv_dyn         = create_balance_controller(robot, conf.balance_ctrl,conf.motor_params, dt);
+    robot.current_ctrl    = create_current_controller(robot, conf.current_ctrl, conf.motor_params, dt);
     connect_ctrl_manager(robot);
 
     # create low-pass filter for computing joint velocities
     robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4('encoder_filter', dt, conf.motor_params.NJ)
     plug(robot.encoders.sout,             robot.encoder_filter.x)
-    plug(robot.encoder_filter.dx,         robot.ctrl_manager.dq);
+    plug(robot.encoder_filter.dx,         robot.current_ctrl.dq);
     plug(robot.encoder_filter.dx,         robot.torque_ctrl.jointsVelocities);
     plug(robot.encoder_filter.dx,         robot.base_estimator.joint_velocities);
 
