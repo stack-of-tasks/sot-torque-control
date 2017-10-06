@@ -1,6 +1,6 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
-robot.timeStep = 0.002;
-ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False);
+robot.timeStep = 0.001;
+ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 robot.ctrl_manager.setStreamPrintPeriod(0.5);
 start_sot()
 np.linalg.norm(robot.device.robotVelocity.value)
