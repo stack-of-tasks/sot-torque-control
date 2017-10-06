@@ -25,8 +25,8 @@ create_topic(robot.ros, robot.inv_dyn.com_ref_vel,              'com_ref_vel')
 create_topic(robot.ros, robot.inv_dyn.com_acc_des,              'com_acc_des')
 create_topic(robot.ros, robot.base_estimator.lf_xyzquat,        'lf_est')
 create_topic(robot.ros, robot.base_estimator.rf_xyzquat,        'rf_est')
-create_topic(robot.ros, robot.ctrl_manager.currents_real,       'i_real');
-create_topic(robot.ros, robot.ctrl_manager.pwmDes,              'i_des')
+create_topic(robot.ros, robot.current_ctrl.i_real,              'i_real');
+create_topic(robot.ros, robot.ctrl_manager.u,                   'i_des')
 
 # wait until the motion has finished
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)

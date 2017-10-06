@@ -173,7 +173,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& cur_sens_gains            = m_i_sens_gainsSIN(iter);
         const dynamicgraph::Vector& i_offset_real             = m_i_sensor_offsets_real_outSOUT(iter);
         const dynamicgraph::Vector& dq                        = m_dqSIN(iter);
-        const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
+        //const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
         const dynamicgraph::Vector& dead_zone_offsets         = m_dead_zone_offsetsSIN(iter);
         const dynamicgraph::Vector& dead_zone_comp_perc       = m_percentage_dead_zone_compensationSIN(iter);
         const dynamicgraph::Vector& bemf_factor               = m_bemf_factorSIN(iter);
@@ -202,10 +202,10 @@ namespace dynamicgraph
 
         // compensate dead zone
         s += m_dz_coeff.cwiseProduct(dead_zone_comp_perc.cwiseProduct(dead_zone_offsets));
-        s = s.cwiseProduct(in_out_gain);
+        //s = s.cwiseProduct(in_out_gain);
 
         // when estimating current offset set ctrl to zero
-        if(m_iter<m_currentOffsetIters)
+        if(m_emergency_stop_triggered || m_iter<m_currentOffsetIters)
           s.setZero();
 
         return s;
@@ -243,7 +243,6 @@ namespace dynamicgraph
             m_emergency_stop_triggered = true;
             SEND_MSG("Joint "+m_robot_util->get_name_from_id(i)+" control is too large: "+
                      toString(u(i))+"A > "+toString(u_max(i))+"A", MSG_TYPE_ERROR);
-            break;
           }
 
           s(i) = u(i)*in_out_gain(i);
@@ -256,7 +255,7 @@ namespace dynamicgraph
         }
 
         // when estimating current offset set ctrl to zero
-        if(m_iter<m_currentOffsetIters)
+        if(m_emergency_stop_triggered || m_iter<m_currentOffsetIters)
           s.setZero();
 
         return s;
