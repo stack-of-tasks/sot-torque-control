@@ -230,6 +230,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
     torque_ctrl.KiTorque.value                          = NJ*(0.0,);
+    torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
     torque_ctrl.KpCurrent.value                         = tuple(conf.k_p_current);
     torque_ctrl.KiCurrent.value                         = NJ*(0.0,);
     torque_ctrl.k_tau.value                             = tuple(conf.k_tau);

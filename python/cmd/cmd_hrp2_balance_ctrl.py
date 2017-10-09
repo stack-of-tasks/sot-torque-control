@@ -14,6 +14,11 @@ robot.inv_dyn.kd_feet.value = 6*(0.,)
 robot.inv_dyn.kd_constraints.value = 6*(0.,)
 robot.inv_dyn.kp_com.value = (30.0, 30.0, 50.0)
 
+# enable integral feedback in torque control
+import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+robot.torque_ctrl.torque_integral_saturation.value = tuple(0.9*motor_params.Kf_n / motor_params.Kt_n)
+robot.torque_ctrl.KiTorque.value = 30*(10.0,)
+
 # create ros topics
 create_topic(robot.ros, robot.device.robotState,                'robotState')
 create_topic(robot.ros, robot.estimator_ft.jointsTorques,       'tau');
