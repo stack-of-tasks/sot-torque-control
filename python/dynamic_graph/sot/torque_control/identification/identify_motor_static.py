@@ -32,8 +32,8 @@ def identify_motor_static(enc, dq, ctrl, current, tau, JOINT_ID, JOINT_NAME, ZER
     # identify current sensor gain
     x = current[maskConstAng]
     y = ctrl[maskConstAng]/IN_OUT_GAIN
-    maskPosErr = (y - x > 0.0)
-    maskNegErr = (y - x < 0.0)
+    maskPosErr = np.logical_and(y - x > 0.0, np.abs(x)>0.5)
+    maskNegErr = np.logical_and(y - x < 0.0, np.abs(x)>0.5)
     print "Number of samples with constant angle:", x.shape[0]
     print "Number of samples with constant angle and pos vel:", x[maskPosErr].shape[0]
     print "Number of samples with constant angle and neg vel:", x[maskNegErr].shape[0]
@@ -45,7 +45,7 @@ def identify_motor_static(enc, dq, ctrl, current, tau, JOINT_ID, JOINT_NAME, ZER
         (Ksn,DZn)=solve1stOrderLeastSquare(x[maskNegErr], y[maskNegErr])
         (Ksp,DZp)=solve1stOrderLeastSquare(x[maskPosErr], y[maskPosErr])    
         Ks = 0.5*(Ksp+Ksn);
-        Ks = 0.99*min([Ksp, Ksn])
+        Ks = min([Ksp, Ksn]);
         DZ = 0.5*(DZp-DZn);    
         print "Current sensor gains = ", Ksp, Ksn;
         print "Deadzones            = ", DZp, -DZn;
@@ -78,23 +78,23 @@ def identify_motor_static(enc, dq, ctrl, current, tau, JOINT_ID, JOINT_NAME, ZER
     plt.legend()
     
     plt.figure()
-    y = Ks*current
-    x = ctrl/IN_OUT_GAIN - Ks*current
+    y = Ks*current[maskConstAng]
+    x = ctrl[maskConstAng]/IN_OUT_GAIN - Ks*current[maskConstAng]
     plt.ylabel(r'$i(t)$')
     plt.xlabel(r'$ctrl(t)-i(t)$')
     plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    plt.plot(x[maskConstAng][maskPosErr],y[maskConstAng][maskPosErr],'rx',lw=3,markersize=1, label='pos err'); 
-    plt.plot(x[maskConstAng][maskNegErr],y[maskConstAng][maskNegErr],'bx',lw=3,markersize=1, label='neg err'); 
+    plt.plot(x[maskPosErr],y[maskPosErr],'rx',lw=3,markersize=1, label='pos err'); 
+    plt.plot(x[maskNegErr],y[maskNegErr],'bx',lw=3,markersize=1, label='neg err'); 
     plt.legend()
     
     plt.figure()
-    y = ctrl/IN_OUT_GAIN
-    x = ctrl/IN_OUT_GAIN - Ks*current
+    y = ctrl[maskConstAng]/IN_OUT_GAIN
+    x = ctrl[maskConstAng]/IN_OUT_GAIN - Ks*current[maskConstAng]
     plt.ylabel(r'$ctrl(t)$')
     plt.xlabel(r'$ctrl(t)-i(t)$')    
     plt.plot(x,y,'.' ,lw=3,markersize=1,c='0.5');  
-    plt.plot(x[maskConstAng][maskPosErr],y[maskConstAng][maskPosErr],'rx',lw=3,markersize=1, label='pos err'); 
-    plt.plot(x[maskConstAng][maskNegErr],y[maskConstAng][maskNegErr],'bx',lw=3,markersize=1, label='neg err'); 
+    plt.plot(x[maskPosErr],y[maskPosErr],'rx',lw=3,markersize=1, label='pos err'); 
+    plt.plot(x[maskNegErr],y[maskNegErr],'bx',lw=3,markersize=1, label='neg err'); 
     plt.legend()
     
     plt.figure()

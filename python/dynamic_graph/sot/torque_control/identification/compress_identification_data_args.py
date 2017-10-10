@@ -18,10 +18,10 @@ def main():
     EST_DELAY = 0.1;        ''' delay introduced by the estimation in seconds '''
     NJ = 30;                ''' number of joints '''
     DT = 0.001;             ''' sampling period '''
-    PLOT_DATA = False;
+    PLOT_DATA = True;
     FORCE_ESTIMATE_RECOMPUTATION = True;
     NEGLECT_GYROSCOPE = True;
-    NEGLECT_ACCELEROMETER = True;
+    NEGLECT_ACCELEROMETER = False;
     SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO = False;
     USE_FT_SENSORS = True
     
@@ -116,16 +116,16 @@ def main():
         
         print 'JOINT_ID :'
         print JOINT_ID
-        if (JOINT_ID == 4): 
-           current = current[:,5].reshape(N,1);
-        elif (JOINT_ID == 5):
-            current = current[:,4].reshape(N,1);
-        elif (JOINT_ID == 11):
-            current = current[:,10].reshape(N,1); #OK
-        elif (JOINT_ID == 10):
-            current = current[:,11].reshape(N,1); #OK               
-        else:
-            current = current[:,JOINT_ID].reshape(N,len(JOINT_ID));
+#        if (JOINT_ID == 4): 
+#           current = current[:,5].reshape(N,1);
+#        elif (JOINT_ID == 5):
+#            current = current[:,4].reshape(N,1);
+#        elif (JOINT_ID == 11):
+#            current = current[:,10].reshape(N,1); #OK
+#        elif (JOINT_ID == 10):
+#            current = current[:,11].reshape(N,1); #OK               
+#        else:
+        current = current[:,JOINT_ID].reshape(N,len(JOINT_ID));
         enc  = enc[:N,7:];
         acc  = acc[:N,1:];
         gyro = gyro[:N,1:];

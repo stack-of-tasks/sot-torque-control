@@ -90,6 +90,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(measuredCurrent,        dynamicgraph::Vector);      /// measured current in amps
         DECLARE_SIGNAL_IN(KpTorque,               dynamicgraph::Vector);      /// proportional gain for torque feedback controller
         DECLARE_SIGNAL_IN(KiTorque,               dynamicgraph::Vector);      /// integral gain for torque feedback controller
+        DECLARE_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector);  /// integral error saturation
         DECLARE_SIGNAL_IN(KpCurrent,              dynamicgraph::Vector);      /// proportional gain for current feedback controller
         DECLARE_SIGNAL_IN(KiCurrent,              dynamicgraph::Vector);      /// integral gain for current feedback controller
  

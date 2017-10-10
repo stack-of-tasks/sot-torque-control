@@ -46,6 +46,7 @@ SET(plugins
   inverse-dynamics-balance-controller
   position-controller
   control-manager
+  current-controller
 #  hrp2-device-pos-ctrl
   torque-offset-estimator
   #hrp2-device-torque-ctrl

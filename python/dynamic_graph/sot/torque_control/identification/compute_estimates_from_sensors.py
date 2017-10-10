@@ -12,7 +12,7 @@ PLOT_SENSOR_DATA = False;
 
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
-from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference as VelAccEstimator
+from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
 import numpy as np
 import dynamic_graph.sot.torque_control.utils.plot_utils as plut
 import matplotlib.pyplot as plt
@@ -34,15 +34,16 @@ def compute_delta_q_components(enc, delta_q, dq, delta_q_ff, qRef, dqRef, k_tau,
     return (delta_q_friction, delta_q_fb_pos, delta_q_fb_vel, delta_q_fb_force);
         
 
-def set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensor_data):
+def set_sensor_data_in_estimator(estimator_ft, estimator_kin, acc_filter, gyro_filter, ft_RH_filter, 
+                                 ft_LF_filter, ft_LH_filter, ft_RF_filter, sensor_data):
     estimator_ft.base6d_encoders.value = tuple(6*[0.0,]+sensor_data['enc'][:30].tolist());
-    estimator_kin.x.value              = tuple(sensor_data['enc'][:30].tolist());
-    estimator_ft.accelerometer.value   = tuple(sensor_data['acc'][0:3]);
-    estimator_ft.gyroscope.value       = tuple(sensor_data['gyro']);
-    estimator_ft.ftSensRightFoot.value = tuple(sensor_data['forceRL']);
-    estimator_ft.ftSensLeftFoot.value  = tuple(sensor_data['forceLL']);
-    estimator_ft.ftSensRightHand.value = tuple(sensor_data['forceRA']);
-    estimator_ft.ftSensLeftHand.value  = tuple(sensor_data['forceLA']);
+    estimator_kin.x.value              = tuple(sensor_data['enc'][:30].tolist());    
+    acc_filter.x.value   = tuple(sensor_data['acc'][0:3]);
+    gyro_filter.x.value  = tuple(sensor_data['gyro']);
+    ft_RF_filter.x.value = tuple(sensor_data['forceRL']);
+    ft_LF_filter.x.value = tuple(sensor_data['forceLL']);
+    ft_RH_filter.x.value = tuple(sensor_data['forceRA']);
+    ft_LH_filter.x.value = tuple(sensor_data['forceLA']);
     
 
 def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_SENSORS=True):
@@ -52,15 +53,34 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
     
     # Create and initialize estimator
     estimator_ft = ForceTorqueEstimator("estimator_ft"+str(np.random.rand()));
-    estimator_kin = VelAccEstimator("estimator_kin"+str(np.random.rand()));
+    estimator_kin = NumericalDifference("estimator_kin"+str(np.random.rand()));
+    ft_RF_filter = NumericalDifference("ft_RF_filter"+str(np.random.rand()));
+    ft_LF_filter = NumericalDifference("ft_LF_filter"+str(np.random.rand()));
+    ft_RH_filter = NumericalDifference("ft_RH_filter"+str(np.random.rand()));
+    ft_LH_filter = NumericalDifference("ft_LH_filter"+str(np.random.rand()));
+    acc_filter = NumericalDifference("dv_filter"+str(np.random.rand()));
+    gyro_filter = NumericalDifference("w_filter"+str(np.random.rand()));
+    estimator_kin = NumericalDifference("estimator_kin"+str(np.random.rand()));
+
     plug(estimator_kin.x,   estimator_ft.q_filtered);
     plug(estimator_kin.dx,  estimator_ft.dq_filtered);
     plug(estimator_kin.ddx, estimator_ft.ddq_filtered);
+    plug(acc_filter.x_filtered,                   estimator_ft.accelerometer);
+    plug(gyro_filter.x_filtered,                  estimator_ft.gyro);
+    plug(gyro_filter.dx,                          estimator_ft.dgyro);
+    plug(ft_RF_filter.x_filtered,                 estimator_ft.ftSensRightFoot);
+    plug(ft_LF_filter.x_filtered,                 estimator_ft.ftSensLeftFoot);
+    plug(ft_RH_filter.x_filtered,                 estimator_ft.ftSensRightHand);
+    plug(ft_LH_filter.x_filtered,                 estimator_ft.ftSensLeftHand);
+
+    estimator_ft.rotor_inertias.value = NJ*(0.,);
+    estimator_ft.gear_ratios.value    = NJ*(0.,);
+
     estimator_ft.dqRef.value = NJ*(0.0,);
     estimator_ft.ddqRef.value = NJ*(0.0,);
     #Only use inertia model (not current) to estimate torques.
     estimator_ft.wCurrentTrust.value     = NJ*(0.0,);
-    estimator_ft.currentMeasure.value    = NJ*(0.0,);
+    estimator_ft.current.value           = NJ*(0.0,);
     estimator_ft.saturationCurrent.value = NJ*(0.0,);
     estimator_ft.motorParameterKt_p.value  = tuple(30*[1.,])
     estimator_ft.motorParameterKt_n.value  = tuple(30*[1.,])
@@ -71,15 +91,23 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
     estimator_ft.motorParameterKa_p.value  = tuple(30*[0.,])
     estimator_ft.motorParameterKa_n.value  = tuple(30*[0.,]) 
     
-    set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensors[0]);
+    set_sensor_data_in_estimator(estimator_ft, estimator_kin, acc_filter, gyro_filter, ft_RH_filter, 
+                                     ft_LF_filter, ft_LH_filter, ft_RF_filter, sensors[0]);
     print "Time step: %f" % dt;
     print "Estimation delay: %f" % delay;
     if(ftSensorOffsets==None):
-        estimator_ft.init(dt,delay,delay,delay,delay,True);
+        estimator_ft.init(True);
     else:
-        estimator_ft.init(dt,delay,delay,delay,delay,False);
+        estimator_ft.init(False);
         estimator_ft.setFTsensorOffsets(tuple(ftSensorOffsets));
-    estimator_kin.init(dt,NJ, delay);
+    estimator_kin.init(dt,NJ, delay, 2);
+    ft_RF_filter.init( dt, 6, delay, 1)
+    ft_LF_filter.init( dt, 6, delay, 1)
+    ft_RH_filter.init( dt, 6, delay, 1)
+    ft_LH_filter.init( dt, 6, delay, 1)
+    gyro_filter.init(  dt, 3, delay, 1)
+    acc_filter.init(   dt, 3, delay, 1)
+
     estimator_ft.setUseRawEncoders(False);
     estimator_ft.setUseRefJointVel(False);
     estimator_ft.setUseRefJointAcc(False);
@@ -94,7 +122,8 @@ def compute_estimates_from_sensors(sensors, delay, ftSensorOffsets=None, USE_FT_
         if(USE_ROBOT_VIEWER and i%10==0):
             viewer.updateElementConfig('hrp_device', [0,0,0.7,0,0,0] + sensors['enc'][i,:].tolist());
 
-        set_sensor_data_in_estimator(estimator_ft, estimator_kin, sensors[i]);
+        set_sensor_data_in_estimator(estimator_ft, estimator_kin, acc_filter, gyro_filter, ft_RH_filter, 
+                                     ft_LF_filter, ft_LH_filter, ft_RF_filter, sensors[i]);
         estimator_ft.jointsTorques.recompute(i);
         torques[i,:] = np.array(estimator_ft.jointsTorques.value);
         dq[i,:]      = np.array(estimator_kin.dx.value);

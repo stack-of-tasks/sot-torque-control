@@ -44,7 +44,7 @@ namespace dynamicgraph
 #define ESTIMATOR_INPUT_SIGNALS m_base6d_encodersSIN << m_jointsVelocitiesSIN << m_jointsAccelerationsSIN << \
                                 m_jointsTorquesSIN
 
-#define TORQUE_CONTROL_INPUT_SIGNALS    m_jointsTorquesDesiredSIN << m_KpTorqueSIN  << m_KiTorqueSIN  << m_frictionCompensationPercentageSIN//<< m_activeJointsSIN
+#define TORQUE_CONTROL_INPUT_SIGNALS    m_jointsTorquesDesiredSIN << m_KpTorqueSIN  << m_KiTorqueSIN  << m_frictionCompensationPercentageSIN << m_torque_integral_saturationSIN
 #define CURRENT_CONTROL_INPUT_SIGNALS   m_measuredCurrentSIN      << m_KpCurrentSIN << m_KiCurrentSIN 
 #define ALL_INPUT_SIGNALS       m_pwmSIN << m_tauFFSIN << m_tauFBSIN << \
                                 ESTIMATOR_INPUT_SIGNALS << TORQUE_CONTROL_INPUT_SIGNALS << CURRENT_CONTROL_INPUT_SIGNALS << MODEL_INPUT_SIGNALS
@@ -97,6 +97,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(polySignDq        , dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tauFF,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(tauFB,                  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_OUT(desiredCurrent,        dynamicgraph::Vector,   ESTIMATOR_INPUT_SIGNALS <<
                                                                    TORQUE_CONTROL_INPUT_SIGNALS <<
                                                                    MODEL_INPUT_SIGNALS )
@@ -247,6 +248,7 @@ namespace dynamicgraph
         const Eigen::VectorXd& ddq =           m_jointsAccelerationsSIN(iter);
         const Eigen::VectorXd& tau =           m_jointsTorquesSIN(iter);
         const Eigen::VectorXd& tau_d =         m_jointsTorquesDesiredSIN(iter);
+        const Eigen::VectorXd& err_int_sat =   m_torque_integral_saturationSIN(iter);
         const Eigen::VectorXd& kp =            m_KpTorqueSIN(iter);
         const Eigen::VectorXd& ki =            m_KiTorqueSIN(iter);
         const Eigen::VectorXd& k_tau =         m_k_tauSIN(iter);
@@ -275,6 +277,14 @@ namespace dynamicgraph
         }
 
         m_tauErrIntegral += m_dt * ki.cwiseProduct(tau_d-tau);
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
+        {
+          if(m_tauErrIntegral(i) > err_int_sat(i))
+            m_tauErrIntegral(i) = err_int_sat(i);
+          else if(m_tauErrIntegral(i) < -err_int_sat(i))
+            m_tauErrIntegral(i) = -err_int_sat(i);
+        }
+
         m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + m_tauErrIntegral;
         if(dq.size()==(int)m_robot_util->m_nbJoints)
 	  for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)

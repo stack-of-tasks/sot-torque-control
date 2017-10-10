@@ -12,6 +12,7 @@ from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTra
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
+from dynamic_graph.sot.torque_control.current_controller import CurrentController
 from dynamic_graph.sot.torque_control.inverse_dynamics_controller import InverseDynamicsController
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.position_controller import PositionController
@@ -33,8 +34,10 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     from dynamic_graph.sot.torque_control.base_estimator import BaseEstimator
     base_estimator = BaseEstimator('base_estimator');
     plug(robot.encoders.sout,               base_estimator.joint_positions);
-    plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
-    plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
+    #plug(robot.device.forceRLEG,            base_estimator.forceRLEG);
+    #plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
+    plug(robot.filters.ft_LF_filter.x_filtered, base_estimator.forceLLEG)
+    plug(robot.filters.ft_RF_filter.x_filtered, base_estimator.forceRLEG)
     plug(robot.filters.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
     plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
@@ -227,6 +230,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
     torque_ctrl.KiTorque.value                          = NJ*(0.0,);
+    torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
     torque_ctrl.KpCurrent.value                         = tuple(conf.k_p_current);
     torque_ctrl.KiCurrent.value                         = NJ*(0.0,);
     torque_ctrl.k_tau.value                             = tuple(conf.k_tau);
@@ -352,27 +356,15 @@ def create_inverse_dynamics(robot, conf, motor_params, dt=0.001):
 def create_ctrl_manager(conf, motor_params, dt, robot_name='robot'):
     ctrl_manager = ControlManager("ctrl_man");        
 
-#    plug(ent.torque_ctrl.predictedJointsTorques, ctrl_manager.tau_predicted);
-    ctrl_manager.tau_predicted.value                        = NJ*(0.0,);
-    ctrl_manager.max_tau.value                              = NJ*(conf.CTRL_MANAGER_TAU_MAX,);
-    ctrl_manager.max_current.value                          = NJ*(conf.CTRL_MANAGER_CURRENT_MAX,);
-    ctrl_manager.max_ctrl.value                             = NJ*(conf.CTRL_MANAGER_CTRL_MAX,);
-    ctrl_manager.ctrl_saturation.value                      = NJ*(conf.CTRL_SATURATION,);
-    ctrl_manager.percentageDriverDeadZoneCompensation.value = tuple(conf.percentage_deadzone_compensation);
-    ctrl_manager.percentage_bemf_compensation.value         = tuple(conf.percentage_bemf_compensation);
-    ctrl_manager.current_sensor_offsets_low_level.value     = tuple(conf.current_sensor_offsets_low_level);
-    ctrl_manager.iMaxDeadZoneCompensation.value             = tuple(conf.i_max_dz_comp);
-    ctrl_manager.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
-    ctrl_manager.kp_current.value                           = tuple(conf.kp_current);
-    ctrl_manager.ki_current.value                           = tuple(conf.ki_current);
-    ctrl_manager.bemfFactor.value                           = motor_params.K_bemf;
-    ctrl_manager.dead_zone_offsets.value                    = motor_params.deadzone;
-    ctrl_manager.cur_sens_gains.value                       = motor_params.cur_sens_gains;
-    ctrl_manager.currents.value                             = NJ*(0.0,);
+    ctrl_manager.tau_predicted.value    = NJ*(0.0,);
+    ctrl_manager.i_measured.value       = NJ*(0.0,);
+    ctrl_manager.tau_max.value          = NJ*(conf.TAU_MAX,);
+    ctrl_manager.i_max.value            = NJ*(conf.CURRENT_MAX,);
+    ctrl_manager.u_max.value            = NJ*(conf.CTRL_MAX,);
     
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    ctrl_manager.init(dt, conf.urdfFileName, conf.CTRL_MANAGER_CURRENT_MAX, robot_name, conf.CURRENT_OFFSET_ITERS)
+    ctrl_manager.init(dt, conf.urdfFileName, robot_name)
 
     # Set the map from joint name to joint ID
     for key in conf.mapJointNameToID:
@@ -404,25 +396,48 @@ def create_ctrl_manager(conf, motor_params, dt, robot_name='robot'):
     
     ctrl_manager.setRightFootForceSensorXYZ(conf.rightFootSensorXYZ);
     ctrl_manager.setRightFootSoleXYZ(conf.rightFootSoleXYZ);
-    ctrl_manager.setDefaultMaxCurrent(conf.CTRL_MANAGER_CURRENT_MAX)
+
     return ctrl_manager;
 
-def connect_ctrl_manager(ent):    
+def connect_ctrl_manager(robot):    
     # connect to device    
-    plug(ent.device.robotState,             ent.ctrl_manager.base6d_encoders);
-    plug(ent.filters.current_filter.x_filtered, ent.ctrl_manager.currents)
-    #plug(ent.device.currents,               ent.ctrl_manager.currents);
-    plug(ent.filters.estimator_kin.dx,      ent.ctrl_manager.dq);
-    plug(ent.estimator_ft.jointsTorques,    ent.ctrl_manager.tau);
-    plug(ent.ctrl_manager.pwmDes,           ent.torque_ctrl.pwm);
-    ent.ctrl_manager.addCtrlMode("pos");
-    ent.ctrl_manager.addCtrlMode("torque");    
-    plug(ent.torque_ctrl.controlCurrent,        ent.ctrl_manager.ctrl_torque);
-    plug(ent.pos_ctrl.pwmDes,                   ent.ctrl_manager.ctrl_pos);
-    plug(ent.ctrl_manager.joints_ctrl_mode_torque,  ent.inv_dyn.active_joints);
-    ent.ctrl_manager.setCtrlMode("all", "pos");
-    plug(ent.ctrl_manager.pwmDesSafe,               ent.device.control);
+    plug(robot.device.currents,               robot.ctrl_manager.i_measured);
+    plug(robot.estimator_ft.jointsTorques,    robot.ctrl_manager.tau);
+    plug(robot.ctrl_manager.u,                robot.torque_ctrl.pwm);
+    robot.ctrl_manager.addCtrlMode("pos");
+    robot.ctrl_manager.addCtrlMode("torque");    
+    plug(robot.torque_ctrl.controlCurrent,              robot.ctrl_manager.ctrl_torque);
+    plug(robot.pos_ctrl.pwmDes,                         robot.ctrl_manager.ctrl_pos);
+    plug(robot.ctrl_manager.joints_ctrl_mode_torque,    robot.inv_dyn.active_joints);
+    robot.ctrl_manager.setCtrlMode("all", "pos");
+    plug(robot.ctrl_manager.u_safe,                     robot.current_ctrl.i_des);
     return;
+    
+def create_current_controller(robot, conf, motor_params, dt, robot_name='robot'):
+    current_ctrl = CurrentController("current_ctrl");        
+
+    current_ctrl.i_max.value                                = NJ*(conf.CURRENT_MAX,);
+    current_ctrl.u_max.value                                = NJ*(conf.CTRL_MAX,);
+    current_ctrl.u_saturation.value                         = NJ*(conf.CTRL_SATURATION,);
+    current_ctrl.percentage_dead_zone_compensation.value    = tuple(conf.percentage_dead_zone_compensation);
+    current_ctrl.percentage_bemf_compensation.value         = tuple(conf.percentage_bemf_compensation);
+    current_ctrl.i_sensor_offsets_low_level.value           = tuple(conf.current_sensor_offsets_low_level);
+    current_ctrl.i_max_dead_zone_compensation.value         = tuple(conf.i_max_dz_comp);
+    current_ctrl.in_out_gain.value                          = NJ*(conf.IN_OUT_GAIN,);
+    current_ctrl.kp_current.value                           = tuple(conf.kp_current);
+    current_ctrl.ki_current.value                           = tuple(conf.ki_current);
+    current_ctrl.bemf_factor.value                          = motor_params.K_bemf;
+    current_ctrl.dead_zone_offsets.value                    = motor_params.deadzone;
+    current_ctrl.i_sens_gains.value                         = motor_params.cur_sens_gains;
+    # connect to other entities
+    plug(robot.filters.current_filter.x_filtered,   current_ctrl.i_measured)
+    plug(robot.filters.estimator_kin.dx,            current_ctrl.dq);
+    plug(current_ctrl.u_safe,                       robot.device.control);
+    # initialize    
+    current_ctrl.init(dt, robot_name, conf.CURRENT_OFFSET_ITERS)
+    
+    return current_ctrl;
+
 
 def create_admittance_ctrl(robot, dt=0.001):
     admit_ctrl = AdmittanceController("adm_ctrl");

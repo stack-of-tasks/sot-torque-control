@@ -61,12 +61,6 @@ namespace dynamicgraph {
 /// Number of time step to transition from one ctrl mode to another
 #define CTRL_MODE_TRANSITION_TIME_STEP 1000.0
 
-// max motor current
-#define DEFAULT_MAX_CURRENT 8
-
-// number of iterations used to compute current offset at the beginning
-#define CURRENT_OFFSET_ITERS 200
-
       class CtrlMode
       {
       public:
@@ -97,50 +91,24 @@ namespace dynamicgraph {
 	/// Initialize
 	/// @param dt: control interval
 	/// @param urdfFile: path to the URDF model of the robot
-	/// @param maxCurrent: default maximum current for each motor. 
-	/// @param currentOffsetIters: number of iterations while control is disabled to calibrate current sensors. 
-	/// The recommended way is to use the signal max_current.
         void init(const double & dt,
                   const std::string & urdfFile,
-                  const double & maxCurrent,
-                  const std::string & robotRef,
-                  const unsigned int & currentOffsetIters);
+                  const std::string & robotRef);
 
         /* --- SIGNALS --- */
         std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector,int>*> m_ctrlInputsSIN;
         std::vector< dynamicgraph::SignalPtr<bool,int>* >               m_emergencyStopSIN; /// emergency stop inputs. If one is true, control is set to zero forever
         std::vector<dynamicgraph::Signal<dynamicgraph::Vector,int>*>    m_jointsCtrlModesSOUT;
 
-        DECLARE_SIGNAL_IN(base6d_encoders,                       dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(dq,                                    dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
-        DECLARE_SIGNAL_IN(bemfFactor,                            dynamicgraph::Vector);  /// Link between velocity and current; to compensate for BEMF effect on low level current loop (in A/rad.s-1)
-        DECLARE_SIGNAL_IN(in_out_gain,                           dynamicgraph::Vector);  /// gain from input to output control values
-        DECLARE_SIGNAL_IN(cur_sens_gains,                        dynamicgraph::Vector);  /// gains of current sensors
-        DECLARE_SIGNAL_IN(dead_zone_offsets,                     dynamicgraph::Vector);  /// current control dead zone offsets
-        DECLARE_SIGNAL_IN(currents,                              dynamicgraph::Vector);  /// motor currents
+        DECLARE_SIGNAL_IN(i_measured,                            dynamicgraph::Vector);  /// motor currents
         DECLARE_SIGNAL_IN(tau,                                   dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
         DECLARE_SIGNAL_IN(tau_predicted,                         dynamicgraph::Vector);  /// predicted joint torques (using motor model)
-        DECLARE_SIGNAL_IN(max_current,                           dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
-        DECLARE_SIGNAL_IN(max_ctrl,                              dynamicgraph::Vector);  /// max desired current allowed before stopping the controller (in Ampers)
-        DECLARE_SIGNAL_IN(max_tau,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
-        DECLARE_SIGNAL_IN(ctrl_saturation,                       dynamicgraph::Vector);  /// values at which to saturate the control (in bits)
-        DECLARE_SIGNAL_IN(percentageDriverDeadZoneCompensation,  dynamicgraph::Vector);  /// percentatge in [0;1] of the motor driver dead zone that we should compensate 0 is none, 1 is all of it
-        DECLARE_SIGNAL_IN(percentage_bemf_compensation,          dynamicgraph::Vector);  /// percentatge in [0;1] of the motor back-EMF that we should compensate 0 is none, 1 is all of it
-        DECLARE_SIGNAL_IN(iMaxDeadZoneCompensation,              dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
-        DECLARE_SIGNAL_IN(current_sensor_offsets_low_level,      dynamicgraph::Vector);  /// offset of the current sensors seen by the low level
-        DECLARE_SIGNAL_IN(current_sensor_offsets_real_in,        dynamicgraph::Vector);  /// real offset of the current sensors
-        DECLARE_SIGNAL_IN(kp_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
-        DECLARE_SIGNAL_IN(ki_current,                            dynamicgraph::Vector);  /// proportional current feedback gain
+        DECLARE_SIGNAL_IN(i_max,                                 dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
+        DECLARE_SIGNAL_IN(u_max,                                 dynamicgraph::Vector);  /// max desired current allowed before stopping the controller (in Ampers)
+        DECLARE_SIGNAL_IN(tau_max,                               dynamicgraph::Vector);  /// max torque allowed before stopping the controller
 
-        DECLARE_SIGNAL_OUT(pwmDes,                               dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(pwmDesSafe,                           dynamicgraph::Vector);  /// same as pwmDes when everything is fine, 0 otherwise //TODO change since pwmDes is now the desired current and pwmDesSafe is the DAC 
-        DECLARE_SIGNAL_OUT(currents_real,                        dynamicgraph::Vector);  /// current measurements after gain and offset compensation
-        DECLARE_SIGNAL_OUT(currents_low_level,                   dynamicgraph::Vector);  /// current measurements as seen by low-level ctrl
-        DECLARE_SIGNAL_OUT(current_sensor_offsets_real_out,      dynamicgraph::Vector);  /// real offset of the current sensors
-        DECLARE_SIGNAL_OUT(dead_zone_compensation,               dynamicgraph::Vector);  /// dead-zone compensation current applied by the controller
-        DECLARE_SIGNAL_OUT(current_errors,                       dynamicgraph::Vector);  /// current tracking error
-        DECLARE_SIGNAL_OUT(current_errors_ll_wo_bemf,            dynamicgraph::Vector);  /// current tracking error without BEMF effect
-
+        DECLARE_SIGNAL_OUT(u,                                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(u_safe,                               dynamicgraph::Vector);  /// same as u when everything is fine, 0 otherwise
 
         /* --- COMMANDS --- */
 
@@ -152,8 +120,6 @@ namespace dynamicgraph {
         void setCtrlMode(const int jid, const CtrlMode& cm);
 	
         void resetProfiler();
-
-        void setDefaultMaxCurrent(const double &lDefaultMaxCurrent);
 	
 	/// Commands related to joint name and joint id
 	void setNameToId(const std::string& jointName, const double & jointId);
@@ -171,7 +137,7 @@ namespace dynamicgraph {
 	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
         void setRightFootForceSensorXYZ(const dynamicgraph::Vector &);
 	void setFootFrameName(const std::string &, const std::string &);
-    void setImuJointName(const std::string &);
+        void setImuJointName(const std::string &);
 	void displayRobotUtil();
 	/// Set the mapping between urdf and sot.
 	void setJoints(const dynamicgraph::Vector &);
@@ -182,9 +148,6 @@ namespace dynamicgraph {
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
@@ -192,26 +155,14 @@ namespace dynamicgraph {
         }
 
       protected:
-	RobotUtil * m_robot_util;
-	tsid::robots::RobotWrapper *                       m_robot;
+        RobotUtil *                   m_robot_util;
+        tsid::robots::RobotWrapper *  m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period
-        double  m_maxCurrent;       /// control limit in Ampers
         bool    m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or by control limit violation
         bool    m_is_first_iter;    /// true at the first iteration, false otherwise
         int     m_iter;
         double  m_sleep_time;       /// time to sleep at every iteration (to slow down simulation)
-
-        unsigned int m_currentOffsetIters;
-//        dynamicgraph::Vector m_currents;
-//        dynamicgraph::Vector m_current_offsets;
-        dynamicgraph::Vector m_cur_offsets_real;
-        dynamicgraph::Vector m_cur_err_integr;
-
-        dynamicgraph::Vector m_dz_coeff;
-
-        dynamicgraph::Vector m_avg_cur_err_pos;
-        dynamicgraph::Vector m_avg_cur_err_neg;
 
         std::vector<std::string>  m_ctrlModes;                /// existing control modes
         std::vector<CtrlMode>     m_jointCtrlModes_current;   /// control mode of the joints
