@@ -877,7 +877,7 @@ namespace dynamicgraph
           Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector();
           v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
           
-          const Vector6 m_v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
+          m_v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
           
           /* Compute velocity induced by the flexibility */
           Vector6 v_flex_l;
