@@ -102,10 +102,10 @@ namespace dynamicgraph
 
 
 #define INPUT_SIGNALS     m_joint_positionsSIN << m_joint_velocitiesSIN << \
-                          m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN << \
+                          m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN <<  m_dforceLLEGSIN << m_dforceRLEGSIN << \
                           m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN << m_accelerometerSIN << m_gyroscopeSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
-                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT
+                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_flexSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -126,6 +126,8 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN( imu_quaternion,             dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceLLEG,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( forceRLEG,                  dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN( dforceLLEG,                 dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN( dforceRLEG,                 dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN( w_lf_in,                    double)
         ,CONSTRUCT_SIGNAL_IN( w_rf_in,                    double)
         ,CONSTRUCT_SIGNAL_IN( K_fb_feet_poses,            double)
@@ -147,7 +149,12 @@ namespace dynamicgraph
                                                                               <<m_w_rfSOUT
                                                                               <<m_lf_ref_xyzquatSIN
                                                                               <<m_rf_ref_xyzquatSIN)
-        ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER << m_accelerometerSIN << m_gyroscopeSIN)
+        ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER << m_accelerometerSIN << m_gyroscopeSIN << m_qSOUT << m_dforceLLEGSIN << m_dforceRLEGSIN)
+        ,CONSTRUCT_SIGNAL_OUT(v_ac,                       dynamicgraph::Vector, m_vSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(a_ac,                       dynamicgraph::Vector, m_vSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(v_flex,                     dynamicgraph::Vector, m_vSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(v_imu,                      dynamicgraph::Vector, m_vSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(v_kin,                      dynamicgraph::Vector, m_vSOUT)
         ,CONSTRUCT_SIGNAL_OUT(lf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(rf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector, m_qSOUT)
@@ -275,10 +282,6 @@ namespace dynamicgraph
           m_left_foot_id  = m_model.getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
           m_right_foot_id = m_model.getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_IMU_body_id   = m_model.getFrameId(m_robot_util->m_imu_joint_name);
-          sendMsg("m_IMU_body_id="+toString(m_IMU_body_id)+"\n" , MSG_TYPE_INFO);
-          sendMsg("m_left_foot_id="+toString(m_left_foot_id)+"\n" , MSG_TYPE_INFO);
-          sendMsg("m_right_foot_id="+toString(m_right_foot_id)+"\n" , MSG_TYPE_INFO);
-          sendMsg("m_model="+toString(m_model)+"\n" , MSG_TYPE_INFO);
 
           m_q_pin.setZero(m_model.nq);
           m_q_pin[6]= 1.; // for quaternion
@@ -850,42 +853,58 @@ namespace dynamicgraph
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
+        m_qSOUT(iter);
 
         getProfiler().start(PROFILE_BASE_VELOCITY_ESTIMATION);
         {
-          const Eigen::VectorXd& dq = m_joint_velocitiesSIN(iter);
-          const Eigen::Vector3d& acc_imu = m_accelerometerSIN(iter);
-          const Eigen::Vector3d& gyr_imu = m_gyroscopeSIN(iter);
+          const Eigen::VectorXd& dq          = m_joint_velocitiesSIN(iter);
+          const Eigen::Vector3d& acc_imu     = m_accelerometerSIN(iter);
+          const Eigen::Vector3d& gyr_imu     = m_gyroscopeSIN(iter);
           const Eigen::Vector4d& quatIMU_vec = m_imu_quaternionSIN(iter);
+          const Vector6 & dftrf              = m_dforceRLEGSIN(iter);
+          const Vector6 & dftlf              = m_dforceLLEGSIN(iter);
           assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
-
           /* Compute foot velocities */
-          
           const Frame & f_lf = m_model.frames[m_left_foot_id];
           const Motion v_lf_local = m_data->v[f_lf.parent];
-          const SE3 oMlf = m_data->oMi[f_lf.parent];
-          Vector6 v_kin_l = -oMlf.act(v_lf_local).toVector();
+          const SE3 ffMlf = m_data->oMi[f_lf.parent];
+          Vector6 v_kin_l = -ffMlf.act(v_lf_local).toVector();
           v_kin_l.head<3>() = m_oRff * v_kin_l.head<3>();
 
           const Frame & f_rf = m_model.frames[m_right_foot_id];
           const Motion v_rf_local = m_data->v[f_rf.parent];
-          const SE3 oMrf = m_data->oMi[f_rf.parent];
-          Vector6 v_kin_r = -oMrf.act(v_rf_local).toVector();
+          const SE3 ffMrf = m_data->oMi[f_rf.parent];
+          Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector();
           v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
           
-          const Vector6 v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
+          const Vector6 m_v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
           
-          /// TODO express it in the frame of the world
+          /* Compute velocity induced by the flexibility */
+          Vector6 v_flex_l;
+          Vector6 v_flex_r;
+          v_flex_l << -dftlf[0]/m_K_lf(0), -dftlf[1]/m_K_lf(1), -dftlf[2]/m_K_lf(2),
+                      -dftlf[3]/m_K_lf(3), -dftlf[4]/m_K_lf(4), -dftlf[5]/m_K_lf(5); 
+          v_flex_r << -dftrf[0]/m_K_rf(0), -dftrf[1]/m_K_rf(1), -dftrf[2]/m_K_rf(2),
+                      -dftrf[3]/m_K_rf(3), -dftrf[4]/m_K_rf(4), -dftrf[5]/m_K_rf(5);
+          const Eigen::Matrix<double, 6, 6> lfAff = ffMlf.inverse().toActionMatrix();
+          const Eigen::Matrix<double, 6, 6> rfAff = ffMrf.inverse().toActionMatrix();
+          Eigen::Matrix<double, 12, 6> A;
+          A << lfAff,
+               rfAff;
+          Eigen::Matrix<double, 12, 1> b;
+          b << v_flex_l,
+               v_flex_r;         
+          //~ m_v_flex = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+          m_v_flex = (A.transpose() * A).ldlt().solve(A.transpose() * b);
+          m_v_flex.head<3>() = m_oRff * m_v_flex.head<3>();
+
 
           /* Get an estimate of linear velocities from filtered accelerometer integration */
           
           /* rotate acceleration to express it in the world frame */
-          //~ Vector3 acc_world;
           //~ pointRotationByQuaternion(acc_imu,quatIMU_vec,acc_world); //this is false because yaw from imuquat is drifting
-          
           const Vector3 acc_world = m_oRchest * acc_imu;
-          //~ sendMsg("acc in IMU frame :"+toString(acc_imu)+"\n", MSG_TYPE_INFO);
-          //~ sendMsg("acc in WLD frame :"+toString(acc_world)+"\n", MSG_TYPE_INFO);
+
           /* now, the acceleration is expressed in the world frame, 
            * so it can be written as the sum of the proper acceleration and the 
            * constant gravity vector. We could remove this assuming a [0,0,9.81]
@@ -901,20 +920,20 @@ namespace dynamicgraph
             sendMsg("iter:"+toString(iter)+"\n", MSG_TYPE_INFO);
           }
           const Vector3 DCacc = acc_world * (1-m_alpha_DC_acc) + m_last_DCacc * (m_alpha_DC_acc);
+          //~ sendMsg("acc_world            :"+toString(acc_world)+"\n", MSG_TYPE_INFO);
           m_last_DCacc = DCacc;
           const Vector3 ACacc = acc_world - DCacc;
-          //~ sendMsg("ACacc            :"+toString(ACacc)+"\n", MSG_TYPE_INFO);
+          m_v_ac = ACacc;
           /* Then this acceleration is integrated.  */
           const Vector3 vel = m_last_vel + ACacc * m_dt;
           m_last_vel = vel;
-          //~ sendMsg("vel              :"+toString(vel)+"\n", MSG_TYPE_INFO);
           /* To stabilise the integrated velocity, we add the 
            * asumption that globaly, velocity is zero. So we remove DC again */
           const Vector3 DCvel = vel * (1-m_alpha_DC_vel) + m_last_DCvel * (m_alpha_DC_vel);
           m_last_DCvel = DCvel;
           const Vector3 ACvel = vel - DCvel;
-          //~ sendMsg("ACvel            :"+toString(ACvel)+"\n", MSG_TYPE_INFO);
-          
+          m_v_ac = ACvel;
+
           /* Express back velocity in the imu frame to get a full 6d velocity with the gyro*/
           const Vector3 imuVimu = m_oRchest.transpose() * ACvel;
           /* Here we could remove dc from gyrometer to remove bias*/  ///TODO 
@@ -924,13 +943,14 @@ namespace dynamicgraph
           const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);
           const SE3 chestMimu(Matrix3::Identity(), +1.0*Vector3(-0.13, 0.0,  0.118)); ///TODO Read this transform from setable parameter /// TODO chesk the sign of the translation
           const SE3 ffMimu = ffMchest * chestMimu;
-          const Motion v = ffMimu.act(imuWimu) ;//- ffWchest;
-          //~ const Motion v = ffMimu.act(imuWimu) - ffMchest.act(ffWchest);
-          //~ const Motion v = ffMimu.act(imuWimu) - ffMchest.rotation()*(ffWchest);
+          const Motion v= ffMimu.act(imuWimu) ;//- ffWchest;
+          m_v_imu = v.toVector();
+          m_v_imu.head<3>() = m_oRff * m_v_imu.head<3>();
 
-          //~ m_v_sot.head<6>() = v.toVector();
-          m_v_sot.head<6>() = v_kin;
-          //~ m_v_sot.head<3>() = ACvel; /*This overwrite kinematic velocity estimation*/
+          
+          //~ m_v_sot.head<6>() = m_v_kin;
+          m_v_sot.head<6>() = m_v_flex + m_v_kin;
+          //~ m_v_sot.head<6>() = m_v_imu; 
           m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
 
           s = m_v_sot;
@@ -940,8 +960,65 @@ namespace dynamicgraph
         return s;
       }
       
+      DEFINE_SIGNAL_OUT_FUNCTION(v_kin, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal v_kin before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_v_kin;
+        return s;
+      }
       
+      DEFINE_SIGNAL_OUT_FUNCTION(v_flex, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal v_flex before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_v_flex;
+        return s;
+      }
       
+      DEFINE_SIGNAL_OUT_FUNCTION(v_imu, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal v_imu before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_v_imu;
+        return s;
+      }
+      
+      DEFINE_SIGNAL_OUT_FUNCTION(v_ac, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal v_ac before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_v_ac;
+        return s;
+      }
+      
+      DEFINE_SIGNAL_OUT_FUNCTION(a_ac, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal a_ac before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_a_ac;
+        return s;
+      }      
 
       /* --- COMMANDS ---------------------------------------------------------- */
 

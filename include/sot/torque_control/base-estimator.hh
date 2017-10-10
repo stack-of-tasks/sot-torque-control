@@ -132,6 +132,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(imu_quaternion,             dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(forceLLEG,                  dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(forceRLEG,                  dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(dforceLLEG,                 dynamicgraph::Vector);  ///derivative of left force torque sensor
+        DECLARE_SIGNAL_IN(dforceRLEG,                 dynamicgraph::Vector);  ///derivative of right force torque sensor
         DECLARE_SIGNAL_IN(w_lf_in,                    double);  /// weight of the estimation coming from the left foot
         DECLARE_SIGNAL_IN(w_rf_in,                    double);  /// weight of the estimation coming from the right foot
         DECLARE_SIGNAL_IN(K_fb_feet_poses,            double);  /// feed back gain to correct feet position according to last base estimation and kinematic
@@ -144,8 +146,13 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_OUT(q,                         dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  /// n+6 robot velocities
+        DECLARE_SIGNAL_OUT(v_kin,                     dynamicgraph::Vector);  /// 6d robot velocities from kinematic only   (encoders derivative)
+        DECLARE_SIGNAL_OUT(v_flex,                    dynamicgraph::Vector);  /// 6d robot velocities from flexibility only (force sensor derivative)
+        DECLARE_SIGNAL_OUT(v_imu,                     dynamicgraph::Vector);  /// 6d robot velocities form imu only (accelerometer integration + gyro)
         DECLARE_SIGNAL_OUT(lf_xyzquat,                dynamicgraph::Vector);  /// left foot pose
         DECLARE_SIGNAL_OUT(rf_xyzquat,                dynamicgraph::Vector);  /// right foot pose
+        DECLARE_SIGNAL_OUT(a_ac,                      dynamicgraph::Vector);  /// acceleration of the base in the world with DC component removed
+        DECLARE_SIGNAL_OUT(v_ac,                      dynamicgraph::Vector);  /// velocity of the base in the world with DC component removed
 
         DECLARE_SIGNAL_OUT(q_lf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(q_rf,                       dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
@@ -186,6 +193,14 @@ namespace dynamicgraph {
         double            m_fz_margin_rf;     /// margin used for computing normal force weight
         Vector6           m_K_rf;             /// 6d stiffness of right foot spring
         Vector6           m_K_lf;             /// 6d stiffness of left foot spring
+
+
+        Vector6           m_v_kin;            /// 6d robot velocities from kinematic only   (encoders derivative)
+        Vector6           m_v_flex;           /// 6d robot velocities from flexibility only (force sensor derivative)
+        Vector6           m_v_imu;            /// 6d robot velocities form imu only (accelerometer integration + gyro)
+        
+        Vector3           m_v_ac;             /// velocity of the base in the world with DC component removed
+        Vector3           m_a_ac;             /// acceleration of the base in the world with DC component removed
 
         double            m_alpha_DC_acc;     /// alpha parameter for DC blocker filter on acceleration data
         double            m_alpha_DC_vel;     /// alpha parameter for DC blocker filter on velocity data
