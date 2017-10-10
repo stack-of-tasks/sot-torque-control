@@ -56,7 +56,6 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     plug(robot.q.sout,              robot.pos_ctrl.base6d_encoders);
     plug(robot.q.sout,              robot.traj_gen.base6d_encoders);
     plug(robot.q.sout,              robot.estimator_ft.base6d_encoders);
-    plug(robot.q.sout,              robot.torque_ctrl.base6d_encoders);
     
     robot.ros = RosPublish('rosPublish');
     robot.device.after.addDownsampledSignal('rosPublish.trigger',1);

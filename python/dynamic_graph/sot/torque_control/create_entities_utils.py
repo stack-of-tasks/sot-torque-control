@@ -222,20 +222,14 @@ def create_estimators(robot, conf, motor_params, dt):
         
 def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="robot"):
     torque_ctrl = JointTorqueController("jtc");
-    plug(robot.device.robotState,               torque_ctrl.base6d_encoders);
     plug(robot.filters.estimator_kin.dx,                torque_ctrl.jointsVelocities);
     plug(robot.filters.estimator_kin.ddx,               torque_ctrl.jointsAccelerations);
-    plug(robot.estimator_ft.jointsTorques,      torque_ctrl.jointsTorques);
-    plug(robot.filters.current_filter.x_filtered, torque_ctrl.measuredCurrent);
+    plug(robot.estimator_ft.jointsTorques,              torque_ctrl.jointsTorques);
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
-    torque_ctrl.KiTorque.value                          = NJ*(0.0,);
+    torque_ctrl.KiTorque.value                          = tuple(conf.k_i_torque);
     torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
-    torque_ctrl.KpCurrent.value                         = tuple(conf.k_p_current);
-    torque_ctrl.KiCurrent.value                         = NJ*(0.0,);
-    torque_ctrl.k_tau.value                             = tuple(conf.k_tau);
-    torque_ctrl.k_v.value                               = tuple(conf.k_v);
-    torque_ctrl.frictionCompensationPercentage.value    = NJ*(conf.FRICTION_COMPENSATION_PERCENTAGE,);
+    torque_ctrl.coulomb_friction_compensation_percentage.value = NJ*(conf.COULOMB_FRICTION_COMPENSATION_PERCENTAGE,);
 
     torque_ctrl.motorParameterKt_p.value  = tuple(motor_params.Kt_p)
     torque_ctrl.motorParameterKt_n.value  = tuple(motor_params.Kt_n)
@@ -245,7 +239,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.motorParameterKv_n.value  = tuple(motor_params.Kv_n)
     torque_ctrl.motorParameterKa_p.value  = tuple(motor_params.Ka_p)
     torque_ctrl.motorParameterKa_n.value  = tuple(motor_params.Ka_n)
-    torque_ctrl.polySignDq.value          = NJ*(3,); 
+    torque_ctrl.polySignDq.value          = NJ*(conf.poly_sign_dq,); 
     torque_ctrl.init(dt, robot_name);
     return torque_ctrl;
    
@@ -337,8 +331,6 @@ def create_inverse_dynamics(robot, conf, motor_params, dt=0.001):
     plug(robot.estimator_ft.baseAngularVelocity, inv_dyn_ctrl.baseAngularVelocity);
     plug(robot.estimator_ft.baseAcceleration,    inv_dyn_ctrl.baseAcceleration);
     plug(inv_dyn_ctrl.tauDes,           robot.torque_ctrl.jointsTorquesDesired);
-    plug(inv_dyn_ctrl.tauFF,            robot.torque_ctrl.tauFF);
-    plug(inv_dyn_ctrl.tauFB,            robot.torque_ctrl.tauFB);
     plug(inv_dyn_ctrl.tauDes,           robot.estimator_ft.tauDes);
     plug(robot.estimator_ft.dynamicsError,       inv_dyn_ctrl.dynamicsError);
     
@@ -403,10 +395,9 @@ def connect_ctrl_manager(robot):
     # connect to device    
     plug(robot.device.currents,               robot.ctrl_manager.i_measured);
     plug(robot.estimator_ft.jointsTorques,    robot.ctrl_manager.tau);
-    plug(robot.ctrl_manager.u,                robot.torque_ctrl.pwm);
     robot.ctrl_manager.addCtrlMode("pos");
     robot.ctrl_manager.addCtrlMode("torque");    
-    plug(robot.torque_ctrl.controlCurrent,              robot.ctrl_manager.ctrl_torque);
+    plug(robot.torque_ctrl.u,                           robot.ctrl_manager.ctrl_torque);
     plug(robot.pos_ctrl.pwmDes,                         robot.ctrl_manager.ctrl_pos);
     plug(robot.ctrl_manager.joints_ctrl_mode_torque,    robot.inv_dyn.active_joints);
     robot.ctrl_manager.setCtrlMode("all", "pos");
@@ -502,8 +493,7 @@ def create_ros_topics(robot):
         pass;
 
     try:
-        create_topic(ros, robot.torque_ctrl.controlCurrent, 'controlCurrent');
-        create_topic(ros, robot.torque_ctrl.desiredCurrent, 'desiredCurrent');
+        create_topic(ros, robot.torque_ctrl.u, 'i_des_torque_ctrl');
     except:
         pass;
 
@@ -588,9 +578,6 @@ def create_tracer(device, traj_gen=None, estimator_ft=None, estimator_kin=None,
             f.write('Inv dyn Ki: {0}\n'.format(inv_dyn.Ki.value));
         if(torque_ctrl!=None):
             f.write('Torque ctrl KpTorque: {0}\n'.format (robot.torque_ctrl.KpTorque.value ));
-            f.write('Torque ctrl KpCurrent: {0}\n'.format(robot.torque_ctrl.KpCurrent.value));
-            f.write('Torque ctrl K_tau: {0}\n'.format(robot.torque_ctrl.k_tau.value));
-            f.write('Torque ctrl K_v: {0}\n'.format(robot.torque_ctrl.k_v.value));
     f.close();
     return tracer;
 
