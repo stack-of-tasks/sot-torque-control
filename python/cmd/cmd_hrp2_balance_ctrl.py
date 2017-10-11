@@ -17,7 +17,7 @@ robot.inv_dyn.kp_com.value = (30.0, 30.0, 50.0)
 # enable integral feedback in torque control
 import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
 robot.torque_ctrl.torque_integral_saturation.value = tuple(0.9*motor_params.Kf_n / motor_params.Kt_n)
-robot.torque_ctrl.KiTorque.value = 30*(10.0,)
+robot.torque_ctrl.KiTorque.value = 30*(5.0,)
 
 # create ros topics
 create_topic(robot.ros, robot.device.robotState,                'robotState')
@@ -32,6 +32,8 @@ create_topic(robot.ros, robot.base_estimator.lf_xyzquat,        'lf_est')
 create_topic(robot.ros, robot.base_estimator.rf_xyzquat,        'rf_est')
 create_topic(robot.ros, robot.current_ctrl.i_real,              'i_real');
 create_topic(robot.ros, robot.ctrl_manager.u,                   'i_des')
+create_topic(robot.ros, robot.base_estimator.q,               'q');
+create_topic(robot.ros, robot.base_estimator.v,               'v');
 
 # wait until the motion has finished
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
@@ -50,14 +52,31 @@ robot.base_estimator.reset_foot_positions();
 robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
 robot.base_estimator.K_fb_feet_poses.value = 1e-3
 
-# plug encoder velocities (without base vel) to balance controller
+# plug encoder velocities (with different base vel) to balance controller
 from dynamic_graph.sot.core import Stack_of_vector, Selec_of_vector
 robot.v = Stack_of_vector('v');
-robot.v.sin1.value = 6*(0.0,);
+plug(robot.base_estimator.v_flex, robot.v.sin1);
 plug(robot.filters.estimator_kin.dx, robot.v.sin2)
 robot.v.selec1(0,6)
 robot.v.selec2(0,30)
 plug(robot.v.sout, robot.inv_dyn.v)
+
+# Compute finite differences of base position
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
+robot.q_fd = create_butter_lp_filter_Wn_05_N_3('q_filter', robot.timeStep, 36)
+plug(robot.base_estimator.q, robot.q_fd.x)
+create_topic(robot.ros, robot.q_fd.dx,         'q_fd')
+
+# Replace force sensor filters
+from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
+robot.force_LF_filter = create_butter_lp_filter_Wn_05_N_3('force_LF_filter', robot.timeStep, 6)
+robot.force_RF_filter = create_butter_lp_filter_Wn_05_N_3('force_RF_filter', robot.timeStep, 6)
+plug(robot.device.forceLLEG, robot.force_LF_filter.x)
+plug(robot.force_LF_filter.x_filtered, robot.base_estimator.forceLLEG)
+plug(robot.force_LF_filter.dx, robot.base_estimator.dforceLLEG)
+plug(robot.device.forceRLEG, robot.force_RF_filter.x)
+plug(robot.force_RF_filter.x_filtered, robot.base_estimator.forceRLEG)
+plug(robot.force_RF_filter.dx, robot.base_estimator.dforceRLEG)
 
 # set dz comp and bemf comp to zero
 robot.ctrl_manager.percentageDriverDeadZoneCompensation.value = 30*(0.,)
@@ -112,9 +131,6 @@ create_topic(robot.ros, robot.estimator_kin.dx,                'dq_sav');
 create_topic(robot.ros, robot.encoder_filter.dx,               'dq');
 create_topic(robot.ros, robot.device.gyrometer,               'gyrometer');
 create_topic(robot.ros, robot.device.accelerometer,           'accelerometer');
-
-create_topic(robot.ros, robot.base_estimator.q,               'q');
-create_topic(robot.ros, robot.base_estimator.v,               'v');
 
 
 

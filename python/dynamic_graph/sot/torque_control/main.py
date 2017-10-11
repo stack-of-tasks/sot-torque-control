@@ -85,6 +85,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     plug(robot.encoders.sout,             robot.encoder_filter.x)
     plug(robot.encoder_filter.dx,         robot.current_ctrl.dq);
     plug(robot.encoder_filter.dx,         robot.torque_ctrl.jointsVelocities);
+    plug(robot.encoder_filter.x_filtered, robot.base_estimator.joint_positions);
     plug(robot.encoder_filter.dx,         robot.base_estimator.joint_velocities);
 
     robot.ros = RosPublish('rosPublish');

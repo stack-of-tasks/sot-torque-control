@@ -38,6 +38,8 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     #plug(robot.device.forceLLEG,            base_estimator.forceLLEG);
     plug(robot.filters.ft_LF_filter.x_filtered, base_estimator.forceLLEG)
     plug(robot.filters.ft_RF_filter.x_filtered, base_estimator.forceRLEG)
+    plug(robot.filters.ft_LF_filter.dx,         base_estimator.dforceLLEG)
+    plug(robot.filters.ft_RF_filter.dx,         base_estimator.dforceRLEG)
     plug(robot.filters.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
     plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
