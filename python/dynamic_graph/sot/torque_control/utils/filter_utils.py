@@ -50,23 +50,25 @@ def create_chebi2_lp_filter_Wn_03_N_4(name, dt, size):
 def mfreqz(fs, b, a=1, show_plot=True):
     import scipy.signal as signal
     from numpy import log10, pi, unwrap, arctan2, real, imag
-    from pylab import subplot, plot, ylim, ylabel, xlabel, title, subplots_adjust, show
+    from pylab import subplot, plot, ylim, ylabel, xlabel, title, subplots_adjust, show, grid
     w,h = signal.freqz(b,a)
     f = w*fs/(2*max(w))
     h_dB = 20 * log10 (abs(h))
-    subplot(211)
+    ax1 = subplot(211)
     plot(f,abs(h))
     ylim(0, 1)
     ylabel('Magnitude')
     xlabel(r'Frequency (Hz)')
     title(r'Frequency response')
-    subplot(212)
+    grid(True)
+    subplot(212, sharex=ax1)
     h_Phase = unwrap(arctan2(imag(h),real(h)))
     delay = h_Phase / (2*pi*f)
     plot(f,delay)
     ylabel('Delay (s)')
     xlabel(r'Frequency (Hz)')
     title(r'Phase delay')
+    grid(True)
     subplots_adjust(hspace=0.5)
     if(show_plot):
       show()

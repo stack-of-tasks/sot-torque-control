@@ -34,14 +34,14 @@ namespace dynamicgraph
                             << m_motorParameterKa_pSIN << m_motorParameterKa_nSIN <<  m_polySignDqSIN
 
 #define ESTIMATOR_INPUT_SIGNALS m_jointsVelocitiesSIN << m_jointsAccelerationsSIN << \
-                                m_jointsTorquesSIN
+                                m_jointsTorquesSIN << m_jointsTorquesDerivativeSIN
 
 #define TORQUE_INTEGRAL_INPUT_SIGNALS m_KiTorqueSIN << m_torque_integral_saturationSIN
-#define TORQUE_CONTROL_INPUT_SIGNALS  m_jointsTorquesDesiredSIN << m_KpTorqueSIN  << \
-                                      m_coulomb_friction_compensation_percentageSIN
+#define TORQUE_CONTROL_INPUT_SIGNALS  m_jointsTorquesDesiredSIN << m_KpTorqueSIN  << m_KdTorqueSIN \
+                                      << m_coulomb_friction_compensation_percentageSIN
 
 #define ALL_INPUT_SIGNALS       ESTIMATOR_INPUT_SIGNALS << TORQUE_INTEGRAL_INPUT_SIGNALS << \
-                                TORQUE_CONTROL_INPUT_SIGNALS << MODEL_INPUT_SIGNALS
+                                TORQUE_CONTROL_INPUT_SIGNALS << MODEL_INPUT_SIGNALS 
 #define ALL_OUTPUT_SIGNALS      m_uSOUT << m_torque_error_integralSOUT << m_smoothSignDqSOUT
 
       namespace dynamicgraph = ::dynamicgraph;
@@ -67,8 +67,10 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(jointsAccelerations,    dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsTorques,          dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsTorquesDesired,   dynamicgraph::Vector)
+        ,CONSTRUCT_SIGNAL_IN(jointsTorquesDerivative,dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(KpTorque,                     dynamicgraph::Vector)   // proportional gain for torque feedback controller
         ,CONSTRUCT_SIGNAL_IN(KiTorque,                     dynamicgraph::Vector)   // integral gain for torque feedback controller
+        ,CONSTRUCT_SIGNAL_IN(KdTorque,                     dynamicgraph::Vector)   // derivative gain for torque feedback controller
         ,CONSTRUCT_SIGNAL_IN(coulomb_friction_compensation_percentage, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector)
@@ -154,8 +156,11 @@ namespace dynamicgraph
         const Eigen::VectorXd& dq                 = m_jointsVelocitiesSIN(iter);
         const Eigen::VectorXd& ddq                = m_jointsAccelerationsSIN(iter);
         const Eigen::VectorXd& tau                = m_jointsTorquesSIN(iter);
+        const Eigen::VectorXd& dtau               = m_jointsTorquesDerivativeSIN(iter);
         const Eigen::VectorXd& tau_d              = m_jointsTorquesDesiredSIN(iter);
+//        const Eigen::VectorXd& dtau_d             = m_jointsTorquesDesiredDerivativeSIN(iter);
         const Eigen::VectorXd& kp                 = m_KpTorqueSIN(iter);
+        const Eigen::VectorXd& kd                 = m_KdTorqueSIN(iter);
         const Eigen::VectorXd& tauErrInt          = m_torque_error_integralSOUT(iter);
         const Eigen::VectorXd& colFricCompPerc    = m_coulomb_friction_compensation_percentageSIN(iter);
         const Eigen::VectorXd& motorParameterKt_p = m_motorParameterKt_pSIN(iter);
@@ -169,7 +174,7 @@ namespace dynamicgraph
         const Eigen::VectorXd& polySignDq         = m_polySignDqSIN(iter);
 //        const Eigen::VectorXd& dq_thr =        m_dq_thresholdSIN(iter);
 
-        m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + tauErrInt;
+        m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + tauErrInt - kd.cwiseProduct(dtau);
 
         int offset = 0;
         if(dq.size()==(int)(m_robot_util->m_nbJoints+6))

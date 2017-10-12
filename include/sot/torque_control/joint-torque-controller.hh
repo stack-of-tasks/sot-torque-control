@@ -84,9 +84,12 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(jointsVelocities,       dynamicgraph::Vector);      /// dq
         DECLARE_SIGNAL_IN(jointsAccelerations,    dynamicgraph::Vector);      /// ddq
         DECLARE_SIGNAL_IN(jointsTorques,          dynamicgraph::Vector);      /// estimated joints torques tau
+        DECLARE_SIGNAL_IN(jointsTorquesDerivative,dynamicgraph::Vector);      /// estimated joints torques derivative dtau
         DECLARE_SIGNAL_IN(jointsTorquesDesired,   dynamicgraph::Vector);      /// desired joints torques tauDes
+//        DECLARE_SIGNAL_IN(jointsTorquesDesiredDerivative, dynamicgraph::Vector);/// desired joints torques derivative dtauDes
         DECLARE_SIGNAL_IN(KpTorque,               dynamicgraph::Vector);      /// proportional gain for torque feedback controller
         DECLARE_SIGNAL_IN(KiTorque,               dynamicgraph::Vector);      /// integral gain for torque feedback controller
+        DECLARE_SIGNAL_IN(KdTorque,               dynamicgraph::Vector);      /// derivative gain for torque feedback controller
         DECLARE_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector);  /// integral error saturation
  
 //        DECLARE_SIGNAL_IN(dq_threshold,           dynamicgraph::Vector);      /// velocity sign threshold

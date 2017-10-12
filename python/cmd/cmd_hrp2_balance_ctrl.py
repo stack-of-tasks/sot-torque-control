@@ -8,16 +8,14 @@ robot = main_v3(robot, startSoT=True, go_half_sitting=False)
 
 robot.base_estimator.w_lf_in.value = 1.0
 robot.base_estimator.w_rf_in.value = 1.0
-robot.inv_dyn.v.value = 36*(0.,)
-robot.inv_dyn.kd_com.value = (0.0, 0.0, 0.0)
+robot.base_estimator.set_imu_weight(0.0)
+plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
+plug(robot.filters.estimator_kin.dx,         robot.current_ctrl.dq);
+plug(robot.filters.estimator_kin.dx,         robot.torque_ctrl.jointsVelocities);
+robot.inv_dyn.kd_com.value = 3*(0.,)
 robot.inv_dyn.kd_feet.value = 6*(0.,)
 robot.inv_dyn.kd_constraints.value = 6*(0.,)
 robot.inv_dyn.kp_com.value = (30.0, 30.0, 50.0)
-
-# enable integral feedback in torque control
-import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
-robot.torque_ctrl.torque_integral_saturation.value = tuple(0.9*motor_params.Kf_n / motor_params.Kt_n)
-robot.torque_ctrl.KiTorque.value = 30*(5.0,)
 
 # create ros topics
 create_topic(robot.ros, robot.device.robotState,                'robotState')
@@ -34,6 +32,9 @@ create_topic(robot.ros, robot.current_ctrl.i_real,              'i_real');
 create_topic(robot.ros, robot.ctrl_manager.u,                   'i_des')
 create_topic(robot.ros, robot.base_estimator.q,               'q');
 create_topic(robot.ros, robot.base_estimator.v,               'v');
+create_topic(robot.ros, robot.base_estimator.v_flex,          'v_flex');
+create_topic(robot.ros, robot.base_estimator.v_kin,           'v_kin');
+
 
 # wait until the motion has finished
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
@@ -52,58 +53,23 @@ robot.base_estimator.reset_foot_positions();
 robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
 robot.base_estimator.K_fb_feet_poses.value = 1e-3
 
-# plug encoder velocities (with different base vel) to balance controller
-from dynamic_graph.sot.core import Stack_of_vector, Selec_of_vector
-robot.v = Stack_of_vector('v');
-plug(robot.base_estimator.v_flex, robot.v.sin1);
-plug(robot.filters.estimator_kin.dx, robot.v.sin2)
-robot.v.selec1(0,6)
-robot.v.selec2(0,30)
-plug(robot.v.sout, robot.inv_dyn.v)
+# enable integral feedback in torque control
+import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+robot.torque_ctrl.torque_integral_saturation.value = tuple(0.9*motor_params.Kf_n / motor_params.Kt_n)
+robot.torque_ctrl.KiTorque.value = 30*(3.0,)
 
-# Compute finite differences of base position
-from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
-robot.q_fd = create_butter_lp_filter_Wn_05_N_3('q_filter', robot.timeStep, 36)
-plug(robot.base_estimator.q, robot.q_fd.x)
-create_topic(robot.ros, robot.q_fd.dx,         'q_fd')
-
-# Replace force sensor filters
-from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
-robot.force_LF_filter = create_butter_lp_filter_Wn_05_N_3('force_LF_filter', robot.timeStep, 6)
-robot.force_RF_filter = create_butter_lp_filter_Wn_05_N_3('force_RF_filter', robot.timeStep, 6)
-plug(robot.device.forceLLEG, robot.force_LF_filter.x)
-plug(robot.force_LF_filter.x_filtered, robot.base_estimator.forceLLEG)
-plug(robot.force_LF_filter.dx, robot.base_estimator.dforceLLEG)
-plug(robot.device.forceRLEG, robot.force_RF_filter.x)
-plug(robot.force_RF_filter.x_filtered, robot.base_estimator.forceRLEG)
-plug(robot.force_RF_filter.dx, robot.base_estimator.dforceRLEG)
+# compute derivatives of joint torques
+from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
+torque_der = NumericalDifference("torque_der");
+plug(robot.torque_ctrl.jointsTorques, torque_der.x)
+torque_der.init(robot.timeStep, 30, 0.015, 2);
+create_topic(robot.ros, torque_der.dx, 'dtau')
+plug(torque_der.dx, robot.torque_ctrl.jointsTorquesDerivative)
 
 # set dz comp and bemf comp to zero
 robot.ctrl_manager.percentageDriverDeadZoneCompensation.value = 30*(0.,)
 robot.ctrl_manager.percentage_bemf_compensation.value = 30*(0.,)
 robot.ctrl_manager.ki_current.value = 30*(0.,)
-# disable friction compensatio
-robot.torque_ctrl.motorParameterKv_p.value = 30*(0.,)
-robot.torque_ctrl.motorParameterKv_n.value = 30*(0.,)
-# disable flexibility estimation and IMU
-robot.base_estimator.forceLLEG.value = robot.filters.ft_LF_filter.x_filtered.value
-robot.base_estimator.forceRLEG.value = robot.filters.ft_RF_filter.x_filtered.value
-robot.base_estimator.set_imu_weight(0.0)
-# change delay of low-pass filters
-dt = robot.timeStep
-delay = 0.06
-robot.filters.ft_RF_filter.init( dt, 6, delay, 1)
-robot.filters.ft_LF_filter.init( dt, 6, delay, 1)
-robot.filters.ft_RH_filter.init( dt, 6, delay, 1)
-robot.filters.ft_LH_filter.init( dt, 6, delay, 1)
-robot.filters.gyro_filter.init(  dt, 3, delay, 1)
-robot.filters.acc_filter.init(   dt, 3, delay, 1)
-robot.filters.estimator_kin.init(dt,30, delay, 2);
-
-# connect old velocity estimator
-plug(robot.filters.estimator_kin.dx,         robot.ctrl_manager.dq);
-plug(robot.filters.estimator_kin.dx,         robot.torque_ctrl.jointsVelocities);
-plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
 
 # switch to position control
 go_to_position(robot.traj_gen, robot.device.robotState.value[6:], 3.0)

@@ -228,7 +228,9 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     plug(robot.filters.estimator_kin.ddx,               torque_ctrl.jointsAccelerations);
     plug(robot.estimator_ft.jointsTorques,              torque_ctrl.jointsTorques);
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
+    torque_ctrl.jointsTorquesDerivative.value           = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
+    torque_ctrl.KdTorque.value                          = tuple(conf.k_d_torque);
     torque_ctrl.KiTorque.value                          = tuple(conf.k_i_torque);
     torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
     torque_ctrl.coulomb_friction_compensation_percentage.value = NJ*(conf.COULOMB_FRICTION_COMPENSATION_PERCENTAGE,);
