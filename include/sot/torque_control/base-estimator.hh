@@ -149,6 +149,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(v_kin,                     dynamicgraph::Vector);  /// 6d robot velocities from kinematic only   (encoders derivative)
         DECLARE_SIGNAL_OUT(v_flex,                    dynamicgraph::Vector);  /// 6d robot velocities from flexibility only (force sensor derivative)
         DECLARE_SIGNAL_OUT(v_imu,                     dynamicgraph::Vector);  /// 6d robot velocities form imu only (accelerometer integration + gyro)
+        DECLARE_SIGNAL_OUT(v_gyr,                     dynamicgraph::Vector);  /// 6d robot velocities form gyroscope only (as if gyro measured the pure angular ankle velocities)
         DECLARE_SIGNAL_OUT(lf_xyzquat,                dynamicgraph::Vector);  /// left foot pose
         DECLARE_SIGNAL_OUT(rf_xyzquat,                dynamicgraph::Vector);  /// right foot pose
         DECLARE_SIGNAL_OUT(a_ac,                      dynamicgraph::Vector);  /// acceleration of the base in the world with DC component removed
@@ -198,7 +199,8 @@ namespace dynamicgraph {
         Vector6           m_v_kin;            /// 6d robot velocities from kinematic only   (encoders derivative)
         Vector6           m_v_flex;           /// 6d robot velocities from flexibility only (force sensor derivative)
         Vector6           m_v_imu;            /// 6d robot velocities form imu only (accelerometer integration + gyro)
-        
+        Vector6           m_v_gyr;            /// 6d robot velocities form gyroscope only (as if gyro measured the pure angular ankle velocities)
+
         Vector3           m_v_ac;             /// velocity of the base in the world with DC component removed
         Vector3           m_a_ac;             /// acceleration of the base in the world with DC component removed
 

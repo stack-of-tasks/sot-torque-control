@@ -105,7 +105,7 @@ namespace dynamicgraph
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN <<  m_dforceLLEGSIN << m_dforceRLEGSIN << \
                           m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN << m_accelerometerSIN << m_gyroscopeSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
-                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_flexSOUT
+                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_gyrSOUT << m_v_flexSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -154,6 +154,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(a_ac,                       dynamicgraph::Vector, m_vSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v_flex,                     dynamicgraph::Vector, m_vSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v_imu,                      dynamicgraph::Vector, m_vSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(v_gyr,                      dynamicgraph::Vector, m_vSOUT)
         ,CONSTRUCT_SIGNAL_OUT(v_kin,                      dynamicgraph::Vector, m_vSOUT)
         ,CONSTRUCT_SIGNAL_OUT(lf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
         ,CONSTRUCT_SIGNAL_OUT(rf_xyzquat,                 dynamicgraph::Vector, m_qSOUT)
@@ -899,6 +900,19 @@ namespace dynamicgraph
           m_v_flex.head<3>() = m_oRff * m_v_flex.head<3>();
 
 
+
+          /* Get an estimate of linear velocities from gyroscope only*/
+          // we make the asumtion than we are 'turning around the foot' with pure angular velocity in the ankle measured by the gyro
+          const Matrix3 ffRimu = (m_data->oMf[m_IMU_body_id]).rotation();
+          const Matrix3 lfRimu = ffMlf.rotation().transpose() * ffRimu;
+          const Matrix3 rfRimu = ffMrf.rotation().transpose() * ffRimu;
+          Motion v_gyr_ankle_l( Vector3(0.,0.,0.),  lfRimu * Vector3(gyr_imu(0),gyr_imu(1),0.));
+          Motion v_gyr_ankle_r( Vector3(0.,0.,0.),  rfRimu * Vector3(gyr_imu(0),gyr_imu(1),0.));
+          Vector6 v_gyr_l = -ffMlf.inverse().act(v_gyr_ankle_l).toVector();
+          Vector6 v_gyr_r = -ffMrf.inverse().act(v_gyr_ankle_r).toVector();
+          m_v_gyr =  0.5*(v_gyr_l + v_gyr_r);
+
+
           /* Get an estimate of linear velocities from filtered accelerometer integration */
           
           /* rotate acceleration to express it in the world frame */
@@ -993,6 +1007,18 @@ namespace dynamicgraph
         }
         m_vSOUT(iter);
         s = m_v_imu;
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(v_gyr, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal v_gyr before initialization!");
+          return s;
+        }
+        m_vSOUT(iter);
+        s = m_v_gyr;
         return s;
       }
       
