@@ -7,6 +7,11 @@ create_topic(robot.ros, robot.ctrl_manager.current_errors,        'i_err');
 create_topic(robot.ros, robot.estimator_ft.jointsTorques,       'tau');
 create_topic(robot.ros, robot.torque_ctrl.jointsTorquesDesired, 'tau_des');
 
+# set dz comp and bemf comp to zero
+robot.ctrl_manager.percentageDriverDeadZoneCompensation.value = 30*(0.,)
+robot.ctrl_manager.percentage_bemf_compensation.value = 30*(0.,)
+robot.ctrl_manager.ki_current.value = 30*(0.,)
+
 # create trajectory generator for torque
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
 torque_traj_gen = NdTrajectoryGenerator('torque_traj_gen')

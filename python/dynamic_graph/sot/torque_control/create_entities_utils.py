@@ -45,6 +45,11 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
     plug(robot.imu_offset_compensation.gyrometer_out,     base_estimator.gyroscope);
     base_estimator.K_fb_feet_poses.value = conf.K_fb_feet_poses;
+    try:
+        base_estimator.w_lf_in.value = conf.w_lf_in;
+        base_estimator.w_rf_in.value = conf.w_rf_in;
+    except:
+        pass;
     
     base_estimator.set_imu_weight(conf.w_imu);
     base_estimator.set_stiffness_right_foot(conf.K);
