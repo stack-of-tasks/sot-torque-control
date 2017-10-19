@@ -47,6 +47,7 @@ def create_chebi2_lp_filter_Wn_03_N_4(name, dt, size):
     return lp_filter;
 
 def filter_series(b1, a1, b2, a2):
+   import numpy as np    
    b = np.polymul(b1,b2)
    a = np.polymul(a1,a2)
    return b, a
