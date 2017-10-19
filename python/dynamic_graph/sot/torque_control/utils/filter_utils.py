@@ -46,6 +46,22 @@ def create_chebi2_lp_filter_Wn_03_N_4(name, dt, size):
                              ( 1.        , -3.7862251 ,  5.38178322, -3.40348456,  0.80798333));
     return lp_filter;
 
+def filter_series(b1, a1, b2, a2):
+   b = np.polymul(b1,b2)
+   a = np.polymul(a1,a2)
+   return b, a
+
+def create_chebi1_checby2_series_filter(name, dt, size):
+   #b1,a1=cheby2(2, 20,0.05);
+   #b2,a2 = cheby1(4,0.05,0.08);
+   #(b,a) = filter_series(b1,a1,b2,a2);
+   lp_filter = FilterDifferentiator(name);
+   
+   lp_filter.init(dt, size, 
+                  (2.16439898e-05, 4.43473520e-05, -1.74065002e-05,
+                   -8.02197247e-05,  -1.74065002e-05,   4.43473520e-05, 2.16439898e-05),
+                  (1.,-5.32595322,11.89749109,-14.26803139, 9.68705647,  -3.52968633,   0.53914042))
+   return lp_filter;
 
 def mfreqz(fs, b, a=1, show_plot=True):
     import scipy.signal as signal
