@@ -1,10 +1,14 @@
 # modify file /opt/ros/indigo/lib/python2.7/dist-packages/rqt_py_console/spyder_console_widget.py (moduleCompletion -> module_completion)
 
+# file to modify joint bounds: 
+# nano ~/devel/hrp2-n14-system/src/direct-access/hrp2-io-boards-init.cpp
+
 from dynamic_graph.sot.torque_control.main import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import smoothly_set_signal,  stop_sot
 from dynamic_graph import plug
 robot.timeStep=0.0015
 robot = main_v3(robot, startSoT=True, go_half_sitting=False)
+go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
 
 robot.base_estimator.set_imu_weight(0.0)
 plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
@@ -29,7 +33,7 @@ create_topic(robot.ros, robot.base_estimator.q,               'q');
 create_topic(robot.ros, robot.base_estimator.v,               'v');
 create_topic(robot.ros, robot.base_estimator.v_flex,          'v_flex');
 create_topic(robot.ros, robot.base_estimator.v_kin,           'v_kin');
-
+create_topic(robot.ros, robot.base_estimator.v_gyr,           'v_gyr');
 
 # wait until the motion has finished
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)

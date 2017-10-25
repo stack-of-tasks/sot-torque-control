@@ -963,7 +963,9 @@ namespace dynamicgraph
 
           
           //~ m_v_sot.head<6>() = m_v_kin;
-          m_v_sot.head<6>() = m_v_flex + m_v_kin;
+          //~ m_v_sot.head<6>() = m_v_flex + m_v_kin;
+          //~ m_v_sot.head<6>() = m_v_gyr + m_v_kin;
+          m_v_sot.head<6>() = m_v_gyr;
           //~ m_v_sot.head<6>() = m_v_imu; 
           m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
 

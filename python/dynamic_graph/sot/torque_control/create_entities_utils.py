@@ -42,8 +42,10 @@ def create_base_estimator(robot, dt, conf, robot_name="robot"):
     plug(robot.filters.ft_RF_filter.dx,         base_estimator.dforceRLEG)
     plug(robot.filters.estimator_kin.dx,            base_estimator.joint_velocities);
     plug(robot.imu_filter.imu_quat,         base_estimator.imu_quaternion);
-    plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
-    plug(robot.imu_offset_compensation.gyrometer_out,     base_estimator.gyroscope);
+    #plug(robot.imu_offset_compensation.accelerometer_out, base_estimator.accelerometer);
+    #plug(robot.imu_offset_compensation.gyrometer_out,     base_estimator.gyroscope);
+    plug(robot.filters.gyro_filter.x_filtered,             base_estimator.gyroscope);
+    plug(robot.filters.acc_filter.x_filtered,              base_estimator.accelerometer);
     base_estimator.K_fb_feet_poses.value = conf.K_fb_feet_poses;
     try:
         base_estimator.w_lf_in.value = conf.w_lf_in;
