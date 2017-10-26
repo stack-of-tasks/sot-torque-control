@@ -67,7 +67,7 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
         void init(const double& dt);
         void update_offset(const double & duration);
-
+        void setGyroDCBlockerParameter(const double & alpha);
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(accelerometer_in,          dynamicgraph::Vector);  /// raw accelerometer data
         DECLARE_SIGNAL_IN(gyrometer_in,              dynamicgraph::Vector);  /// raw gyrometer data
@@ -92,7 +92,7 @@ namespace dynamicgraph {
         float           m_dt;		      /// sampling time in seconds
         int             m_update_cycles_left; /// number of update cycles left
         int             m_update_cycles;      /// total number of update cycles to perform
-
+        double          m_a_gyro_DC_blocker;  /// filter parameter to remove DC from gyro online (should be close to <1.0 and equal to 1.0 for disabling)
         Vector3         m_gyro_offset;        /// gyrometer offset
         Vector3         m_acc_offset;         /// accelerometer offset
 

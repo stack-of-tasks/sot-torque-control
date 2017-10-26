@@ -1,17 +1,3 @@
-//=====================================================================================================
-//
-// Implementation of Madgwick's IMU and AHRS algorithms.
-// See: http://www.x-io.co.uk/node/8#open_source_ahrs_and_imu_algorithms
-//
-// Date			Author          Notes
-// 29/09/2011	SOH Madgwick    Initial release
-// 02/10/2011	SOH Madgwick	Optimised for reduced CPU load
-// 11/05/2017   T Flayols       Make it a dynamic-graph entity
-//
-//=====================================================================================================
-
-
-
 #include <sot/torque_control/imu_offset_compensation.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
@@ -57,6 +43,7 @@ namespace dynamicgraph
         ,m_update_cycles_left(0)
         ,m_update_cycles(0)
         ,m_dt(0.001)
+        ,m_a_gyro_DC_blocker(1.0)
 
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -87,6 +74,13 @@ namespace dynamicgraph
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_dt = dt;
         m_initSucceeded = true;
+      }
+
+      void ImuOffsetCompensation::setGyroDCBlockerParameter(const double & alpha)
+      {
+        if(alpha>1.0 || alpha<=0.0)
+          return SEND_MSG("GyroDCBlockerParameter must be > 0 and <= 1", MSG_TYPE_ERROR);
+        m_a_gyro_DC_blocker = alpha;
       }
 
       void ImuOffsetCompensation::update_offset(const double& duration)
@@ -150,6 +144,9 @@ namespace dynamicgraph
         const dynamicgraph::Vector& gyrometer = m_gyrometer_inSIN(iter);
         if(s.size()!=3)
           s.resize(3);
+        //estimate bias online with the assumption that average angular velocity should be zero.
+        if (m_a_gyro_DC_blocker !=1.0)
+            m_gyro_offset = m_gyro_offset*m_a_gyro_DC_blocker + (1.-m_a_gyro_DC_blocker)*gyrometer;
         s = gyrometer - m_gyro_offset;
         return s;
       }
