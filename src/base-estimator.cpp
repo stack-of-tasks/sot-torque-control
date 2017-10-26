@@ -289,7 +289,10 @@ namespace dynamicgraph
           m_q_sot.setZero(m_robot_util->m_nbJoints+6);
           m_v_pin.setZero(m_robot_util->m_nbJoints+6);
           m_v_sot.setZero(m_robot_util->m_nbJoints+6);
-          
+          m_v_kin.setZero(m_robot_util->m_nbJoints+6);
+          m_v_flex.setZero(m_robot_util->m_nbJoints+6);
+          m_v_imu.setZero(m_robot_util->m_nbJoints+6);
+          m_v_gyr.setZero(m_robot_util->m_nbJoints+6);
           m_sole_M_ftSens = SE3(Matrix3::Identity(),
                                 -Eigen::Map<const Vector3>(&m_robot_util->m_foot_util.m_Right_Foot_Force_Sensor_XYZ(0)));
         
