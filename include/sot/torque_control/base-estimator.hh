@@ -196,10 +196,10 @@ namespace dynamicgraph {
         Vector6           m_K_lf;             /// 6d stiffness of left foot spring
 
 
-        Vector6           m_v_kin;            /// 6d robot velocities from kinematic only   (encoders derivative)
-        Vector6           m_v_flex;           /// 6d robot velocities from flexibility only (force sensor derivative)
-        Vector6           m_v_imu;            /// 6d robot velocities form imu only (accelerometer integration + gyro)
-        Vector6           m_v_gyr;            /// 6d robot velocities form gyroscope only (as if gyro measured the pure angular ankle velocities)
+        Eigen::VectorXd   m_v_kin;            /// 6d robot velocities from kinematic only   (encoders derivative)
+        Eigen::VectorXd   m_v_flex;           /// 6d robot velocities from flexibility only (force sensor derivative)
+        Eigen::VectorXd   m_v_imu;            /// 6d robot velocities form imu only (accelerometer integration + gyro)
+        Eigen::VectorXd   m_v_gyr;            /// 6d robot velocities form gyroscope only (as if gyro measured the pure angular ankle velocities)
 
         Vector3           m_v_ac;             /// velocity of the base in the world with DC component removed
         Vector3           m_a_ac;             /// acceleration of the base in the world with DC component removed

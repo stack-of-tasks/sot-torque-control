@@ -878,7 +878,7 @@ namespace dynamicgraph
           Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector();
           v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
           
-          m_v_kin = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base. 
+          m_v_kin.head<6>() = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base.
           
           /* Compute velocity induced by the flexibility */
           Vector6 v_flex_l;
@@ -895,8 +895,8 @@ namespace dynamicgraph
           Eigen::Matrix<double, 12, 1> b;
           b << v_flex_l,
                v_flex_r;         
-          //~ m_v_flex = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
-          m_v_flex = (A.transpose() * A).ldlt().solve(A.transpose() * b);
+          //~ m_v_flex.head<6>() = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+          m_v_flex.head<6>() = (A.transpose() * A).ldlt().solve(A.transpose() * b);
           m_v_flex.head<3>() = m_oRff * m_v_flex.head<3>();
 
 
@@ -906,11 +906,19 @@ namespace dynamicgraph
           const Matrix3 ffRimu = (m_data->oMf[m_IMU_body_id]).rotation();
           const Matrix3 lfRimu = ffMlf.rotation().transpose() * ffRimu;
           const Matrix3 rfRimu = ffMrf.rotation().transpose() * ffRimu;
-          Motion v_gyr_ankle_l( Vector3(0.,0.,0.),  lfRimu * Vector3(gyr_imu(0),gyr_imu(1),0.));
-          Motion v_gyr_ankle_r( Vector3(0.,0.,0.),  rfRimu * Vector3(gyr_imu(0),gyr_imu(1),0.));
+
+          const SE3 chestMimu(Matrix3::Identity(), Vector3(-0.13, 0.0,  0.118)); ///TODO Read this transform from setable parameter /// TODO chesk the sign of the translation
+          const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);
+          const SE3 imuMff = (ffMchest * chestMimu).inverse();
+          //gVw_a =  gVo_g + gHa.act(aVb_a)-gVb_g //angular velocity in the ankle from gyro and d_enc
+          const Frame & f_imu = m_model.frames[m_IMU_body_id];
+          Vector3 gVo_a_l = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2));// +(imuMff*ffMlf).act(v_lf_local).angular() - m_data->v[f_imu.parent].angular();
+          Vector3 gVo_a_r = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2));// +(imuMff*ffMrf).act(v_rf_local).angular() - m_data->v[f_imu.parent].angular();
+          Motion v_gyr_ankle_l( Vector3(0.,0.,0.),  lfRimu * gVo_a_l);
+          Motion v_gyr_ankle_r( Vector3(0.,0.,0.),  rfRimu * gVo_a_r);
           Vector6 v_gyr_l = -ffMlf.inverse().act(v_gyr_ankle_l).toVector();
           Vector6 v_gyr_r = -ffMrf.inverse().act(v_gyr_ankle_r).toVector();
-          m_v_gyr =  0.5*(v_gyr_l + v_gyr_r);
+          m_v_gyr.head<6>() =  0.5*(v_gyr_l + v_gyr_r);
 
 
           /* Get an estimate of linear velocities from filtered accelerometer integration */
@@ -952,23 +960,27 @@ namespace dynamicgraph
           const Vector3 imuVimu = m_oRchest.transpose() * ACvel;
           /* Here we could remove dc from gyrometer to remove bias*/  ///TODO 
           const Motion imuWimu(imuVimu,gyr_imu);
-          const Frame & f_imu = m_model.frames[m_IMU_body_id];
+          //const Frame & f_imu = m_model.frames[m_IMU_body_id];
           const Motion ffWchest = m_data->v[f_imu.parent];
-          const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);
-          const SE3 chestMimu(Matrix3::Identity(), +1.0*Vector3(-0.13, 0.0,  0.118)); ///TODO Read this transform from setable parameter /// TODO chesk the sign of the translation
+          //const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);
+          //const SE3 chestMimu(Matrix3::Identity(), +1.0*Vector3(-0.13, 0.0,  0.118)); ///TODO Read this transform from setable parameter /// TODO chesk the sign of the translation
           const SE3 ffMimu = ffMchest * chestMimu;
           const Motion v= ffMimu.act(imuWimu) ;//- ffWchest;
-          m_v_imu = v.toVector();
+          m_v_imu.head<6>() = v.toVector();
           m_v_imu.head<3>() = m_oRff * m_v_imu.head<3>();
 
           
-          //~ m_v_sot.head<6>() = m_v_kin;
-          //~ m_v_sot.head<6>() = m_v_flex + m_v_kin;
-          //~ m_v_sot.head<6>() = m_v_gyr + m_v_kin;
-          m_v_sot.head<6>() = m_v_gyr;
-          //~ m_v_sot.head<6>() = m_v_imu; 
-          m_v_sot.tail(m_robot_util->m_nbJoints) = dq;
+          //~ m_v_sot.head<6>() = m_v_kin.head<6>();
+          //~ m_v_sot.head<6>() = m_v_flex.head<6>() + m_v_kin.head<6>();
+          //~ m_v_sot.head<6>() = m_v_gyr.head<6>() + m_v_kin.head<6>();
+          m_v_sot.head<6>() = m_v_gyr.head<6>();
+          //~ m_v_sot.head<6>() = m_v_imu.head<6>();
 
+          m_v_sot.tail( m_robot_util->m_nbJoints) = dq;
+          m_v_kin.tail( m_robot_util->m_nbJoints) = dq;
+          m_v_flex.tail(m_robot_util->m_nbJoints) = dq;
+          m_v_gyr.tail( m_robot_util->m_nbJoints) = dq;
+          m_v_imu.tail( m_robot_util->m_nbJoints) = dq;
           s = m_v_sot;
 
         }
