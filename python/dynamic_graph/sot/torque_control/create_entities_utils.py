@@ -264,6 +264,15 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     except:        
         plug(robot.ff_locator.base6dFromFoot_encoders, ctrl.q);
         plug(robot.ff_locator.v, ctrl.v);
+        
+    try:
+        from dynamic_graph.sot.core import Selec_of_vector
+        robot.ddq_des = Selec_of_vector('ddq_des')
+        plug(ctrl.dv_des, robot.ddq_des.sin);
+        robot.ddq_des.selec(6,NJ+6);
+        plug(robot.ddq_des.sout, robot.estimator_ft.ddqRef);
+    except:
+        print "WARNING: Could not connect dv_des from BalanceController to ForceTorqueEstimator";
 
     plug(robot.estimator_ft.contactWrenchRightSole, ctrl.wrench_right_foot);
     plug(robot.estimator_ft.contactWrenchLeftSole,  ctrl.wrench_left_foot);

@@ -1,15 +1,11 @@
 from dynamic_graph.sot.torque_control.tests.test_balance_ctrl_openhrp import *
+np.set_printoptions(precision=3, suppress=True)
 robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 robot.ctrl_manager.setStreamPrintPeriod(0.5);
 start_sot()
-np.linalg.norm(robot.device.robotVelocity.value)
-sleep(5)
-ent.ctrl_manager.setCtrlMode('all','torque')
-robot.ctrl_manager.setStreamPrintPeriod(0.2);
-robot.base_estimator.set_imu_weight(0.0);
 
-create_topic(robot.ros, robot.estimator_kin.dx, 'dq_est');
+create_topic(robot.ros, robot.filters.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
 create_topic(robot.ros, robot.inv_dyn.com_ref_pos,  'com_ref_pos');
 create_topic(robot.ros, robot.inv_dyn.com_ref_vel,  'com_ref_vel');
@@ -34,10 +30,16 @@ create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchL
 create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
 
+ent.ctrl_manager.setCtrlMode('all','torque')
+robot.base_estimator.set_imu_weight(0.0);
+
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
 robot.com_traj_gen.startSinusoid(1, -0.05, 1.5)
+
+create_topic(robot.ros, robot.inv_dyn.tau_des,            'tau_des');
+create_topic(robot.ros, robot.estimator_ft.jointsTorques, 'tau_est');
 
 plug(robot.estimator_kin.dx,    robot.base_estimator.joint_velocities)
 plug(robot.q.sout,              robot.inv_dyn.q);
