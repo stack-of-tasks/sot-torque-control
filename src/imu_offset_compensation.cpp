@@ -62,6 +62,12 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &ImuOffsetCompensation::update_offset,
                                     docCommandVoid1("Update the IMU offsets.",
                                                     "Duration of the update phase in seconds (double)")));
+        addCommand("setGyroDCBlockerParameter",
+                   makeCommandVoid1(*this, &ImuOffsetCompensation::setGyroDCBlockerParameter,
+                                    docCommandVoid1("Set DC Blocker filter parameter.",
+                                                    "alpha (double)")));
+
+
       }
 
       /* ------------------------------------------------------------------- */
