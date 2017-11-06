@@ -29,10 +29,15 @@ create_topic(robot.ros, robot.device.forceRLEG,       'forceRLEG');
 create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
 create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
+#create_topic(robot.ros, robot.torque_ctrl.dq_motor,       'dq_motor');
+#create_topic(robot.ros, robot.torque_ctrl.jointsAccelerationsDesired,       'ddq_des');
 
+#robot.torque_ctrl.velLeakingRate.value = 30*(0.,)
+#robot.torque_ctrl.reset_ddq_integral();
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(0.0);
 
+robot.com_traj_gen.playSpline("/local/rbudhira/git/proyan/parametric-curves/spline1.out")
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
@@ -118,4 +123,3 @@ traj_gen.startSinusoid('rar', -0.3, 1.0);
 
 tracer.start();
 tracer = reset_tracer(robot,tracer)
-
