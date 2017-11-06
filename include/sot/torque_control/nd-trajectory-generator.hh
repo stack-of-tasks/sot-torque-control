@@ -40,6 +40,7 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
+#include <parametriccurves/spline.hpp>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -79,6 +80,8 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
 
         void playTrajectoryFile(const std::string& fileName);
+
+        void playSpline(const std::string& fileName);
 
         /** Print the current value of the specified component. */
         void getValue(const int& id);
@@ -148,12 +151,14 @@ namespace dynamicgraph {
           JTG_LIN_CHIRP,
           JTG_TRIANGLE,
           JTG_CONST_ACC,
-          JTG_TEXT_FILE
+          JTG_TEXT_FILE,
+          JTG_SPLINE
         };
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
-        double            m_dt;               /// control loop time period
+        double            m_dt;               /// control loop time step.
+        double            m_t;                /// current control loop time.
         unsigned int      m_n;                /// size of ouput vector
         unsigned int      m_iterLast;         /// last iter index
 
@@ -166,6 +171,7 @@ namespace dynamicgraph {
         std::vector<TriangleTrajectoryGenerator*>    m_triangleTrajGen;
         std::vector<ConstantAccelerationTrajectoryGenerator*>    m_constAccTrajGen;
         TextFileTrajectoryGenerator*                 m_textFileTrajGen;
+        parametriccurves::Spline<double, Eigen::Dynamic>*       m_splineTrajGen;
 
       }; // class NdTrajectoryGenerator
       

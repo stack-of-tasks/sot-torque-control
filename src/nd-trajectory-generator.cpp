@@ -56,6 +56,7 @@ namespace dynamicgraph
             ,m_firstIter(true)
             ,m_initSucceeded(false)
             ,m_n(1)
+            ,m_t(0)
             ,m_iterLast(0)
       {
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
@@ -85,6 +86,11 @@ namespace dynamicgraph
                                                     "(int)    index",
                                                     "(double) final value",
                                                     "(double) time to reach the final value in sec")));
+
+        addCommand("playSpline",
+                   makeCommandVoid1(*this, &NdTrajectoryGenerator::playSpline,
+                                    docCommandVoid1("Load serialized spline from file",
+                                                    "(string)   filename")));
 
         addCommand("startTriangle",
                    makeCommandVoid4(*this, &NdTrajectoryGenerator::startTriangle,
@@ -149,6 +155,7 @@ namespace dynamicgraph
           m_noTrajGen[i]        = new NoTrajectoryGenerator(1);
           m_currentTrajGen[i]   = m_noTrajGen[i];
         }
+        m_splineTrajGen   = new parametriccurves::Spline<double,Eigen::Dynamic>();
         m_textFileTrajGen = new TextFileTrajectoryGenerator(dt, n);
         m_initSucceeded = true;
       }
@@ -194,6 +201,10 @@ namespace dynamicgraph
               for(unsigned int i=0; i<m_n; i++)
                 s(i) = m_textFileTrajGen->getPos()[i];
             }
+            else if(m_status[0]==JTG_SPLINE)
+            {
+              s = (*m_splineTrajGen)(m_t);
+            }
             else
               for(unsigned int i=0; i<m_n; i++)
                 s(i) = m_currentTrajGen[i]->getPos()(0);
@@ -217,6 +228,24 @@ namespace dynamicgraph
             if(m_textFileTrajGen->isTrajectoryEnded())
               SEND_MSG("Text file trajectory ended.", MSG_TYPE_INFO);
           }
+          else if(m_status[0]==JTG_SPLINE)
+          {
+            m_t += m_dt;
+            if(m_t >= m_splineTrajGen->tmax())
+            {
+              s = (*m_splineTrajGen)(m_splineTrajGen->tmax());
+              for(unsigned int i=0; i<m_n; i++)
+              {
+                m_noTrajGen[i]->set_initial_point(s(i));
+                m_status[i] = JTG_STOP;
+              }
+              SEND_MSG("Spline trajectory ended.", MSG_TYPE_INFO);
+              m_t =0;
+            }
+            else
+              s = (*m_splineTrajGen)(m_t);
+            
+          }
           else
           {
             for(unsigned int i=0; i<m_n; i++)
@@ -231,7 +260,6 @@ namespace dynamicgraph
               }
             }
           }
-
         }
         getProfiler().stop(PROFILE_ND_POSITION_DESIRED_COMPUTATION);
 
@@ -255,10 +283,11 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_textFileTrajGen->getVel()[i];
         }
+        else if(m_status[0]==JTG_SPLINE)
+          s = m_splineTrajGen->derivate(m_t, 1);
         else
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_currentTrajGen[i]->getVel()(0);
-
         return s;
       }
 
@@ -280,10 +309,11 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_textFileTrajGen->getAcc()[i];
         }
+        else if(m_status[0]==JTG_SPLINE)
+          s = m_splineTrajGen->derivate(m_t, 2);
         else
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_currentTrajGen[i]->getAcc()(0);
-
         return s;
       }
 
@@ -341,6 +371,54 @@ namespace dynamicgraph
         for(unsigned int i=0; i<m_n; i++)
         {
           m_status[i]         = JTG_TEXT_FILE;
+        }
+      }
+
+      void NdTrajectoryGenerator::playSpline(const std::string& filename)
+      {
+        if(!m_initSucceeded)
+          return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
+
+        for(unsigned int i=0; i<m_n; i++)
+          if(m_status[i]!=JTG_STOP)
+            return SEND_MSG("You cannot control component "
+                            +toString(i)+" because it is already controlled.",
+                            MSG_TYPE_ERROR);
+
+        if(!m_splineTrajGen->loadSpline(filename))
+          return SEND_MSG("Error while loading spline"+filename, MSG_TYPE_ERROR);
+
+        // check current configuration is not too far from initial configuration
+        bool needToMoveToInitConf = false;
+        const VectorXd& xInit = (*m_splineTrajGen)(0);
+        for(unsigned int i=0; i<m_n; i++)
+          if(fabs(xInit[i] - m_currentTrajGen[i]->getPos()(0)) > 0.001)
+          {
+            needToMoveToInitConf = true;
+            SEND_MSG("Component "+ toString(i) +" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
+          }
+
+        // if necessary move joints to initial configuration
+        if(needToMoveToInitConf)
+        {
+          for(unsigned int i=0; i<m_n; i++)
+          {
+//            if(!isJointInRange(i, xInit[i]))
+//              return;
+
+            m_minJerkTrajGen[i]->set_initial_point(m_noTrajGen[i]->getPos());
+            m_minJerkTrajGen[i]->set_final_point(xInit[i]);
+            m_minJerkTrajGen[i]->set_trajectory_time(4.0);
+            m_status[i] = JTG_MIN_JERK;
+            m_currentTrajGen[i] = m_minJerkTrajGen[i];
+          }
+          return;
+        }
+
+        m_t = 0.0;
+        for(unsigned int i=0; i<m_n; i++)
+        {
+          m_status[i]         = JTG_SPLINE;
         }
       }
 
