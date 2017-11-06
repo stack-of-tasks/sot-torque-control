@@ -915,8 +915,8 @@ namespace dynamicgraph
           const SE3 imuMff = (ffMchest * chestMimu).inverse();
           //gVw_a =  gVo_g + gHa.act(aVb_a)-gVb_g //angular velocity in the ankle from gyro and d_enc
           const Frame & f_imu = m_model.frames[m_IMU_body_id];
-          Vector3 gVo_a_l = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2));// +(imuMff*ffMlf).act(v_lf_local).angular() - m_data->v[f_imu.parent].angular();
-          Vector3 gVo_a_r = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2));// +(imuMff*ffMrf).act(v_rf_local).angular() - m_data->v[f_imu.parent].angular();
+          Vector3 gVo_a_l = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2)) + (imuMff*ffMlf).act(v_lf_local).angular() - m_data->v[f_imu.parent].angular();
+          Vector3 gVo_a_r = Vector3(gyr_imu(0),gyr_imu(1),gyr_imu(2)) + (imuMff*ffMrf).act(v_rf_local).angular() - m_data->v[f_imu.parent].angular();
           Motion v_gyr_ankle_l( Vector3(0.,0.,0.),  lfRimu * gVo_a_l);
           Motion v_gyr_ankle_r( Vector3(0.,0.,0.),  rfRimu * gVo_a_r);
           Vector6 v_gyr_l = -ffMlf.inverse().act(v_gyr_ankle_l).toVector();
@@ -975,8 +975,8 @@ namespace dynamicgraph
           
           //~ m_v_sot.head<6>() = m_v_kin.head<6>();
           //~ m_v_sot.head<6>() = m_v_flex.head<6>() + m_v_kin.head<6>();
-          //~ m_v_sot.head<6>() = m_v_gyr.head<6>() + m_v_kin.head<6>();
-          m_v_sot.head<6>() = m_v_gyr.head<6>();
+          m_v_sot.head<6>() = m_v_gyr.head<6>() + m_v_kin.head<6>();
+//          m_v_sot.head<6>() = m_v_gyr.head<6>();
           //~ m_v_sot.head<6>() = m_v_imu.head<6>();
 
           m_v_sot.tail( m_robot_util->m_nbJoints) = dq;
@@ -1011,7 +1011,7 @@ namespace dynamicgraph
           return s;
         }
         m_vSOUT(iter);
-        s = m_v_flex;
+        s = m_v_flex+m_v_kin;
         return s;
       }
       
