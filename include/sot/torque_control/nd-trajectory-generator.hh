@@ -163,6 +163,7 @@ namespace dynamicgraph {
         };
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
+        bool              m_infiniteTime;    /// true if trajectory is to go on forever
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time step.
         double            m_t;                /// current control loop time.

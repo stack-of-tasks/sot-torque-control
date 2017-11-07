@@ -55,6 +55,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
+            ,m_infiniteTime(false)
             ,m_n(1)
             ,m_t(0)
             ,m_iterLast(0)
@@ -151,7 +152,7 @@ namespace dynamicgraph
           //m_triangleTrajGen[i]  = new parametriccurves::InfiniteTriangle<double,1>(5.0);
           // m_constAccTrajGen[i]  = new parametriccurves::ConstantAcceleration<double,1>(5.0);
           m_linChirpTrajGen[i]  = new parametriccurves::LinearChirp<double,1>(5.0);
-          m_noTrajGen[i]        = new parametriccurves::Constant<double,1>(-1.0);
+          m_noTrajGen[i]        = new parametriccurves::Constant<double,1>(std::numeric_limits<double>::max());
           m_currentTrajGen[i]   = m_noTrajGen[i];
         }
         m_splineTrajGen   = new parametriccurves::Spline<double,Eigen::Dynamic>();
@@ -245,7 +246,7 @@ namespace dynamicgraph
           {
             for(unsigned int i=0; i<m_n; i++)
             {
-              if(!m_currentTrajGen[i]->checkRange(m_t))
+              if(!m_currentTrajGen[i]->checkRange(m_t) && !m_infiniteTime)
               {
                 s(i) = (*m_currentTrajGen[i])(m_currentTrajGen[i]->tmax())[0];
                 m_currentTrajGen[i] = m_noTrajGen[i];
@@ -254,7 +255,7 @@ namespace dynamicgraph
                 SEND_MSG("Trajectory of index "+toString(i)+" ended.", MSG_TYPE_INFO);
               }
               else
-                s(i) = (*m_currentTrajGen[i])(m_t)[i];
+                s(i) = (*m_currentTrajGen[i])(m_t)[0];
             }
           }
         }
@@ -283,7 +284,7 @@ namespace dynamicgraph
           s = m_splineTrajGen->derivate(m_t, 1);
         else
           for(unsigned int i=0; i<m_n; i++)
-            s(i) = m_currentTrajGen[i]->derivate(m_t, 1)[i];
+            s(i) = m_currentTrajGen[i]->derivate(m_t, 1)[0];
 
         return s;
       }
@@ -323,7 +324,7 @@ namespace dynamicgraph
         if(id<0 || id>=m_n)
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
 
-        SEND_MSG("Current value of component "+toString(id)+" is "+toString( (*m_currentTrajGen[id])(m_t)) , MSG_TYPE_INFO);
+        SEND_MSG("Current value of component "+toString(id)+" is "+toString( (*m_currentTrajGen[id])(m_t)[0]) , MSG_TYPE_INFO);
       }
 
       void NdTrajectoryGenerator::playTrajectoryFile(const std::string& fileName)
@@ -347,7 +348,6 @@ namespace dynamicgraph
             needToMoveToInitConf = true;
             SEND_MSG("Component "+ toString(i) +" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
           }
-
         // if necessary move joints to initial configuration
         if(needToMoveToInitConf)
         {
@@ -356,14 +356,16 @@ namespace dynamicgraph
 //            if(!isJointInRange(i, xInit[i]))
 //              return;
 
-            m_minJerkTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[i]);
+            m_minJerkTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
             m_minJerkTrajGen[i]->setFinalPoint(xInit[i]);
             m_minJerkTrajGen[i]->setTimePeriod(4.0);
             m_status[i] = JTG_MIN_JERK;
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
           }
+          m_t = 0.0;
           return;
         }
+
         m_t = 0.0;
         for(unsigned int i=0; i<m_n; i++)
         {
@@ -385,14 +387,14 @@ namespace dynamicgraph
 
         // check current configuration is not too far from initial configuration
         bool needToMoveToInitConf = false;
-        const VectorXd& xInit = (*m_splineTrajGen)(0);
+        const VectorXd& xInit = (*m_splineTrajGen)(0.002);
+        assert(xInit.size() == m_n);
         for(unsigned int i=0; i<m_n; i++)
           if(fabs(xInit[i] - (*m_currentTrajGen[i])(m_t)[0]) > 0.001)
           {
             needToMoveToInitConf = true;
             SEND_MSG("Component "+ toString(i) +" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
           }
-
         // if necessary move joints to initial configuration
         if(needToMoveToInitConf)
         {
@@ -406,9 +408,12 @@ namespace dynamicgraph
             m_minJerkTrajGen[i]->setTimePeriod(4.0);
             m_status[i] = JTG_MIN_JERK;
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
+            SEND_MSG("MinimumJerk trajectory for index "+ toString(i) +" to go to final position" + toString(xInit[i]), MSG_TYPE_WARNING);
           }
+          m_t = 0.0;
           return;
         }
+
         m_t = 0.0;
         for(unsigned int i=0; i<m_n; i++)
         {
@@ -432,12 +437,13 @@ namespace dynamicgraph
 //          return;
 
         m_sinTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
-        m_t = 0.0;
         m_sinTrajGen[i]->setFinalPoint(xFinal);
         m_sinTrajGen[i]->setTrajectoryTime(time);
-        SEND_MSG("Set initial point of sinusoid to "+toString((*m_sinTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
+        SEND_MSG("Set initial point of sinusoid to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
+        m_infiniteTime = true;
         m_status[i]         = JTG_SINUSOID;
         m_currentTrajGen[i] = m_sinTrajGen[i];
+        m_t = 0.0;
       }
       /*
       void NdTrajectoryGenerator::startTriangle(const int& id, const double& xFinal, const double& time, const double& Tacc)
@@ -568,6 +574,7 @@ namespace dynamicgraph
         unsigned int i = id;
         m_noTrajGen[i]->setInitialPoint((*m_currentTrajGen[i])(m_t)[0]);
         m_status[i] = JTG_STOP;
+        m_infiniteTime = false;
         m_currentTrajGen[i] = m_noTrajGen[i];
         m_t = 0.0;
       }
