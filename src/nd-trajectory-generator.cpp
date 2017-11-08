@@ -491,7 +491,7 @@ namespace dynamicgraph
         m_constAccTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
         SEND_MSG("Set initial point of const-acc trajectory to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
         m_constAccTrajGen[i]->setFinalPoint(xFinal);
-        m_constAccTrajGen[i]->setTimePeriod(time);
+        m_constAccTrajGen[i]->setTrajectoryTime(time);
         m_status[i]         = JTG_CONST_ACC;
         m_currentTrajGen[i] = m_constAccTrajGen[i];
         m_infiniteTime = true;
