@@ -100,13 +100,14 @@ namespace dynamicgraph
                                                     "(double) final values",
                                                     "(double) time to reach the final value in sec",
                                                     "(double) time to accelerate in sec")));
+        */
         addCommand("startConstAcc",
                    makeCommandVoid3(*this, &NdTrajectoryGenerator::startConstAcc,
                                     docCommandVoid3("Start an infinite trajectory with piece-wise constant acceleration.",
                                                     "(int)    index",
                                                     "(double) final values",
                                                     "(double) time to reach the final value in sec")));
-        */
+
         addCommand("startLinChirp",
                    makeCommandVoid5(*this, &NdTrajectoryGenerator::startLinearChirp,
                                     docCommandVoid5("Start a linear-chirp motion.",
@@ -141,7 +142,7 @@ namespace dynamicgraph
         m_minJerkTrajGen.resize(m_n);
         m_sinTrajGen.resize(m_n);
         //m_triangleTrajGen.resize(m_n);
-        //m_constAccTrajGen.resize(m_n);
+        m_constAccTrajGen.resize(m_n);
         m_linChirpTrajGen.resize(m_n);
         m_currentTrajGen.resize(m_n);
         m_noTrajGen.resize(m_n);
@@ -150,7 +151,7 @@ namespace dynamicgraph
           m_minJerkTrajGen[i]   = new parametriccurves::MinimumJerk<double,1>(5.0);
           m_sinTrajGen[i]       = new parametriccurves::InfiniteSinusoid<double,1>(5.0);
           //m_triangleTrajGen[i]  = new parametriccurves::InfiniteTriangle<double,1>(5.0);
-          // m_constAccTrajGen[i]  = new parametriccurves::ConstantAcceleration<double,1>(5.0);
+          m_constAccTrajGen[i]  = new parametriccurves::InfiniteConstAcc<double,1>(5.0);
           m_linChirpTrajGen[i]  = new parametriccurves::LinearChirp<double,1>(5.0);
           m_noTrajGen[i]        = new parametriccurves::Constant<double,1>(std::numeric_limits<double>::max());
           m_currentTrajGen[i]   = m_noTrajGen[i];
@@ -472,7 +473,7 @@ namespace dynamicgraph
         m_currentTrajGen[i] = m_triangleTrajGen[i];
         m_t = 0.0;
       }
-
+      */
       void NdTrajectoryGenerator::startConstAcc(const int& id, const double& xFinal, const double& time)
       {
         if(!m_initSucceeded)
@@ -487,15 +488,15 @@ namespace dynamicgraph
 //        if(!isJointInRange(i, xFinal))
 //          return;
 
-        m_constAccTrajGen[i]->setInitialPoint(m_noTrajGen[i]->getPos());
-        SEND_MSG("Set initial point of const-acc trajectory to "+toString(m_constAccTrajGen[i]->getPos()),MSG_TYPE_DEBUG);
+        m_constAccTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
+        SEND_MSG("Set initial point of const-acc trajectory to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
         m_constAccTrajGen[i]->setFinalPoint(xFinal);
         m_constAccTrajGen[i]->setTimePeriod(time);
         m_status[i]         = JTG_CONST_ACC;
         m_currentTrajGen[i] = m_constAccTrajGen[i];
+        m_infiniteTime = true;
         m_t = 0.0;
       }
-      */
       void NdTrajectoryGenerator::startLinearChirp(const int& id, const double& xFinal, const double& f0, const double& f1, const double& time)
       {
         if(!m_initSucceeded)

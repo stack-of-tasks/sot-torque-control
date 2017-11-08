@@ -47,6 +47,7 @@
 #include <parametriccurves/minimum-jerk.hpp>
 #include <parametriccurves/linear-chirp.hpp>
 #include <parametriccurves/infinite-sinusoid.hpp>
+#include <parametriccurves/infinite-const-acc.hpp>
 
 #include <map>
 #include <initializer_list>
@@ -120,7 +121,7 @@ namespace dynamicgraph {
          * @param time The time to go from the current position to xFinal [sec].
          * @param Tacc The time during witch acceleration is keept constant [sec].
          */
-        //void startConstAcc(const int& id, const double& xFinal, const double& time);
+        void startConstAcc(const int& id, const double& xFinal, const double& time);
 
         /** Start a linear-chirp trajectory, that is a sinusoidal trajectory with frequency
          * being a linear function of time.
@@ -157,7 +158,7 @@ namespace dynamicgraph {
           JTG_MIN_JERK,
           JTG_LIN_CHIRP,
           //JTG_TRIANGLE,
-          //JTG_CONST_ACC,
+          JTG_CONST_ACC,
           JTG_TEXT_FILE,
           JTG_SPLINE
         };
@@ -177,7 +178,7 @@ namespace dynamicgraph {
         std::vector<parametriccurves::InfiniteSinusoid<double,1>* >              m_sinTrajGen;
         std::vector<parametriccurves::LinearChirp<double,1>*>                    m_linChirpTrajGen;
         //std::vector<parametriccurves::InfiniteTriangular<double,1>* >            m_triangleTrajGen;
-        //std::vector<parametriccurves::ConstantAcceleration<double,1>* >          m_constAccTrajGen;
+        std::vector<parametriccurves::InfiniteConstAcc<double,1>* >          m_constAccTrajGen;
         parametriccurves::TextFile<double, Eigen::Dynamic>*                      m_textFileTrajGen;
         parametriccurves::Spline<double, Eigen::Dynamic>*                        m_splineTrajGen;
 
