@@ -383,7 +383,7 @@ namespace dynamicgraph
           if(m_status[i]!=JTG_STOP)
             return SEND_MSG("You cannot control component " +toString(i)+" because it is already controlled.",MSG_TYPE_ERROR);
 
-        if(!m_splineTrajGen->loadSpline(filename))
+        if(!m_splineTrajGen->loadFromFile(filename))
           return SEND_MSG("Error while loading spline"+filename, MSG_TYPE_ERROR);
 
         // check current configuration is not too far from initial configuration

@@ -37,7 +37,7 @@ create_topic(robot.ros, robot.device.accelerometer,       'acc');
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(0.0);
 
-robot.com_traj_gen.playSpline("/local/rbudhira/git/proyan/sot-torque-control/scripts/spline1.out")
+robot.com_traj_gen.playSpline("${SOTTORQUECONTROL_SOURCE_DIR}/data/traj_com_y_0.08/com_spline.curve")
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
