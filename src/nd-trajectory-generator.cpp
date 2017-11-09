@@ -34,7 +34,7 @@ namespace dynamicgraph
       using namespace Eigen;
 
 #define PROFILE_ND_POSITION_DESIRED_COMPUTATION "NdTrajGen: traj computation"
-
+#define DOUBLE_INF std::numeric_limits<double>::max()
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef NdTrajectoryGenerator EntityClassName;
@@ -55,7 +55,6 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
-            ,m_infiniteTime(false)
             ,m_n(1)
             ,m_t(0)
             ,m_iterLast(0)
@@ -153,8 +152,13 @@ namespace dynamicgraph
           //m_triangleTrajGen[i]  = new parametriccurves::InfiniteTriangle<double,1>(5.0);
           m_constAccTrajGen[i]  = new parametriccurves::InfiniteConstAcc<double,1>(5.0);
           m_linChirpTrajGen[i]  = new parametriccurves::LinearChirp<double,1>(5.0);
-          m_noTrajGen[i]        = new parametriccurves::Constant<double,1>(std::numeric_limits<double>::max());
+          m_noTrajGen[i]        = new parametriccurves::Constant<double,1>(5.0);
           m_currentTrajGen[i]   = m_noTrajGen[i];
+
+          //Set infinite time for infinite trajectories
+          m_noTrajGen[i]->setTimePeriod(DOUBLE_INF);
+          m_constAccTrajGen[i]->setTimePeriod(DOUBLE_INF);
+          m_sinTrajGen[i]->setTimePeriod(DOUBLE_INF);
         }
         m_splineTrajGen   = new parametriccurves::Spline<double,Eigen::Dynamic>();
         m_textFileTrajGen = new parametriccurves::TextFile<double, Eigen::Dynamic>(dt, n);
@@ -247,7 +251,7 @@ namespace dynamicgraph
           {
             for(unsigned int i=0; i<m_n; i++)
             {
-              if(!m_currentTrajGen[i]->checkRange(m_t) && !m_infiniteTime)
+              if(!m_currentTrajGen[i]->checkRange(m_t))
               {
                 s(i) = (*m_currentTrajGen[i])(m_currentTrajGen[i]->tmax())[0];
                 m_currentTrajGen[i] = m_noTrajGen[i];
@@ -441,7 +445,6 @@ namespace dynamicgraph
         m_sinTrajGen[i]->setFinalPoint(xFinal);
         m_sinTrajGen[i]->setTrajectoryTime(time);
         SEND_MSG("Set initial point of sinusoid to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
-        m_infiniteTime = true;
         m_status[i]         = JTG_SINUSOID;
         m_currentTrajGen[i] = m_sinTrajGen[i];
         m_t = 0.0;
@@ -494,7 +497,6 @@ namespace dynamicgraph
         m_constAccTrajGen[i]->setTrajectoryTime(time);
         m_status[i]         = JTG_CONST_ACC;
         m_currentTrajGen[i] = m_constAccTrajGen[i];
-        m_infiniteTime = true;
         m_t = 0.0;
       }
       void NdTrajectoryGenerator::startLinearChirp(const int& id, const double& xFinal, const double& f0, const double& f1, const double& time)
@@ -575,7 +577,6 @@ namespace dynamicgraph
         unsigned int i = id;
         m_noTrajGen[i]->setInitialPoint((*m_currentTrajGen[i])(m_t)[0]);
         m_status[i] = JTG_STOP;
-        m_infiniteTime = false;
         m_currentTrajGen[i] = m_noTrajGen[i];
         m_t = 0.0;
       }
