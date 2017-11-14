@@ -1,16 +1,16 @@
 ####CONFIG######################
-CONTACT_SEQUENCE_WHOLEBODY_FILE="../data/seq1/contact_sequence_trajectory.xml"
+CONTACT_SEQUENCE_WHOLEBODY_FILE="../data/traj_com_y_0.08/contact_sequence_trajectory.xml"
 CONTACT_SEQUENCE_XML_TAG="ContactSequence"
 
-COM_SPLINE_OUTPUT_FILE="../data/seq1/com_spline.curve"
-RF_FORCE_OUTPUT_FILE ="../data/seq1/rf_force.curve"
-LF_FORCE_OUTPUT_FILE ="../data/seq1/lf_force.curve"
-RH_FORCE_OUTPUT_FILE ="../data/seq1/rh_force.curve"
-LH_FORCE_OUTPUT_FILE ="../data/seq1/lh_force.curve"
+COM_SPLINE_OUTPUT_FILE="../data/traj_com_y_0.08/com_spline.curve"
+RF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rf_force.curve"
+LF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lf_force.curve"
+RH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rh_force.curve"
+LH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lh_force.curve"
 VERIFY=True
-WRITE_OUTPUT =False
+WRITE_OUTPUT =True
+PLOT =True
 ####CONFIG######################
-
 
 
 from parametriccurves import spline, forcecurve
@@ -24,8 +24,9 @@ def array_polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False, eps=1e-1
   assert len(x.shape)==1;
   p = np.zeros((y.shape[0], deg+1))
   for i,y_a in enumerate(y):
+    assert y_a.size ==y_a.shape[1]
     p_a , residual, _, _, _ = np.polyfit(x, np.asarray(y_a).squeeze(), deg, rcond, full, w, cov);
-    p[i, :] = p_a
+    p[i, :] = p_a[::-1] 
     assert(residual <=eps)
   return p
 
@@ -71,7 +72,7 @@ poly_control_list_lf_lin = []; poly_control_list_lf_ang = []
 poly_control_list_rh_lin = []; poly_control_list_rh_ang = []
 poly_control_list_lh_lin = []; poly_control_list_lh_ang = []
 time_vector = np.zeros(len(cs.ms_interval_data))
-
+control_list = np.array([])
 for spl in cs.ms_interval_data:
   x = np.array([]);
   y_com = np.array([]);  y_dcom = np.array([]);  y_ddcom = np.array([]);
@@ -100,6 +101,11 @@ for spl in cs.ms_interval_data:
       y_ddcom = np.append(y_ddcom, y[3:6], axis=1)
       y_dL = np.append(y_dL, y[6:9], axis=1)
   for y in spl.control_trajectory:
+
+    if control_list.size ==0:
+      control_list = y
+    else:
+      control_list = np.append(control_list, y, axis=1)
     if y_control_rf_lin.size==0:
       y_control_rf_lin = y[0:3]
       y_control_rf_ang = y[3:6]
@@ -118,7 +124,6 @@ for spl in cs.ms_interval_data:
       y_control_rh_ang = np.append(y_control_rh_ang, y[15:18], axis=1)
       y_control_lh_lin = np.append(y_control_lh_lin, y[18:21], axis=1)
       y_control_lh_ang = np.append(y_control_lh_ang, y[21:24], axis=1)
-  print x.shape, y_com.shape, y_control_rf_lin.shape
 
   traj_times.append(x)
   poly_com_list.append(dd_polyfit(x, y_com, y_dcom, y_ddcom, deg_y=5, eps=1e-20))
@@ -138,7 +143,7 @@ time_vector = np.zeros(len(traj_times)+1)
 for ts in xrange(len(traj_times)):
   time_vector[ts] = traj_times[ts][0]
 time_vector[-1] = traj_times[-1][-1]
-  
+
 com_spline = spline(poly_com_list, time_vector)
 rf_force = forcecurve(spline(poly_control_list_rf_lin, time_vector),
                       spline(poly_control_list_rf_ang, time_vector))
@@ -148,6 +153,7 @@ rh_force = forcecurve(spline(poly_control_list_rh_lin, time_vector),
                       spline(poly_control_list_rh_ang, time_vector))
 lh_force = forcecurve(spline(poly_control_list_lh_lin, time_vector),
                       spline(poly_control_list_lh_ang, time_vector))
+print "Trajectories created"
 if WRITE_OUTPUT:
   com_spline.save_to_file(COM_SPLINE_OUTPUT_FILE)
   rf_force.save_to_file(RF_FORCE_OUTPUT_FILE)
@@ -161,7 +167,12 @@ if VERIFY:
   for spl in cs.ms_interval_data:
     for j,t in enumerate(spl.time_trajectory):
       assert(np.isclose(spl.state_trajectory[j][0:3],com_spline(t)).all())
-      print j, spl.state_trajectory[j][3:6],com_spline.derivate(t,1)
+      if not np.isclose(spl.control_trajectory[j][0:6],rf_force(t)).all():
+        print t, spl.control_trajectory[j][0:6], rf_force(t)
+        raw_input("Error in xml vs spline rf force")
+      if not np.isclose(spl.control_trajectory[j][6:12],lf_force(t)).all():
+        print t, spl.control_trajectory[j][6:12], lf_force(t)
+        raw_input("Error in xml vs spline lf force")
       if not np.isclose(spl.state_trajectory[j][3:6],com_spline.derivate(t,1)).all():
         raw_input("Oops")
       if not np.isclose(spl.dot_state_trajectory[j][3:6],com_spline.derivate(t,2)).all():
