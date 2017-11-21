@@ -39,7 +39,16 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/utils/trajectory-generators.hh>
+//#include <sot/torque_control/utils/trajectory-generators.hh>
+
+#include <parametriccurves/spline.hpp>
+#include <parametriccurves/constant.hpp>
+#include <parametriccurves/text-file.hpp>
+#include <parametriccurves/minimum-jerk.hpp>
+#include <parametriccurves/linear-chirp.hpp>
+#include <parametriccurves/infinite-sinusoid.hpp>
+#include <parametriccurves/infinite-const-acc.hpp>
+
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -80,6 +89,8 @@ namespace dynamicgraph {
 
         void playTrajectoryFile(const std::string& fileName);
 
+        void playSpline(const std::string& fileName);
+
         /** Print the current value of the specified component. */
         void getValue(const int& id);
 
@@ -102,7 +113,7 @@ namespace dynamicgraph {
          * @param xFinal The position of the component corresponding to the max amplitude of the trajectory.
          * @param time The time to go from the current position to xFinal [sec].
          */
-        void startTriangle(const int& id, const double& xFinal, const double& time, const double& Tacc);
+        //void startTriangle(const int& id, const double& xFinal, const double& time, const double& Tacc);
 
         /** Start an infinite trajectory with piece-wise constant acceleration.
          * @param id integer index.
@@ -146,26 +157,29 @@ namespace dynamicgraph {
           JTG_SINUSOID,
           JTG_MIN_JERK,
           JTG_LIN_CHIRP,
-          JTG_TRIANGLE,
+          //JTG_TRIANGLE,
           JTG_CONST_ACC,
-          JTG_TEXT_FILE
+          JTG_TEXT_FILE,
+          JTG_SPLINE
         };
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
-        double            m_dt;               /// control loop time period
+        double            m_dt;               /// control loop time step.
+        double            m_t;                /// current control loop time.
         unsigned int      m_n;                /// size of ouput vector
         unsigned int      m_iterLast;         /// last iter index
 
         std::vector<JTG_Status> m_status;     /// status of the component
-        std::vector<AbstractTrajectoryGenerator*>    m_currentTrajGen;
-        std::vector<NoTrajectoryGenerator*>          m_noTrajGen;
-        std::vector<MinimumJerkTrajectoryGenerator*> m_minJerkTrajGen;
-        std::vector<SinusoidTrajectoryGenerator*>    m_sinTrajGen;
-        std::vector<LinearChirpTrajectoryGenerator*> m_linChirpTrajGen;
-        std::vector<TriangleTrajectoryGenerator*>    m_triangleTrajGen;
-        std::vector<ConstantAccelerationTrajectoryGenerator*>    m_constAccTrajGen;
-        TextFileTrajectoryGenerator*                 m_textFileTrajGen;
+        std::vector<parametriccurves::AbstractCurve<double, Eigen::Vector1d>* >  m_currentTrajGen;
+        std::vector<parametriccurves::Constant<double, 1>* >                     m_noTrajGen;
+        std::vector<parametriccurves::MinimumJerk<double, 1>* >                  m_minJerkTrajGen;
+        std::vector<parametriccurves::InfiniteSinusoid<double,1>* >              m_sinTrajGen;
+        std::vector<parametriccurves::LinearChirp<double,1>*>                    m_linChirpTrajGen;
+        //std::vector<parametriccurves::InfiniteTriangular<double,1>* >            m_triangleTrajGen;
+        std::vector<parametriccurves::InfiniteConstAcc<double,1>* >          m_constAccTrajGen;
+        parametriccurves::TextFile<double, Eigen::Dynamic>*                      m_textFileTrajGen;
+        parametriccurves::Spline<double, Eigen::Dynamic>*                        m_splineTrajGen;
 
       }; // class NdTrajectoryGenerator
       
