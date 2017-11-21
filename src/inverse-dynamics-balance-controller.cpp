@@ -61,6 +61,8 @@ namespace dynamicgraph
 #define PROFILE_PREPARE_INV_DYN     "InverseDynamicsBalanceController: prepare inv-dyn"
 #define PROFILE_READ_INPUT_SIGNALS  "InverseDynamicsBalanceController: read input signals"
 
+#define ZERO_FORCE_THRESHOLD 1e-3
+
 #define INPUT_SIGNALS         m_com_ref_posSIN \
   << m_com_ref_velSIN \
   << m_com_ref_accSIN \
@@ -76,6 +78,8 @@ namespace dynamicgraph
   << m_base_orientation_ref_posSIN \
   << m_base_orientation_ref_velSIN \
   << m_base_orientation_ref_accSIN \
+  << m_f_ref_right_footSIN \
+  << m_f_ref_left_footSIN \
   << m_kp_base_orientationSIN \
   << m_kd_base_orientationSIN \
   << m_kp_constraintsSIN \
@@ -169,6 +173,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(base_orientation_ref_pos,    dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(base_orientation_ref_vel,    dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(base_orientation_ref_acc,    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(f_ref_right_foot,            dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(f_ref_left_foot,             dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_base_orientation,         dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_base_orientation,         dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_constraints,              dynamicgraph::Vector)
@@ -217,8 +223,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_right_foot_local,   dynamicgraph::Vector, m_f_des_right_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_left_foot_local,    dynamicgraph::Vector, m_f_des_left_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des,                    dynamicgraph::Vector, m_zmp_des_left_footSOUT<<
-                                                                          m_zmp_des_right_footSOUT)
-
+                                                                                    m_zmp_des_right_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_right_foot,             dg::Vector, m_wrench_right_footSIN)
             ,CONSTRUCT_SIGNAL_OUT(zmp_left_foot,              dg::Vector, m_wrench_left_footSIN)
             ,CONSTRUCT_SIGNAL_OUT(zmp,                        dg::Vector, m_wrench_left_footSIN<<
@@ -278,6 +283,7 @@ namespace dynamicgraph
       {
         if(m_contactState == DOUBLE_SUPPORT)
         {
+          SEND_MSG("Remove right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
           m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskRF, w_feet, 1);
@@ -295,6 +301,7 @@ namespace dynamicgraph
       {
         if(m_contactState == DOUBLE_SUPPORT)
         {
+          SEND_MSG("Remove left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
           m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
@@ -305,6 +312,28 @@ namespace dynamicgraph
           }
           else
             m_contactState = RIGHT_SUPPORT;
+        }
+      }
+
+      void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime)
+      {
+        if(m_contactState == LEFT_SUPPORT)
+        {
+          SEND_MSG("Add right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
+          m_invDyn->addRigidContact(*m_contactRF);
+          m_invDyn->removeTask(m_taskRF->name(), transitionTime);
+          m_contactState = DOUBLE_SUPPORT;
+        }
+      }
+
+      void InverseDynamicsBalanceController::addLeftFootContact(const double& transitionTime)
+      {
+        if(m_contactState == RIGHT_SUPPORT)
+        {
+          SEND_MSG("Add left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
+          m_invDyn->addRigidContact(*m_contactLF);
+          m_invDyn->removeTask(m_taskLF->name(), transitionTime);
+          m_contactState = DOUBLE_SUPPORT;
         }
       }
 
@@ -338,17 +367,6 @@ namespace dynamicgraph
         const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios_sot = m_gear_ratiosSIN(0);
 
-	//TODO: Remove asserts
-        assert(contactPoints.rows()==3 && contactPoints.cols()==4);
-
-        assert(contactNormal.size()==3);
-        assert(kp_contact.size()==6);
-        assert(kd_contact.size()==6);
-        assert(kp_com.size()==3);
-        assert(kd_com.size()==3);
-
-        assert(kp_feet.size()==6);
-        assert(kd_feet.size()==6);
         assert(kp_posture.size()==m_robot_util->m_nbJoints);
         assert(kd_posture.size()==m_robot_util->m_nbJoints);
         assert(rotor_inertias_sot.size()==m_robot_util->m_nbJoints);
@@ -357,8 +375,8 @@ namespace dynamicgraph
         m_w_com = m_w_comSIN(0);
         m_w_posture = m_w_postureSIN(0);
         const double & w_forces = m_w_forcesSIN(0);
-//      const double & w_base_orientation = m_w_base_orientationSIN(0);
-//      const double & w_torques = m_w_torquesSIN(0);
+//        const double & w_base_orientation = m_w_base_orientationSIN(0);
+//        const double & w_torques = m_w_torquesSIN(0);
         const double & mu = m_muSIN(0);
         const double & fMin = m_f_minSIN(0);
         const double & fMaxRF = m_f_max_right_footSIN(0);
@@ -374,21 +392,12 @@ namespace dynamicgraph
           assert(m_robot->nv()>=6);
 	  m_robot_util->m_nbJoints = m_robot->nv()-6;
 
-
           Vector rotor_inertias_urdf(rotor_inertias_sot.size());
           Vector gear_ratios_urdf(gear_ratios_sot.size());
           m_robot_util->joints_sot_to_urdf(rotor_inertias_sot, rotor_inertias_urdf);
           m_robot_util->joints_sot_to_urdf(gear_ratios_sot, gear_ratios_urdf);
           m_robot->rotor_inertias(rotor_inertias_urdf);
           m_robot->gear_ratios(gear_ratios_urdf);
-
-	  const double & w_com = m_w_comSIN(0);
-	  const double & w_posture = m_w_postureSIN(0);
-	  //        const double & w_base_orientation = m_w_base_orientationSIN(0);
-	  //        const double & w_torques = m_w_torquesSIN(0);
-	  const double & w_forces = m_w_forcesSIN(0);
-	  const double & mu = m_muSIN(0);
-	  const double & fMin = m_f_minSIN(0);
 
           m_dv_sot.setZero(m_robot->nv());
           m_tau_sot.setZero(m_robot->nv()-6);
@@ -515,6 +524,32 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
 
+        // use reference contact wrenches (if plugged) to determine contact phase
+        if(m_f_ref_left_footSIN.isPlugged() && m_f_ref_right_footSIN.isPlugged())
+        {
+          const Vector6 & f_ref_left_foot  = m_f_ref_left_footSIN(iter);
+          const Vector6 & f_ref_right_foot = m_f_ref_right_footSIN(iter);
+          if(m_contactState == DOUBLE_SUPPORT)
+          {
+            if(f_ref_left_foot.norm() < ZERO_FORCE_THRESHOLD)
+            {
+              removeLeftFootContact(0.0);
+            }
+            else if(f_ref_right_foot.norm() < ZERO_FORCE_THRESHOLD)
+            {
+              removeRightFootContact(0.0);
+            }
+          }
+          else if(m_contactState == LEFT_SUPPORT && f_ref_right_foot.norm()>ZERO_FORCE_THRESHOLD)
+          {
+            addRightFootContact(0.0);
+          }
+          else if(m_contactState == RIGHT_SUPPORT && f_ref_left_foot.norm()>ZERO_FORCE_THRESHOLD)
+          {
+            addLeftFootContact(0.0);
+          }
+        }
+
         if(m_contactState == RIGHT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime)
         {
           m_contactState = RIGHT_SUPPORT;
@@ -532,12 +567,8 @@ namespace dynamicgraph
         const VectorN6& v_sot = m_vSIN(iter);
         assert(v_sot.size()==m_robot_util->m_nbJoints+6);
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
-
-        assert(x_com_ref.size()==3);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
-        assert(dx_com_ref.size()==3);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
-        assert(ddx_com_ref.size()==3);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
         assert(q_ref.size()==m_robot_util->m_nbJoints);
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
@@ -546,13 +577,9 @@ namespace dynamicgraph
         assert(ddq_ref.size()==m_robot_util->m_nbJoints);
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
 
-        assert(kp_contact.size()==6);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
-        assert(kd_contact.size()==6);
         const Vector3& kp_com = m_kp_comSIN(iter);
-        assert(kp_com.size()==3);
         const Vector3& kd_com = m_kd_comSIN(iter);
-        assert(kd_com.size()==3);
 
         const VectorN& kp_posture = m_kp_postureSIN(iter);
         assert(kp_posture.size()==m_robot_util->m_nbJoints);
@@ -573,15 +600,10 @@ namespace dynamicgraph
         if(m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION)
         {
           const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
-          assert(x_rf_ref.size()==12);
           const Vector6& dx_rf_ref =  m_rf_ref_velSIN(iter);
-          assert(dx_rf_ref.size()==6);
           const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
-          assert(ddx_rf_ref.size()==6);
           const Vector6& kp_feet = m_kp_feetSIN(iter);
-          assert(kp_feet.size()==6);
           const Vector6& kd_feet = m_kd_feetSIN(iter);
-          assert(kd_feet.size()==6);
           m_sampleRF.pos = x_rf_ref;
           m_sampleRF.vel = dx_rf_ref;
           m_sampleRF.acc = ddx_rf_ref;
@@ -592,15 +614,10 @@ namespace dynamicgraph
         else if(m_contactState==RIGHT_SUPPORT || m_contactState==RIGHT_SUPPORT_TRANSITION)
         {
           const Eigen::Matrix<double,12,1>& x_lf_ref = m_lf_ref_posSIN(iter);
-          assert(x_lf_ref.size()==12);
           const Vector6& dx_lf_ref = m_lf_ref_velSIN(iter);
-          assert(dx_lf_ref.size()==6);
           const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
-          assert(ddx_lf_ref.size()==6);
           const Vector6& kp_feet = m_kp_feetSIN(iter);
-          assert(kp_feet.size()==6);
           const Vector6& kd_feet = m_kd_feetSIN(iter);
-          assert(kd_feet.size()==6);
           m_sampleLF.pos = x_lf_ref;
           m_sampleLF.vel = dx_lf_ref;
           m_sampleLF.acc = ddx_lf_ref;
