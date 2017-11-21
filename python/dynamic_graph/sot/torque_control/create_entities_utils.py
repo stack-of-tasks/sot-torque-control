@@ -5,6 +5,7 @@
 """
 
 from dynamic_graph import plug
+from dynamic_graph.sot.core.switch import Switch
 from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
 from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
@@ -91,6 +92,20 @@ def create_com_traj_gen(conf, dt):
     com_traj_gen.initial_value.value = conf.COM_DES;
     com_traj_gen.init(dt,3);
     return com_traj_gen ;
+
+def create_force_traj_gen(name, initial_value, dt):
+    force_traj_gen = NdTrajectoryGenerator(name);
+    force_traj_gen.initial_value.value = initial_value;
+    force_traj_gen.init(dt,6);
+    return force_traj_gen ;
+
+def create_trajectory_switch():
+    traj_sync = Switch("traj_sync");
+    return traj_sync ;
+
+def connect_synchronous_trajectories(switch, list_of_traj_gens):
+  for traj_gen in list_of_traj_gens:
+    plug(switch.out, traj_gen.trigger);
 
 def create_free_flyer_locator(ent, robot_name="robot"):
     from dynamic_graph.sot.torque_control.free_flyer_locator import FreeFlyerLocator
@@ -295,6 +310,10 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     plug(robot.com_traj_gen.x,                    ctrl.com_ref_pos);
     plug(robot.com_traj_gen.dx,                   ctrl.com_ref_vel);
     plug(robot.com_traj_gen.ddx,                  ctrl.com_ref_acc);
+
+    plug(robot.rf_force_traj_gen.x,               ctrl.f_ref_right_foot);
+    plug(robot.lf_force_traj_gen.x,               ctrl.l_ref_right_foot);
+
 
     # rather than giving to the controller the values of gear ratios and rotor inertias
     # it is better to compute directly their product in python and pass the result

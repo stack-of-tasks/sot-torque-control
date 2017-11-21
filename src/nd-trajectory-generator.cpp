@@ -50,10 +50,12 @@ namespace dynamicgraph
           NdTrajectoryGenerator(const std::string& name)
             : Entity(name)
             ,CONSTRUCT_SIGNAL_IN(initial_value,dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL(x,   OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(trigger,bool)
+            ,CONSTRUCT_SIGNAL(x, OUT,  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_OUT(dx,  dynamicgraph::Vector, m_xSOUT)
             ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
             ,m_firstIter(true)
+            ,m_splineReady(false)
             ,m_initSucceeded(false)
             ,m_n(1)
             ,m_t(0)
@@ -61,7 +63,8 @@ namespace dynamicgraph
       {
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
-        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN);
+        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN 
+                                    <<m_triggerSIN);
 
         /* Commands. */
         addCommand("init",
@@ -87,10 +90,11 @@ namespace dynamicgraph
                                                     "(double) final value",
                                                     "(double) time to reach the final value in sec")));
 
-        addCommand("playSpline",
-                   makeCommandVoid1(*this, &NdTrajectoryGenerator::playSpline,
-                                    docCommandVoid1("Load serialized spline from file",
-                                                    "(string)   filename")));
+        addCommand("setSpline",
+                   makeCommandVoid2(*this, &NdTrajectoryGenerator::setSpline,
+                                    docCommandVoid2("Load serialized spline from file",
+                                                    "(string)   filename",
+                                                    "(double) time to initial conf")));
 
         /*        addCommand("startTriangle",
                    makeCommandVoid4(*this, &NdTrajectoryGenerator::startTriangle,
@@ -198,6 +202,7 @@ namespace dynamicgraph
           }
           else if(iter == m_iterLast)
           {
+            if (m_triggerSIN(iter)==true && m_splineReady) startSpline();
             if(m_status[0]==JTG_TEXT_FILE)
             {
               s = (*m_textFileTrajGen)(m_t);
@@ -215,6 +220,7 @@ namespace dynamicgraph
           m_iterLast = iter;
           m_t += m_dt;
 
+          if (m_triggerSIN(iter)==true && m_splineReady) startSpline();
           if(m_status[0]==JTG_TEXT_FILE)
           {
             if(!m_textFileTrajGen->checkRange(m_t))
@@ -241,7 +247,8 @@ namespace dynamicgraph
                 m_noTrajGen[i]->setInitialPoint(s(i));
                 m_status[i] = JTG_STOP;
               }
-              SEND_MSG("Spline trajectory ended.", MSG_TYPE_INFO);
+              m_splineReady =false;
+              SEND_MSG("Spline trajectory ended. Remember to turn off the trigger.", MSG_TYPE_INFO);
               m_t =0;
             }
             else
@@ -378,7 +385,7 @@ namespace dynamicgraph
         }
       }
 
-      void NdTrajectoryGenerator::playSpline(const std::string& filename)
+      void NdTrajectoryGenerator::setSpline(const std::string& filename, const double& timeToInitConf)
       {
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start spline before initialization!",MSG_TYPE_ERROR);
@@ -390,9 +397,10 @@ namespace dynamicgraph
         if(!m_splineTrajGen->loadFromFile(filename))
           return SEND_MSG("Error while loading spline"+filename, MSG_TYPE_ERROR);
 
+        SEND_MSG("Spline set to "+filename+". Now checking initial position", MSG_TYPE_INFO);
         // check current configuration is not too far from initial configuration
         bool needToMoveToInitConf = false;
-        const VectorXd& xInit = (*m_splineTrajGen)(0.002);
+        const VectorXd& xInit = (*m_splineTrajGen)(0.0);
         assert(xInit.size() == m_n);
         for(unsigned int i=0; i<m_n; i++)
           if(fabs(xInit[i] - (*m_currentTrajGen[i])(m_t)[0]) > 0.001)
@@ -410,7 +418,7 @@ namespace dynamicgraph
 
             m_minJerkTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
             m_minJerkTrajGen[i]->setFinalPoint(xInit[i]);
-            m_minJerkTrajGen[i]->setTimePeriod(4.0);
+            m_minJerkTrajGen[i]->setTimePeriod(timeToInitConf);
             m_status[i] = JTG_MIN_JERK;
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
             SEND_MSG("MinimumJerk trajectory for index "+ toString(i) +" to go to final position" + toString(xInit[i]), MSG_TYPE_WARNING);
@@ -418,7 +426,13 @@ namespace dynamicgraph
           m_t = 0.0;
           return;
         }
+        m_splineReady = true;
+        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);        
+      }
 
+      void NdTrajectoryGenerator::startSpline()
+      {
+        if(m_status[0]==JTG_SPLINE) return;
         m_t = 0.0;
         for(unsigned int i=0; i<m_n; i++)
         {
@@ -577,6 +591,7 @@ namespace dynamicgraph
         unsigned int i = id;
         m_noTrajGen[i]->setInitialPoint((*m_currentTrajGen[i])(m_t)[0]);
         m_status[i] = JTG_STOP;
+        m_splineReady = false;
         m_currentTrajGen[i] = m_noTrajGen[i];
         m_t = 0.0;
       }

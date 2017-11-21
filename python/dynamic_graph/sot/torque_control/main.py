@@ -6,6 +6,7 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
+from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_switch, connect_synchronous_trajectories
 from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_generator, create_com_traj_gen, create_encoders
 from dynamic_graph.sot.torque_control.create_entities_utils import create_imu_offset_compensation, create_estimators, create_imu_filter
 from dynamic_graph.sot.torque_control.create_entities_utils import create_base_estimator, create_position_controller, create_torque_controller
@@ -63,6 +64,10 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     
     robot.traj_gen        = create_trajectory_generator(robot.device, dt);
     robot.com_traj_gen    = create_com_traj_gen(conf.balance_ctrl, dt);
+    robot.rf_force_traj_gen  = create_force_traj_gen("rf_force_ref", conf.balance_ctrl.LF_FORCE_DES, dt);
+    robot.lf_force_traj_gen  = create_force_traj_gen("rf_force_ref", conf.balance_ctrl.RF_FORCE_DES, dt);
+
+    robot.traj_sync       = create_trajectory_switch();
     robot.rf_traj_gen     = SE3TrajectoryGenerator("tg_rf");
     robot.lf_traj_gen     = SE3TrajectoryGenerator("tg_lf");
     robot.rf_traj_gen.init(dt);
@@ -73,6 +78,11 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     (robot.estimator_ft, robot.filters)         = create_estimators(robot, conf.force_torque_estimator, conf.motor_params, dt);
     robot.imu_filter                            = create_imu_filter(robot, dt);
     robot.base_estimator                        = create_base_estimator(robot, dt, conf.base_estimator);
+
+    connect_synchronous_trajectories(robot.traj_sync,
+                                     [robot.com_traj_gen,
+                                      robot.rf_force_traj_gen, robot.lf_force_traj_gen,
+                                      robot.rf_traj_gen, robot.lf_traj_gen])
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);
     robot.torque_ctrl     = create_torque_controller(robot, conf.joint_torque_controller, conf.motor_params, dt);

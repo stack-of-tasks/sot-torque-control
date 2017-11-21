@@ -8,7 +8,7 @@ LF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lf_force.curve"
 RH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rh_force.curve"
 LH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lh_force.curve"
 VERIFY=False
-WRITE_OUTPUT =True
+WRITE_OUTPUT =False
 #PLOT =True
 ####CONFIG######################
 
