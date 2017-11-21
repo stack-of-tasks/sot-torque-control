@@ -7,13 +7,13 @@ RF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rf_force.curve"
 LF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lf_force.curve"
 RH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rh_force.curve"
 LH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lh_force.curve"
-VERIFY=True
+VERIFY=False
 WRITE_OUTPUT =True
-PLOT =True
+#PLOT =True
 ####CONFIG######################
 
 
-from parametriccurves import spline, forcecurve
+from parametriccurves import spline, spline6
 from locomote import ContactSequenceHumanoid
 from numpy import polyfit
 from numpy.linalg import lstsq
@@ -67,20 +67,20 @@ cs.loadFromXML(CONTACT_SEQUENCE_WHOLEBODY_FILE,CONTACT_SEQUENCE_XML_TAG)
 traj_times = []
 poly_com_list = []; poly_dcom_list = []; poly_ddcom_list = []
 poly_L_list = []; poly_dL_list = []
-poly_control_list_rf_lin = []; poly_control_list_rf_ang = []
-poly_control_list_lf_lin = []; poly_control_list_lf_ang = []
-poly_control_list_rh_lin = []; poly_control_list_rh_ang = []
-poly_control_list_lh_lin = []; poly_control_list_lh_ang = []
+poly_control_list_rf = [];
+poly_control_list_lf = [];
+poly_control_list_rh = [];
+poly_control_list_lh = [];
 time_vector = np.zeros(len(cs.ms_interval_data))
 control_list = np.array([])
 for spl in cs.ms_interval_data:
   x = np.array([]);
   y_com = np.array([]);  y_dcom = np.array([]);  y_ddcom = np.array([]);
   y_L = np.array([]);   y_dL = np.array([]);
-  y_control_lf_lin = np.array([]);  y_control_lf_ang = np.array([]); 
-  y_control_rf_lin = np.array([]);  y_control_rf_ang = np.array([]);
-  y_control_rh_lin = np.array([]);  y_control_rh_ang = np.array([]);
-  y_control_lh_lin = np.array([]);  y_control_lh_ang = np.array([]);
+  y_control_lf = np.array([]); 
+  y_control_rf = np.array([]);
+  y_control_rh = np.array([]);
+  y_control_lh = np.array([]);
   for t in spl.time_trajectory:
     x = np.append(x,t)
   if x.size==0: break;
@@ -106,38 +106,26 @@ for spl in cs.ms_interval_data:
       control_list = y
     else:
       control_list = np.append(control_list, y, axis=1)
-    if y_control_rf_lin.size==0:
-      y_control_rf_lin = y[0:3]
-      y_control_rf_ang = y[3:6]
-      y_control_lf_lin = y[6:9]
-      y_control_lf_ang = y[9:12]
-      y_control_rh_lin = y[12:15]
-      y_control_rh_ang = y[15:18]
-      y_control_lh_lin = y[18:21]
-      y_control_lh_ang = y[21:24]
+    if y_control_rf.size==0:
+      y_control_rf = y[0:6]
+      y_control_lf = y[6:12]
+      y_control_rh = y[12:18]
+      y_control_lh = y[18:24]
     else:
-      y_control_rf_lin = np.append(y_control_rf_lin, y[0:3], axis=1)
-      y_control_rf_ang = np.append(y_control_rf_ang, y[3:6], axis=1)
-      y_control_lf_lin = np.append(y_control_lf_lin, y[6:9], axis=1)
-      y_control_lf_ang = np.append(y_control_lf_ang, y[9:12], axis=1)
-      y_control_rh_lin = np.append(y_control_rh_lin, y[12:15], axis=1)
-      y_control_rh_ang = np.append(y_control_rh_ang, y[15:18], axis=1)
-      y_control_lh_lin = np.append(y_control_lh_lin, y[18:21], axis=1)
-      y_control_lh_ang = np.append(y_control_lh_ang, y[21:24], axis=1)
+      y_control_rf = np.append(y_control_rf, y[0:6], axis=1)
+      y_control_lf = np.append(y_control_lf, y[6:12], axis=1)
+      y_control_rh = np.append(y_control_rh, y[12:18], axis=1)
+      y_control_lh = np.append(y_control_lh, y[18:24], axis=1)
 
   traj_times.append(x)
   poly_com_list.append(dd_polyfit(x, y_com, y_dcom, y_ddcom, deg_y=5, eps=1e-20))
   #poly_L_list.append(array_polyfit(x, y_L, deg=4, full=True))
   #poly_dL_list.append(array_polyfit(x, y_dL, deg=3, full=True))
   #Fitting for control vector is the same?
-  poly_control_list_rf_lin.append(array_polyfit(x, y_control_rf_lin, deg=3, full=True, eps=1e-18))
-  poly_control_list_rf_ang.append(array_polyfit(x, y_control_rf_ang, deg=3, full=True, eps=1e-18))
-  poly_control_list_lf_lin.append(array_polyfit(x, y_control_lf_lin, deg=3, full=True, eps=1e-18))
-  poly_control_list_lf_ang.append(array_polyfit(x, y_control_lf_ang, deg=3, full=True, eps=1e-18))
-  poly_control_list_rh_lin.append(array_polyfit(x, y_control_rh_lin, deg=3, full=True, eps=1e-18))
-  poly_control_list_rh_ang.append(array_polyfit(x, y_control_rh_ang, deg=3, full=True, eps=1e-18))
-  poly_control_list_lh_lin.append(array_polyfit(x, y_control_lh_lin, deg=3, full=True, eps=1e-18))
-  poly_control_list_lh_ang.append(array_polyfit(x, y_control_lh_ang, deg=3, full=True, eps=1e-18))
+  poly_control_list_rf.append(array_polyfit(x, y_control_rf, deg=3, full=True, eps=1e-18))
+  poly_control_list_lf.append(array_polyfit(x, y_control_lf, deg=3, full=True, eps=1e-18))
+  poly_control_list_rh.append(array_polyfit(x, y_control_rh, deg=3, full=True, eps=1e-18))
+  poly_control_list_lh.append(array_polyfit(x, y_control_lh, deg=3, full=True, eps=1e-18))
 
 time_vector = np.zeros(len(traj_times)+1)
 for ts in xrange(len(traj_times)):
@@ -145,14 +133,11 @@ for ts in xrange(len(traj_times)):
 time_vector[-1] = traj_times[-1][-1]
 
 com_spline = spline(poly_com_list, time_vector)
-rf_force = forcecurve(spline(poly_control_list_rf_lin, time_vector),
-                      spline(poly_control_list_rf_ang, time_vector))
-lf_force = forcecurve(spline(poly_control_list_lf_lin, time_vector),
-                      spline(poly_control_list_lf_ang, time_vector))
-rh_force = forcecurve(spline(poly_control_list_rh_lin, time_vector),
-                      spline(poly_control_list_rh_ang, time_vector))
-lh_force = forcecurve(spline(poly_control_list_lh_lin, time_vector),
-                      spline(poly_control_list_lh_ang, time_vector))
+rf_force = spline6(poly_control_list_rf, time_vector)
+lf_force = spline6(poly_control_list_lf, time_vector)
+rh_force = spline6(poly_control_list_rh, time_vector)
+lh_force = spline6(poly_control_list_lh, time_vector)
+
 print "Trajectories created"
 if WRITE_OUTPUT:
   com_spline.save_to_file(COM_SPLINE_OUTPUT_FILE)
