@@ -81,7 +81,8 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
 
     connect_synchronous_trajectories(robot.traj_sync,
                                      [robot.com_traj_gen,
-                                      robot.rf_force_traj_gen, robot.lf_force_traj_gen])
+                                      robot.rf_force_traj_gen, robot.lf_force_traj_gen,
+                                      robot.rf_traj_gen, robot.lf_traj_gen])
     #robot.rf_traj_gen, robot.lf_traj_gen])
 
     robot.pos_ctrl        = create_position_controller(robot, conf.pos_ctrl_gains, dt);

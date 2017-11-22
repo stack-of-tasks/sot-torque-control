@@ -42,20 +42,28 @@ create_topic(robot.ros, robot.base_estimator.w_lf_filtered, 'w_lf_filtered', dat
 create_topic(robot.ros, robot.base_estimator.w_rf_filtered, 'w_rf_filtered', data_type='double');
 #create_topic(robot.ros, robot.torque_ctrl.dq_motor,       'dq_motor');
 #create_topic(robot.ros, robot.torque_ctrl.jointsAccelerationsDesired,       'ddq_des');
+create_topic(robot.ros, robot.rf_traj_gen.x, 'rf_ref_traj_gen');
+create_topic(robot.ros, robot.lf_traj_gen.x, 'lf_ref_traj_gen');
 
 #robot.torque_ctrl.velLeakingRate.value = 30*(0.,)
 #robot.torque_ctrl.reset_ddq_integral();
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(1.0);
 
-SOT_TORQUE_INSTALL_DIR = '/home/adelpret/devel/openrobots/src/sot-torque-control'
-robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", 1)
-robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", 1)
-robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", 1)
+SOT_TORQUE_INSTALL_DIR = '/local/rbudhira/git/sot/sot-torque-control'
+
 robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", -1)
 robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", -1)
 robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", -1)
-robot.traj_sync.out.value = 1
+robot.lf_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_spline2.curve", -1, tuple(map(tuple, np.identity(3))))
+
+robot.traj_sync.turnOn()
+
+robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", 1)
+robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", 1)
+robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", 1)
+robot.lf_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_spline2.curve", 1, tuple(map(tuple, np.identity(3))))
+
 
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
