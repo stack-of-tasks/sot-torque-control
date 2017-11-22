@@ -1,3 +1,18 @@
+from parametriccurves import spline, spline6
+from locomote import ContactSequenceHumanoid
+from numpy import polyfit
+from numpy.linalg import lstsq, solve
+from pinocchio.utils import *
+import numpy as np
+
+
+####################FOOT TRAJECTORY
+Z_AMP=0.06
+TIME_TO_LIFT=(2,2.7)
+TOTAL_TRAJ_TIME=4.7
+LF_INIT=np.array([0.0244904,0.105,0.])
+
+
 ####CONFIG######################
 CONTACT_SEQUENCE_WHOLEBODY_FILE="../data/traj_com_y_0.08/contact_sequence_trajectory.xml"
 CONTACT_SEQUENCE_XML_TAG="ContactSequence"
@@ -7,18 +22,12 @@ RF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rf_force.curve"
 LF_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lf_force.curve"
 RH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/rh_force.curve"
 LH_FORCE_OUTPUT_FILE ="../data/traj_com_y_0.08/lh_force.curve"
+LF_SPLINE_OUTPUT_FILE="../data/traj_com_y_0.08/lf_spline"+ str(int(Z_AMP*100))+".curve"
 VERIFY=False
-WRITE_OUTPUT =False
-#PLOT =True
-####CONFIG######################
+WRITE_OUTPUT =True
+PLOT =True
+##########################################
 
-
-from parametriccurves import spline, spline6
-from locomote import ContactSequenceHumanoid
-from numpy import polyfit
-from numpy.linalg import lstsq
-from pinocchio.utils import *
-import numpy as np
 
 def array_polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False, eps=1e-18):
   assert len(x.shape)==1;
@@ -59,7 +68,6 @@ def dd_polyfit_1d(x, y, dy, ddy, deg_y, eps=1e-20):
   x, residual, _, _ = lstsq(A, B)
   assert(residual <=eps)
   return x
-
 
 cs = ContactSequenceHumanoid(0)
 cs.loadFromXML(CONTACT_SEQUENCE_WHOLEBODY_FILE,CONTACT_SEQUENCE_XML_TAG)
@@ -139,6 +147,42 @@ lf_force = spline6(poly_control_list_lf, time_vector)
 rh_force = spline6(poly_control_list_rh, time_vector)
 lh_force = spline6(poly_control_list_lh, time_vector)
 
+def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT,
+               totalTrajTime=TOTAL_TRAJ_TIME):
+
+  s = timeToLift[1]-timeToLift[0]
+  s0=timeToLift[0]
+  s1 = timeToLift[1]
+
+  A = np.zeros((7, 7))
+  A[0,:] = np.array([s0**n for n in xrange(7)])
+  A[1,:] = np.array([(0.5*(s0+s1))**n for n in xrange(7)])
+  A[2,:] = np.array([s1**n for n in xrange(7)])
+  A[3,1:] = np.array([n*(s0**(n-1)) for n in xrange(1,7)])
+  A[4,1:] = np.array([n*(s1**(n-1)) for n in xrange(1,7)])
+  A[5,2:] = np.array([n*(n-1)*(s0**(n-2)) for n in xrange(2,7)])
+  A[6,2:] = np.array([n*(n-1)*(s1**(n-2)) for n in xrange(2,7)])
+
+  B = np.matrix([[0.0,z_amp,0.0,0.,0.,0.,0.]]).transpose()
+
+  poly_coeff_begin=np.zeros((3, 7))
+  poly_coeff_s =np.zeros((3, 7))
+  poly_coeff_end= np.zeros((3, 7))
+
+  for arr in [poly_coeff_begin, poly_coeff_s, poly_coeff_end]:
+    arr[0][0] = initPos[0]
+    arr[1][0] = initPos[1]
+
+  time_vector = np.array([0., s0, s1, totalTrajTime])
+  poly_coeff_s[2,:] = np.array(solve(A,B)).squeeze()
+
+  return ([poly_coeff_begin, poly_coeff_s, poly_coeff_end], time_vector)
+
+lf_traj = foot_lift0(initPos=LF_INIT, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT,
+                    totalTrajTime=TOTAL_TRAJ_TIME)
+
+lf_spline = spline(lf_traj[0], lf_traj[1])
+
 print "Trajectories created"
 if WRITE_OUTPUT:
   com_spline.save_to_file(COM_SPLINE_OUTPUT_FILE)
@@ -146,7 +190,7 @@ if WRITE_OUTPUT:
   lf_force.save_to_file(LF_FORCE_OUTPUT_FILE)
   rh_force.save_to_file(RH_FORCE_OUTPUT_FILE)
   lh_force.save_to_file(LH_FORCE_OUTPUT_FILE)
-
+  lf_spline.save_to_file(LF_SPLINE_OUTPUT_FILE)
 ###############CONFIRM SPLINE OUTPUT##########################
 
 if VERIFY:
@@ -163,3 +207,12 @@ if VERIFY:
         raw_input("Oops")
       if not np.isclose(spl.dot_state_trajectory[j][3:6],com_spline.derivate(t,2)).all():
         raw_input("Oops again")
+
+if PLOT:
+  import matplotlib.pyplot as plt
+  N = 1000
+  lf_spline_data = np.array([lf_spline((t/(1.0*N))*lf_spline.max())[2] \
+                             for t in xrange(N)]).squeeze()
+  time_data = np.array([(t/(1.0*N))*lf_spline.max() for t in xrange(N)]).squeeze()
+  plt.plot(time_data, lf_spline_data)
+  plt.show()
