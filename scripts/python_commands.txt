@@ -37,7 +37,13 @@ create_topic(robot.ros, robot.device.accelerometer,       'acc');
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(0.0);
 
-robot.com_traj_gen.playSpline("${SOTTORQUECONTROL_SOURCE_DIR}/data/traj_com_y_0.08/com_spline.curve")
+robot.com_traj_gen.setSpline("${SOT_TORQUE_INSTALL_DIR}/data/traj_com_y_0.08/com_spline.curve", -1)
+robot.lf_force_traj_gen.setSpline("${SOT_TORQUE_INSTALL_DIR}/data/traj_com_y_0.08/lf_force.curve", -1)
+robot.rf_force_traj_gen.setSpline("${SOT_TORQUE_INSTALL_DIR}/data/traj_com_y_0.08/rf_force.curve", -1)
+robot.traj_sync.turnOn()
+
+create_topic(robot.ros, robot.inv_dyn.f_ref_right_foot, 'right_foot_force_des');
+create_topic(robot.ros, robot.inv_dyn.f_ref_left_foot, 'left_foot_force_des');
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)

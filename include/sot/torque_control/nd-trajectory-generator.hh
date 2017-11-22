@@ -76,7 +76,8 @@ namespace dynamicgraph {
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(initial_value,  dynamicgraph::Vector);
-        DECLARE_SIGNAL(x,      OUT,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(trigger,        bool);
+        DECLARE_SIGNAL(x, OUT,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(dx,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(ddx,           dynamicgraph::Vector);
 
@@ -91,6 +92,9 @@ namespace dynamicgraph {
 
         void playSpline(const std::string& fileName);
 
+        void setSpline(const std::string& filename, const double& timeToInitConf);
+        void startSpline();
+        
         /** Print the current value of the specified component. */
         void getValue(const int& id);
 
@@ -169,6 +173,7 @@ namespace dynamicgraph {
         double            m_t;                /// current control loop time.
         unsigned int      m_n;                /// size of ouput vector
         unsigned int      m_iterLast;         /// last iter index
+        bool              m_splineReady;      /// true if the spline has been successfully loaded.
 
         std::vector<JTG_Status> m_status;     /// status of the component
         std::vector<parametriccurves::AbstractCurve<double, Eigen::Vector1d>* >  m_currentTrajGen;
