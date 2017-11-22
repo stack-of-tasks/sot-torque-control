@@ -36,7 +36,7 @@ def get_sim_conf():
     conf.motor_params              = motor_params;
     return conf;
     
-def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False, start_sot=True):
+def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=False, startSoT=True):
     # BUILD THE STANDARD GRAPH
     conf = get_sim_conf();
     robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf);
@@ -76,7 +76,7 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
         plug(robot.q.sout,              robot.inv_dyn.q);
         plug(robot.v.sout,              robot.inv_dyn.v);
     
-    if(start_sot):
+    if(startSoT):
         start_sot();    
         # RESET FORCE/TORQUE SENSOR OFFSET
         sleep(10*robot.timeStep);

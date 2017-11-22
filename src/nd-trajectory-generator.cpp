@@ -400,6 +400,12 @@ namespace dynamicgraph
         SEND_MSG("Spline set to "+filename+". Now checking initial position", MSG_TYPE_INFO);
         // check current configuration is not too far from initial configuration
         bool needToMoveToInitConf = false;
+        if(timeToInitConf == -1)
+        {
+          m_splineReady = true;
+          SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
+          return;
+        }
         const VectorXd& xInit = (*m_splineTrajGen)(0.0);
         assert(xInit.size() == m_n);
         for(unsigned int i=0; i<m_n; i++)

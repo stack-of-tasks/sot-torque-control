@@ -312,7 +312,7 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     plug(robot.com_traj_gen.ddx,                  ctrl.com_ref_acc);
 
     plug(robot.rf_force_traj_gen.x,               ctrl.f_ref_right_foot);
-    plug(robot.lf_force_traj_gen.x,               ctrl.l_ref_right_foot);
+    plug(robot.lf_force_traj_gen.x,               ctrl.f_ref_left_foot);
 
 
     # rather than giving to the controller the values of gear ratios and rotor inertias
