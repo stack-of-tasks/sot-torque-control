@@ -158,6 +158,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(zmp_des_right_foot_local,  dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des_left_foot_local,   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_ref,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_right_foot,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_left_foot,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp,                       dynamicgraph::Vector);

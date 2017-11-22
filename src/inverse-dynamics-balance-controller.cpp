@@ -129,6 +129,7 @@ namespace dynamicgraph
   << m_zmp_des_right_foot_localSOUT \
   << m_zmp_des_left_foot_localSOUT \
   << m_zmp_desSOUT \
+  << m_zmp_refSOUT \
   << m_zmp_right_footSOUT \
   << m_zmp_left_footSOUT \
   << m_zmpSOUT \
@@ -146,6 +147,7 @@ namespace dynamicgraph
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef InverseDynamicsBalanceController EntityClassName;
 
+      typedef Eigen::Matrix<double,2,1> Vector2;
       typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN;
       typedef Eigen::Matrix<double,Eigen::Dynamic,1> VectorN6;
       /* --- DG FACTORY ---------------------------------------------------- */
@@ -224,6 +226,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_left_foot_local,    dynamicgraph::Vector, m_f_des_left_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des,                    dynamicgraph::Vector, m_zmp_des_left_footSOUT<<
                                                                                     m_zmp_des_right_footSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(zmp_ref,                    dynamicgraph::Vector, m_f_ref_left_footSIN<<
+                                                                                    m_f_ref_right_footSIN)
             ,CONSTRUCT_SIGNAL_OUT(zmp_right_foot,             dg::Vector, m_wrench_right_footSIN)
             ,CONSTRUCT_SIGNAL_OUT(zmp_left_foot,              dg::Vector, m_wrench_left_footSIN)
             ,CONSTRUCT_SIGNAL_OUT(zmp,                        dg::Vector, m_wrench_left_footSIN<<
@@ -967,6 +971,49 @@ namespace dynamicgraph
 
         m_zmp_des = (m_f_RF(2)*m_zmp_des_RF + m_f_LF(2)*m_zmp_des_LF) / (m_f_LF(2)+m_f_RF(2));
         s = m_zmp_des.head<2>();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(zmp_ref,dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_ref before initialization!");
+          return s;
+        }
+        if(s.size()!=2)
+          s.resize(2);
+        const Vector6 & f_LF = m_f_ref_left_footSIN(iter);
+        const Vector6 & f_RF = m_f_ref_right_footSIN(iter);
+
+        se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+        Vector3 zmp_LF, zmp_RF;
+        if(fabs(f_LF(2)>1.0))
+        {
+          zmp_LF(0) = -f_LF(4) / f_LF(2);
+          zmp_LF(1) =  f_LF(3) / f_LF(2);
+          zmp_LF(2) = -H_lf.translation()(2);
+        }
+        else
+          zmp_LF.setZero();
+        zmp_LF = H_lf.act(zmp_LF);
+
+        se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+                                          m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+        if(fabs(f_RF(2)>1.0))
+        {
+          zmp_RF(0) = -f_RF(4) / f_RF(2);
+          zmp_RF(1) =  f_RF(3) / f_RF(2);
+          zmp_RF(2) = -H_rf.translation()(2);
+        }
+        else
+          zmp_RF.setZero();
+        zmp_RF = H_rf.act(zmp_RF);
+
+        if(f_LF(2)+f_RF(2) != 0.0)
+          s = (f_RF(2)*zmp_RF.head<2>() + f_LF(2)*zmp_LF.head<2>()) / (f_LF(2)+f_RF(2));
+
         return s;
       }
 
