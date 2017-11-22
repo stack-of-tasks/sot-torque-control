@@ -423,6 +423,12 @@ namespace dynamicgraph
           m_contactLF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactLF);
 
+          if(m_f_ref_left_footSIN.isPlugged() && m_f_ref_right_footSIN.isPlugged())
+          {
+            m_contactLF->setRegularizationTaskWeightVector(Vector6::Ones());
+            m_contactRF->setRegularizationTaskWeightVector(Vector6::Ones());
+          }
+
           m_taskCom = new TaskComEquality("task-com", *m_robot);
           m_taskCom->Kp(kp_com);
           m_taskCom->Kd(kd_com);
@@ -529,6 +535,9 @@ namespace dynamicgraph
         {
           const Vector6 & f_ref_left_foot  = m_f_ref_left_footSIN(iter);
           const Vector6 & f_ref_right_foot = m_f_ref_right_footSIN(iter);
+          m_contactLF->setForceReference(f_ref_left_foot);
+          m_contactRF->setForceReference(f_ref_right_foot);
+
           if(m_contactState == DOUBLE_SUPPORT)
           {
             if(f_ref_left_foot.norm() < ZERO_FORCE_THRESHOLD)
@@ -594,9 +603,6 @@ namespace dynamicgraph
         const double & w_posture = m_w_postureSIN(iter);
         const double & w_forces = m_w_forcesSIN(iter);
 
-        const double & fMaxRF = m_f_max_right_footSIN(iter);
-        const double & fMaxLF = m_f_max_left_footSIN(iter);
-
         if(m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION)
         {
           const Eigen::Matrix<double,12,1>& x_rf_ref = m_rf_ref_posSIN(iter);
@@ -658,6 +664,13 @@ namespace dynamicgraph
           m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
         }
 
+        const double & fMin = m_f_minSIN(0);
+        const double & fMaxRF = m_f_max_right_footSIN(iter);
+        const double & fMaxLF = m_f_max_left_footSIN(iter);
+        m_contactLF->setMinNormalForce(fMin);
+        m_contactRF->setMinNormalForce(fMin);
+        m_contactLF->setMaxNormalForce(fMaxLF);
+        m_contactRF->setMaxNormalForce(fMaxRF);
         m_contactLF->Kp(kp_contact);
         m_contactLF->Kd(kd_contact);
         m_contactLF->setRegularizationTaskWeight(w_forces);
