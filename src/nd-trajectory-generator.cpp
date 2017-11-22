@@ -398,14 +398,16 @@ namespace dynamicgraph
           return SEND_MSG("Error while loading spline"+filename, MSG_TYPE_ERROR);
 
         SEND_MSG("Spline set to "+filename+". Now checking initial position", MSG_TYPE_INFO);
-        // check current configuration is not too far from initial configuration
+
         bool needToMoveToInitConf = false;
-        if(timeToInitConf == -1)
+        if(timeToInitConf < 0)
         {
           m_splineReady = true;
           SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
           return;
         }
+
+        // check current configuration is not too far from initial configuration
         const VectorXd& xInit = (*m_splineTrajGen)(0.0);
         assert(xInit.size() == m_n);
         for(unsigned int i=0; i<m_n; i++)
@@ -419,17 +421,15 @@ namespace dynamicgraph
         {
           for(unsigned int i=0; i<m_n; i++)
           {
-//            if(!isJointInRange(i, xInit[i]))
-//              return;
-
             m_minJerkTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
             m_minJerkTrajGen[i]->setFinalPoint(xInit[i]);
             m_minJerkTrajGen[i]->setTimePeriod(timeToInitConf);
             m_status[i] = JTG_MIN_JERK;
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
-            SEND_MSG("MinimumJerk trajectory for index "+ toString(i) +" to go to final position" + toString(xInit[i]), MSG_TYPE_WARNING);
+//            SEND_MSG("MinimumJerk trajectory for index "+ toString(i) +" to go to final position" + toString(xInit[i]), MSG_TYPE_WARNING);
           }
           m_t = 0.0;
+          m_splineReady = true;
           return;
         }
         m_splineReady = true;
