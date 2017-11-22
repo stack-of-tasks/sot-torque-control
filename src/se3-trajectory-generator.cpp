@@ -50,18 +50,22 @@ namespace dynamicgraph
           SE3TrajectoryGenerator(const std::string& name)
             : Entity(name)
             ,CONSTRUCT_SIGNAL_IN(initial_value,dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(trigger,bool)
             ,CONSTRUCT_SIGNAL(x,   OUT, dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_OUT(dx,  dynamicgraph::Vector, m_xSOUT)
             ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
             ,m_firstIter(true)
             ,m_initSucceeded(false)
+            ,m_splineReady(false)
+            ,m_t(0)
             ,m_np(12)
             ,m_nv(6)
             ,m_iterLast(0)
       {
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
-        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN);
+        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN
+                                    <<m_triggerSIN );
 
         /* Commands. */
         addCommand("init",
@@ -78,6 +82,12 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &SE3TrajectoryGenerator::playTrajectoryFile,
                                     docCommandVoid1("Play the trajectory read from the specified text file.",
                                                     "(string) File name, path included")));
+        addCommand("setSpline",
+                   makeCommandVoid3(*this, &SE3TrajectoryGenerator::setSpline,
+                                    docCommandVoid3("Load serialized spline from file",
+                                                    "(string)   filename",
+                                                    "(double) time to initial conf",
+                                                    "(Matrix) orientation of the point")));
 
         addCommand("startSinusoid",
                    makeCommandVoid3(*this, &SE3TrajectoryGenerator::startSinusoid,
@@ -146,6 +156,7 @@ namespace dynamicgraph
           m_noTrajGen[i]        = new NoTrajectoryGenerator(1);
           m_currentTrajGen[i]   = m_noTrajGen[i];
         }
+        m_splineTrajGen   = new parametriccurves::Spline<double,Eigen::Dynamic>();
         m_textFileTrajGen = new TextFileTrajectoryGenerator(dt, m_np);
         m_initSucceeded = true;
       }
@@ -184,10 +195,21 @@ namespace dynamicgraph
           }
           else if(iter == m_iterLast)
           {
+            if (m_triggerSIN(iter)==true && m_splineReady) startSpline();
             if(m_status[0]==TG_TEXT_FILE)
             {
               for(unsigned int i=0; i<m_np; i++)
                 s(i) = m_textFileTrajGen->getPos()[i];
+            }
+            else if(m_status[0]==TG_SPLINE)
+            {
+              const Eigen::Vector3d& t= (*m_splineTrajGen)(m_t);
+              s.segment<3>(0) = m_splineRotation.row(0);
+              s.segment<3>(4) = m_splineRotation.row(1);
+              s.segment<3>(8) = m_splineRotation.row(2);
+              s[3] = t[0];
+              s[7] = t[1];
+              s[11]= t[2];
             }
             else
               for(unsigned int i=0; i<m_np; i++)
@@ -196,7 +218,7 @@ namespace dynamicgraph
             return s;
           }
           m_iterLast = iter;
-
+          if (m_triggerSIN(iter)==true && m_splineReady) startSpline();
           if(m_status[0]==TG_TEXT_FILE)
           {
             const VectorXd& xRef = m_textFileTrajGen->compute_next_point();
@@ -211,6 +233,38 @@ namespace dynamicgraph
             }
             if(m_textFileTrajGen->isTrajectoryEnded())
               SEND_MSG("Text file trajectory ended.", MSG_TYPE_INFO);
+          }
+          else if(m_status[0]==TG_SPLINE)
+          {
+            m_t += m_dt;
+            if(!m_splineTrajGen->checkRange(m_t))
+            {
+              const Eigen::Vector3d& t= (*m_splineTrajGen)(m_splineTrajGen->tmax());
+              s.segment<3>(0) = m_splineRotation.row(0);
+              s.segment<3>(4) = m_splineRotation.row(1);
+              s.segment<3>(8) = m_splineRotation.row(2);
+              s[3] = t[0];
+              s[7] = t[1];
+              s[11]= t[2];
+              for(unsigned int i=0; i<m_np; i++)
+              {
+                m_noTrajGen[i]->set_initial_point(s(i));
+                m_status[i] = TG_STOP;
+              }
+              m_splineReady =false;
+              SEND_MSG("Spline trajectory ended. Remember to turn off the trigger.", MSG_TYPE_INFO);
+              m_t =0;
+            }
+            else
+            {
+              const Eigen::Vector3d& t= (*m_splineTrajGen)(m_t);
+              s.segment<3>(0) = m_splineRotation.row(0);
+              s.segment<3>(4) = m_splineRotation.row(1);
+              s.segment<3>(8) = m_splineRotation.row(2);
+              s[3] = t[0];
+              s[7] = t[1];
+              s[11]= t[2];
+            }
           }
           else
           {
@@ -250,6 +304,12 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_nv; i++)
             s(i) = m_textFileTrajGen->getVel()[i];
         }
+        else if(m_status[0]==TG_SPLINE)
+        {
+          const Eigen::Vector3d& t= m_splineTrajGen->derivate(m_t,1);
+          s.segment<3>(0) = t;
+          s.segment<3>(3).setZero();
+        }
         else
           for(unsigned int i=0; i<m_nv; i++)
             s(i) = m_currentTrajGen[i]->getVel()(0);
@@ -274,6 +334,12 @@ namespace dynamicgraph
         {
           for(unsigned int i=0; i<m_nv; i++)
             s(i) = m_textFileTrajGen->getAcc()[i];
+        }
+        else if(m_status[0]==TG_SPLINE)
+        {
+          const Eigen::Vector3d& t= m_splineTrajGen->derivate(m_t,2);
+          s.segment<3>(0) = t;
+          s.segment<3>(3).setZero();
         }
         else
           for(unsigned int i=0; i<m_nv; i++)
@@ -333,6 +399,73 @@ namespace dynamicgraph
         for(unsigned int i=0; i<m_np; i++)
         {
           m_status[i]         = TG_TEXT_FILE;
+        }
+      }
+
+      void SE3TrajectoryGenerator::setSpline(const std::string& fileName,
+                                            const double& timeToInitConf,
+                                            const Eigen::MatrixXd& init_rotation)
+      {
+        if(!m_initSucceeded)
+          return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
+
+        for(unsigned int i=0; i<m_np; i++)
+          if(m_status[i]!=TG_STOP)
+            return SEND_MSG("You cannot control component "+toString(i)+" because it is already controlled.", MSG_TYPE_ERROR);
+
+        if(!m_splineTrajGen->loadFromFile(fileName))
+          return SEND_MSG("Error while loading text file "+fileName, MSG_TYPE_ERROR);
+
+        // check current configuration is not too far from initial trajectory configuration
+        bool needToMoveToInitConf = false;
+        m_splineReady = true;
+        m_splineRotation = init_rotation;
+        if(timeToInitConf < 0)
+        {
+          SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
+          return;
+        }
+
+        const VectorXd& t= (*m_splineTrajGen)(0.0);
+        VectorXd xInit(12);
+        xInit.segment<3>(0) = m_splineRotation.row(0);
+        xInit.segment<3>(4) = m_splineRotation.row(1);
+        xInit.segment<3>(8) = m_splineRotation.row(2);
+        xInit[3] = t[0];
+        xInit[7] = t[1];
+        xInit[11]= t[2];
+
+        for(unsigned int i=0; i<m_np; i++)
+          if(fabs(xInit[i] - m_currentTrajGen[i]->getPos()(0)) > 0.001)
+          {
+            needToMoveToInitConf = true;
+            SEND_MSG("Component "+ toString(i) +" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
+        }
+
+        // if necessary move joints to initial configuration
+        if(needToMoveToInitConf)
+        {
+          for(unsigned int i=0; i<m_np; i++)
+          {
+            m_minJerkTrajGen[i]->set_initial_point(m_noTrajGen[i]->getPos());
+            m_minJerkTrajGen[i]->set_final_point(xInit[i]);
+            m_minJerkTrajGen[i]->set_trajectory_time(timeToInitConf);
+            m_status[i] = TG_MIN_JERK;
+            m_currentTrajGen[i] = m_minJerkTrajGen[i];
+          }          
+          return;
+        }
+
+        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);        
+      }
+
+      void SE3TrajectoryGenerator::startSpline()
+      {
+        if(m_status[0]==TG_SPLINE) return;
+        m_t = 0.0;
+        for(unsigned int i=0; i<m_np; i++)
+        {
+          m_status[i]         = TG_SPLINE;
         }
       }
 
@@ -474,6 +607,9 @@ namespace dynamicgraph
         m_noTrajGen[i]->set_initial_point(m_currentTrajGen[i]->getPos());
         m_status[i] = TG_STOP;
         m_currentTrajGen[i] = m_noTrajGen[i];
+        
+        m_splineReady=false;
+        m_t=0.0;
       }
 
       /* ------------------------------------------------------------------- */

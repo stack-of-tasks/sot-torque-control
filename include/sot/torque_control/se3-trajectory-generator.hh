@@ -40,6 +40,7 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
+#include <parametriccurves/spline.hpp>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"
@@ -68,6 +69,7 @@ namespace dynamicgraph {
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(initial_value,  dynamicgraph::Vector);
         DECLARE_SIGNAL(x,      OUT,       dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(trigger,        bool);
         DECLARE_SIGNAL_OUT(dx,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(ddx,           dynamicgraph::Vector);
 
@@ -79,6 +81,10 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
 
         void playTrajectoryFile(const std::string& fileName);
+        void startSpline();
+        void setSpline(const std::string& filename,
+                       const double& timeToInitConf,
+                       const Eigen::MatrixXd& init_rotation);
 
         /** Print the current value of the specified component. */
         void getValue(const int& id);
@@ -148,7 +154,8 @@ namespace dynamicgraph {
           TG_LIN_CHIRP,
           TG_TRIANGLE,
           TG_CONST_ACC,
-          TG_TEXT_FILE
+          TG_TEXT_FILE,
+          TG_SPLINE
         };
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
@@ -157,6 +164,12 @@ namespace dynamicgraph {
         unsigned int      m_np;               /// size of position vector
         unsigned int      m_nv;               /// size of velocity vector
         unsigned int      m_iterLast;         /// last iter index
+
+        double m_t;
+        Eigen::Matrix3d m_splineRotation;
+        parametriccurves::Spline<double, Eigen::Dynamic>*     m_splineTrajGen;
+        bool m_splineReady;
+
 
         std::vector<TG_Status> m_status;     /// status of the component
         std::vector<AbstractTrajectoryGenerator*>    m_currentTrajGen;
