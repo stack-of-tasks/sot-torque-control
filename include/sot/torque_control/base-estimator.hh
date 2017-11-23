@@ -100,6 +100,9 @@ namespace dynamicgraph {
         BaseEstimator( const std::string & name );
 
         void init(const double & dt, const std::string& urdfFile);
+        
+        void set_fz_stable_windows_size(const int & ws);
+        void set_alpha_w_filter(const double & a);
         void set_alpha_DC_acc(const double & a);
         void set_alpha_DC_vel(const double & a);
         void reset_foot_positions();
@@ -160,6 +163,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(q_imu,                      dynamicgraph::Vector);  /// n+6 robot configuration with base6d in RPY
         DECLARE_SIGNAL_OUT(w_lf,                       double);  /// weight of the estimation coming from the left foot
         DECLARE_SIGNAL_OUT(w_rf,                       double);  /// weight of the estimation coming from the right foot
+        DECLARE_SIGNAL_OUT(w_lf_filtered,              double);  /// filtered weight of the estimation coming from the left foot
+        DECLARE_SIGNAL_OUT(w_rf_filtered,              double);  /// filtered weight of the estimation coming from the right foot
 
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
@@ -179,6 +184,11 @@ namespace dynamicgraph {
         double            m_dt;               /// sampling time step
         RobotUtil *       m_robot_util;
 
+        bool              m_left_foot_is_stable;    /// True if left foot as been stable for the last 'm_fz_stable_windows_size' samples
+        bool              m_right_foot_is_stable;   /// True if right foot as been stable for the last 'm_fz_stable_windows_size' samples
+        int               m_fz_stable_windows_size; /// size of the windows used to detect that feet did not leave the ground
+        int               m_lf_fz_stable_cpt; ///counter for detecting for how long the feet has been stable
+        int               m_rf_fz_stable_cpt; ///counter for detecting for how long the feet has been stable
 
         /* Estimator parameters */
         double            m_w_imu;            /// weight of IMU for sensor fusion
@@ -195,7 +205,6 @@ namespace dynamicgraph {
         Vector6           m_K_rf;             /// 6d stiffness of right foot spring
         Vector6           m_K_lf;             /// 6d stiffness of left foot spring
 
-
         Eigen::VectorXd   m_v_kin;            /// 6d robot velocities from kinematic only   (encoders derivative)
         Eigen::VectorXd   m_v_flex;           /// 6d robot velocities from flexibility only (force sensor derivative)
         Eigen::VectorXd   m_v_imu;            /// 6d robot velocities form imu only (accelerometer integration + gyro)
@@ -207,6 +216,10 @@ namespace dynamicgraph {
         double            m_alpha_DC_acc;     /// alpha parameter for DC blocker filter on acceleration data
         double            m_alpha_DC_vel;     /// alpha parameter for DC blocker filter on velocity data
         
+        double            m_alpha_w_filter;   /// filter parameter to filter weights (1st order low pass filter)
+        
+        double m_w_lf_filtered;               /// filtered weight of the estimation coming from the left foot
+        double m_w_rf_filtered;               /// filtered weight of the estimation coming from the right foot
         
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data

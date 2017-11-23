@@ -105,7 +105,8 @@ namespace dynamicgraph
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN <<  m_dforceLLEGSIN << m_dforceRLEGSIN << \
                           m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN << m_accelerometerSIN << m_gyroscopeSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
-                          m_w_lfSOUT << m_w_rfSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_gyrSOUT << m_v_flexSOUT
+                          m_w_lfSOUT << m_w_rfSOUT << m_w_lf_filteredSOUT << m_w_rf_filteredSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << \ 
+                          m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_gyrSOUT << m_v_flexSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -147,6 +148,8 @@ namespace dynamicgraph
                                                                               <<m_K_fb_feet_posesSIN
                                                                               <<m_w_lfSOUT
                                                                               <<m_w_rfSOUT
+                                                                              <<m_w_lf_filteredSOUT
+                                                                              <<m_w_rf_filteredSOUT
                                                                               <<m_lf_ref_xyzquatSIN
                                                                               <<m_rf_ref_xyzquatSIN)
         ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER << m_accelerometerSIN << m_gyroscopeSIN << m_qSOUT << m_dforceLLEGSIN << m_dforceRLEGSIN)
@@ -163,6 +166,8 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(q_imu,                      dynamicgraph::Vector, m_qSOUT<<m_imu_quaternionSIN)
         ,CONSTRUCT_SIGNAL_OUT(w_lf,                       double, m_forceLLEGSIN)
         ,CONSTRUCT_SIGNAL_OUT(w_rf,                       double, m_forceRLEGSIN)
+        ,CONSTRUCT_SIGNAL_OUT(w_lf_filtered,              double, m_w_lfSOUT)
+        ,CONSTRUCT_SIGNAL_OUT(w_rf_filtered,              double, m_w_rfSOUT)
         ,m_initSucceeded(false)
         ,m_reset_foot_pos(true)
         ,m_w_imu(0.0)
@@ -186,6 +191,16 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "time step (double)",
                                                     "URDF file path (string)")));
+
+
+        addCommand("set_fz_stable_windows_size",
+                           makeCommandVoid1(*this, &BaseEstimator::set_fz_stable_windows_size,
+                                            docCommandVoid1("Set the windows size used to detect that feet is stable",
+                                                            "int")));
+        addCommand("set_alpha_w_filter",
+                   makeCommandVoid1(*this, &BaseEstimator::set_alpha_w_filter,
+                                    docCommandVoid1("Set the filter parameter to filter weights",
+                                                    "double")));                                            
         addCommand("set_alpha_DC_acc",
                    makeCommandVoid1(*this, &BaseEstimator::set_alpha_DC_acc,
                                     docCommandVoid1("Set the filter parameter for removing DC from accelerometer data",
@@ -194,7 +209,6 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &BaseEstimator::set_alpha_DC_vel,
                                     docCommandVoid1("Set the filter parameter for removing DC from velocity integrated from acceleration",
                                                     "double")));                                            
-             
         addCommand("reset_foot_positions",
                    makeCommandVoid0(*this, &BaseEstimator::reset_foot_positions,
                                     docCommandVoid0("Reset the position of the feet.")));
@@ -261,7 +275,7 @@ namespace dynamicgraph
         m_dt = dt;
         try
         {
-          /* Retrieve m_robot_util  informations */
+          /* Retrieve m_robot_util informations */
           std::string localName(robotRef);
           if (isNameInRobotUtil(localName))
           {
@@ -302,6 +316,12 @@ namespace dynamicgraph
           
           m_alpha_DC_acc = 0.9995;
           m_alpha_DC_vel = 0.9995;
+          m_alpha_w_filter = 1.0;
+          m_left_foot_is_stable  = true;
+          m_right_foot_is_stable = true;
+          m_fz_stable_windows_size = 10;
+          m_lf_fz_stable_cpt = m_fz_stable_windows_size;
+          m_rf_fz_stable_cpt = m_fz_stable_windows_size;
           m_isFirstIterFlag = true;
         }
         catch (const std::exception& e)
@@ -313,6 +333,21 @@ namespace dynamicgraph
         m_data = new se3::Data(m_model);
         m_initSucceeded = true;
       }
+
+      void BaseEstimator::set_fz_stable_windows_size(const int& ws)
+      {
+          if(ws<0.0)
+          return SEND_MSG("windows_size should be a positive integer", MSG_TYPE_ERROR);
+        m_fz_stable_windows_size = ws;
+      }
+
+      void BaseEstimator::set_alpha_w_filter(const double& a)
+      {
+          if(a<0.0 || a>1.0)
+          return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+        m_alpha_w_filter = a;
+      }
+
 
       void BaseEstimator::set_alpha_DC_acc(const double& a)
       {
@@ -575,16 +610,24 @@ namespace dynamicgraph
 
         // if the weights are not specified by the user through the input signals w_lf, w_rf
         // then compute them
+        // if one feet is not stable, force weight to 0.0
         double wL, wR;
         if(m_w_lf_inSIN.isPlugged())
           wL = m_w_lf_inSIN(iter);
         else
+        {
           wL = m_w_lfSOUT(iter);
-
+          if (m_left_foot_is_stable == false)
+            wL = 0.0;
+        }
         if(m_w_rf_inSIN.isPlugged())
           wR = m_w_rf_inSIN(iter);
         else
+        {
           wR = m_w_rfSOUT(iter);
+          if (m_right_foot_is_stable == false)
+            wR = 0.0;
+        }
 
         assert(qj.size()==m_robot_util->m_nbJoints && "Unexpected size of signal joint_positions");
 
@@ -662,6 +705,17 @@ namespace dynamicgraph
               SE3 rightDrift_delta;
               se3Interp(leftDrift ,SE3::Identity(),K_fb*wR,leftDrift_delta);
               se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
+              // if a feet is not stable on the ground (aka flying), fully update his position 
+              if (m_right_foot_is_stable == false)
+                rightDrift_delta = leftDrift;
+              if (m_left_foot_is_stable == false)
+                leftDrift_delta  = rightDrift;
+              if (m_right_foot_is_stable == false && m_left_foot_is_stable == false)
+                {
+                    //robot is jumping, do not update any feet position
+                    rightDrift_delta = SE3::Identity();
+                    leftDrift_delta = SE3::Identity();
+                }
               m_oMlfs = m_oMlfs * leftDrift_delta;
               m_oMrfs = m_oMrfs * rightDrift_delta;
               // dedrift (x, y, z, yaw) using feet pose references
@@ -823,6 +877,20 @@ namespace dynamicgraph
         double w_zmp = compute_zmp_weight(zmp, m_left_foot_sizes,
                                           m_zmp_std_dev_lf, m_zmp_margin_lf);
         double w_fz = compute_force_weight(wrench(2), m_fz_std_dev_lf, m_fz_margin_lf);
+        //check that foot is sensing a force greater than the margin treshold for more than 'm_fz_stable_windows_size' samples
+        if (wrench(2) > m_fz_margin_lf)
+            m_lf_fz_stable_cpt++;
+        else m_lf_fz_stable_cpt = 0;
+
+        if (m_lf_fz_stable_cpt >= m_fz_stable_windows_size)
+        {
+            m_lf_fz_stable_cpt = m_fz_stable_windows_size;
+            m_left_foot_is_stable = true;
+        }
+        else
+        {
+            m_left_foot_is_stable = false;
+        }
         s = w_zmp*w_fz;
         return s;
       }
@@ -842,9 +910,50 @@ namespace dynamicgraph
         double w_zmp = compute_zmp_weight(zmp, m_right_foot_sizes,
                                           m_zmp_std_dev_rf, m_zmp_margin_rf);
         double w_fz = compute_force_weight(wrench(2), m_fz_std_dev_rf, m_fz_margin_rf);
+        //check that foot is sensing a force greater than the margin treshold for more than 'm_fz_stable_windows_size' samples
+        if (wrench(2) > m_fz_margin_rf)
+            m_rf_fz_stable_cpt++;
+        else m_rf_fz_stable_cpt = 0;
+
+        if (m_rf_fz_stable_cpt >= m_fz_stable_windows_size)
+        {
+            m_rf_fz_stable_cpt = m_fz_stable_windows_size;
+            m_right_foot_is_stable = true;
+        }
+        else
+        {
+            m_right_foot_is_stable = false;
+        }
         s = w_zmp*w_fz;
         return s;
       }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(w_rf_filtered, double)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal w_rf_filtered before initialization!");
+          return s;
+        }
+        double w_rf = m_w_rfSOUT(iter);
+        m_w_rf_filtered = m_alpha_w_filter*w_rf + (1-m_alpha_w_filter)*m_w_rf_filtered; //low pass filter
+        s = m_w_rf_filtered;
+        return s;
+      }
+      
+      DEFINE_SIGNAL_OUT_FUNCTION(w_lf_filtered, double)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal w_lf_filtered before initialization!");
+          return s;
+        }
+        double w_lf = m_w_lfSOUT(iter);
+        m_w_lf_filtered = m_alpha_w_filter*w_lf + (1-m_alpha_w_filter)*m_w_lf_filtered; //low pass filter
+        s = m_w_lf_filtered;
+        return s;
+      }
+
 
       DEFINE_SIGNAL_OUT_FUNCTION(v,dynamicgraph::Vector)
       {
