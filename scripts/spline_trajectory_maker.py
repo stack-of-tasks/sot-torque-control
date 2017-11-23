@@ -10,7 +10,7 @@ import numpy as np
 Z_AMP=0.06
 TIME_TO_LIFT=(2,2.7)
 TOTAL_TRAJ_TIME=4.7
-LF_INIT=np.array([0.0244904,0.105,0.])
+LF_INIT=np.array([0.01,0.095,0.105])
 
 
 ####CONFIG######################
@@ -163,7 +163,7 @@ def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT,
   A[5,2:] = np.array([n*(n-1)*(s0**(n-2)) for n in xrange(2,7)])
   A[6,2:] = np.array([n*(n-1)*(s1**(n-2)) for n in xrange(2,7)])
 
-  B = np.matrix([[0.0,z_amp,0.0,0.,0.,0.,0.]]).transpose()
+  B = np.matrix([[initPos[2],z_amp+initPos[2],initPos[2],0.,0.,0.,0.]]).transpose()
 
   poly_coeff_begin=np.zeros((3, 7))
   poly_coeff_s =np.zeros((3, 7))
@@ -172,6 +172,9 @@ def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT,
   for arr in [poly_coeff_begin, poly_coeff_s, poly_coeff_end]:
     arr[0][0] = initPos[0]
     arr[1][0] = initPos[1]
+
+  for arr in [poly_coeff_begin, poly_coeff_end]:
+    arr[2][0] = initPos[2]
 
   time_vector = np.array([0., s0, s1, totalTrajTime])
   poly_coeff_s[2,:] = np.array(solve(A,B)).squeeze()
