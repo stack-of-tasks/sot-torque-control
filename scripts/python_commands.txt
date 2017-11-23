@@ -4,6 +4,8 @@ robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 robot.ctrl_manager.setStreamPrintPeriod(0.5);
 start_sot()
+#wait 1s
+robot.estimator_ft.setFTsensorOffsets((0.,)*24)
 
 create_topic(robot.ros, robot.filters.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
@@ -29,9 +31,15 @@ create_topic(robot.ros, robot.device.forceRLEG,       'forceRLEG');
 create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
 create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
+create_topic(robot.ros, robot.base_estimator.w_lf, 'w_lf', data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_rf, 'w_rf', data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_lf_filtered, 'w_lf_filtered', data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_rf_filtered, 'w_rf_filtered', data_type='double');
+
+
 
 ent.ctrl_manager.setCtrlMode('all','torque')
-robot.base_estimator.set_imu_weight(0.0);
+robot.base_estimator.set_imu_weight(1.0);
 
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
