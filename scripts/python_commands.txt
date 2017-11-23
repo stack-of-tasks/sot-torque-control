@@ -23,6 +23,7 @@ create_topic(robot.ros, robot.traj_gen.q, 'q_ref');
 create_topic(robot.ros, robot.device.robotVelocity, 'v');
 create_topic(robot.ros, robot.base_estimator.v, 'v_est');
 create_topic(robot.ros, robot.inv_dyn.zmp_des, 'zmp_des');
+create_topic(robot.ros, robot.inv_dyn.zmp_ref, 'zmp_ref');
 create_topic(robot.ros, robot.inv_dyn.zmp, 'zmp');
 create_topic(robot.ros, robot.inv_dyn.f_ref_right_foot, 'f_ref_right_foot');
 create_topic(robot.ros, robot.inv_dyn.f_ref_left_foot, 'f_ref_left_foot');
@@ -52,18 +53,12 @@ robot.base_estimator.set_imu_weight(1.0);
 
 SOT_TORQUE_INSTALL_DIR = '/home/adelpret/devel/openrobots/src/sot-torque-control'
 
-robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", -1)
-robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", -1)
-robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", -1)
-robot.lf_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_spline2.curve", -1, tuple(map(tuple, np.identity(3))))
-
-robot.traj_sync.turnOn()
-
 robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", 1)
 robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", 1)
 robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", 1)
 robot.lf_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_spline2.curve", 1, tuple(map(tuple, np.identity(3))))
 
+robot.traj_sync.out.value = 1 #turnOn()
 
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)

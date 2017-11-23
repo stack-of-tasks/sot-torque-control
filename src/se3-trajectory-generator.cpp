@@ -204,12 +204,10 @@ namespace dynamicgraph
             else if(m_status[0]==TG_SPLINE)
             {
               const Eigen::Vector3d& t= (*m_splineTrajGen)(m_t);
-              s.segment<3>(0) = m_splineRotation.row(0);
-              s.segment<3>(4) = m_splineRotation.row(1);
-              s.segment<3>(8) = m_splineRotation.row(2);
-              s[3] = t[0];
-              s[7] = t[1];
-              s[11]= t[2];
+              s.head<3>() = t;
+              s.segment<3>(3) = m_splineRotation.row(0);
+              s.segment<3>(6) = m_splineRotation.row(1);
+              s.segment<3>(9) = m_splineRotation.row(2);
             }
             else
               for(unsigned int i=0; i<m_np; i++)
@@ -240,12 +238,10 @@ namespace dynamicgraph
             if(!m_splineTrajGen->checkRange(m_t))
             {
               const Eigen::Vector3d& t= (*m_splineTrajGen)(m_splineTrajGen->tmax());
-              s.segment<3>(0) = m_splineRotation.row(0);
-              s.segment<3>(4) = m_splineRotation.row(1);
-              s.segment<3>(8) = m_splineRotation.row(2);
-              s[3] = t[0];
-              s[7] = t[1];
-              s[11]= t[2];
+              s.head<3>() = t;
+              s.segment<3>(3) = m_splineRotation.row(0);
+              s.segment<3>(6) = m_splineRotation.row(1);
+              s.segment<3>(9) = m_splineRotation.row(2);
               for(unsigned int i=0; i<m_np; i++)
               {
                 m_noTrajGen[i]->set_initial_point(s(i));
@@ -258,12 +254,10 @@ namespace dynamicgraph
             else
             {
               const Eigen::Vector3d& t= (*m_splineTrajGen)(m_t);
-              s.segment<3>(0) = m_splineRotation.row(0);
-              s.segment<3>(4) = m_splineRotation.row(1);
-              s.segment<3>(8) = m_splineRotation.row(2);
-              s[3] = t[0];
-              s[7] = t[1];
-              s[11]= t[2];
+              s.head<3>() = t;
+              s.segment<3>(3) = m_splineRotation.row(0);
+              s.segment<3>(6) = m_splineRotation.row(1);
+              s.segment<3>(9) = m_splineRotation.row(2);
             }
           }
           else
@@ -428,12 +422,10 @@ namespace dynamicgraph
 
         const VectorXd& t= (*m_splineTrajGen)(0.0);
         VectorXd xInit(12);
-        xInit.segment<3>(0) = m_splineRotation.row(0);
-        xInit.segment<3>(4) = m_splineRotation.row(1);
-        xInit.segment<3>(8) = m_splineRotation.row(2);
-        xInit[3] = t[0];
-        xInit[7] = t[1];
-        xInit[11]= t[2];
+        xInit.segment<3>(3) = m_splineRotation.row(0);
+        xInit.segment<3>(6) = m_splineRotation.row(1);
+        xInit.segment<3>(9) = m_splineRotation.row(2);
+        xInit.head<3>() = t;
 
         for(unsigned int i=0; i<m_np; i++)
           if(fabs(xInit[i] - m_currentTrajGen[i]->getPos()(0)) > 0.001)
