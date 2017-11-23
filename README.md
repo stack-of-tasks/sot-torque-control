@@ -10,6 +10,7 @@ This project depends on:
 * pinocchio >= 1.2
 * metapod
 * [PinInvDyn](https://github.com/stack-of-tasks/invdyn)
+* [parametric-curves](https://github.com/stack-of-tasks/parametric-curves)
 
 All of these packages (except PinInvDyn) can be installed through [robotpkg](http://robotpkg.openrobots.org/).
 In particular, you can find them in [robotpkg-wip](http://robotpkg.openrobots.org/robotpkg-wip.html) (work in progress), a subset of robotpkg.
