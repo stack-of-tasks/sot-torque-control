@@ -3,9 +3,11 @@ np.set_printoptions(precision=3, suppress=True)
 robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 robot.ctrl_manager.setStreamPrintPeriod(0.5);
+
 start_sot()
 #wait 1s
 robot.estimator_ft.setFTsensorOffsets((0.,)*24)
+
 
 create_topic(robot.ros, robot.filters.estimator_kin.dx, 'dq_est');
 create_topic(robot.ros, robot.dq.sout, 'dq');
@@ -22,6 +24,8 @@ create_topic(robot.ros, robot.device.robotVelocity, 'v');
 create_topic(robot.ros, robot.base_estimator.v, 'v_est');
 create_topic(robot.ros, robot.inv_dyn.zmp_des, 'zmp_des');
 create_topic(robot.ros, robot.inv_dyn.zmp, 'zmp');
+create_topic(robot.ros, robot.inv_dyn.f_ref_right_foot, 'f_ref_right_foot');
+create_topic(robot.ros, robot.inv_dyn.f_ref_left_foot, 'f_ref_left_foot');
 create_topic(robot.ros, robot.inv_dyn.f_des_right_foot, 'f_des_right_foot');
 create_topic(robot.ros, robot.inv_dyn.f_des_left_foot, 'f_des_left_foot');
 create_topic(robot.ros, robot.inv_dyn.zmp_left_foot, 'zmp_left_foot');
@@ -31,20 +35,34 @@ create_topic(robot.ros, robot.device.forceRLEG,       'forceRLEG');
 create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
 create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
+
 create_topic(robot.ros, robot.base_estimator.w_lf, 'w_lf', data_type='double');
 create_topic(robot.ros, robot.base_estimator.w_rf, 'w_rf', data_type='double');
 create_topic(robot.ros, robot.base_estimator.w_lf_filtered, 'w_lf_filtered', data_type='double');
 create_topic(robot.ros, robot.base_estimator.w_rf_filtered, 'w_rf_filtered', data_type='double');
+#create_topic(robot.ros, robot.torque_ctrl.dq_motor,       'dq_motor');
+#create_topic(robot.ros, robot.torque_ctrl.jointsAccelerationsDesired,       'ddq_des');
 
-
-
+#robot.torque_ctrl.velLeakingRate.value = 30*(0.,)
+#robot.torque_ctrl.reset_ddq_integral();
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(1.0);
+
+SOT_TORQUE_INSTALL_DIR = '/home/adelpret/devel/openrobots/src/sot-torque-control'
+robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", 1)
+robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", 1)
+robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", 1)
+robot.com_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/com_spline.curve", -1)
+robot.lf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_force.curve", -1)
+robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/rf_force.curve", -1)
+robot.traj_sync.out.value = 1
 
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
 sleep(2.0*7)
 robot.com_traj_gen.startSinusoid(1, -0.05, 1.5)
+robot.com_traj_gen.startLinChirp(1, -0.05, 0.3, 0.7, 10)
+robot.com_traj_gen.startConstAcc(1, -0.05, 2)
 
 create_topic(robot.ros, robot.inv_dyn.tau_des,            'tau_des');
 create_topic(robot.ros, robot.estimator_ft.jointsTorques, 'tau_est');
@@ -126,4 +144,3 @@ traj_gen.startSinusoid('rar', -0.3, 1.0);
 
 tracer.start();
 tracer = reset_tracer(robot,tracer)
-

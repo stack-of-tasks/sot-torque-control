@@ -80,6 +80,8 @@ namespace dynamicgraph {
 		  const std::string& robotRef);
         void removeRightFootContact(const double& transitionTime);
         void removeLeftFootContact(const double& transitionTime);
+        void addRightFootContact(const double& transitionTime);
+        void addLeftFootContact(const double& transitionTime);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(com_ref_pos,                dynamicgraph::Vector);
@@ -97,6 +99,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(base_orientation_ref_pos,   dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(base_orientation_ref_vel,   dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(base_orientation_ref_acc,   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(f_ref_right_foot,           dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(f_ref_left_foot,            dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(kp_base_orientation,        dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_base_orientation,        dynamicgraph::Vector);
@@ -154,6 +158,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(zmp_des_right_foot_local,  dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des_left_foot_local,   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(zmp_ref,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_right_foot,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_left_foot,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp,                       dynamicgraph::Vector);
