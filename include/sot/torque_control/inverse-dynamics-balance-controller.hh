@@ -169,6 +169,12 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(base_orientation,          dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_pos,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_foot_vel,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_foot_vel,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_foot_acc,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_foot_acc,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_foot_acc_des,        dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_foot_acc_des,         dynamicgraph::Vector);
         
         /// This signal copies active_joints only if it changes from a all false or to an all false value
         DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);

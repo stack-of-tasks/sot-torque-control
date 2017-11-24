@@ -243,9 +243,11 @@ namespace dynamicgraph {
 
 	bool joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);
 
-	bool velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot);
+        bool velocity_urdf_to_sot(Eigen::ConstRefVector q_urdf,
+                                  Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot);
       
-	bool velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf);
+        bool velocity_sot_to_urdf(Eigen::ConstRefVector q_urdf,
+                                  Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf);
 
 	bool config_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::RefVector q_sot);
 	bool config_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf);

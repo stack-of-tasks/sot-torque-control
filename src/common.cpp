@@ -17,7 +17,7 @@
 #include <sot/torque_control/common.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
-
+//#include <pinocchio/algorithm/kinematics.hpp>
 
 namespace dynamicgraph
 {
@@ -293,8 +293,10 @@ namespace dynamicgraph
       }
       
       bool RobotUtil::
-      velocity_urdf_to_sot(Eigen::ConstRefVector v_urdf, Eigen::RefVector v_sot)
+      velocity_urdf_to_sot(Eigen::ConstRefVector q_urdf, Eigen::ConstRefVector v_urdf,
+                           Eigen::RefVector v_sot)
       {
+        assert(q_urdf.size()==m_nbJoints+7);
 	assert(v_urdf.size()==m_nbJoints+6);
 	assert(v_sot.size()==m_nbJoints+6);
 	
@@ -303,16 +305,21 @@ namespace dynamicgraph
 	    SEND_MSG("velocity_urdf_to_sot should be called", MSG_TYPE_ERROR);
 	    return false;
 	  }
-
-        v_sot.head<6>() = v_urdf.head<6>();
+        const Eigen::Quaterniond q(q_urdf(6), q_urdf(3), q_urdf(4), q_urdf(5));
+        Eigen::Matrix3d oRb  = q.toRotationMatrix();
+        v_sot.head<3>()     = oRb*v_urdf.head<3>();
+        v_sot.segment<3>(3) = oRb*v_urdf.segment<3>(3);
+//        v_sot.head<6>() = v_urdf.head<6>();
         joints_urdf_to_sot(v_urdf.tail(m_nbJoints), 
 			   v_sot.tail(m_nbJoints));
 	return true;
       }
 
       bool RobotUtil::
-      velocity_sot_to_urdf(Eigen::ConstRefVector v_sot, Eigen::RefVector v_urdf)
+      velocity_sot_to_urdf(Eigen::ConstRefVector q_urdf, Eigen::ConstRefVector v_sot,
+                           Eigen::RefVector v_urdf)
       {
+        assert(q_urdf.size()==m_nbJoints+7);
 	assert(v_urdf.size()==m_nbJoints+6);
 	assert(v_sot.size()==m_nbJoints+6);
 	
@@ -321,7 +328,12 @@ namespace dynamicgraph
 	    SEND_MSG("velocity_sot_to_urdf should be called", MSG_TYPE_ERROR);
 	    return false;
 	  }
-	v_urdf.head<6>() = v_sot.head<6>();
+        // compute rotation from world to base frame
+        const Eigen::Quaterniond q(q_urdf(6), q_urdf(3), q_urdf(4), q_urdf(5));
+        Eigen::Matrix3d oRb  = q.toRotationMatrix();
+        v_urdf.head<3>()     = oRb.transpose()*v_sot.head<3>();
+        v_urdf.segment<3>(3) = oRb.transpose()*v_sot.segment<3>(3);
+//	v_urdf.head<6>() = v_sot.head<6>();
         joints_sot_to_urdf(v_sot.tail(m_nbJoints), 
 			   v_urdf.tail(m_nbJoints));
 	return true;

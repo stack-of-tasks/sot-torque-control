@@ -226,6 +226,7 @@ void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
   tsid::math::SE3ToVector(H_rf, s.pos);
   m_contactRF->setReference(s);
   SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
+  setVelocity(m_v_sot);
 }
 
 void DeviceTorqueCtrl::setVelocity( const dynamicgraph::Vector& v )
@@ -238,7 +239,7 @@ void DeviceTorqueCtrl::setVelocity( const dynamicgraph::Vector& v )
   }
   Device::setVelocity(v);
   m_v_sot = v;
-  m_robot_util->velocity_sot_to_urdf(m_v_sot, m_v);
+  m_robot_util->velocity_sot_to_urdf(m_q, m_v_sot, m_v);
 }
 
 void DeviceTorqueCtrl::setControlInputType(const std::string& cit)
@@ -340,8 +341,8 @@ void DeviceTorqueCtrl::integrate( const double & dt )
     m_v += dt*m_dv;
 
     m_robot_util->config_urdf_to_sot(m_q, m_q_sot);
-    m_robot_util->velocity_urdf_to_sot(m_v, m_v_sot);
-    m_robot_util->velocity_urdf_to_sot(m_dv, m_dv_sot);
+    m_robot_util->velocity_urdf_to_sot(m_q, m_v, m_v_sot);
+    m_robot_util->velocity_urdf_to_sot(m_q, m_dv, m_dv_sot);
 
     state_                = m_q_sot;
     velocity_             = m_v_sot;

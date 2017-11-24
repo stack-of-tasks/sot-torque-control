@@ -140,6 +140,12 @@ namespace dynamicgraph
   << m_base_orientationSOUT \
   << m_right_foot_posSOUT \
   << m_left_foot_posSOUT \
+  << m_right_foot_velSOUT \
+  << m_left_foot_velSOUT \
+  << m_right_foot_accSOUT \
+  << m_left_foot_accSOUT \
+  << m_right_foot_acc_desSOUT \
+  << m_left_foot_acc_desSOUT \
   << m_dv_desSOUT \
   << m_MSOUT
 
@@ -243,6 +249,12 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_foot_vel,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_foot_acc,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc_des,          dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_foot_acc_des,         dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_INNER(active_joints_checked,    dg::Vector, m_active_jointsSIN)
             ,m_initSucceeded(false)
             ,m_enabled(false)
@@ -288,7 +300,12 @@ namespace dynamicgraph
         if(m_contactState == DOUBLE_SUPPORT)
         {
           SEND_MSG("Remove right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
-          m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
+          bool res = m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
+          if(!res)
+          {
+            const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+            SEND_MSG("Error while remove right foot contact."+tsid::solvers::HQPDataToString(hqpData, false), MSG_TYPE_ERROR);
+          }
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskRF, w_feet, 1);
           if(transitionTime>m_dt)
@@ -306,7 +323,12 @@ namespace dynamicgraph
         if(m_contactState == DOUBLE_SUPPORT)
         {
           SEND_MSG("Remove left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
-          m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
+          bool res = m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
+          if(!res)
+          {
+            const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+            SEND_MSG("Error while remove right foot contact."+tsid::solvers::HQPDataToString(hqpData, false), MSG_TYPE_ERROR);
+          }
           const double & w_feet = m_w_feetSIN.accessCopy();
           m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
           if(transitionTime>m_dt)
@@ -640,7 +662,7 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_PREPARE_INV_DYN);
         m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
-        m_robot_util->velocity_sot_to_urdf(v_sot, m_v_urdf);
+        m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
 
         m_sampleCom.pos = x_com_ref;
         m_sampleCom.vel = dx_com_ref;
@@ -745,7 +767,7 @@ namespace dynamicgraph
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
         m_dv_urdf = m_invDyn->getAccelerations(sol);
-        m_robot_util->velocity_urdf_to_sot(m_dv_urdf, m_dv_sot);
+        m_robot_util->velocity_urdf_to_sot(m_q_urdf, m_dv_urdf, m_dv_sot);
         Eigen::Matrix<double,12,1> tmp;
         if(m_invDyn->getContactForces(m_contactRF->name(), sol, tmp))
           m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
@@ -1140,9 +1162,9 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_pos before initialization!");
           return s;
         }
-        //        m_tau_desSOUT(iter);
+        m_tau_desSOUT(iter);
         se3::SE3 oMi;
-	    s.resize(12);
+        s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
         return s;
@@ -1155,11 +1177,97 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_pos before initialization!");
           return s;
         }
-        //        m_tau_desSOUT(iter);
+        m_tau_desSOUT(iter);
         se3::SE3 oMi;
-	    s.resize(12);
+        s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(left_foot_vel, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_vel before initialization!");
+          return s;
+        }
+        se3::Motion v;
+        m_robot->frameVelocity(m_invDyn->data(), m_frame_id_lf, v);
+        s = v.toVector();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_foot_vel, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_vel before initialization!");
+          return s;
+        }
+        se3::Motion v;
+        m_robot->frameVelocity(m_invDyn->data(), m_frame_id_rf, v);
+        s = v.toVector();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(left_foot_acc, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        if(m_contactState == RIGHT_SUPPORT)
+          s = m_taskLF->getAcceleration(m_dv_urdf);
+        else
+          s = m_contactLF->getMotionTask().getAcceleration(m_dv_urdf);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_foot_acc, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_acc before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        if(m_contactState == LEFT_SUPPORT)
+          s = m_taskRF->getAcceleration(m_dv_urdf);
+        else
+          s = m_contactRF->getMotionTask().getAcceleration(m_dv_urdf);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(left_foot_acc_des, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc_des before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        if(m_contactState == RIGHT_SUPPORT)
+          s = m_taskLF->getDesiredAcceleration();
+        else
+          s = m_contactLF->getMotionTask().getDesiredAcceleration();
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_foot_acc_des, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_acc_des before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        if(m_contactState == LEFT_SUPPORT)
+          s = m_taskRF->getDesiredAcceleration();
+        else
+          s = m_contactRF->getMotionTask().getDesiredAcceleration();
         return s;
       }
 
