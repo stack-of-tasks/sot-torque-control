@@ -10,11 +10,12 @@ robot.timeStep=0.0015
 robot = main_v3(robot, startSoT=True, go_half_sitting=False)
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
 
-robot.base_estimator.set_imu_weight(0.0)
+#robot.base_estimator.set_imu_weight(0.0)
 plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
 #plug(robot.filters.estimator_kin.dx,         robot.current_ctrl.dq);
 #plug(robot.filters.estimator_kin.dx,         robot.torque_ctrl.jointsVelocities);
 robot.inv_dyn.kp_com.value = (30.0, 30.0, 50.0)
+#robot.inv_dyn.kd_com.value = (8.0, 8.0, 0.0)
 
 # create ros topics
 create_topic(robot.ros, robot.device.robotState,                'robotState')
@@ -53,8 +54,8 @@ robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','
 
 # enable integral feedback in torque control
 import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
-robot.torque_ctrl.torque_integral_saturation.value = tuple(0.9*motor_params.Kf_n / motor_params.Kt_n)
-robot.torque_ctrl.KiTorque.value = 30*(3.0,)
+robot.torque_ctrl.torque_integral_saturation.value = tuple(0.5*motor_params.Kf_n / motor_params.Kt_n)
+robot.torque_ctrl.KiTorque.value = 30*(5.0,)
 
 # enable foot pose update in base estimator
 robot.base_estimator.K_fb_feet_poses.value = 1e-3
@@ -102,7 +103,7 @@ smoothly_set_signal(robot.torque_ctrl.KpTorque,30*(1.,))
 smoothly_set_signal(robot.inv_dyn.kp_posture,30*(5.,))
 
 robot.com_traj_gen.stop(-1)
-.
+robot.com_traj_gen.move(1, 0.03, 1.5)
 robot.com_traj_gen.startSinusoid(1,-0.03,1.5)
 
 
