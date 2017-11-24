@@ -687,7 +687,7 @@ namespace dynamicgraph
           if(m_K_fb_feet_posesSIN.isPlugged())
           {
             const double K_fb = m_K_fb_feet_posesSIN(iter);
-            if (K_fb > 0.0)
+            if (K_fb > 0.0 && m_w_imu > 0.0)
             {
               assert(m_w_imu > 0.0 && "Update of the feet 6d poses should not be done if wIMU = 0.0");
               assert(K_fb < 1.0 && "Feedback gain on foot correction should be less than 1.0 (K_fb_feet_poses>1.0)");
@@ -705,15 +705,15 @@ namespace dynamicgraph
               se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
               // if a feet is not stable on the ground (aka flying), fully update his position 
               if (m_right_foot_is_stable == false)
-                rightDrift_delta = leftDrift;
+                rightDrift_delta = rightDrift;
               if (m_left_foot_is_stable == false)
-                leftDrift_delta  = rightDrift;
+                leftDrift_delta  = leftDrift;
               if (m_right_foot_is_stable == false && m_left_foot_is_stable == false)
-                {
-                    //robot is jumping, do not update any feet position
-                    rightDrift_delta = SE3::Identity();
-                    leftDrift_delta = SE3::Identity();
-                }
+              {
+                //robot is jumping, do not update any feet position
+                rightDrift_delta = SE3::Identity();
+                leftDrift_delta = SE3::Identity();
+              }
               m_oMlfs = m_oMlfs * leftDrift_delta;
               m_oMrfs = m_oMrfs * rightDrift_delta;
               // dedrift (x, y, z, yaw) using feet pose references
@@ -910,17 +910,18 @@ namespace dynamicgraph
         double w_fz = compute_force_weight(wrench(2), m_fz_std_dev_rf, m_fz_margin_rf);
         //check that foot is sensing a force greater than the margin treshold for more than 'm_fz_stable_windows_size' samples
         if (wrench(2) > m_fz_margin_rf)
-            m_rf_fz_stable_cpt++;
-        else m_rf_fz_stable_cpt = 0;
+          m_rf_fz_stable_cpt++;
+        else
+          m_rf_fz_stable_cpt = 0;
 
         if (m_rf_fz_stable_cpt >= m_fz_stable_windows_size)
         {
-            m_rf_fz_stable_cpt = m_fz_stable_windows_size;
-            m_right_foot_is_stable = true;
+          m_rf_fz_stable_cpt = m_fz_stable_windows_size;
+          m_right_foot_is_stable = true;
         }
         else
         {
-            m_right_foot_is_stable = false;
+          m_right_foot_is_stable = false;
         }
         s = w_zmp*w_fz;
         return s;
@@ -999,6 +1000,7 @@ namespace dynamicgraph
           // if both weights are zero set them to a small positive value to avoid division by zero
           if(wR==0.0 && wL==0.0)
           {
+            SEND_WARNING_STREAM_MSG("The robot is flying!!!");
             wR = 1e-3;
             wL = 1e-3;
           }
@@ -1007,16 +1009,18 @@ namespace dynamicgraph
           const Frame & f_lf = m_model.frames[m_left_foot_id];
           const Motion v_lf_local = m_data->v[f_lf.parent];
           const SE3 ffMlf = m_data->oMi[f_lf.parent];
-          Vector6 v_kin_l = -ffMlf.act(v_lf_local).toVector();
-          v_kin_l.head<3>() = m_oRff * v_kin_l.head<3>();
+          Vector6 v_kin_l = -ffMlf.act(v_lf_local).toVector(); //this is the velocity of the base in the frame of the base.
+          v_kin_l.head<3>()     = m_oRff * v_kin_l.head<3>();
+          v_kin_l.segment<3>(3) = m_oRff * v_kin_l.segment<3>(3);
 
           const Frame & f_rf = m_model.frames[m_right_foot_id];
           const Motion v_rf_local = m_data->v[f_rf.parent];
           const SE3 ffMrf = m_data->oMi[f_rf.parent];
-          Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector();
-          v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
+          Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector(); //this is the velocity of the base in the frame of the base.
+          v_kin_r.head<3>()     = m_oRff * v_kin_r.head<3>();
+          v_kin_r.segment<3>(3) = m_oRff * v_kin_r.segment<3>(3);
           
-          m_v_kin.head<6>() = (wR*v_kin_r + wL*v_kin_l)/(wL+wR); //this is the velocity of the base in the frame of the base.
+          m_v_kin.head<6>() = (wR*v_kin_r + wL*v_kin_l)/(wL+wR);
           
           /* Compute velocity induced by the flexibility */
           Vector6 v_flex_l;

@@ -67,6 +67,7 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
         robot.dq.selec(6, NJ+6);
         plug(robot.dq.sout,             robot.pos_ctrl.jointsVelocities);
         plug(robot.dq.sout,             robot.base_estimator.joint_velocities);
+        plug(robot.device.gyrometer,    robot.base_estimator.gyroscope);
 
     # BYPASS BASE ESTIMATOR
     robot.v = Selec_of_vector("v");

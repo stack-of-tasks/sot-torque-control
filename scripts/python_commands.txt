@@ -4,19 +4,19 @@ robot.timeStep = 0.002;
 ent = test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=True);
 robot.ctrl_manager.setStreamPrintPeriod(0.5)
 
-create_topic(robot.ros, robot.filters.estimator_kin.dx, 'dq_est');
-create_topic(robot.ros, robot.dq.sout, 'dq');
+create_topic(robot.ros, robot.filters.estimator_kin.dx, 'dq_est', robot, robot.filters.estimator_kin);
+create_topic(robot.ros, robot.dq.sout, 'dq', robot, robot.dq);
 create_topic(robot.ros, robot.inv_dyn.com_ref_pos,  'com_ref_pos');
 create_topic(robot.ros, robot.inv_dyn.com_ref_vel,  'com_ref_vel');
 create_topic(robot.ros, robot.inv_dyn.com,          'com');
 create_topic(robot.ros, robot.inv_dyn.com_vel,      'com_vel');
 create_topic(robot.ros, robot.inv_dyn.com_acc,      'com_acc');
 create_topic(robot.ros, robot.inv_dyn.com_acc_des,  'com_acc_des');
-create_topic(robot.ros, robot.base_estimator.q, 'q_est');
+create_topic(robot.ros, robot.base_estimator.q, 'q_est', robot, robot.base_estimator);
 create_topic(robot.ros, robot.q.sout, 'q');
 create_topic(robot.ros, robot.traj_gen.q, 'q_ref');
 create_topic(robot.ros, robot.device.robotVelocity, 'v');
-create_topic(robot.ros, robot.base_estimator.v, 'v_est');
+create_topic(robot.ros, robot.base_estimator.v, 'v_est', robot, robot.base_estimator);
 create_topic(robot.ros, robot.inv_dyn.zmp_des, 'zmp_des');
 create_topic(robot.ros, robot.inv_dyn.zmp_ref, 'zmp_ref');
 create_topic(robot.ros, robot.inv_dyn.zmp, 'zmp');
@@ -28,13 +28,13 @@ create_topic(robot.ros, robot.inv_dyn.zmp_left_foot, 'zmp_left_foot');
 create_topic(robot.ros, robot.inv_dyn.zmp_right_foot, 'zmp_right_foot');
 create_topic(robot.ros, robot.device.forceLLEG,       'forceLLEG');
 create_topic(robot.ros, robot.device.forceRLEG,       'forceRLEG');
-create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
+#create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,       'wrenchLeftSole');
 create_topic(robot.ros, robot.device.gyrometer,       'gyro');
 create_topic(robot.ros, robot.device.accelerometer,       'acc');
-create_topic(robot.ros, robot.base_estimator.w_lf, 'w_lf', data_type='double');
-create_topic(robot.ros, robot.base_estimator.w_rf, 'w_rf', data_type='double');
-create_topic(robot.ros, robot.base_estimator.w_lf_filtered, 'w_lf_filtered', data_type='double');
-create_topic(robot.ros, robot.base_estimator.w_rf_filtered, 'w_rf_filtered', data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_lf, 'w_lf', robot, robot.base_estimator, data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_rf, 'w_rf', robot, robot.base_estimator, data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_lf_filtered, 'w_lf_filtered', robot, robot.base_estimator, data_type='double');
+create_topic(robot.ros, robot.base_estimator.w_rf_filtered, 'w_rf_filtered', robot, robot.base_estimator, data_type='double');
 #create_topic(robot.ros, robot.torque_ctrl.dq_motor,       'dq_motor');
 #create_topic(robot.ros, robot.torque_ctrl.jointsAccelerationsDesired,       'ddq_des');
 create_topic(robot.ros, robot.rf_traj_gen.x, 'rf_pose_ref');
@@ -50,6 +50,10 @@ create_topic(robot.ros, robot.inv_dyn.left_foot_acc_des, 'lf_acc_des');
 #robot.torque_ctrl.reset_ddq_integral();
 ent.ctrl_manager.setCtrlMode('all','torque')
 robot.base_estimator.set_imu_weight(1.0);
+plug(robot.encoders.sout,       robot.base_estimator.joint_positions)
+#plug(robot.device.gyrometer,    robot.base_estimator.gyroscope);
+plug(robot.filters.estimator_kin.dx,            robot.base_estimator.joint_velocities);
+plug(robot.filters.gyro_filter.x_filtered,      robot.base_estimator.gyroscope);
 
 SOT_TORQUE_INSTALL_DIR = '/home/adelpret/devel/openrobots/src/sot-torque-control'
 
@@ -59,6 +63,9 @@ robot.rf_force_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/
 robot.lf_traj_gen.setSpline(SOT_TORQUE_INSTALL_DIR+"/data/traj_com_y_0.08/lf_spline2.curve", 1, tuple(map(tuple, np.identity(3))))
 
 robot.traj_sync.out.value = 1 #turnOn()
+
+plug(robot.base_estimator.q,              robot.inv_dyn.q);
+plug(robot.base_estimator.v,              robot.inv_dyn.v);
 
 sleep(5.0)
 robot.com_traj_gen.move(1, 0.05, 1.5)
