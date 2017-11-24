@@ -146,8 +146,6 @@ namespace dynamicgraph
                                                                               <<m_w_lf_inSIN
                                                                               <<m_w_rf_inSIN
                                                                               <<m_K_fb_feet_posesSIN
-                                                                              <<m_w_lfSOUT
-                                                                              <<m_w_rfSOUT
                                                                               <<m_w_lf_filteredSOUT
                                                                               <<m_w_rf_filteredSOUT
                                                                               <<m_lf_ref_xyzquatSIN
@@ -616,7 +614,7 @@ namespace dynamicgraph
           wL = m_w_lf_inSIN(iter);
         else
         {
-          wL = m_w_lfSOUT(iter);
+          wL = m_w_lf_filteredSOUT(iter);
           if (m_left_foot_is_stable == false)
             wL = 0.0;
         }
@@ -624,7 +622,7 @@ namespace dynamicgraph
           wR = m_w_rf_inSIN(iter);
         else
         {
-          wR = m_w_rfSOUT(iter);
+          wR = m_w_rf_filteredSOUT(iter);
           if (m_right_foot_is_stable == false)
             wR = 0.0;
         }
@@ -977,6 +975,34 @@ namespace dynamicgraph
           const Vector6 & dftrf              = m_dforceRLEGSIN(iter);
           const Vector6 & dftlf              = m_dforceLLEGSIN(iter);
           assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
+
+          // if the weights are not specified by the user through the input signals w_lf, w_rf
+          // then compute them
+          // if one feet is not stable, force weight to 0.0
+          double wL, wR;
+          if(m_w_lf_inSIN.isPlugged())
+            wL = m_w_lf_inSIN(iter);
+          else
+          {
+            wL = m_w_lf_filteredSOUT(iter);
+            if (m_left_foot_is_stable == false)
+              wL = 0.0;
+          }
+          if(m_w_rf_inSIN.isPlugged())
+            wR = m_w_rf_inSIN(iter);
+          else
+          {
+            wR = m_w_rf_filteredSOUT(iter);
+            if (m_right_foot_is_stable == false)
+              wR = 0.0;
+          }
+          // if both weights are zero set them to a small positive value to avoid division by zero
+          if(wR==0.0 && wL==0.0)
+          {
+            wR = 1e-3;
+            wL = 1e-3;
+          }
+
           /* Compute foot velocities */
           const Frame & f_lf = m_model.frames[m_left_foot_id];
           const Motion v_lf_local = m_data->v[f_lf.parent];
@@ -990,7 +1016,7 @@ namespace dynamicgraph
           Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector();
           v_kin_r.head<3>() = m_oRff * v_kin_r.head<3>();
           
-          m_v_kin.head<6>() = 0.5*(v_kin_r + v_kin_l); //this is the velocity of the base in the frame of the base.
+          m_v_kin.head<6>() = (wR*v_kin_r + wL*v_kin_l)/(wL+wR); //this is the velocity of the base in the frame of the base.
           
           /* Compute velocity induced by the flexibility */
           Vector6 v_flex_l;
@@ -1030,7 +1056,7 @@ namespace dynamicgraph
           Motion v_gyr_ankle_r( Vector3(0.,0.,0.),  rfRimu * gVo_a_r);
           Vector6 v_gyr_l = -ffMlf.inverse().act(v_gyr_ankle_l).toVector();
           Vector6 v_gyr_r = -ffMrf.inverse().act(v_gyr_ankle_r).toVector();
-          m_v_gyr.head<6>() =  0.5*(v_gyr_l + v_gyr_r);
+          m_v_gyr.head<6>() =  (wL*v_gyr_l + wR*v_gyr_r)/(wL+wR);
 
 
           /* Get an estimate of linear velocities from filtered accelerometer integration */

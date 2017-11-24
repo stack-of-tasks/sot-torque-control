@@ -17,7 +17,6 @@
 #include <sot/torque_control/common.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
-//#include <pinocchio/algorithm/kinematics.hpp>
 
 namespace dynamicgraph
 {
