@@ -274,6 +274,7 @@ namespace dynamicgraph
         m_zmp_RF.setZero();
         m_zmp_LF.setZero();
         m_zmp.setZero();
+        m_com_offset.setZero();
 
         /* Commands. */
         addCommand("init",
@@ -281,6 +282,10 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "Robot reference (string)")));
+
+        addCommand("updateComOffset",
+                   makeCommandVoid0(*this, &InverseDynamicsBalanceController::updateComOffset,
+                                    docCommandVoid0("Update the offset on the CoM based on the CoP measurement.")));
 
         addCommand("removeRightFootContact",
                    makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeRightFootContact,
@@ -293,6 +298,14 @@ namespace dynamicgraph
                                                     "Transition time in seconds (double)")));
 
 	
+      }
+
+      void InverseDynamicsBalanceController::updateComOffset()
+      {
+        const Vector3 & com = m_robot->com(m_invDyn->data());
+        m_com_offset = m_zmp - com;
+        m_com_offset(2) = 0.0;
+        SEND_MSG("CoM offset updated: "+toString(m_com_offset), MSG_TYPE_INFO);
       }
 
       void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime)
@@ -369,8 +382,8 @@ namespace dynamicgraph
         if(dt<=0.0)
           return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
-	/* Retrieve m_robot_util  informations */
-	std::string localName(robotRef);
+        /* Retrieve m_robot_util  informations */
+        std::string localName(robotRef);
         if (isNameInRobotUtil(localName))
           m_robot_util = getRobotUtil(localName);
         else
@@ -610,8 +623,8 @@ namespace dynamicgraph
         assert(dq_ref.size()==m_robot_util->m_nbJoints);
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
         assert(ddq_ref.size()==m_robot_util->m_nbJoints);
-        const Vector6& kp_contact = m_kp_constraintsSIN(iter);
 
+        const Vector6& kp_contact = m_kp_constraintsSIN(iter);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
         const Vector3& kp_com = m_kp_comSIN(iter);
         const Vector3& kd_com = m_kd_comSIN(iter);
@@ -664,7 +677,7 @@ namespace dynamicgraph
         m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
         m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
 
-        m_sampleCom.pos = x_com_ref;
+        m_sampleCom.pos = x_com_ref - m_com_offset;
         m_sampleCom.vel = dx_com_ref;
         m_sampleCom.acc = ddx_com_ref;
         m_taskCom->setReference(m_sampleCom);
@@ -1123,7 +1136,7 @@ namespace dynamicgraph
         if(s.size()!=3)
           s.resize(3);
         const Vector3 & com = m_robot->com(m_invDyn->data());
-        s = com;
+        s = com + m_com_offset;
         return s;
       }
 

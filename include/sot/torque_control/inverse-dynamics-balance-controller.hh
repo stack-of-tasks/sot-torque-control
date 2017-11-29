@@ -78,6 +78,7 @@ namespace dynamicgraph {
 
         void init(const double& dt, 
 		  const std::string& robotRef);
+        void updateComOffset();
         void removeRightFootContact(const double& transitionTime);
         void removeLeftFootContact(const double& transitionTime);
         void addRightFootContact(const double& transitionTime);
@@ -240,6 +241,7 @@ namespace dynamicgraph {
         tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
         tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
         tsid::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
+        tsid::math::Vector3 m_com_offset;          /// 3d CoM offset
         tsid::math::Vector3 m_zmp_des_LF;          /// 3d desired zmp left foot
         tsid::math::Vector3 m_zmp_des_RF;          /// 3d desired zmp left foot
         tsid::math::Vector3 m_zmp_des_LF_local;    /// 3d desired zmp left foot expressed in local frame
