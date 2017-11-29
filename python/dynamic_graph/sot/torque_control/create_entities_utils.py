@@ -171,22 +171,50 @@ def create_trajectory_generator(device, dt=0.001, robot_name="robot"):
     return jtg;
 
 def create_estimators(robot, conf, motor_params, dt):
-    filters = Bunch()
+    from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi1_checby2_series_filter
+    robot.filters_sg = Bunch()
+    filters = Bunch();
 
     estimator_ft = ForceTorqueEstimator("estimator_ft");
 
     # create low-pass filter for motor currents
     filters.current_filter = create_butter_lp_filter_Wn_05_N_3('current_filter', dt, NJ)
 
-    #filters.current_filter = NumericalDifference("current_filter");
-    filters.ft_RF_filter = NumericalDifference("ft_RF_filter");
-    filters.ft_LF_filter = NumericalDifference("ft_LF_filter");
-    filters.ft_RH_filter = NumericalDifference("ft_RH_filter");
-    filters.ft_LH_filter = NumericalDifference("ft_LH_filter");
-    filters.acc_filter = NumericalDifference("dv_filter");
-    filters.gyro_filter = NumericalDifference("w_filter");
+    use_sav_gol = True;
+    if(use_sav_gol):
+        #filters.current_filter = NumericalDifference("current_filter");
+        robot.filters_sg.ft_RF_filter = NumericalDifference("ft_RF_sg_filter");
+        robot.filters_sg.ft_LF_filter = NumericalDifference("ft_LF_sg_filter");
+        robot.filters_sg.ft_RH_filter = NumericalDifference("ft_RH_sg_filter");
+        robot.filters_sg.ft_LH_filter = NumericalDifference("ft_LH_sg_filter");
+        robot.filters_sg.acc_filter = NumericalDifference("dv_sg_filter");
+        robot.filters_sg.gyro_filter = NumericalDifference("w_sg_filter");
+        robot.filters_sg.estimator_kin = NumericalDifference("estimator_kin_sg");
+    
+        #robot.filters_sg.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
+        robot.filters_sg.ft_RF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+        robot.filters_sg.ft_LF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+        robot.filters_sg.ft_RH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+        robot.filters_sg.ft_LH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
+        robot.filters_sg.gyro_filter.init(dt, 3, conf.DELAY_GYRO*dt,1)
+        robot.filters_sg.acc_filter.init(dt, 3, conf.DELAY_ACC*dt,1)
+        robot.filters_sg.estimator_kin.init(dt,NJ, conf.DELAY_ENC*dt,2);
 
-    filters.estimator_kin = NumericalDifference("estimator_kin");
+        plug(robot.encoders.sout,                             robot.filters_sg.estimator_kin.x);
+        plug(robot.imu_offset_compensation.accelerometer_out, robot.filters_sg.acc_filter.x);
+        plug(robot.imu_offset_compensation.gyrometer_out,     robot.filters_sg.gyro_filter.x);
+        plug(robot.device.forceRLEG,                          robot.filters_sg.ft_RF_filter.x);
+        plug(robot.device.forceLLEG,                          robot.filters_sg.ft_LF_filter.x);
+        plug(robot.device.forceRARM,                          robot.filters_sg.ft_RH_filter.x);
+        plug(robot.device.forceLARM,                          robot.filters_sg.ft_LH_filter.x);
+
+    filters.ft_RF_filter  = create_chebi1_checby2_series_filter("ft_RF_filter", dt, 6);
+    filters.ft_LF_filter  = create_chebi1_checby2_series_filter("ft_LF_filter", dt, 6);
+    filters.ft_RH_filter  = create_chebi1_checby2_series_filter("ft_RH_filter", dt, 6);
+    filters.ft_LH_filter  = create_chebi1_checby2_series_filter("ft_LH_filter", dt, 6);
+    filters.acc_filter    = create_chebi1_checby2_series_filter("dv_filter", dt, 3);
+    filters.gyro_filter   = create_chebi1_checby2_series_filter("w_filter", dt, 3);
+    filters.estimator_kin = create_chebi1_checby2_series_filter("estimator_kin", dt, NJ);
 
     plug(robot.encoders.sout,                             filters.estimator_kin.x);
     plug(robot.device.robotState,                         estimator_ft.base6d_encoders);
@@ -232,15 +260,6 @@ def create_estimators(robot, conf, motor_params, dt):
     estimator_ft.gear_ratios.value    = motor_params.GEAR_RATIOS;
 
     estimator_ft.init(True);
-    #filters.current_filter.init(dt,NJ, conf.DELAY_CURRENT*dt,1)
-    filters.ft_RF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
-    filters.ft_LF_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
-    filters.ft_RH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
-    filters.ft_LH_filter.init(dt, 6, conf.DELAY_FORCE*dt,1)
-    filters.gyro_filter.init(dt, 3, conf.DELAY_GYRO*dt,1)
-    filters.acc_filter.init(dt, 3, conf.DELAY_ACC*dt,1)
-
-    filters.estimator_kin.init(dt,NJ, conf.DELAY_ENC*dt,2);
 
     return (estimator_ft, filters);
         
@@ -313,7 +332,6 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
 
     plug(robot.rf_force_traj_gen.x,               ctrl.f_ref_right_foot);
     plug(robot.lf_force_traj_gen.x,               ctrl.f_ref_left_foot);
-
 
     # rather than giving to the controller the values of gear ratios and rotor inertias
     # it is better to compute directly their product in python and pass the result
