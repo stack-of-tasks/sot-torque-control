@@ -17,6 +17,8 @@ namespace dynamicgraph
       using namespace dg::command;
       using namespace std;
 
+#define CALIBRATION_FILE_NAME "/opt/imu_calib.txt"
+
 #define PROFILE_IMU_OFFSET_COMPENSATION_COMPUTATION          "ImuOffsetCompensation computation"
 
 #define INPUT_SIGNALS     m_accelerometer_inSIN  << m_gyrometer_inSIN
@@ -80,6 +82,45 @@ namespace dynamicgraph
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_dt = dt;
         m_initSucceeded = true;
+
+        // try to read IMU calibration data from file
+        std::ifstream infile;
+        infile.open(CALIBRATION_FILE_NAME, std::ios::in);
+        if(!infile.is_open())
+          return SEND_MSG("Error trying to read calibration results from file "+toString(CALIBRATION_FILE_NAME), MSG_TYPE_ERROR);
+
+        double z=0;
+        int i=0;
+        while(infile>>z)
+        {
+          m_gyro_offset(i) = z;
+          i++;
+          if(i==3)
+            break;
+        }
+        if(i!=3)
+        {
+          m_gyro_offset.setZero();
+          return SEND_MSG("Error trying to read gyro offset from file "+toString(CALIBRATION_FILE_NAME)+". Not enough values: "+toString(i), MSG_TYPE_ERROR);
+        }
+
+        i=0;
+        while(infile>>z)
+        {
+          m_acc_offset(i) = z;
+          i++;
+          if(i==3)
+            break;
+        }
+        if(i!=3)
+        {
+          m_gyro_offset.setZero();
+          m_acc_offset.setZero();
+          return SEND_MSG("Error trying to read acc offset from file "+toString(CALIBRATION_FILE_NAME)+". Not enough values: "+toString(i), MSG_TYPE_ERROR);
+        }
+
+        SEND_MSG("Offset read finished:\n* acc offset: "+toString(m_acc_offset.transpose())+
+                 "\n* gyro offset: "+toString(m_gyro_offset.transpose()), MSG_TYPE_INFO);
       }
 
       void ImuOffsetCompensation::setGyroDCBlockerParameter(const double & alpha)
@@ -107,14 +148,33 @@ namespace dynamicgraph
         m_update_cycles_left--;
         if(m_update_cycles_left==0)
         {
-          Vector3 g;
+          Vector3 g, new_acc_offset, new_gyro_offset;
           g<<0.0, 0.0, 9.81;
-          m_acc_offset  = (m_acc_sum /m_update_cycles) - g;
-          m_gyro_offset = m_gyro_sum/m_update_cycles;
+          new_acc_offset  = (m_acc_sum /m_update_cycles) - g;
+          new_gyro_offset = m_gyro_sum/m_update_cycles;
           m_acc_sum.setZero();
           m_gyro_sum.setZero();
-          SEND_MSG("Offset computation finished:\n* acc offset: "+toString(m_acc_offset.transpose())+
-                   "\n* gyro offset: "+toString(m_gyro_offset.transpose()), MSG_TYPE_INFO);
+          SEND_MSG("Offset computation finished:"+
+                   ("\n* old acc offset: "+toString(m_acc_offset.transpose()))+
+                   "\n* new acc offset: "+toString(new_acc_offset.transpose())+
+                   "\n* old gyro offset: "+toString(m_gyro_offset.transpose())+
+                   "\n* new gyro offset: "+toString(new_gyro_offset.transpose()), MSG_TYPE_INFO);
+          m_acc_offset = new_acc_offset;
+          m_gyro_offset = new_gyro_offset;
+
+          // save to text file
+          ofstream aof(CALIBRATION_FILE_NAME);
+          if(!aof.is_open())
+            return SEND_MSG("Error trying to save calibration results on file "+toString(CALIBRATION_FILE_NAME), MSG_TYPE_ERROR);
+
+          for(unsigned long int i=0;i<3;i++)
+            aof << m_gyro_offset[i] << " " ;
+          aof << std::endl;
+          for(unsigned long int i=0;i<3;i++)
+            aof << m_acc_offset[i] << " " ;
+          aof << std::endl;
+          aof.close();
+          SEND_MSG("IMU calibration data saved to file "+toString(CALIBRATION_FILE_NAME), MSG_TYPE_INFO);
         }
       }
 
