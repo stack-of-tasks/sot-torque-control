@@ -39,7 +39,7 @@ namespace dynamicgraph
 #define TORQUE_INTEGRAL_INPUT_SIGNALS m_KiTorqueSIN << m_torque_integral_saturationSIN
 #define TORQUE_CONTROL_INPUT_SIGNALS  m_jointsTorquesDesiredSIN << m_KpTorqueSIN  << m_KdTorqueSIN \
                                       << m_coulomb_friction_compensation_percentageSIN
-#define VEL_CONTROL_INPUT_SIGNALS  m_dq_desSIN << m_KdVelSIN \
+#define VEL_CONTROL_INPUT_SIGNALS  m_dq_desSIN << m_KdVelSIN << m_KiVelSIN \
 
 #define ALL_INPUT_SIGNALS       ESTIMATOR_INPUT_SIGNALS << TORQUE_INTEGRAL_INPUT_SIGNALS << \
                                 TORQUE_CONTROL_INPUT_SIGNALS << VEL_CONTROL_INPUT_SIGNALS << \
@@ -75,6 +75,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(KiTorque,                     dynamicgraph::Vector)   // integral gain for torque feedback controller
         ,CONSTRUCT_SIGNAL_IN(KdTorque,                     dynamicgraph::Vector)   // derivative gain for torque feedback controller
         ,CONSTRUCT_SIGNAL_IN(KdVel,                        dynamicgraph::Vector)   // derivative gain for velocity feedback
+        ,CONSTRUCT_SIGNAL_IN(KiVel,                        dynamicgraph::Vector)   // integral gain for velocity feedback
         ,CONSTRUCT_SIGNAL_IN(coulomb_friction_compensation_percentage, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector)
@@ -129,9 +130,9 @@ namespace dynamicgraph
         if(!m_KiTorqueSIN.isPlugged())
           return SEND_MSG("Init failed: signal m_KiTorqueSIN is not plugged", MSG_TYPE_ERROR);
 
-	/* Retrieve m_robot_util  informations */
-	std::string localName(robot_ref);
-	if (isNameInRobotUtil(localName))
+        /* Retrieve m_robot_util  informations */
+        std::string localName(robot_ref);
+        if (isNameInRobotUtil(localName))
         {
           m_robot_util = getRobotUtil(localName);
         }
@@ -145,11 +146,13 @@ namespace dynamicgraph
         m_tau_star.setZero(m_robot_util->m_nbJoints);
         m_current_des.setZero(m_robot_util->m_nbJoints);
         m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
+        m_dqErrIntegral.setZero(m_robot_util->m_nbJoints);
       }
 
       void JointTorqueController::reset_integral()
       {
         m_tauErrIntegral.setZero();
+        m_dqErrIntegral.setZero();
       }
 
       /* --- SIGNALS ---------------------------------------------------------- */
@@ -168,6 +171,7 @@ namespace dynamicgraph
         const Eigen::VectorXd& kp                 = m_KpTorqueSIN(iter);
         const Eigen::VectorXd& kd                 = m_KdTorqueSIN(iter);
         const Eigen::VectorXd& kd_vel             = m_KdVelSIN(iter);
+        const Eigen::VectorXd& ki_vel             = m_KiVelSIN(iter);
         const Eigen::VectorXd& tauErrInt          = m_torque_error_integralSOUT(iter);
         const Eigen::VectorXd& colFricCompPerc    = m_coulomb_friction_compensation_percentageSIN(iter);
         const Eigen::VectorXd& motorParameterKt_p = m_motorParameterKt_pSIN(iter);
@@ -187,10 +191,12 @@ namespace dynamicgraph
         if(dq.size()==(int)(m_robot_util->m_nbJoints+6))
           offset = 6;
 
+        m_dqErrIntegral += m_dt * ki_vel.cwiseProduct(dq_des-dq);
+
         for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
         {
           m_current_des(i) = motorModel.getCurrent(m_tau_star(i),
-                                                   dq(i+offset)+kd_vel(i)*(dq_des(i)-dq(i+offset)),
+                                                   dq(i+offset)+kd_vel(i)*(dq_des(i)-dq(i+offset))+m_dqErrIntegral(i),
                                                    ddq(i+offset),
                                                    motorParameterKt_p(i),
                                                    motorParameterKt_n(i),

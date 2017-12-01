@@ -7,8 +7,8 @@ from dynamic_graph.sot.torque_control.main import *
 from dynamic_graph.sot.torque_control.utils.sot_utils import smoothly_set_signal,  stop_sot
 from dynamic_graph import plug
 robot.timeStep=0.0015
-robot = main_v3(robot, startSoT=True, go_half_sitting=True)
-#go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
+robot = main_v3(robot, startSoT=True, go_half_sitting=0)
+go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
 
 #robot.base_estimator.set_imu_weight(0.0)
 plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
@@ -83,9 +83,9 @@ robot.ctrl_manager.setCtrlMode('all', 'pos')
 create_topic(robot.ros, robot.inv_dyn.f_des_right_foot,         'f_des_R')
 create_topic(robot.ros, robot.inv_dyn.f_des_left_foot,          'f_des_L')
 create_topic(robot.ros, robot.inv_dyn.tau_des,                  'tau_des');
-create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,  'f_LeftSole');
-create_topic(robot.ros, robot.estimator_ft.contactWrenchRightSole, 'f_RightSole');
-create_topic(robot.ros, robot.ctrl_manager.pwmDes,              'i_des');	
+create_topic(robot.ros, robot.estimator_ft.contactWrenchLeftSole,  'f_L');
+create_topic(robot.ros, robot.estimator_ft.contactWrenchRightSole, 'f_R');
+create_topic(robot.ros, robot.ctrl_manager.u,                        'i_des');	
 create_topic(robot.ros, robot.ctrl_manager.ctrl_torque,              'i_des');
 
 create_topic(robot.ros, robot.inv_dyn.zmp_des_right_foot_local, 'cop_des_R_local')
@@ -111,7 +111,7 @@ smoothly_set_signal(robot.torque_ctrl.KpTorque,30*(1.,))
 smoothly_set_signal(robot.inv_dyn.kp_posture,30*(5.,))
 
 robot.com_traj_gen.stop(-1)
-robot.com_traj_gen.move(1, 0.05, 1.5)
-robot.com_traj_gen.startSinusoid(1,-0.05,1.5)
+robot.com_traj_gen.move(1, 0.03, 1.5)
+robot.com_traj_gen.startSinusoid(1,-0.03,2.0)
 
 

@@ -90,6 +90,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(KiTorque,               dynamicgraph::Vector);      /// integral gain for torque feedback controller
         DECLARE_SIGNAL_IN(KdTorque,               dynamicgraph::Vector);      /// derivative gain for torque feedback controller
         DECLARE_SIGNAL_IN(KdVel,                  dynamicgraph::Vector);      /// derivative gain for velocity feedback
+        DECLARE_SIGNAL_IN(KiVel,                  dynamicgraph::Vector);      /// integral gain for velocity feedback
         DECLARE_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector);  /// integral error saturation
 
  
@@ -119,6 +120,7 @@ namespace dynamicgraph {
         Eigen::VectorXd m_current_des;
         Eigen::VectorXd m_tauErrIntegral; /// integral of the torque error
         Eigen::VectorXd m_currentErrIntegral; /// integral of the current error
+        Eigen::VectorXd m_dqErrIntegral; /// integral of the velocity error
 
 	RobotUtil * m_robot_util;
 

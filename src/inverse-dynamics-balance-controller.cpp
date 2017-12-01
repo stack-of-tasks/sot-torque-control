@@ -287,6 +287,8 @@ namespace dynamicgraph
         m_zmp_LF.setZero();
         m_zmp.setZero();
         m_com_offset.setZero();
+        m_v_RF_int.setZero();
+        m_v_LF_int.setZero();
 
         /* Commands. */
         addCommand("init",
@@ -899,8 +901,11 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_DQ_ADMITTANCE);
 
-        Eigen::Vector6d v_des_RF = kp.cwiseProduct(f_des_RF - f_RF);
-        Eigen::Vector6d v_des_LF = kp.cwiseProduct(f_des_LF - f_LF);
+        Eigen::Vector6d v_des_RF = kp.cwiseProduct(f_RF - f_des_RF);
+        Eigen::Vector6d v_des_LF = kp.cwiseProduct(f_LF - f_des_LF);
+
+        m_v_RF_int += ki.cwiseProduct(f_RF - f_des_RF);
+        m_v_LF_int += ki.cwiseProduct(f_LF - f_des_LF);
 
         m_robot->frameJacobianLocal(m_invDyn->data(), m_taskRF->frame_id(), m_J_RF);
         m_robot->frameJacobianLocal(m_invDyn->data(), m_taskLF->frame_id(), m_J_LF);
@@ -908,11 +913,11 @@ namespace dynamicgraph
         m_J_RF_QR.compute(m_J_RF.rightCols(m_robot_util->m_nbJoints));
         m_J_LF_QR.compute(m_J_LF.rightCols(m_robot_util->m_nbJoints));
 
-        Vector dq_adm_urdf = m_J_RF_QR.solve(v_des_RF);
+        Vector dq_adm_urdf = m_J_RF_QR.solve(v_des_RF+m_v_RF_int);
 //        SEND_MSG("J RF:\n"+toString(m_J_RF.rightCols(m_robot_util->m_nbJoints), 1), MSG_TYPE_DEBUG);
 //        SEND_MSG("v_des RF: "+toString(v_des_RF.transpose()), MSG_TYPE_DEBUG);
 //        SEND_MSG("dq_adm RF: "+toString(s.transpose()), MSG_TYPE_DEBUG);
-        dq_adm_urdf += m_J_LF_QR.solve(v_des_LF);
+        dq_adm_urdf += m_J_LF_QR.solve(v_des_LF+m_v_LF_int);
 //        SEND_MSG("J LF:\n"+toString(m_J_LF.rightCols(m_robot_util->m_nbJoints), 1), MSG_TYPE_DEBUG);
 //        SEND_MSG("v_des LF: "+toString(v_des_LF.transpose()), MSG_TYPE_DEBUG);
 //        SEND_MSG("dq_adm LF: "+toString(s.transpose()), MSG_TYPE_DEBUG);

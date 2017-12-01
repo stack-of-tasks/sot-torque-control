@@ -262,6 +262,8 @@ namespace dynamicgraph {
         Matrix6x m_J_LF;
         Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;
         Eigen::ColPivHouseholderQR<Matrix6x> m_J_LF_QR;
+        tsid::math::Vector6 m_v_RF_int;
+        tsid::math::Vector6 m_v_LF_int;
 
         unsigned int m_timeLast;
 	RobotUtil * m_robot_util;

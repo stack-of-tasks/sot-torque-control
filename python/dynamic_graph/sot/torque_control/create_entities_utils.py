@@ -275,6 +275,7 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     torque_ctrl.KdTorque.value                          = tuple(conf.k_d_torque);
     torque_ctrl.KiTorque.value                          = tuple(conf.k_i_torque);
     torque_ctrl.KdVel.value                             = tuple(conf.k_d_vel);
+    torque_ctrl.KiVel.value                             = tuple(conf.k_i_vel);
     torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
     torque_ctrl.coulomb_friction_compensation_percentage.value = NJ*(conf.COULOMB_FRICTION_COMPENSATION_PERCENTAGE,);
 
@@ -333,8 +334,8 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     plug(robot.com_traj_gen.dx,                   ctrl.com_ref_vel);
     plug(robot.com_traj_gen.ddx,                  ctrl.com_ref_acc);
 
-    plug(robot.rf_force_traj_gen.x,               ctrl.f_ref_right_foot);
-    plug(robot.lf_force_traj_gen.x,               ctrl.f_ref_left_foot);
+#    plug(robot.rf_force_traj_gen.x,               ctrl.f_ref_right_foot);
+#    plug(robot.lf_force_traj_gen.x,               ctrl.f_ref_left_foot);
 
     # rather than giving to the controller the values of gear ratios and rotor inertias
     # it is better to compute directly their product in python and pass the result
