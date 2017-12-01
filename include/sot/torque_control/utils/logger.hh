@@ -96,26 +96,43 @@ namespace dynamicgraph {
       };
 
       template<typename T>
-      std::string toString(const T& v)
+      std::string toString(const T& v, const int precision=3, const int width=-1)
       {
         std::stringstream ss;
-        ss<<v;
+        if(width>precision)
+          ss<<std::fixed<<std::setw(width)<<std::setprecision(precision)<<v;
+        else
+          ss<<std::fixed<<std::setprecision(precision)<<v;
         return ss.str();
       }
 
       template<typename T>
-      std::string toString(const std::vector<T>& v, const std::string separator=", ")
+      std::string toString(const std::vector<T>& v, const int precision=3, const int width=-1,
+                           const std::string separator=", ")
       {
         std::stringstream ss;
-        for(int i=0; i<v.size()-1; i++)
-          ss<<v[i]<<separator;
-        ss<<v[v.size()-1];
+        if(width>precision)
+        {
+          for(int i=0; i<v.size()-1; i++)
+            ss<<std::fixed<<std::setw(width)<<std::setprecision(precision)<<v[i]<<separator;
+          ss<<std::fixed<<std::setw(width)<<std::setprecision(precision)<<v[v.size()-1];
+        }
+        else
+        {
+          for(int i=0; i<v.size()-1; i++)
+            ss<<std::fixed<<std::setprecision(precision)<<v[i]<<separator;
+          ss<<std::fixed<<std::setprecision(precision)<<v[v.size()-1];
+        }
+
         return ss.str();
       }
 
-      template<typename T, int N>
-      std::string toString(const Eigen::Matrix<T, N, 1, 0, N, 1>& v, const std::string separator=", ",
-                           const int precision=3, const int width=-1)
+//      template<typename T, int N>
+//      std::string toString(const Eigen::Matrix<T, N, 1, 0, N, 1>& v, const std::string separator=", ",
+//                           const int precision=3, const int width=-1)
+      template<typename T>
+      std::string toString(const Eigen::MatrixBase<T>& v,
+                           const int precision=3, const int width=-1, const std::string separator=", ")
       {
         std::stringstream ss;
         if(width>precision)

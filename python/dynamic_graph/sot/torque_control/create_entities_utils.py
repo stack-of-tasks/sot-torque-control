@@ -270,9 +270,11 @@ def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="ro
     plug(robot.estimator_ft.jointsTorques,              torque_ctrl.jointsTorques);
     torque_ctrl.jointsTorquesDesired.value              = NJ*(0.0,);
     torque_ctrl.jointsTorquesDerivative.value           = NJ*(0.0,);
+    torque_ctrl.dq_des.value                            = NJ*(0.0,);
     torque_ctrl.KpTorque.value                          = tuple(conf.k_p_torque);
     torque_ctrl.KdTorque.value                          = tuple(conf.k_d_torque);
     torque_ctrl.KiTorque.value                          = tuple(conf.k_i_torque);
+    torque_ctrl.KdVel.value                             = tuple(conf.k_d_vel);
     torque_ctrl.torque_integral_saturation.value        = tuple(conf.torque_integral_saturation);
     torque_ctrl.coulomb_friction_compensation_percentage.value = NJ*(conf.COULOMB_FRICTION_COMPENSATION_PERCENTAGE,);
 
@@ -311,6 +313,7 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     plug(robot.estimator_ft.contactWrenchRightSole, ctrl.wrench_right_foot);
     plug(robot.estimator_ft.contactWrenchLeftSole,  ctrl.wrench_left_foot);
     plug(ctrl.tau_des,                              robot.torque_ctrl.jointsTorquesDesired);
+    plug(ctrl.dq_admittance,                        robot.torque_ctrl.dq_des);
     plug(ctrl.tau_des,                              robot.estimator_ft.tauDes);
 
     plug(ctrl.right_foot_pos,         robot.rf_traj_gen.initial_value);
@@ -358,6 +361,8 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     ctrl.kd_posture.value = conf.kd_posture;
     ctrl.kp_pos.value = conf.kp_pos;
     ctrl.kd_pos.value = conf.kd_pos;
+    ctrl.kp_admittance.value = conf.kp_admittance;
+    ctrl.ki_admittance.value = conf.ki_admittance;
 
     ctrl.w_com.value = conf.w_com;
     ctrl.w_feet.value = conf.w_feet;

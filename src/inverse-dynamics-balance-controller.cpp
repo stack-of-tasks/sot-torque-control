@@ -56,14 +56,20 @@ namespace dynamicgraph
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
       //Size to be aligned                "-------------------------------------------------------"
-#define PROFILE_TAU_DES_COMPUTATION "InverseDynamicsBalanceController: desired tau"
-#define PROFILE_HQP_SOLUTION        "InverseDynamicsBalanceController: HQP"
-#define PROFILE_PREPARE_INV_DYN     "InverseDynamicsBalanceController: prepare inv-dyn"
-#define PROFILE_READ_INPUT_SIGNALS  "InverseDynamicsBalanceController: read input signals"
+#define PROFILE_TAU_DES_COMPUTATION "InvDynBalCtrl: desired tau"
+#define PROFILE_HQP_SOLUTION        "InvDynBalCtrl: HQP"
+#define PROFILE_PREPARE_INV_DYN     "InvDynBalCtrl: prepare inv-dyn"
+#define PROFILE_READ_INPUT_SIGNALS  "InvDynBalCtrl: read input signals"
+#define PROFILE_DQ_ADMITTANCE       "InvDynBalCtrl: dq admittance"
 
 #define ZERO_FORCE_THRESHOLD 1e-3
 
-#define INPUT_SIGNALS         m_com_ref_posSIN \
+#define ADMITTANCE_SIGNALS     m_kp_admittanceSIN \
+                            << m_ki_admittanceSIN \
+                            << m_wrench_left_footSIN  \
+                            << m_wrench_right_footSIN
+
+#define INV_DYN_SIGNALS         m_com_ref_posSIN \
   << m_com_ref_velSIN \
   << m_com_ref_accSIN \
   << m_rf_ref_posSIN \
@@ -117,9 +123,9 @@ namespace dynamicgraph
   << m_qSIN \
   << m_vSIN \
   << m_wrench_baseSIN \
-  << m_wrench_left_footSIN  \
-  << m_wrench_right_footSIN  \
   << m_active_jointsSIN
+
+#define INPUT_SIGNALS   ADMITTANCE_SIGNALS << INV_DYN_SIGNALS
 
 #define OUTPUT_SIGNALS        m_tau_desSOUT \
   << m_f_des_right_footSOUT \
@@ -147,6 +153,7 @@ namespace dynamicgraph
   << m_right_foot_acc_desSOUT \
   << m_left_foot_acc_desSOUT \
   << m_dv_desSOUT \
+  << m_dq_admittanceSOUT \
   << m_MSOUT
 
       /// Define EntityClassName here rather than in the header file
@@ -195,6 +202,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(kd_posture,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_pos,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_pos,                      dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(kp_admittance,               dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(ki_admittance,               dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(w_com,                       double)
      	    ,CONSTRUCT_SIGNAL_IN(w_feet,                      double)
             ,CONSTRUCT_SIGNAL_IN(w_posture,                   double)
@@ -223,7 +232,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(wrench_left_foot,            dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(wrench_right_foot,           dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(active_joints,               dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(tau_des,                    dynamicgraph::Vector, INPUT_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(tau_des,                    dynamicgraph::Vector, INV_DYN_SIGNALS)
             ,CONSTRUCT_SIGNAL_OUT(f_des_right_foot,           dynamicgraph::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(f_des_left_foot,            dynamicgraph::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_right_foot,         dynamicgraph::Vector, m_f_des_right_footSOUT)
@@ -241,6 +250,9 @@ namespace dynamicgraph
                                                                           m_zmp_left_footSOUT<<
                                                                           m_zmp_right_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(dv_des,                     dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(dq_admittance,              dg::Vector, ADMITTANCE_SIGNALS <<
+                                                                          m_f_des_right_footSOUT <<
+                                                                          m_f_des_left_footSOUT)
             ,CONSTRUCT_SIGNAL_OUT(M,                          dg::Matrix, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com,                        dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_vel,                    dg::Vector, m_tau_desSOUT)
@@ -443,6 +455,8 @@ namespace dynamicgraph
           m_f.setZero(24);
           m_q_urdf.setZero(m_robot->nq());
           m_v_urdf.setZero(m_robot->nv());
+          m_J_RF.setZero(6, m_robot->nv());
+          m_J_LF.setZero(6, m_robot->nv());
 
           m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
@@ -768,8 +782,8 @@ namespace dynamicgraph
         {
           SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: "+toString(sol.status));
           SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
-          SEND_DEBUG_STREAM_MSG("q="+toString(q_sot, ", ", 1,5));
-          SEND_DEBUG_STREAM_MSG("v="+toString(v_sot, ", ", 1,5));
+          SEND_DEBUG_STREAM_MSG("q="+toString(q_sot.transpose(),1,5));
+          SEND_DEBUG_STREAM_MSG("v="+toString(v_sot.transpose(),1,5));
           s.setZero();
           return s;
         }
@@ -862,6 +876,51 @@ namespace dynamicgraph
           return s;
         }
         s = m_f_LF;
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(dq_admittance, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal dq_admittance before initialization!");
+          return s;
+        }
+        if(s.size()!=m_robot_util->m_nbJoints)
+          s.resize(m_robot_util->m_nbJoints);
+
+
+        const Eigen::Vector6d& f_des_RF = m_f_des_right_footSOUT(iter);
+        const Eigen::Vector6d& f_des_LF = m_f_des_left_footSOUT(iter);
+        const Eigen::Vector6d& f_RF = m_wrench_right_footSIN(iter);
+        const Eigen::Vector6d& f_LF = m_wrench_left_footSIN(iter);
+        const Eigen::Vector6d& kp = m_kp_admittanceSIN(iter);
+        const Eigen::Vector6d& ki = m_ki_admittanceSIN(iter);
+
+        getProfiler().start(PROFILE_DQ_ADMITTANCE);
+
+        Eigen::Vector6d v_des_RF = kp.cwiseProduct(f_des_RF - f_RF);
+        Eigen::Vector6d v_des_LF = kp.cwiseProduct(f_des_LF - f_LF);
+
+        m_robot->frameJacobianLocal(m_invDyn->data(), m_taskRF->frame_id(), m_J_RF);
+        m_robot->frameJacobianLocal(m_invDyn->data(), m_taskLF->frame_id(), m_J_LF);
+
+        m_J_RF_QR.compute(m_J_RF.rightCols(m_robot_util->m_nbJoints));
+        m_J_LF_QR.compute(m_J_LF.rightCols(m_robot_util->m_nbJoints));
+
+        Vector dq_adm_urdf = m_J_RF_QR.solve(v_des_RF);
+//        SEND_MSG("J RF:\n"+toString(m_J_RF.rightCols(m_robot_util->m_nbJoints), 1), MSG_TYPE_DEBUG);
+//        SEND_MSG("v_des RF: "+toString(v_des_RF.transpose()), MSG_TYPE_DEBUG);
+//        SEND_MSG("dq_adm RF: "+toString(s.transpose()), MSG_TYPE_DEBUG);
+        dq_adm_urdf += m_J_LF_QR.solve(v_des_LF);
+//        SEND_MSG("J LF:\n"+toString(m_J_LF.rightCols(m_robot_util->m_nbJoints), 1), MSG_TYPE_DEBUG);
+//        SEND_MSG("v_des LF: "+toString(v_des_LF.transpose()), MSG_TYPE_DEBUG);
+//        SEND_MSG("dq_adm LF: "+toString(s.transpose()), MSG_TYPE_DEBUG);
+
+        m_robot_util->joints_urdf_to_sot(dq_adm_urdf, s);
+
+        getProfiler().stop(PROFILE_DQ_ADMITTANCE);
+
         return s;
       }
 

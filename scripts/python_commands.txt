@@ -45,11 +45,13 @@ create_topic(robot.ros, robot.inv_dyn.left_foot_pos, 'lf_pose');
 create_topic(robot.ros, robot.inv_dyn.left_foot_vel, 'lf_vel');
 create_topic(robot.ros, robot.inv_dyn.left_foot_acc, 'lf_acc');
 create_topic(robot.ros, robot.inv_dyn.left_foot_acc_des, 'lf_acc_des');
+create_topic(robot.ros, robot.inv_dyn.dq_admittance, 'dq_adm');
 
 #robot.torque_ctrl.velLeakingRate.value = 30*(0.,)
 #robot.torque_ctrl.reset_ddq_integral();
 ent.ctrl_manager.setCtrlMode('all','torque')
-robot.base_estimator.set_imu_weight(1.0);
+robot.inv_dyn.dq_admittance.recompute(0)
+robot.base_estimator.set_imu_weight(0.0);
 plug(robot.encoders.sout,       robot.base_estimator.joint_positions)
 #plug(robot.device.gyrometer,    robot.base_estimator.gyroscope);
 plug(robot.filters.estimator_kin.dx,            robot.base_estimator.joint_velocities);

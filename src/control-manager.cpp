@@ -287,7 +287,7 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_ctrlInputsSIN.size(); i++)
           {
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[i])(iter);
-            SEND_MSG(toString(iter)+") tau =" +toString(ctrl," ",1,4)+m_ctrlModes[i], MSG_TYPE_ERROR);
+            SEND_MSG(toString(iter)+") tau =" +toString(ctrl,1,4," ")+m_ctrlModes[i], MSG_TYPE_ERROR);
           }
         }
 

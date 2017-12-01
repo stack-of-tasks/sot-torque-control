@@ -632,6 +632,11 @@ namespace dynamicgraph
         // if both weights are zero set them to a small positive value to avoid division by zero
         if(wR==0.0 && wL==0.0)
         {
+          SEND_WARNING_STREAM_MSG("The robot is flying!"+
+                                  ("- forceRLEG: "+toString(ftrf.transpose()))+
+                                   "- forceLLEG: "+toString(ftlf.transpose())+
+                                  "- m_right_foot_is_stable: "+toString(m_right_foot_is_stable)+
+                                  "- m_left_foot_is_stable: "+toString(m_left_foot_is_stable));
           wR = 1e-3;
           wL = 1e-3;
         }
@@ -1000,7 +1005,6 @@ namespace dynamicgraph
           // if both weights are zero set them to a small positive value to avoid division by zero
           if(wR==0.0 && wL==0.0)
           {
-            SEND_WARNING_STREAM_MSG("The robot is flying!!!");
             wR = 1e-3;
             wL = 1e-3;
           }

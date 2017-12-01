@@ -68,8 +68,6 @@ namespace dynamicgraph {
         *   plug(estimator.jointsTorques,       jtc.jointsTorques);
         *   jtc.KpTorque.value = N_DOF*(10.0,);
         *   jtc.KiTorque.value = N_DOF*(0.01,);
-        *   jtc.k_tau.value = ...
-        *   jtc.k_v.value = ...
         *   jtc.init(dt);
         *
         * DETAILS
@@ -87,10 +85,13 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(jointsTorquesDerivative,dynamicgraph::Vector);      /// estimated joints torques derivative dtau
         DECLARE_SIGNAL_IN(jointsTorquesDesired,   dynamicgraph::Vector);      /// desired joints torques tauDes
 //        DECLARE_SIGNAL_IN(jointsTorquesDesiredDerivative, dynamicgraph::Vector);/// desired joints torques derivative dtauDes
+        DECLARE_SIGNAL_IN(dq_des,                 dynamicgraph::Vector);      /// desired joint velocities
         DECLARE_SIGNAL_IN(KpTorque,               dynamicgraph::Vector);      /// proportional gain for torque feedback controller
         DECLARE_SIGNAL_IN(KiTorque,               dynamicgraph::Vector);      /// integral gain for torque feedback controller
         DECLARE_SIGNAL_IN(KdTorque,               dynamicgraph::Vector);      /// derivative gain for torque feedback controller
+        DECLARE_SIGNAL_IN(KdVel,                  dynamicgraph::Vector);      /// derivative gain for velocity feedback
         DECLARE_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector);  /// integral error saturation
+
  
 //        DECLARE_SIGNAL_IN(dq_threshold,           dynamicgraph::Vector);      /// velocity sign threshold
 //        DECLARE_SIGNAL_IN(ddq_threshold,          dynamicgraph::Vector);      /// acceleration sign threshold
