@@ -1,4 +1,6 @@
+[![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 # sot-torque-control
+
 Collection of dynamic-graph entities aimed at implementing torque control on different robots.
 Read the project wiki to get a description of the main entities contained in this repository.
 
