@@ -88,6 +88,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/torque-offset-estimator.hh
   include/sot/torque_control/imu_offset_compensation.hh
+  include/sot/torque_control/admittance-controller.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
