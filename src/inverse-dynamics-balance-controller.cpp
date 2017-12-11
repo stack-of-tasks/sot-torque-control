@@ -891,7 +891,6 @@ namespace dynamicgraph
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
-
         const Eigen::Vector6d& f_des_RF = m_f_des_right_footSOUT(iter);
         const Eigen::Vector6d& f_des_LF = m_f_des_left_footSOUT(iter);
         const Eigen::Vector6d& f_RF = m_wrench_right_footSIN(iter);
@@ -904,8 +903,8 @@ namespace dynamicgraph
         Eigen::Vector6d v_des_RF = kp.cwiseProduct(f_RF - f_des_RF);
         Eigen::Vector6d v_des_LF = kp.cwiseProduct(f_LF - f_des_LF);
 
-        m_v_RF_int += ki.cwiseProduct(f_RF - f_des_RF);
-        m_v_LF_int += ki.cwiseProduct(f_LF - f_des_LF);
+        m_v_RF_int += m_dt*ki.cwiseProduct(f_RF - f_des_RF);
+        m_v_LF_int += m_dt*ki.cwiseProduct(f_LF - f_des_LF);
 
         m_robot->frameJacobianLocal(m_invDyn->data(), m_taskRF->frame_id(), m_J_RF);
         m_robot->frameJacobianLocal(m_invDyn->data(), m_taskLF->frame_id(), m_J_LF);
