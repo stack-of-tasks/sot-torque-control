@@ -56,6 +56,7 @@ SET(plugins
   device-torque-ctrl
   trace-player
   imu_offset_compensation
+  admittance-controller
   )
 
 #set(ADDITIONAL_feature-task_LIBS feature-generic task)

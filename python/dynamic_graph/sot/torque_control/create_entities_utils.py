@@ -24,6 +24,7 @@ from dynamic_graph.sot.torque_control.utils.sot_utils import Bunch
 from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
 #from dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains import *
 
+
 def create_encoders(robot):
     from dynamic_graph.sot.core import Selec_of_vector
     encoders = Selec_of_vector('qn')
@@ -265,6 +266,7 @@ def create_estimators(robot, conf, motor_params, dt):
         
 def create_torque_controller(robot, conf, motor_params, dt=0.001, robot_name="robot"):
     torque_ctrl = JointTorqueController("jtc");
+    plug(robot.encoders.sout,                           torque_ctrl.jointsPositions);
     plug(robot.filters.estimator_kin.dx,                torque_ctrl.jointsVelocities);
     plug(robot.filters.estimator_kin.ddx,               torque_ctrl.jointsAccelerations);
     plug(robot.estimator_ft.jointsTorques,              torque_ctrl.jointsTorques);
@@ -493,30 +495,24 @@ def create_current_controller(robot, conf, motor_params, dt, robot_name='robot')
     return current_ctrl;
 
 
-def create_admittance_ctrl(robot, dt=0.001):
+def create_admittance_ctrl(robot, conf, dt=0.001, robot_name='robot'):
     admit_ctrl = AdmittanceController("adm_ctrl");
-    plug(robot.device.robotState,             admit_ctrl.base6d_encoders);
-    plug(robot.filters.estimator_kin.dx,    admit_ctrl.jointsVelocities);
+    plug(robot.encoders.sout,                         admit_ctrl.encoders);
+    plug(robot.filters.estimator_kin.dx,              admit_ctrl.jointsVelocities);
     plug(robot.estimator_ft.contactWrenchRightSole,   admit_ctrl.fRightFoot);
     plug(robot.estimator_ft.contactWrenchLeftSole,    admit_ctrl.fLeftFoot);
-    plug(robot.estimator_ft.contactWrenchRightHand,   admit_ctrl.fRightHand);
-    plug(robot.estimator_ft.contactWrenchLeftHand,    admit_ctrl.fLeftHand);
-    plug(robot.traj_gen.fRightFoot,           admit_ctrl.fRightFootRef);
-    plug(robot.traj_gen.fLeftFoot,            admit_ctrl.fLeftFootRef);
-    plug(robot.traj_gen.fRightHand,           admit_ctrl.fRightHandRef);
-    plug(robot.traj_gen.fLeftHand,            admit_ctrl.fLeftHandRef);
+    plug(robot.inv_dyn.f_des_right_foot,              admit_ctrl.fRightFootRef);
+    plug(robot.inv_dyn.f_des_left_foot,               admit_ctrl.fLeftFootRef);
     
-    admit_ctrl.damping.value = 4*(0.05,);
-    admit_ctrl.Kd.value = NJ*(0,);
-    kf = -0.0005;
-    km = -0.008;
-    admit_ctrl.Kf.value = 3*(kf,)+3*(km,)+3*(kf,)+3*(km,)+3*(kf,)+3*(km,)+3*(kf,)+3*(km,);
-    
-    robot.ctrl_manager.addCtrlMode("adm");
-    plug(admit_ctrl.qDes,                       robot.ctrl_manager.ctrl_adm);
-    plug(robot.ctrl_manager.joints_ctrl_mode_adm, admit_ctrl.controlledJoints);
-    
-    admit_ctrl.init(dt);
+    admit_ctrl.damping.value          = 4*(0.05,);
+    admit_ctrl.controlledJoints.value = NJ*(1.0,);
+    admit_ctrl.kp_force.value         = conf.kp_force;
+    admit_ctrl.ki_force.value         = conf.ki_force;
+    admit_ctrl.kp_vel.value           = conf.kp_vel;
+    admit_ctrl.ki_vel.value           = conf.ki_vel;
+    admit_ctrl.force_integral_saturation.value = conf.force_integral_saturation;
+        
+    admit_ctrl.init(dt, robot_name);
     return admit_ctrl;
 
 def create_topic(ros_import, signal, name, robot=None, entity=None, data_type='vector', sleep_time=0.1):
