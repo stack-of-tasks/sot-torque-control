@@ -79,6 +79,7 @@ namespace dynamicgraph {
         DYNAMIC_GRAPH_ENTITY_DECL();
 
       public:  /* --- SIGNALS --- */
+        DECLARE_SIGNAL_IN(jointsPositions,        dynamicgraph::Vector);      /// q
         DECLARE_SIGNAL_IN(jointsVelocities,       dynamicgraph::Vector);      /// dq
         DECLARE_SIGNAL_IN(jointsAccelerations,    dynamicgraph::Vector);      /// ddq
         DECLARE_SIGNAL_IN(jointsTorques,          dynamicgraph::Vector);      /// estimated joints torques tau
@@ -120,6 +121,7 @@ namespace dynamicgraph {
         Eigen::VectorXd m_current_des;
         Eigen::VectorXd m_tauErrIntegral; /// integral of the torque error
         Eigen::VectorXd m_currentErrIntegral; /// integral of the current error
+//        Eigen::VectorXd m_dqDesIntegral; /// integral of the desired velocity
         Eigen::VectorXd m_dqErrIntegral; /// integral of the velocity error
 
 	RobotUtil * m_robot_util;
