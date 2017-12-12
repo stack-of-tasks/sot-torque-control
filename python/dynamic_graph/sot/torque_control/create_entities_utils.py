@@ -316,7 +316,6 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     plug(robot.estimator_ft.contactWrenchRightSole, ctrl.wrench_right_foot);
     plug(robot.estimator_ft.contactWrenchLeftSole,  ctrl.wrench_left_foot);
     plug(ctrl.tau_des,                              robot.torque_ctrl.jointsTorquesDesired);
-    plug(ctrl.dq_admittance,                        robot.torque_ctrl.dq_des);
     plug(ctrl.tau_des,                              robot.estimator_ft.tauDes);
 
     plug(ctrl.right_foot_pos,         robot.rf_traj_gen.initial_value);
@@ -364,8 +363,6 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
     ctrl.kd_posture.value = conf.kd_posture;
     ctrl.kp_pos.value = conf.kp_pos;
     ctrl.kd_pos.value = conf.kd_pos;
-    ctrl.kp_admittance.value = conf.kp_admittance;
-    ctrl.ki_admittance.value = conf.ki_admittance;
 
     ctrl.w_com.value = conf.w_com;
     ctrl.w_feet.value = conf.w_feet;

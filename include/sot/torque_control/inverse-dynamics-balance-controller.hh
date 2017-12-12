@@ -115,8 +115,6 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(kd_posture,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_pos,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_pos,                     dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(kp_admittance,              dynamicgraph::Vector);
-        DECLARE_SIGNAL_IN(ki_admittance,              dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(w_com,                      double);
         DECLARE_SIGNAL_IN(w_feet,                     double);
@@ -154,7 +152,6 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(tau_des,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(M,                         dynamicgraph::Matrix);
         DECLARE_SIGNAL_OUT(dv_des,                    dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(dq_admittance,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(f_des_right_foot,          dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(f_des_left_foot,           dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(zmp_des_right_foot,        dynamicgraph::Vector);
