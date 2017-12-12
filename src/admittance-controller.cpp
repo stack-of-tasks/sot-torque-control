@@ -235,9 +235,9 @@ namespace dynamicgraph
           //const Vector& qMask            = m_controlledJointsSIN(iter); // n
           //const Eigen::Vector4d& damping = m_dampingSIN(iter);          // 4
 
-          assert(q.size()==m_nj     && "Unexpected size of signal encoder");
-          assert(dq.size()==m_nj    && "Unexpected size of signal dq");
-          assert(qMask.size()==m_nj && "Unexpected size of signal controlledJoints");
+          assert(q_sot.size()==m_nj     && "Unexpected size of signal encoder");
+//          assert(dq.size()==m_nj    && "Unexpected size of signal dq");
+//          assert(qMask.size()==m_nj && "Unexpected size of signal controlledJoints");
 
           Eigen::Vector6d v_des_RF = -kp.cwiseProduct(e_f_RF);
           Eigen::Vector6d v_des_LF = -kp.cwiseProduct(e_f_LF);
