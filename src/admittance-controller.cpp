@@ -41,16 +41,18 @@ namespace dynamicgraph
 
 #define REF_FORCE_SIGNALS m_fRightFootRefSIN << m_fLeftFootRefSIN
 //                          m_fRightHandRefSIN << m_fLeftHandRefSIN
-#define FORCE_SIGNALS     m_fRightFootSIN << m_fLeftFootSIN
+#define FORCE_SIGNALS     m_fRightFootSIN << m_fLeftFootSIN << m_fRightFootFilteredSIN << m_fLeftFootFilteredSIN
 //                          m_fRightHandSIN << m_fLeftHandSIN
-#define GAIN_SIGNALS      m_kp_forceSIN << m_ki_forceSIN << m_kp_velSIN << m_ki_velSIN << m_force_integral_saturationSIN
+#define GAIN_SIGNALS      m_kp_forceSIN << m_ki_forceSIN << \
+                          m_kp_velSIN << m_ki_velSIN << \
+                          m_force_integral_saturationSIN << m_force_integral_deadzoneSIN
 #define STATE_SIGNALS     m_encodersSIN << m_jointsVelocitiesSIN
 
 #define INPUT_SIGNALS     STATE_SIGNALS << REF_FORCE_SIGNALS << \
                           FORCE_SIGNALS << GAIN_SIGNALS << m_controlledJointsSIN << m_dampingSIN
 
-#define FORCE_ERROR_SIGNALS m_fRightFootErrorSOUT << m_fLeftFootErrorSOUT //<< m_fRightHandErrorSOUT << m_fLeftHandErrorSOUT
-#define OUTPUT_SIGNALS      m_uSOUT << m_dqDesSOUT << FORCE_ERROR_SIGNALS
+#define DES_VEL_SIGNALS m_vDesRightFootSOUT << m_vDesLeftFootSOUT //<< m_fRightHandErrorSOUT << m_fLeftHandErrorSOUT
+#define OUTPUT_SIGNALS      m_uSOUT << m_dqDesSOUT << DES_VEL_SIGNALS
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -74,35 +76,38 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(kp_vel,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(ki_vel,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(force_integral_saturation, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(force_integral_deadzone,   dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(fRightFootRef,       dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(fLeftFootRef,        dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(fRightFoot,          dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(fLeftFoot,           dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fRightFootFiltered,  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(fLeftFootFiltered,   dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(controlledJoints,    dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(damping,             dynamicgraph::Vector)
 //            ,CONSTRUCT_SIGNAL_IN(fRightHandRef,       dynamicgraph::Vector)
 //            ,CONSTRUCT_SIGNAL_IN(fLeftHandRef,        dynamicgraph::Vector)
 //            ,CONSTRUCT_SIGNAL_IN(fRightHand,          dynamicgraph::Vector)
 //            ,CONSTRUCT_SIGNAL_IN(fLeftHand,           dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL_OUT(u,                  dynamicgraph::Vector, STATE_SIGNALS<<
-                                                                FORCE_SIGNALS<<
-                                                                REF_FORCE_SIGNALS<<
-                                                                GAIN_SIGNALS<<
-                                                                m_controlledJointsSIN)
-            ,CONSTRUCT_SIGNAL_OUT(dqDes,            dynamicgraph::Vector, STATE_SIGNALS <<
-                                                                GAIN_SIGNALS <<
-                                                                FORCE_ERROR_SIGNALS <<
-                                                                m_dampingSIN)
-            ,CONSTRUCT_SIGNAL_OUT(fRightFootError,  dynamicgraph::Vector, m_fRightFootSIN <<
-                                                                m_fRightFootRefSIN)
-            ,CONSTRUCT_SIGNAL_OUT(fLeftFootError,   dynamicgraph::Vector, m_fLeftFootSIN <<
-                                                                m_fLeftFootRefSIN)
+            ,CONSTRUCT_SIGNAL_OUT(u,              dynamicgraph::Vector, STATE_SIGNALS<<
+                                                                        m_controlledJointsSIN)
+            ,CONSTRUCT_SIGNAL_OUT(dqDes,          dynamicgraph::Vector, STATE_SIGNALS <<
+                                                                        DES_VEL_SIGNALS <<
+                                                                        m_dampingSIN)
+            ,CONSTRUCT_SIGNAL_OUT(vDesRightFoot,  dynamicgraph::Vector, m_fRightFootSIN <<
+                                                                        m_fRightFootFilteredSIN <<
+                                                                        m_fRightFootRefSIN <<
+                                                                        GAIN_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(vDesLeftFoot,   dynamicgraph::Vector, m_fLeftFootSIN <<
+                                                                        m_fLeftFootFilteredSIN <<
+                                                                        m_fLeftFootRefSIN <<
+                                                                        GAIN_SIGNALS)
 //            ,CONSTRUCT_SIGNAL_OUT(fRightHandError,  dynamicgraph::Vector, m_fRightHandSIN <<
 //                                                                m_fRightHandRefSIN)
 //            ,CONSTRUCT_SIGNAL_OUT(fLeftHandError,   dynamicgraph::Vector, m_fLeftHandSIN <<
 //                                                                m_fLeftHandRefSIN)
             ,m_initSucceeded(false)
-            ,m_useJacobianTranspose(false)
+            ,m_useJacobianTranspose(true)
             ,m_firstIter(true)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -225,57 +230,14 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_DQ_DES_COMPUTATION);
         {
-          const Vector6& e_f_RF          = m_fRightFootErrorSOUT(iter); // 6
-          const Vector6& e_f_LF          = m_fLeftFootErrorSOUT(iter);  // 6
-          const Vector6d& kp             = m_kp_forceSIN(iter);
-          const Vector6d& ki             = m_ki_forceSIN(iter);
-          const Vector6d& f_sat          = m_force_integral_saturationSIN(iter);
+          const Eigen::Vector6d v_des_LF = m_vDesLeftFootSOUT(iter);
+          const Eigen::Vector6d v_des_RF = m_vDesRightFootSOUT(iter);
           const Vector& q_sot            = m_encodersSIN(iter);  // n
 //          const Vector& dq_sot           = m_jointsVelocitiesSIN(iter); // n
           //const Vector& qMask            = m_controlledJointsSIN(iter); // n
           //const Eigen::Vector4d& damping = m_dampingSIN(iter);          // 4
 
           assert(q_sot.size()==m_nj     && "Unexpected size of signal encoder");
-//          assert(dq.size()==m_nj    && "Unexpected size of signal dq");
-//          assert(qMask.size()==m_nj && "Unexpected size of signal controlledJoints");
-
-          Eigen::Vector6d v_des_RF = -kp.cwiseProduct(e_f_RF);
-          Eigen::Vector6d v_des_LF = -kp.cwiseProduct(e_f_LF);
-
-          m_v_RF_int -= m_dt*ki.cwiseProduct(e_f_RF);
-          m_v_LF_int -= m_dt*ki.cwiseProduct(e_f_LF);
-
-          // saturate
-          bool saturating_LF = false;
-          bool saturating_RF = false;
-          for(int i=0; i<6; i++)
-          {
-            if(m_v_RF_int(i) > f_sat(i))
-            {
-              saturating_RF = true;
-              m_v_RF_int(i) = f_sat(i);
-            }
-            else if(m_v_RF_int(i) < -f_sat(i))
-            {
-              saturating_RF = true;
-              m_v_RF_int(i) = -f_sat(i);
-            }
-
-            if(m_v_LF_int(i) > f_sat(i))
-            {
-              saturating_LF = true;
-              m_v_LF_int(i) = f_sat(i);
-            }
-            else if(m_v_LF_int(i) < -f_sat(i))
-            {
-              saturating_LF = true;
-              m_v_LF_int(i) = -f_sat(i);
-            }
-          }
-          if(saturating_LF)
-            SEND_INFO_STREAM_MSG("Saturate m_v_LF_int integral: "+toString(m_v_LF_int.transpose()));
-          if(saturating_RF)
-            SEND_INFO_STREAM_MSG("Saturate m_v_RF_int integral: "+toString(m_v_RF_int.transpose()));
 
 
           /// *** Compute all Jacobians ***
@@ -293,19 +255,16 @@ namespace dynamicgraph
           /// Compute admittance control law
           if(m_useJacobianTranspose)
           {
-            m_dq_des_urdf  = m_J_RF.rightCols(m_nj).transpose()*(v_des_RF+m_v_RF_int);
-            m_dq_des_urdf += m_J_LF.rightCols(m_nj).transpose()*(v_des_LF+m_v_LF_int);
+            m_dq_des_urdf  = m_J_RF.rightCols(m_nj).transpose()*v_des_RF;
+            m_dq_des_urdf += m_J_LF.rightCols(m_nj).transpose()*v_des_LF;
           }
           else
           {
             m_J_RF_QR.compute(m_J_RF.rightCols(m_nj));
             m_J_LF_QR.compute(m_J_LF.rightCols(m_nj));
 
-            m_dq_des_urdf = m_J_RF_QR.solve(v_des_RF+m_v_RF_int);
-//            SEND_INFO_STREAM_MSG("v_des_RF+m_v_RF_int:" + toString((v_des_RF+m_v_RF_int).transpose()));
-//            SEND_INFO_STREAM_MSG("dq_des_urdf (RF only):" + toString(m_dq_des_urdf.transpose()));
-            m_dq_des_urdf += m_J_LF_QR.solve(v_des_LF+m_v_LF_int);
-//            SEND_INFO_STREAM_MSG("dq_des_urdf (RF+LF):" + toString(m_dq_des_urdf.transpose()));
+            m_dq_des_urdf = m_J_RF_QR.solve(v_des_RF);
+            m_dq_des_urdf += m_J_LF_QR.solve(v_des_LF);
           }
 
           if(s.size()!=m_nj)
@@ -318,34 +277,99 @@ namespace dynamicgraph
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fRightFootError,dynamicgraph::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(vDesRightFoot,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
-          SEND_MSG("Cannot compute signal fRightFootError before initialization!", MSG_TYPE_WARNING_STREAM);
+          SEND_MSG("Cannot compute signal vDesRightFoot before initialization!", MSG_TYPE_WARNING_STREAM);
           return s;
         }
-        const Vector6& f =           m_fRightFootSIN(iter);      // 6
-        const Vector6& fRef =        m_fRightFootRefSIN(iter);   // 6
-        if(s.size()!=6)
-          s.resize(6);
-        s = fRef - f;
+        const Vector6& f        = m_fRightFootSIN(iter);
+        const Vector6& f_filt   = m_fRightFootFilteredSIN(iter);
+        const Vector6& fRef     = m_fRightFootRefSIN(iter);
+        const Vector6d& kp      = m_kp_forceSIN(iter);
+        const Vector6d& ki      = m_ki_forceSIN(iter);
+        const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
+        const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
+
+        Eigen::Vector6d err      = fRef - f;
+        Eigen::Vector6d err_filt = fRef - f_filt;
+        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+
+        for(int i=0; i<6; i++)
+        {
+          if(err(i)>dz(i))
+            m_v_RF_int(i) -= m_dt * ki(i) * (err(i)-dz(i));
+          else if(err(i)<-dz(i))
+            m_v_RF_int(i) -= m_dt * ki(i) * (err(i)+dz(i));
+        }
+
+        // saturate
+        bool saturating = false;
+        for(int i=0; i<6; i++)
+        {
+          if(m_v_RF_int(i) > f_sat(i))
+          {
+            saturating = true;
+            m_v_RF_int(i) = f_sat(i);
+          }
+          else if(m_v_RF_int(i) < -f_sat(i))
+          {
+            saturating = true;
+            m_v_RF_int(i) = -f_sat(i);
+          }
+        }
+        if(saturating)
+          SEND_INFO_STREAM_MSG("Saturate m_v_RF_int integral: "+toString(m_v_RF_int.transpose()));
+        s = v_des + m_v_RF_int;
         return s;
       }
 
-      DEFINE_SIGNAL_OUT_FUNCTION(fLeftFootError,dynamicgraph::Vector)
+      DEFINE_SIGNAL_OUT_FUNCTION(vDesLeftFoot,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
-          SEND_MSG("Cannot compute signal fLeftFootError before initialization!", MSG_TYPE_WARNING_STREAM);
+          SEND_MSG("Cannot compute signal vDesLeftFoot before initialization!", MSG_TYPE_WARNING_STREAM);
           return s;
         }
-        const Vector6& f =           m_fLeftFootSIN(iter);      // 6
-        const Vector6& fRef =        m_fLeftFootRefSIN(iter);   // 6
-        if(s.size()!=6)
-          s.resize(6);
-        s = fRef - f;
-        return s;
+        const Vector6& f        = m_fLeftFootSIN(iter);
+        const Vector6& f_filt   = m_fLeftFootFilteredSIN(iter);
+        const Vector6& fRef     = m_fLeftFootRefSIN(iter);
+        const Vector6d& kp      = m_kp_forceSIN(iter);
+        const Vector6d& ki      = m_ki_forceSIN(iter);
+        const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
+        const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
+
+        Eigen::Vector6d err      = fRef - f;
+        Eigen::Vector6d err_filt = fRef - f_filt;
+        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+
+        for(int i=0; i<6; i++)
+        {
+          if(err(i)>dz(i))
+            m_v_LF_int(i) -= m_dt * ki(i) * (err(i)-dz(i));
+          else if(err(i)<-dz(i))
+            m_v_LF_int(i) -= m_dt * ki(i) * (err(i)+dz(i));
+        }
+
+        // saturate
+        bool saturating = false;
+        for(int i=0; i<6; i++)
+        {
+          if(m_v_LF_int(i) > f_sat(i))
+          {
+            saturating = true;
+            m_v_LF_int(i) = f_sat(i);
+          }
+          else if(m_v_LF_int(i) < -f_sat(i))
+          {
+            saturating = true;
+            m_v_LF_int(i) = -f_sat(i);
+          }
+        }
+        if(saturating)
+          SEND_INFO_STREAM_MSG("Saturate m_v_LF_int integral: "+toString(m_v_LF_int.transpose()));
+        s = v_des + m_v_LF_int;
       }
 
 //      DEFINE_SIGNAL_OUT_FUNCTION(fRightHandError,dynamicgraph::Vector)

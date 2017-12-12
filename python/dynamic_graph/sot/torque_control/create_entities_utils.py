@@ -499,8 +499,10 @@ def create_admittance_ctrl(robot, conf, dt=0.001, robot_name='robot'):
     admit_ctrl = AdmittanceController("adm_ctrl");
     plug(robot.encoders.sout,                         admit_ctrl.encoders);
     plug(robot.filters.estimator_kin.dx,              admit_ctrl.jointsVelocities);
-    plug(robot.estimator_ft.contactWrenchRightSole,   admit_ctrl.fRightFoot);
-    plug(robot.estimator_ft.contactWrenchLeftSole,    admit_ctrl.fLeftFoot);
+    plug(robot.device.forceRLEG,                      admit_ctrl.fRightFoot);
+    plug(robot.device.forceLLEG,                      admit_ctrl.fLeftFoot);
+    plug(robot.filters.ft_RF_filter.x_filtered,       admit_ctrl.fRightFootFiltered);
+    plug(robot.filters.ft_LF_filter.x_filtered,       admit_ctrl.fLeftFootFiltered);
     plug(robot.inv_dyn.f_des_right_foot,              admit_ctrl.fRightFootRef);
     plug(robot.inv_dyn.f_des_left_foot,               admit_ctrl.fLeftFootRef);
     
@@ -511,6 +513,14 @@ def create_admittance_ctrl(robot, conf, dt=0.001, robot_name='robot'):
     admit_ctrl.kp_vel.value           = conf.kp_vel;
     admit_ctrl.ki_vel.value           = conf.ki_vel;
     admit_ctrl.force_integral_saturation.value = conf.force_integral_saturation;
+    admit_ctrl.force_integral_deadzone.value   = conf.force_integral_deadzone;
+    
+    # connect it to torque control
+    from dynamic_graph.sot.core import Add_of_vector
+    robot.sum_torque_adm = Add_of_vector('sum_torque_adm');
+    plug(robot.inv_dyn.tau_des,     robot.sum_torque_adm.sin1);
+    plug(admit_ctrl.u,              robot.sum_torque_adm.sin2);
+    plug(robot.sum_torque_adm.sout, robot.torque_ctrl.jointsTorquesDesired);
         
     admit_ctrl.init(dt, robot_name);
     return admit_ctrl;
