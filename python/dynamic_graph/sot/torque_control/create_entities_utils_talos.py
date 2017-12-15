@@ -18,11 +18,11 @@ from dynamic_graph.sot.torque_control.inverse_dynamics_controller import Inverse
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.position_controller import PositionController
 from dynamic_graph.tracer_real_time import TracerRealTime
-from dynamic_graph.sot.torque_control.pyrene.motors_parameters import NJ
-from dynamic_graph.sot.torque_control.pyrene.motors_parameters import *
-from dynamic_graph.sot.torque_control.utils.sot_utils_pyrene import Bunch
+from dynamic_graph.sot.torque_control.talos.motors_parameters import NJ
+from dynamic_graph.sot.torque_control.talos.motors_parameters import *
+from dynamic_graph.sot.torque_control.utils.sot_utils_talos import Bunch
 from dynamic_graph.sot.torque_control.utils.filter_utils import create_butter_lp_filter_Wn_05_N_3
-#from dynamic_graph.sot.torque_control.pyrene.joint_pos_ctrl_gains import *
+#from dynamic_graph.sot.torque_control.talos.joint_pos_ctrl_gains import *
 
 def create_encoders(robot):
     from dynamic_graph.sot.core import Selec_of_vector

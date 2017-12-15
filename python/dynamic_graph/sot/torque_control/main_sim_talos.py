@@ -7,7 +7,7 @@
 import random
 import numpy as np
 from dynamic_graph import plug
-from create_entities_utils_pyrene import *
+from create_entities_utils_talos import *
 from hrp2_motors_parameters_sim import *
 # from dynamic_graph.sot.torque_control.hrp2_device_pos_ctrl import HRP2DevicePosCtrl
 import robotviewer  # start robotviewer from bash with 'robotviewer -sXML-RPC'.

@@ -6,29 +6,29 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_trajectory_switch, connect_synchronous_trajectories, create_force_traj_gen
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_trajectory_generator, create_com_traj_gen, create_encoders
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_imu_offset_compensation, create_filters, create_imu_filter
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_base_estimator, create_position_controller, create_torque_controller
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_balance_controller, create_ctrl_manager, create_ros_topics
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_free_flyer_locator#, create_flex_estimator, create_floatingBase
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_current_controller, connect_ctrl_manager
-from dynamic_graph.sot.torque_control.create_entities_utils_pyrene import create_tracer, create_topic
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_trajectory_switch, connect_synchronous_trajectories, create_force_traj_gen
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_trajectory_generator, create_com_traj_gen, create_encoders
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_imu_offset_compensation, create_filters, create_imu_filter
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_base_estimator, create_position_controller, create_torque_controller
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_balance_controller, create_ctrl_manager, create_ros_topics
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_free_flyer_locator#, create_flex_estimator, create_floatingBase
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_current_controller, connect_ctrl_manager
+from dynamic_graph.sot.torque_control.create_entities_utils_talos import create_tracer, create_topic
 from dynamic_graph.ros import RosPublish
-from dynamic_graph.sot.torque_control.utils.sot_utils_pyrene import start_sot, stop_sot, go_to_position, Bunch
+from dynamic_graph.sot.torque_control.utils.sot_utils_talos import start_sot, stop_sot, go_to_position, Bunch
 from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4
 
 from time import sleep
 
 def get_default_conf():
-    import dynamic_graph.sot.torque_control.pyrene.balance_ctrl_conf as balance_ctrl_conf
-    import dynamic_graph.sot.torque_control.pyrene.base_estimator_conf as base_estimator_conf
-    import dynamic_graph.sot.torque_control.pyrene.control_manager_conf as control_manager_conf
-    #import dynamic_graph.sot.torque_control.pyrene.current_controller_conf as current_controller_conf
-    import dynamic_graph.sot.torque_control.pyrene.force_torque_estimator_conf as force_torque_estimator_conf
-    import dynamic_graph.sot.torque_control.pyrene.joint_torque_controller_conf as joint_torque_controller_conf
-    import dynamic_graph.sot.torque_control.pyrene.joint_pos_ctrl_gains as pos_ctrl_gains
-    import dynamic_graph.sot.torque_control.pyrene.motors_parameters as motor_params
+    import dynamic_graph.sot.torque_control.talos.balance_ctrl_conf as balance_ctrl_conf
+    import dynamic_graph.sot.torque_control.talos.base_estimator_conf as base_estimator_conf
+    import dynamic_graph.sot.torque_control.talos.control_manager_conf as control_manager_conf
+    #import dynamic_graph.sot.torque_control.talos.current_controller_conf as current_controller_conf
+    import dynamic_graph.sot.torque_control.talos.force_torque_estimator_conf as force_torque_estimator_conf
+    import dynamic_graph.sot.torque_control.talos.joint_torque_controller_conf as joint_torque_controller_conf
+    import dynamic_graph.sot.torque_control.talos.joint_pos_ctrl_gains as pos_ctrl_gains
+    import dynamic_graph.sot.torque_control.talos.motors_parameters as motor_params
     conf = Bunch();
     conf.balance_ctrl              = balance_ctrl_conf;
     conf.base_estimator            = base_estimator_conf;
@@ -127,7 +127,7 @@ def main_post_start(robot):
     return ros;
 
 ''' Main function to call before starting the graph. '''
-def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/pyrene.urdf'):
+def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/talos.urdf'):
     dt = robot.timeStep;
     robot.device.setControlInputType('position');
     
