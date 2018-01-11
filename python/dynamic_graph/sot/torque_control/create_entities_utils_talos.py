@@ -357,7 +357,7 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
         robot.ddq_des = Selec_of_vector('ddq_des')
         plug(ctrl.dv_des, robot.ddq_des.sin);
         robot.ddq_des.selec(6,NJ+6);
-        plug(robot.ddq_des.sout, robot.estimator_ft.ddqRef);
+        #plug(robot.ddq_des.sout, robot.estimator_ft.ddqRef);
     except:
         print "WARNING: Could not connect dv_des from BalanceController to ForceTorqueEstimator";
 
@@ -515,6 +515,7 @@ def connect_ctrl_manager(robot):
     plug(robot.ctrl_manager.joints_ctrl_mode_torque,    robot.inv_dyn.active_joints);
     robot.ctrl_manager.setCtrlMode("all", "pos");
     #plug(robot.ctrl_manager.u_safe,                     robot.current_ctrl.i_des);
+    plug(robot.ctrl_manager.u_safe,                     robot.device.control);
     return;
     
 def create_current_controller(robot, conf, motor_params, dt, robot_name='robot'):
