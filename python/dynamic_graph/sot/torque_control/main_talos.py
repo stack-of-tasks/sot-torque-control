@@ -107,7 +107,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
 
     #robot.estimator_ft.dgyro.value = (0.0, 0.0, 0.0);
     #robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0);
-#    estimator.accelerometer.value = (0.0, 0.0, 9.81);
+    #estimator.accelerometer.value = (0.0, 0.0, 9.81);
     if(startSoT):
         print "Gonna start SoT";
         sleep(1.0);
@@ -127,7 +127,7 @@ def main_post_start(robot):
     return ros;
 
 ''' Main function to call before starting the graph. '''
-def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/talos.urdf'):
+'''def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/talos.urdf'):
     dt = robot.timeStep;
     robot.device.setControlInputType('position');
     
@@ -161,4 +161,4 @@ def main_v2(robot, delay=0.01, startSoT=True, go_half_sitting=True, urdfFileName
             sleep(1.0);
             go_to_position(robot.traj_gen, robot.halfSitting[6:], 10.0);
 
-    return robot;
+    return robot;'''
