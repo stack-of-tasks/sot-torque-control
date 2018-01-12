@@ -6,7 +6,6 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.core.switch import Switch
-from dynamic_graph.sot.torque_control.force_torque_estimator import ForceTorqueEstimator
 from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
 from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTrajectoryGenerator
@@ -14,7 +13,6 @@ from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajector
 from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.current_controller import CurrentController
-from dynamic_graph.sot.torque_control.inverse_dynamics_controller import InverseDynamicsController
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.position_controller import PositionController
 from dynamic_graph.tracer_real_time import TracerRealTime
