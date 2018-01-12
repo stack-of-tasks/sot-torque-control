@@ -40,7 +40,7 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
-#include <parametriccurves/spline.hpp>
+#include <parametric-curves/spline.hpp>
 #include <map>
 #include <initializer_list>
 #include "boost/assign.hpp"

@@ -41,13 +41,13 @@
 #include <sot/torque_control/utils/logger.hh>
 //#include <sot/torque_control/utils/trajectory-generators.hh>
 
-#include <parametriccurves/spline.hpp>
-#include <parametriccurves/constant.hpp>
-#include <parametriccurves/text-file.hpp>
-#include <parametriccurves/minimum-jerk.hpp>
-#include <parametriccurves/linear-chirp.hpp>
-#include <parametriccurves/infinite-sinusoid.hpp>
-#include <parametriccurves/infinite-const-acc.hpp>
+#include <parametric-curves/spline.hpp>
+#include <parametric-curves/constant.hpp>
+#include <parametric-curves/text-file.hpp>
+#include <parametric-curves/minimum-jerk.hpp>
+#include <parametric-curves/linear-chirp.hpp>
+#include <parametric-curves/infinite-sinusoid.hpp>
+#include <parametric-curves/infinite-const-acc.hpp>
 
 #include <map>
 #include <initializer_list>
