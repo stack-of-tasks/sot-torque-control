@@ -61,7 +61,7 @@ namespace dynamicgraph
             ,m_np(12)
             ,m_nv(6)
             ,m_iterLast(0)
-      {
+      {sotDEBUGIN(15);
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
         Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN
@@ -133,7 +133,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::init(const double& dt)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_firstIter = true;
@@ -167,7 +167,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(x, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -282,7 +282,7 @@ namespace dynamicgraph
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(dx, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -312,7 +312,7 @@ namespace dynamicgraph
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(ddx, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -347,7 +347,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void SE3TrajectoryGenerator::getValue(const int& id)
-      {
+      {sotDEBUGIN(15);
         if(id<0 || id>=m_np)
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
 
@@ -355,7 +355,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::playTrajectoryFile(const std::string& fileName)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -371,7 +371,7 @@ namespace dynamicgraph
         const VectorXd& xInit = m_textFileTrajGen->get_initial_point();
         for(unsigned int i=0; i<m_np; i++)
           if(fabs(xInit[i] - m_currentTrajGen[i]->getPos()(0)) > 0.001)
-          {
+          {sotDEBUGIN(15);
             needToMoveToInitConf = true;
             SEND_MSG("Component "+ toString(i) +" is too far from initial configuration so first i will move it there.", MSG_TYPE_WARNING);
           }
@@ -399,7 +399,7 @@ namespace dynamicgraph
       void SE3TrajectoryGenerator::setSpline(const std::string& fileName,
                                             const double& timeToInitConf,
                                             const Eigen::MatrixXd& init_rotation)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -452,7 +452,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::startSpline()
-      {
+      {sotDEBUGIN(15);
         if(m_status[0]==TG_SPLINE) return;
         m_t = 0.0;
         for(unsigned int i=0; i<m_np; i++)
@@ -462,7 +462,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::startSinusoid(const int& id, const double& xFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -483,7 +483,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::startTriangle(const int& id, const double& xFinal, const double& time, const double& Tacc)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start triangle before initialization!",MSG_TYPE_ERROR);
         if(id<0 || id>=m_np)
@@ -507,7 +507,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::startConstAcc(const int& id, const double& xFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start constant-acceleration trajectory before initialization!",MSG_TYPE_ERROR);
         if(id<0 || id>=m_np)
@@ -527,7 +527,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::startLinearChirp(const int& id, const double& xFinal, const double& f0, const double& f1, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start linear chirp before initialization!",MSG_TYPE_ERROR);
         if(id<0 || id>=m_np)
@@ -557,7 +557,7 @@ namespace dynamicgraph
       }
 
       void SE3TrajectoryGenerator::move(const int& id, const double& xFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot move value before initialization!",MSG_TYPE_ERROR);
         unsigned int i = id;
@@ -577,7 +577,7 @@ namespace dynamicgraph
 
 
       void SE3TrajectoryGenerator::stop(const int& id)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop value before initialization!",MSG_TYPE_ERROR);
 
@@ -609,7 +609,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void SE3TrajectoryGenerator::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "SE3TrajectoryGenerator "<<getName();
         try
         {
@@ -622,7 +622,7 @@ namespace dynamicgraph
       void SE3TrajectoryGenerator::commandLine(const std::string& cmdLine,
                                             std::istringstream& cmdArgs,
                                             std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "sotSE3TrajectoryGenerator:\n"

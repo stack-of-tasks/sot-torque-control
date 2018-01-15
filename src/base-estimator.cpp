@@ -38,6 +38,7 @@ namespace dynamicgraph
 
       void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12)
       {
+	sotDEBUGIN(15);
         const Eigen::Vector3d t_( s1.translation() * alpha+
                                   s2.translation() * (1-alpha));
 
@@ -45,23 +46,30 @@ namespace dynamicgraph
                                  se3::log3(s2.rotation()) * (1-alpha) );
 
         s12 =  se3::SE3(se3::exp3(w),t_);
+	sotDEBUGOUT(15);
       }
+      
       void rpyToMatrix(double roll, double pitch, double yaw, Eigen::Matrix3d & R)
       {
+	sotDEBUGIN(15);
         Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
         Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
         Eigen::Quaternion<double> q = yawAngle * pitchAngle * rollAngle;
         R = q.matrix();
+	sotDEBUGOUT(15);
       }
 
       void rpyToMatrix(const Eigen::Vector3d & rpy, Eigen::Matrix3d & R)
       {
+	sotDEBUGIN(15);
+	sotDEBUGOUT(15);
         return rpyToMatrix(rpy[0], rpy[1], rpy[2], R);
       }
 
       void matrixToRpy(const Eigen::Matrix3d & M, Eigen::Vector3d & rpy)
       {
+	sotDEBUGIN(15);
         double m = sqrt(M(2,1)*M(2,1) + M(2,2)*M(2,2));
         rpy(1) = atan2(-M(2,0), m);
         if( fabs(fabs(rpy(1)) - 0.5*M_PI) < 0.001 )
@@ -74,26 +82,31 @@ namespace dynamicgraph
           rpy(2) = atan2(M(1,0), M(0,0));  // alpha
           rpy(0) = atan2(M(2,1), M(2,2));  // gamma
         }
+	sotDEBUGOUT(15);
       }
       
       void quanternionMult(const Eigen::Vector4d & q1, const Eigen::Vector4d & q2,  Eigen::Vector4d & q12)
       {
+	sotDEBUGIN(15);
         q12(0) = q2(0)*q1(0)-q2(1)*q1(1)-q2(2)*q1(2)-q2(3)*q1(3);
         q12(1) = q2(0)*q1(1)+q2(1)*q1(0)-q2(2)*q1(3)+q2(3)*q1(2);
         q12(2) = q2(0)*q1(2)+q2(1)*q1(3)+q2(2)*q1(0)-q2(3)*q1(1);
         q12(3) = q2(0)*q1(3)-q2(1)*q1(2)+q2(2)*q1(1)+q2(3)*q1(0);
+	sotDEBUGOUT(15);
       }
 
       void pointRotationByQuaternion(const Eigen::Vector3d & point,const Eigen::Vector4d & quat, Eigen::Vector3d & rotatedPoint)
       {
-            const Eigen::Vector4d p4(0.0, point(0),point(1),point(2));
-            const Eigen::Vector4d quat_conj(quat(0),-quat(1),-quat(2),-quat(3));
-            Eigen::Vector4d q_tmp1,q_tmp2;
-            quanternionMult(quat,p4,q_tmp1);
-            quanternionMult(q_tmp1,quat_conj,q_tmp2);
-            rotatedPoint(0) = q_tmp2(1);
-            rotatedPoint(1) = q_tmp2(2);
-            rotatedPoint(2) = q_tmp2(3);
+	sotDEBUGIN(15);
+	const Eigen::Vector4d p4(0.0, point(0),point(1),point(2));
+	const Eigen::Vector4d quat_conj(quat(0),-quat(1),-quat(2),-quat(3));
+	Eigen::Vector4d q_tmp1,q_tmp2;
+	quanternionMult(quat,p4,q_tmp1);
+	quanternionMult(q_tmp1,quat_conj,q_tmp2);
+	rotatedPoint(0) = q_tmp2(1);
+	rotatedPoint(1) = q_tmp2(2);
+	rotatedPoint(2) = q_tmp2(3);
+	sotDEBUGOUT(15);
       }
 
 #define PROFILE_BASE_POSITION_ESTIMATION    "base-est position estimation"
@@ -176,6 +189,7 @@ namespace dynamicgraph
         ,m_zmp_margin_lf(0.0)
         ,m_zmp_margin_rf(0.0)
       {
+	sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         m_K_rf << 4034,23770,239018,707,502,936;
@@ -266,10 +280,12 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &BaseEstimator::set_normal_force_margin_left_foot,
                                     docCommandVoid1("Set the normal force margin for the left foot",
                                                     "double")));
+	sotDEBUGOUT(15);
       }
 
       void BaseEstimator::init(const double & dt, const std::string& robotRef)
       {
+	sotDEBUGIN(15);
         m_dt = dt;
         try
         {
@@ -283,6 +299,7 @@ namespace dynamicgraph
           else
           {
             SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
+	    sotDEBUGOUT(15);	    
             return;
           }
 
@@ -326,143 +343,165 @@ namespace dynamicgraph
         {
           std::cout << e.what();
           SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
+	  sotDEBUGOUT(15);
           return;
         }
         m_data = new se3::Data(m_model);
         m_initSucceeded = true;
+	sotDEBUGOUT(15);
       }
 
       void BaseEstimator::set_fz_stable_windows_size(const int& ws)
       {
-          if(ws<0.0)
-          return SEND_MSG("windows_size should be a positive integer", MSG_TYPE_ERROR);
+	sotDEBUGIN(15);
+	if(ws<0.0)
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("windows_size should be a positive integer", MSG_TYPE_ERROR);
+	  }
         m_fz_stable_windows_size = ws;
+	sotDEBUGOUT(15);
       }
 
       void BaseEstimator::set_alpha_w_filter(const double& a)
       {
-          if(a<0.0 || a>1.0)
-          return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	sotDEBUGIN(15);
+	if(a<0.0 || a>1.0)
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	  }
         m_alpha_w_filter = a;
+	sotDEBUGOUT(15);
       }
 
 
       void BaseEstimator::set_alpha_DC_acc(const double& a)
       {
-          if(a<0.0 || a>1.0)
-          return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	sotDEBUGIN(15);
+	if(a<0.0 || a>1.0)
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	  }
         m_alpha_DC_acc = a;
+	sotDEBUGOUT(15);
       }
       
       void BaseEstimator::set_alpha_DC_vel(const double& a)
       {
-          if(a<0.0 || a>1.0)
-          return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	sotDEBUGIN(15);
+	if(a<0.0 || a>1.0)
+	  {
+	    sotDEBUGOUT(1);
+	    return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
+	  }
         m_alpha_DC_vel = a;
+	sotDEBUGOUT(15);
       }
 
 
       void BaseEstimator::reset_foot_positions()
-      {
+      {sotDEBUGIN(15);
         m_reset_foot_pos = true;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_imu_weight(const double& w)
-      {
+      {sotDEBUGIN(15);
         if(w<0.0)
           return SEND_MSG("Imu weight must be nonnegative", MSG_TYPE_ERROR);
         m_w_imu = w;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_stiffness_right_foot(const dynamicgraph::Vector & k)
-      {
+      {sotDEBUGIN(15);
         if(k.size()!=6)
           return SEND_MSG("Stiffness vector should have size 6, not "+toString(k.size()), MSG_TYPE_ERROR);
         m_K_rf = k;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_stiffness_left_foot(const dynamicgraph::Vector & k)
-      {
+      {sotDEBUGIN(15);
         if(k.size()!=6)
           return SEND_MSG("Stiffness vector should have size 6, not "+toString(k.size()), MSG_TYPE_ERROR);
         m_K_lf = k;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_zmp_std_dev_right_foot(const double & std_dev)
-      {
+      {sotDEBUGIN(15);
         if(std_dev<=0.0)
           return SEND_MSG("Standard deviation must be a positive number", MSG_TYPE_ERROR);
         m_zmp_std_dev_rf = std_dev;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_zmp_std_dev_left_foot(const double & std_dev)
-      {
+      {sotDEBUGIN(15);
         if(std_dev<=0.0)
           return SEND_MSG("Standard deviation must be a positive number", MSG_TYPE_ERROR);
         m_zmp_std_dev_lf = std_dev;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_normal_force_std_dev_right_foot(const double & std_dev)
-      {
+      {sotDEBUGIN(15);
         if(std_dev<=0.0)
           return SEND_MSG("Standard deviation must be a positive number", MSG_TYPE_ERROR);
         m_fz_std_dev_rf = std_dev;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_normal_force_std_dev_left_foot(const double & std_dev)
-      {
+      {sotDEBUGIN(15);
         if(std_dev<=0.0)
           return SEND_MSG("Standard deviation must be a positive number", MSG_TYPE_ERROR);
         m_fz_std_dev_lf = std_dev;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_right_foot_sizes(const dynamicgraph::Vector & s)
-      {
+      {sotDEBUGIN(15);
         if(s.size()!=4)
           return SEND_MSG("Foot size vector should have size 4, not "+toString(s.size()), MSG_TYPE_ERROR);
         m_right_foot_sizes = s;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_left_foot_sizes(const dynamicgraph::Vector & s)
-      {
+      {sotDEBUGIN(15);
         if(s.size()!=4)
           return SEND_MSG("Foot size vector should have size 4, not "+toString(s.size()), MSG_TYPE_ERROR);
         m_left_foot_sizes = s;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_zmp_margin_right_foot(const double & margin)
-      {
+      {sotDEBUGIN(15);
         m_zmp_margin_rf = margin;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_zmp_margin_left_foot(const double & margin)
-      {
+      {sotDEBUGIN(15);
         m_zmp_margin_lf = margin;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_normal_force_margin_right_foot(const double & margin)
-      {
+      {sotDEBUGIN(15);
         m_fz_margin_rf = margin;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::set_normal_force_margin_left_foot(const double & margin)
-      {
+      {sotDEBUGIN(15);
         m_fz_margin_lf = margin;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::compute_zmp(const Vector6 & w, Vector2 & zmp)
-      {
+      {sotDEBUGIN(15);
         se3::Force f(w);
         f = m_sole_M_ftSens.act(f);
         if(f.linear()[2]==0.0)
           return;
         zmp[0] = -f.angular()[1] / f.linear()[2];
         zmp[1] =  f.angular()[0] / f.linear()[2];
-      }
+      sotDEBUGOUT(1);}
 
       double BaseEstimator::compute_zmp_weight(const Vector2 & zmp, const Vector4 & foot_sizes,
                                                double std_dev, double margin)
-      {
+      {sotDEBUGIN(15);
         double fs0=foot_sizes[0] - margin;
         double fs1=foot_sizes[1] + margin;
         double fs2=foot_sizes[2] - margin;
@@ -476,17 +515,17 @@ namespace dynamicgraph
         double cdy = ((cdf(m_normal, (fs2-zmp[1])/std_dev) -
                        cdf(m_normal, (fs3-zmp[1])/std_dev))-0.5 )*2.0;
         return cdx*cdy;
-      }
+      sotDEBUGOUT(1);}
 
       double BaseEstimator::compute_force_weight(double fz, double std_dev, double margin)
-      {
+      {sotDEBUGIN(15);
         if (fz<margin)
           return 0.0;
         return (cdf(m_normal, (fz-margin)/std_dev)-0.5)*2.0;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::reset_foot_positions_impl(const Vector6 & ftlf, const Vector6 & ftrf)
-      {
+      {sotDEBUGIN(15);
         // compute the base position wrt each foot
         SE3 dummy, dummy1, lfMff, rfMff;
         m_oMrfs = SE3::Identity();
@@ -537,12 +576,12 @@ namespace dynamicgraph
 //        sendMsg("Difference base estimation left-right foot:\n"+toString(m_oMff_rf.inverse()*m_oMff_lf), MSG_TYPE_DEBUG);
 
         m_reset_foot_pos = false;
-      }
+      sotDEBUGOUT(1);}
 
       void BaseEstimator::kinematics_estimation(const Vector6 & ft, const Vector6 & K,
                                                 const SE3 & oMfs, const int foot_id,
                                                 SE3 & oMff, SE3 & oMfa, SE3 & fsMff)
-      {
+      {sotDEBUGIN(15);
         Vector3 xyz;
         xyz << -ft[0]/K(0), -ft[1]/K(1), -ft[2]/K(2);
         Matrix3 R;
@@ -554,19 +593,19 @@ namespace dynamicgraph
         //~ sendMsg("fsMfa (foot_id="+toString(foot_id)+"):\n" + toString(fsMfa), MSG_TYPE_INFO);
         oMff = oMfa*faMff;                                // world to free flyer
         fsMff = fsMfa*faMff;                              // foot sole to free flyer
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_INNER_FUNCTION(kinematics_computations, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal kinematics_computations before initialization!");
           return s;
-        }
+        sotDEBUGOUT(1);}
 
         const Eigen::VectorXd& qj= m_joint_positionsSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
@@ -589,10 +628,10 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_BASE_KINEMATICS_COMPUTATION);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(q, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal q before initialization!");
@@ -781,10 +820,10 @@ namespace dynamicgraph
         }
         getProfiler().stop(PROFILE_BASE_POSITION_ESTIMATION);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(lf_xyzquat, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal lf_xyzquat before initialization!");
@@ -795,10 +834,10 @@ namespace dynamicgraph
         const Eigen::VectorXd & q = m_qSOUT(iter);
         s = m_oMlfs_xyzquat;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(rf_xyzquat, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal rf_xyzquat before initialization!");
@@ -809,10 +848,10 @@ namespace dynamicgraph
         const Eigen::VectorXd & q = m_qSOUT(iter);
         s = m_oMrfs_xyzquat;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(q_lf, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_lf before initialization!");
@@ -826,10 +865,10 @@ namespace dynamicgraph
         base_se3_to_sot(m_oMff_lf.translation(), m_oMff_lf.rotation(), s.head<6>());
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(q_rf, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_rf before initialization!");
@@ -843,10 +882,10 @@ namespace dynamicgraph
         base_se3_to_sot(m_oMff_rf.translation(), m_oMff_rf.rotation(), s.head<6>());
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(q_imu, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_imu before initialization!");
@@ -863,10 +902,10 @@ namespace dynamicgraph
         base_se3_to_sot(q.head<3>(), quatIMU.toRotationMatrix(), s.head<6>());
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(w_lf, double)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal w_lf before initialization!");
@@ -896,10 +935,10 @@ namespace dynamicgraph
         }
         s = w_zmp*w_fz;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(w_rf, double)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal w_rf before initialization!");
@@ -930,10 +969,10 @@ namespace dynamicgraph
         }
         s = w_zmp*w_fz;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(w_rf_filtered, double)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal w_rf_filtered before initialization!");
@@ -943,10 +982,10 @@ namespace dynamicgraph
         m_w_rf_filtered = m_alpha_w_filter*w_rf + (1-m_alpha_w_filter)*m_w_rf_filtered; //low pass filter
         s = m_w_rf_filtered;
         return s;
-      }
+      sotDEBUGOUT(1);}
       
       DEFINE_SIGNAL_OUT_FUNCTION(w_lf_filtered, double)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal w_lf_filtered before initialization!");
@@ -956,11 +995,11 @@ namespace dynamicgraph
         m_w_lf_filtered = m_alpha_w_filter*w_lf + (1-m_alpha_w_filter)*m_w_lf_filtered; //low pass filter
         s = m_w_lf_filtered;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
 
       DEFINE_SIGNAL_OUT_FUNCTION(v,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
@@ -1119,7 +1158,7 @@ namespace dynamicgraph
           //~ m_v_sot.head<6>() = m_v_kin.head<6>();
           //~ m_v_sot.head<6>() = m_v_flex.head<6>() + m_v_kin.head<6>();
           m_v_sot.head<6>() = m_v_gyr.head<6>() + m_v_kin.head<6>();
-//          m_v_sot.head<6>() = m_v_gyr.head<6>();
+	  //          m_v_sot.head<6>() = m_v_gyr.head<6>();
           //~ m_v_sot.head<6>() = m_v_imu.head<6>();
 
           m_v_sot.tail( m_robot_util->m_nbJoints) = dq;
@@ -1131,47 +1170,56 @@ namespace dynamicgraph
 
         }
         getProfiler().stop(PROFILE_BASE_VELOCITY_ESTIMATION);
+	sotDEBUGOUT(1);	
         return s;
       }
       
       DEFINE_SIGNAL_OUT_FUNCTION(v_kin, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v_kin before initialization!");
+	  sotDEBUGOUT(1);	  
           return s;
         }
         m_vSOUT(iter);
         s = m_v_kin;
+	sotDEBUGOUT(1);	
         return s;
       }
       
       DEFINE_SIGNAL_OUT_FUNCTION(v_flex, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v_flex before initialization!");
+	  sotDEBUGOUT(1);	  
           return s;
         }
         m_vSOUT(iter);
         s = m_v_flex+m_v_kin;
+	sotDEBUGOUT(1);
         return s;
       }
       
       DEFINE_SIGNAL_OUT_FUNCTION(v_imu, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v_imu before initialization!");
+	  sotDEBUGOUT(1);	  
           return s;
         }
         m_vSOUT(iter);
         s = m_v_imu;
+	sotDEBUGOUT(1);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(v_gyr, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v_gyr before initialization!");
@@ -1179,30 +1227,37 @@ namespace dynamicgraph
         }
         m_vSOUT(iter);
         s = m_v_gyr;
+
+	sotDEBUGOUT(1);	
         return s;
       }
       
       DEFINE_SIGNAL_OUT_FUNCTION(v_ac, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v_ac before initialization!");
+	  sotDEBUGOUT(1);	  
           return s;
         }
         m_vSOUT(iter);
         s = m_v_ac;
+	sotDEBUGOUT(15);	
         return s;
       }
       
       DEFINE_SIGNAL_OUT_FUNCTION(a_ac, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal a_ac before initialization!");
+	  sotDEBUGOUT(1);	  
           return s;
         }
         m_vSOUT(iter);
         s = m_a_ac;
+	sotDEBUGOUT(15);	
         return s;
       }      
 
@@ -1214,18 +1269,21 @@ namespace dynamicgraph
 
       void BaseEstimator::display(std::ostream& os) const
       {
+	sotDEBUGIN(15);
         os << "BaseEstimator "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
+	sotDEBUGOUT(15);
       }
 
       void BaseEstimator::commandLine(const std::string& cmdLine,
                                       std::istringstream& cmdArgs,
                                       std::ostream& os )
       {
+	sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "BaseEstimator:\n"
@@ -1236,6 +1294,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
+	sotDEBUGOUT(15);
       }
       
     } // namespace torquecontrol

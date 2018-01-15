@@ -4,7 +4,7 @@
    Object to estimate a polynomial that fits some data.
 */
 
-
+#include <sot/core/debug.hh>
 #include <sot/torque_control/utils/poly-estimator.hh>
 
 
@@ -12,7 +12,7 @@
 void pinv(const Eigen::MatrixXd& matrix_in, 
           Eigen::MatrixXd& pseudo_inv, 
           const double& pinvtoler)
-{
+{sotDEBUGIN(15);
   Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix_in, Eigen::ComputeThinU | 
                                         Eigen::ComputeThinV);        
   Eigen::VectorXd singular_values;
@@ -39,7 +39,7 @@ PolyEstimator::PolyEstimator(const unsigned int& order,
   dt_zero_(true),
   first_run_(true),
   pt_(0)
-{
+{sotDEBUGIN(15);
   t_.resize(N_);
   x_.resize(N_);
   elem_list_.reserve(N_); elem_list_.resize(N_);
@@ -55,7 +55,7 @@ PolyEstimator::PolyEstimator(const unsigned int& order,
 void PolyEstimator::estimate(std::vector<double>& esteem,
                             const std::vector<double>& el, 
                             const double& time)
-{
+{sotDEBUGIN(15);
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;
@@ -108,7 +108,7 @@ void PolyEstimator::estimate(std::vector<double>& esteem,
 
 
 void PolyEstimator::fit()
-{
+{sotDEBUGIN(15);
   for (unsigned int i = 0; i < N_; ++i)
   {
     double xtemp = t_[i];
@@ -127,13 +127,13 @@ void PolyEstimator::fit()
 
 
 void PolyEstimator::setWindowLength(const unsigned int& N)
-{
+{sotDEBUGIN(15);
   N_ = N;
 }
 
 
 unsigned int PolyEstimator::getWindowLength()
-{
+{sotDEBUGIN(15);
   return N_; 
 }
 

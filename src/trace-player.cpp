@@ -49,7 +49,7 @@ namespace dynamicgraph
       TracePlayer(const std::string& name)
         : Entity(name)
         ,CONSTRUCT_SIGNAL_OUT(trigger, int, sotNOSIGNAL)
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration(m_triggerSOUT);
 
         /* Commands. */
@@ -78,7 +78,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(trigger, int)
-      {
+      {sotDEBUGIN(15);
         playNext();
         return s;
       }
@@ -88,7 +88,7 @@ namespace dynamicgraph
 
       void TracePlayer::addOutputSignal(const string& fileName,
                                         const string& signalName)
-      {
+      {sotDEBUGIN(15);
         // check there is no other signal with the same name
         if(m_outputSignals.find(signalName) != m_outputSignals.end())
           return SEND_MSG("It already exists a signal with name "+signalName, MSG_TYPE_ERROR);
@@ -157,7 +157,7 @@ namespace dynamicgraph
       }
 
       void TracePlayer::playNext()
-      {
+      {sotDEBUGIN(15);
         typedef std::map<std::string, OutputSignalType* >::iterator it_type;
         for(it_type it=m_outputSignals.begin(); it!=m_outputSignals.end(); it++)
         {
@@ -177,7 +177,7 @@ namespace dynamicgraph
       }
 
       void TracePlayer::rewind()
-      {
+      {sotDEBUGIN(15);
         typedef std::map<std::string, DataPointerType>::iterator it_type;
         for(it_type it=m_dataPointers.begin(); it!=m_dataPointers.end(); it++)
         {
@@ -189,7 +189,7 @@ namespace dynamicgraph
       }
 
       void TracePlayer::clear()
-      {
+      {sotDEBUGIN(15);
         m_data.clear();
         m_dataPointers.clear();
         m_outputSignals.clear();
@@ -205,7 +205,7 @@ namespace dynamicgraph
 
 
       void TracePlayer::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "TracePlayer "<<getName();
         try
         {
@@ -218,7 +218,7 @@ namespace dynamicgraph
       void TracePlayer::commandLine(const std::string& cmdLine,
                                     std::istringstream& cmdArgs,
                                     std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "TracePlayer:\n"

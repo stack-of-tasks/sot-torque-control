@@ -47,7 +47,7 @@ namespace dynamicgraph
         ,m_dt(0.001)
         ,m_a_gyro_DC_blocker(1.0)
 
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         m_gyro_offset.setZero();
@@ -70,14 +70,14 @@ namespace dynamicgraph
                                                     "alpha (double)")));
 
 
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- COMMANDS ------------------------------------------------------ */
       /* ------------------------------------------------------------------- */
 
       void ImuOffsetCompensation::init(const double& dt)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_dt = dt;
@@ -92,7 +92,7 @@ namespace dynamicgraph
         double z=0;
         int i=0;
         while(infile>>z)
-        {
+        {sotDEBUGIN(15);
           m_gyro_offset(i) = z;
           i++;
           if(i==3)
@@ -124,22 +124,22 @@ namespace dynamicgraph
       }
 
       void ImuOffsetCompensation::setGyroDCBlockerParameter(const double & alpha)
-      {
+      {sotDEBUGIN(15);
         if(alpha>1.0 || alpha<=0.0)
           return SEND_MSG("GyroDCBlockerParameter must be > 0 and <= 1", MSG_TYPE_ERROR);
         m_a_gyro_DC_blocker = alpha;
-      }
+      sotDEBUGOUT(1);}
 
       void ImuOffsetCompensation::update_offset(const double& duration)
-      {
+      {sotDEBUGIN(15);
         if(duration<m_dt)
           return SEND_MSG("Duration must be greater than the time step", MSG_TYPE_ERROR);
         m_update_cycles = int(duration/m_dt);
         m_update_cycles_left = m_update_cycles;
-      }
+      sotDEBUGOUT(1);}
 
       void ImuOffsetCompensation::update_offset_impl(int iter)
-      {
+      {sotDEBUGIN(15);
         const dynamicgraph::Vector& accelerometer = m_accelerometer_inSIN(iter);
         const dynamicgraph::Vector& gyrometer = m_gyrometer_inSIN(iter);
         m_acc_sum  += accelerometer;
@@ -176,14 +176,14 @@ namespace dynamicgraph
           aof.close();
           SEND_MSG("IMU calibration data saved to file "+toString(CALIBRATION_FILE_NAME), MSG_TYPE_INFO);
         }
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(accelerometer_out, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal accelerometer before initialization!");
@@ -198,10 +198,10 @@ namespace dynamicgraph
           s.resize(3);
         s = accelerometer - m_acc_offset;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(gyrometer_out, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal gyrometer before initialization!");
@@ -215,7 +215,7 @@ namespace dynamicgraph
             m_gyro_offset = m_gyro_offset*m_a_gyro_DC_blocker + (1.-m_a_gyro_DC_blocker)*gyrometer;
         s = gyrometer - m_gyro_offset;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -223,19 +223,19 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void ImuOffsetCompensation::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "ImuOffsetCompensation "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
 
       void ImuOffsetCompensation::commandLine(const std::string& cmdLine,
                                      std::istringstream& cmdArgs,
                                      std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "ImuOffsetCompensation:\n"
@@ -246,7 +246,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
-      }
+      sotDEBUGOUT(1);}
 
     } // namespace torquecontrol
   } // namespace sot

@@ -71,7 +71,7 @@ namespace dynamicgraph
                                                                   m_qRefSIN)
             ,m_initSucceeded(false)
 	      ,m_robot_util(RefVoidRobotUtil())
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         /* Commands. */
@@ -87,7 +87,7 @@ namespace dynamicgraph
 
       void PositionController::init(const double& dt,
 				    const std::string& robotRef)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         if(!m_base6d_encodersSIN.isPlugged())
@@ -127,7 +127,7 @@ namespace dynamicgraph
       }
 
       void PositionController::resetIntegral()
-      {
+      {sotDEBUGIN(15);
         m_e_integral.setZero(m_robot_util->m_nbJoints);
       }
 
@@ -136,7 +136,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(pwmDes,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal pwmDes before initialization!");
@@ -152,6 +152,7 @@ namespace dynamicgraph
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
+	  std::cerr << "dq: " << dq.size() << std::endl;
           assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
           assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
           assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
@@ -171,7 +172,7 @@ namespace dynamicgraph
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(qError,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_MSG("Cannot compute signal qError before initialization!",MSG_TYPE_WARNING_STREAM);
@@ -198,7 +199,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void PositionController::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "PositionController "<<getName();
         try
         {
@@ -210,7 +211,7 @@ namespace dynamicgraph
       void PositionController::commandLine(const std::string& cmdLine,
                                             std::istringstream& cmdArgs,
                                             std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "sotPositionController:\n"

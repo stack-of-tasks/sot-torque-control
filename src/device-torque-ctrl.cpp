@@ -63,7 +63,7 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
   CONSTRUCT_SIGNAL_IN(kd_constraints,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(rotor_inertias,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector)
-{
+{sotDEBUGIN(15);
   forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRLEG");
   forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLLEG");
   forcesSIN_[2] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRARM");
@@ -94,7 +94,7 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
     if(i==FORCE_SIGNAL_RLEG || i==FORCE_SIGNAL_LLEG)
       wrenches_[i](2) = 350.0;
     forcesSOUT[i]->setConstant(wrenches_[i]);
-  }
+  sotDEBUGOUT(1);}
 
   temp6_.resize(6);
   m_nk = 12;
@@ -112,13 +112,13 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
                               docCommandVoid2("Initialize the entity.",
                                               "Time period in seconds (double)",
                                               "Robot reference (string)")));
-}
+sotDEBUGOUT(1);}
 
 DeviceTorqueCtrl::~DeviceTorqueCtrl()
-{ }
+{sotDEBUGIN(15); sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
-{
+{sotDEBUGIN(15);
   if(dt<=0.0)
     return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
@@ -183,10 +183,10 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
   timestep_ = dt;
   setStateSize(m_nj+6);
   m_initSucceeded = true;
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::setStateSize(const unsigned int& size)
-{
+{sotDEBUGIN(15);
   assert(size==m_nj+6);
   Device::setStateSize(size);
 
@@ -199,10 +199,10 @@ void DeviceTorqueCtrl::setStateSize(const unsigned int& size)
   robotStateSOUT_.setConstant(base6d_encoders_);
   jointsVelocitiesSOUT_.setConstant(jointsVelocities_);
   jointsAccelerationsSOUT_.setConstant(jointsAccelerations_);
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
-{
+{sotDEBUGIN(15);
   assert(q.size()==m_nj+6);
   if(!m_initSucceeded)
   {
@@ -227,10 +227,10 @@ void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
   m_contactRF->setReference(s);
   SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
   setVelocity(m_v_sot);
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::setVelocity( const dynamicgraph::Vector& v )
-{
+{sotDEBUGIN(15);
   assert(v.size()==m_nj+6);
   if(!m_initSucceeded)
   {
@@ -240,10 +240,10 @@ void DeviceTorqueCtrl::setVelocity( const dynamicgraph::Vector& v )
   Device::setVelocity(v);
   m_v_sot = v;
   m_robot_util->velocity_sot_to_urdf(m_q, m_v_sot, m_v);
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::setControlInputType(const std::string& cit)
-{
+{sotDEBUGIN(15);
   if(cit=="torque")
   {
     m_isTorqueControlled = true;
@@ -251,10 +251,10 @@ void DeviceTorqueCtrl::setControlInputType(const std::string& cit)
   }
   m_isTorqueControlled = false;
   return Device::setControlInputType(cit);
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::computeForwardDynamics()
-{
+{sotDEBUGIN(15);
   const Vector & tauDes = controlSIN.accessCopy();
   assert(tauDes.size()==m_nj);
 
@@ -323,10 +323,10 @@ void DeviceTorqueCtrl::computeForwardDynamics()
     SEND_MSG("M*dv +h - JT*f - tau = "+toString((JcT*m_f - b).norm()), MSG_TYPE_DEBUG);
   if((m_Jc*m_dv - m_dJcv).norm() > 1e-10)
     SEND_MSG("Jc*dv - dJc*v = "+toString((m_Jc*m_dv - m_dJcv).norm()), MSG_TYPE_DEBUG);
-}
+sotDEBUGOUT(1);}
 
 void DeviceTorqueCtrl::integrate( const double & dt )
-{
+{sotDEBUGIN(15);
   if(!m_initSucceeded)
   {
     SEND_WARNING_STREAM_MSG("Cannot integrate before initialization!");
@@ -385,4 +385,4 @@ void DeviceTorqueCtrl::integrate( const double & dt )
   gyrometerSOUT_.setTime(time);
   for( int i=0;i<4;++i )
     forcesSOUT[i]->setTime(time);
-}
+sotDEBUGOUT(1);}

@@ -63,7 +63,7 @@ namespace dynamicgraph
             ,m_firstIter(true)
             ,m_initSucceeded(false)
 	,m_robot_util(RefVoidRobotUtil())
-      {
+      {sotDEBUGIN(15);
         BIND_SIGNAL_TO_FUNCTION(fRightFoot, OUT, dynamicgraph::Vector);
         BIND_SIGNAL_TO_FUNCTION(fLeftFoot,  OUT, dynamicgraph::Vector);
         BIND_SIGNAL_TO_FUNCTION(fRightHand, OUT, dynamicgraph::Vector);
@@ -185,11 +185,11 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::stopForce,
                                     docCommandVoid1("Stop the specified force trajectort",
                                                     "(string) force name (rh,lh,lf,rf)")));
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::init(const double& dt,
 					  const std::string& robotRef)
-      {
+      {sotDEBUGIN(15);
 	/* Retrieve m_robot_util  informations */
 	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
@@ -235,7 +235,7 @@ namespace dynamicgraph
           m_currentTrajGen_force[i]   = m_noTrajGen_force[i];
         }
         m_initSucceeded = true;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -243,7 +243,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(q, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -309,13 +309,15 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_POSITION_DESIRED_COMPUTATION);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(dq, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+	  sotDEBUGOUT(15);
           return s;
         }
 
@@ -324,22 +326,24 @@ namespace dynamicgraph
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
         if(m_status[0]==JTG_TEXT_FILE)
-        {
+        {sotDEBUGIN(15);
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_textFileTrajGen->getVel()[i];
         }
         else
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_currentTrajGen[i]->getVel()(0);
-
+	sotDEBUGOUT(1);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(ddq, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+	  sotDEBUGOUT(15);
           return s;
         }
 
@@ -356,51 +360,60 @@ namespace dynamicgraph
         else
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i) = m_currentTrajGen[i]->getAcc()(0);
-
+	
+	sotDEBUGOUT(1);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(fRightFoot, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
 	//        SEND_MSG("Compute force right foot iter "+toString(iter), MSG_TYPE_DEBUG);
         generateReferenceForceSignal("fRightFoot", 
 				     m_robot_util->m_force_util.get_force_id_right_foot(),
 				     s, iter);
+	sotDEBUGOUT(1);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         generateReferenceForceSignal("fLeftFoot", 
 				     m_robot_util->m_force_util.get_force_id_left_foot(),
 				     s, iter);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         generateReferenceForceSignal("fRightHand", 
 				     m_robot_util->
 				     m_force_util.get_force_id_right_hand(), 
 				     s, iter);
+	sotDEBUGOUT(1);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         generateReferenceForceSignal("fLeftHand", 
 				     m_robot_util->
 				     m_force_util.get_force_id_left_hand(), 
 				     s, iter);
+	sotDEBUGOUT(1);
         return s;
       }
 
       bool JointTrajectoryGenerator::generateReferenceForceSignal(const std::string& forceName, int fid, dynamicgraph::Vector& s, int iter)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal "+
 				  forceName+" before initialization!");
+	  sotDEBUGOUT(15);
           return false;
         }
 
@@ -412,7 +425,7 @@ namespace dynamicgraph
           if(iter>m_iterForceSignals[fid])
           {
             m_currentTrajGen_force[fid]->compute_next_point();
-//            SEND_MSG("Compute force "+forceName+" with id "+toString(fid)+": "+toString(fr.transpose()), MSG_TYPE_DEBUG);
+	    //            SEND_MSG("Compute force "+forceName+" with id "+toString(fid)+": "+toString(fr.transpose()), MSG_TYPE_DEBUG);
             m_iterForceSignals[fid]++;
           }
 
@@ -429,7 +442,7 @@ namespace dynamicgraph
           }
         }
         getProfiler().stop(PROFILE_FORCE_DESIRED_COMPUTATION);
-
+	sotDEBUGOUT(15);
         return true;
       }
 
@@ -438,16 +451,16 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void JointTrajectoryGenerator::getJoint(const std::string& jointName)
-      {
+      {sotDEBUGIN(15);
         unsigned int i;
         if(convertJointNameToJointId(jointName,i)==false)
           return;
         const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN.accessCopy();
         SEND_MSG("Current angle of joint "+jointName+" is "+toString(base6d_encoders(6+i)), MSG_TYPE_INFO);
-      }
+      sotDEBUGOUT(1);}
 
       bool JointTrajectoryGenerator::isTrajectoryEnded()
-      {
+      {sotDEBUGIN(15);
         bool output=true;
         if(m_status[0]==JTG_TEXT_FILE)
         {
@@ -476,10 +489,10 @@ namespace dynamicgraph
           }
         }
         return output;
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::playTrajectoryFile(const std::string& fileName)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -515,16 +528,16 @@ namespace dynamicgraph
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
           }
           return;
-        }
+        sotDEBUGOUT(1);}
 
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
         {
           m_status[i]         = JTG_TEXT_FILE;
         }
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startSinusoid(const std::string& jointName, const double& qFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -544,10 +557,10 @@ namespace dynamicgraph
         m_sinTrajGen[i]->set_trajectory_time(time);
         m_status[i]         = JTG_SINUSOID;
         m_currentTrajGen[i] = m_sinTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startTriangle(const std::string& jointName, const double& qFinal, const double& time, const double& Tacc)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start triangle before initialization!",MSG_TYPE_ERROR);
 
@@ -571,10 +584,10 @@ namespace dynamicgraph
 
         m_status[i]         = JTG_TRIANGLE;
         m_currentTrajGen[i] = m_triangleTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startConstAcc(const std::string& jointName, const double& qFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start constant-acceleration trajectory before initialization!",MSG_TYPE_ERROR);
 
@@ -594,10 +607,10 @@ namespace dynamicgraph
         m_constAccTrajGen[i]->set_trajectory_time(time);
         m_status[i]         = JTG_CONST_ACC;
         m_currentTrajGen[i] = m_constAccTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startForceSinusoid(const std::string& forceName, const int& axis, const double& fFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start force sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -622,10 +635,10 @@ namespace dynamicgraph
         m_sinTrajGen_force[i]->set_trajectory_time(time);
         m_status_force[i]         = JTG_SINUSOID;
         m_currentTrajGen_force[i] = m_sinTrajGen_force[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startLinearChirp(const string& jointName, const double& qFinal, const double& f0, const double& f1, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start linear chirp before initialization!",MSG_TYPE_ERROR);
 
@@ -655,10 +668,10 @@ namespace dynamicgraph
           return SEND_MSG("Error while setting final frequency "+toString(f1), MSG_TYPE_ERROR);
         m_status[i]         = JTG_LIN_CHIRP;
         m_currentTrajGen[i] = m_linChirpTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::startForceLinearChirp(const string& forceName, const int& axis, const double& fFinal, const double& f0, const double& f1, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start force linear chirp before initialization!",MSG_TYPE_ERROR);
 
@@ -690,10 +703,10 @@ namespace dynamicgraph
           return SEND_MSG("Error while setting final frequency "+toString(f1), MSG_TYPE_ERROR);
         m_status_force[i]         = JTG_LIN_CHIRP;
         m_currentTrajGen_force[i] = m_linChirpTrajGen_force[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::moveJoint(const string& jointName, const double& qFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot move joint before initialization!",MSG_TYPE_ERROR);
 
@@ -712,10 +725,10 @@ namespace dynamicgraph
         m_minJerkTrajGen[i]->set_trajectory_time(time);
         m_status[i] = JTG_MIN_JERK;
         m_currentTrajGen[i] = m_minJerkTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::moveForce(const string& forceName, const int& axis, const double& fFinal, const double& time)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot move force before initialization!",MSG_TYPE_ERROR);
 
@@ -736,10 +749,10 @@ namespace dynamicgraph
         m_minJerkTrajGen_force[i]->set_trajectory_time(time);
         m_status_force[i] = JTG_MIN_JERK;
         m_currentTrajGen_force[i] = m_minJerkTrajGen_force[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::stop(const std::string& jointName)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop joint before initialization!",MSG_TYPE_ERROR);
 
@@ -762,10 +775,10 @@ namespace dynamicgraph
         m_noTrajGen[i]->set_initial_point(base6d_encoders(6+i));  // update the initial position
         m_status[i] = JTG_STOP;
         m_currentTrajGen[i] = m_noTrajGen[i];
-      }
+      sotDEBUGOUT(1);}
 
       void JointTrajectoryGenerator::stopForce(const std::string& forceName)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop force before initialization!",MSG_TYPE_ERROR);
 
@@ -775,7 +788,7 @@ namespace dynamicgraph
         m_noTrajGen_force[i]->set_initial_point(m_currentTrajGen_force[i]->getPos());  // update the initial position
         m_status_force[i] = JTG_STOP;
         m_currentTrajGen_force[i] = m_noTrajGen_force[i];
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -785,7 +798,7 @@ namespace dynamicgraph
 
       bool JointTrajectoryGenerator::
       convertJointNameToJointId(const std::string& name, unsigned int& id)
-      {
+      {sotDEBUGIN(15);
         // Check if the joint name exists
         int jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
@@ -801,11 +814,11 @@ namespace dynamicgraph
         }
         id = jid;
         return true;
-      }
+      sotDEBUGOUT(1);}
 
       bool JointTrajectoryGenerator::
       convertForceNameToForceId(const std::string& name, unsigned int& id)
-      {
+      {sotDEBUGIN(15);
         // Check if the joint name exists
         Index fid = m_robot_util->m_force_util.get_id_from_name(name);
         if (fid<0)
@@ -821,10 +834,10 @@ namespace dynamicgraph
         }
         id = (unsigned int)fid;
         return true;
-      }
+      sotDEBUGOUT(1);}
 
       bool JointTrajectoryGenerator::isJointInRange(unsigned int id, double q)
-      {
+      {sotDEBUGIN(15);
         JointLimits jl = m_robot_util->get_joint_limits_from_id(id);
         if(q<jl.lower)
         {
@@ -837,10 +850,10 @@ namespace dynamicgraph
           return false;
         }
         return true;
-      }
+      sotDEBUGOUT(1);}
 
       bool JointTrajectoryGenerator::isForceInRange(unsigned int id, const Eigen::VectorXd& f)
-      {
+      {sotDEBUGIN(15);
         ForceLimits fl = m_robot_util->m_force_util.get_limits_from_id(id);
         for(unsigned int i=0; i<6; i++)
           if(f[i]<fl.lower[i] || f[i]>fl.upper[i])
@@ -850,10 +863,10 @@ namespace dynamicgraph
             return false;
           }
         return true;
-      }
+      sotDEBUGOUT(1);}
 
       bool JointTrajectoryGenerator::isForceInRange(unsigned int id, int axis, double f)
-      {
+      {sotDEBUGIN(15);
         ForceLimits fl = m_robot_util->m_force_util.get_limits_from_id(id);
         if(f<fl.lower[axis] || f>fl.upper[axis])
         {
@@ -862,7 +875,7 @@ namespace dynamicgraph
           return false;
         }
         return true;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -870,20 +883,20 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void JointTrajectoryGenerator::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "JointTrajectoryGenerator "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
 
 
       void JointTrajectoryGenerator::commandLine(const std::string& cmdLine,
                                             std::istringstream& cmdArgs,
                                             std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "sotJointTrajectoryGenerator:\n"
@@ -894,7 +907,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
-      }
+      sotDEBUGOUT(1);}
       
     } // namespace torquecontrol
   } // namespace sot

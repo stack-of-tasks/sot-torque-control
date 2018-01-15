@@ -105,7 +105,7 @@ namespace dynamicgraph
         ,m_is_first_iter(true)
         ,m_emergency_stop_triggered(false)
         ,m_iter(0)
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS);
 
         /* Commands. */
@@ -119,12 +119,12 @@ namespace dynamicgraph
         addCommand("reset_integral",
                    makeCommandVoid0(*this, &CurrentController::reset_integral,
                                     docCommandVoid0("Reset the integral error.")));
-      }
+      sotDEBUGOUT(1);}
 
       void CurrentController::init(const double & dt,
                                    const std::string &robotRef,
                                    const unsigned int & currentOffsetIters )
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_dt = dt;
@@ -146,7 +146,7 @@ namespace dynamicgraph
         m_dz_coeff.setZero(m_robot_util->m_nbJoints);
         m_avg_i_err_pos.setZero(m_robot_util->m_nbJoints);
         m_avg_i_err_neg.setZero(m_robot_util->m_nbJoints);
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -154,7 +154,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(u, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal u before initialization!");
@@ -209,10 +209,10 @@ namespace dynamicgraph
           s.setZero();
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(u_safe,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal u_safe before initialization!");
@@ -259,10 +259,10 @@ namespace dynamicgraph
           s.setZero();
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(i_real,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal i_real before initialization!");
@@ -279,10 +279,10 @@ namespace dynamicgraph
         s = s.cwiseProduct(K);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(i_low_level,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal currents_low_level before initialization!");
@@ -296,10 +296,10 @@ namespace dynamicgraph
         const dynamicgraph::Vector& K = m_i_sens_gainsSIN(iter);
         s = s.cwiseProduct(K);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(i_sensor_offsets_real_out, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal i_sensor_offsets_real_out before initialization!");
@@ -332,10 +332,10 @@ namespace dynamicgraph
           s = m_i_offsets_real;
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(dead_zone_compensation, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal dead_zone_compensation before initialization!");
@@ -345,10 +345,10 @@ namespace dynamicgraph
         m_u_safeSOUT(iter);
         s = m_dz_coeff.cwiseProduct(dead_zone_offsets);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(i_errors, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal i_errors before initialization!");
@@ -358,10 +358,10 @@ namespace dynamicgraph
         const dynamicgraph::Vector& currents                  = m_i_realSOUT(iter);
         s = u-currents;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(i_errors_ll_wo_bemf, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal i_errors_ll_wo_bemf before initialization!");
@@ -385,14 +385,14 @@ namespace dynamicgraph
             m_avg_i_err_neg(i) += (s(i)-m_avg_i_err_neg(i))*1e-3;
           }
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       /* --- COMMANDS ---------------------------------------------------------- */
 
       void CurrentController::reset_integral()
-      {
+      {sotDEBUGIN(15);
         m_i_err_integr.setZero();
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- ENTITY -------------------------------------------------------- */
@@ -400,14 +400,14 @@ namespace dynamicgraph
 
 
       void CurrentController::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "CurrentController "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
       
     } // namespace torquecontrol
   } // namespace sot
