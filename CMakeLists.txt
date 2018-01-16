@@ -23,7 +23,7 @@ INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
 
 SET(PROJECT_NAME sot-torque-control)
-SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aiming at the implementation of torque control on HRP-2.")
+SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
 SET(PROJECT_URL "https://github.com/stack-of-tasks/sot-torque-control")
 
 SET(CUSTOM_HEADER_DIR "sot/torque-control")
