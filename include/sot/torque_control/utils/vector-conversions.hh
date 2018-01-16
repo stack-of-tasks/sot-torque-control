@@ -116,12 +116,4 @@ namespace Eigen
   for(unsigned int i=0; i< src.size(); i++) \
     dest(i+offset) = src[i]
 
-//Use ## to combine macro parameters into a single token (token => variable name, etc)
-//And # to stringify a macro parameter (very useful when doing "reflection" in C/C++)
-
-///  METAPOD
-#define METAPOD_FORCE_FROM_SIGNAL(force, signal) \
-  const Eigen::VectorXd& tmp##force##_eig = signal;	\
-  metapod::Spatial::ForceTpl<double> force(tmp##force##_eig.tail<3>(), tmp##force##_eig.head<3>())
-
 #endif // __sot_torque_control_vector_conversion_H__
