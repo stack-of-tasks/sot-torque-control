@@ -45,15 +45,6 @@
 #include <initializer_list>
 #include "boost/assign.hpp"
 
-/* Metapod */
-//~ #include <metapod/models/hrp2_14/hrp2_14.hh>
-//~ #include <metapod/algos/rnea.hh>
-//~ #include <metapod/algos/jac.hh>
-//~ #include <metapod/tools/jcalc.hh>
-//~ #include <metapod/tools/bcalc.hh>
-//~ #include <metapod/tools/print.hh>
-//~ #include <metapod/tools/initconf.hh>
-
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
