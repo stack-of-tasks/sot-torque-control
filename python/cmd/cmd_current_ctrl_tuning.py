@@ -1,4 +1,5 @@
 create_topic(robot.ros, robot.device.currents,                    'i');
+create_topic(robot.ros, robot.device.control,                    'ctrl');
 create_topic(robot.ros, robot.ctrl_manager.currents_real,         'i_real');
 create_topic(robot.ros, robot.ctrl_manager.pwmDes,                'i_des')
 create_topic(robot.ros, robot.device.robotState,                  'robotState')

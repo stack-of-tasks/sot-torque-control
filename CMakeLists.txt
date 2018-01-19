@@ -23,7 +23,7 @@ INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
 
 SET(PROJECT_NAME sot-torque-control)
-SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aiming at the implementation of torque control on HRP-2.")
+SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
 SET(PROJECT_URL "https://github.com/stack-of-tasks/sot-torque-control")
 
 SET(CUSTOM_HEADER_DIR "sot/torque-control")
@@ -61,7 +61,7 @@ ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("tsid")
-ADD_REQUIRED_DEPENDENCY("parametriccurves")
+ADD_REQUIRED_DEPENDENCY("parametric-curves")
 
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
@@ -88,6 +88,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/torque-offset-estimator.hh
   include/sot/torque_control/imu_offset_compensation.hh
+  include/sot/torque_control/admittance-controller.hh
   include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
@@ -129,7 +130,7 @@ PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} tsid)
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} parametriccurves)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} parametric-curves)
 
 
 IF(UNIX)

@@ -33,7 +33,7 @@ namespace dynamicgraph
                             << m_motorParameterKv_pSIN << m_motorParameterKv_nSIN \
                             << m_motorParameterKa_pSIN << m_motorParameterKa_nSIN <<  m_polySignDqSIN
 
-#define ESTIMATOR_INPUT_SIGNALS m_jointsVelocitiesSIN << m_jointsAccelerationsSIN << \
+#define ESTIMATOR_INPUT_SIGNALS m_jointsPositionsSIN << m_jointsVelocitiesSIN << m_jointsAccelerationsSIN << \
                                 m_jointsTorquesSIN << m_jointsTorquesDerivativeSIN
 
 #define TORQUE_INTEGRAL_INPUT_SIGNALS m_KiTorqueSIN << m_torque_integral_saturationSIN
@@ -65,6 +65,7 @@ namespace dynamicgraph
       JointTorqueController::
       JointTorqueController( const std::string & name )
         : Entity(name)
+        ,CONSTRUCT_SIGNAL_IN(jointsPositions,         dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsVelocities,        dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsAccelerations,     dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsTorques,           dynamicgraph::Vector)
@@ -149,6 +150,7 @@ namespace dynamicgraph
         m_tau_star.setZero(m_robot_util->m_nbJoints);
         m_current_des.setZero(m_robot_util->m_nbJoints);
         m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
+//        m_dqDesIntegral.setZero(m_robot_util->m_nbJoints);
         m_dqErrIntegral.setZero(m_robot_util->m_nbJoints);
 	sotDEBUGOUT(15);}
 
@@ -167,6 +169,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(u, dynamicgraph::Vector)
       {
 	sotDEBUGIN(15);
+        const Eigen::VectorXd& q                  = m_jointsPositionsSIN(iter);
         const Eigen::VectorXd& dq                 = m_jointsVelocitiesSIN(iter);
         const Eigen::VectorXd& ddq                = m_jointsAccelerationsSIN(iter);
         const Eigen::VectorXd& tau                = m_jointsTorquesSIN(iter);
@@ -203,11 +206,29 @@ namespace dynamicgraph
           offset = 6;
 
         m_dqErrIntegral += m_dt * ki_vel.cwiseProduct(dq_des-dq);
+        const Eigen::VectorXd& err_int_sat =   m_torque_integral_saturationSIN(iter);
+        // saturate
+        bool saturating = false;
+        for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
+        {
+          if(m_dqErrIntegral(i) > err_int_sat(i))
+          {
+            saturating = true;
+            m_dqErrIntegral(i) = err_int_sat(i);
+          }
+          else if(m_dqErrIntegral(i) < -err_int_sat(i))
+          {
+            saturating = true;
+            m_dqErrIntegral(i) = -err_int_sat(i);
+          }
+        }
+        if(saturating)
+          SEND_INFO_STREAM_MSG("Saturate dqErr integral: "+toString(m_dqErrIntegral.head<12>()));
 
         for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
         {
           m_current_des(i) = motorModel.getCurrent(m_tau_star(i),
-                                                   dq(i+offset)+kd_vel(i)*(dq_des(i)-dq(i+offset))+m_dqErrIntegral(i),
+                                                   dq(i+offset)+kd_vel(i)*(dq_des(i)-dq(i+offset)) + m_dqErrIntegral(i), //ki_vel(i)*(m_dqDesIntegral(i)-q(i)),
                                                    ddq(i+offset),
                                                    motorParameterKt_p(i),
                                                    motorParameterKt_n(i),

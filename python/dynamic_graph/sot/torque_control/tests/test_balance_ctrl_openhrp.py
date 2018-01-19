@@ -25,7 +25,9 @@ def get_sim_conf():
     import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains_sim as pos_ctrl_gains
     import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+    import dynamic_graph.sot.torque_control.hrp2.admittance_ctrl_conf as admittance_ctrl_conf
     conf = Bunch();
+    conf.adm_ctrl                  = admittance_ctrl_conf;
     conf.balance_ctrl              = balance_ctrl_conf;
     conf.base_estimator            = base_estimator_conf;
     conf.control_manager           = control_manager_conf;

@@ -10,12 +10,13 @@ robot.timeStep=0.0015
 robot = main_v3(robot, startSoT=True, go_half_sitting=0)
 go_to_position(robot.traj_gen, 30*(0.0,), 5.0)
 
+robot.inv_dyn.w_forces.value = 1e-4
 #robot.base_estimator.set_imu_weight(0.0)
 plug(robot.filters.estimator_kin.dx,         robot.base_estimator.joint_velocities);
 #plug(robot.filters.estimator_kin.dx,         robot.current_ctrl.dq);
 #plug(robot.filters.estimator_kin.dx,         robot.torque_ctrl.jointsVelocities);
-robot.inv_dyn.kp_com.value = (30.0, 30.0, 50.0)
-robot.inv_dyn.kd_com.value = (8.0, 8.0, 0.0)
+robot.inv_dyn.kp_com.value = (20.0, 20.0, 20.0)
+robot.inv_dyn.kd_com.value = (0.0, 0.0, 0.0)
 robot.torque_ctrl.KpTorque.value = 30*(0.0,)
 #plug(robot.filters_sg.ft_LF_filter.x_filtered, robot.base_estimator.forceLLEG)
 #plug(robot.filters_sg.ft_RF_filter.x_filtered, robot.base_estimator.forceRLEG)
@@ -58,7 +59,7 @@ go_to_position(robot.traj_gen, robot.halfSitting[6:], 5.0);
 robot.base_estimator.reset_foot_positions();
 robot.inv_dyn.updateComOffset()
 # start torque control on leg joints
-robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lk-lar-lap','torque')
+robot.ctrl_manager.setCtrlMode('rhp-rhy-rhr-rk-rar-rap-lhp-lhr-lhy-lar-lap','torque')
 
 # enable integral feedback in torque control
 import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
@@ -108,7 +109,8 @@ create_topic(robot.ros, robot.device.accelerometer,           'accelerometer');
 
 robot.com_traj_gen.move(2, 0.85, 2.0)
 smoothly_set_signal(robot.torque_ctrl.KpTorque,30*(1.,))
-smoothly_set_signal(robot.inv_dyn.kp_posture,30*(5.,))
+smoothly_set_signal(robot.inv_dyn.kp_posture,30*(20.,))
+smoothly_set_signal(robot.inv_dyn.kp_pos,30*(50.,))
 
 robot.com_traj_gen.stop(-1)
 robot.com_traj_gen.move(1, 0.03, 1.5)

@@ -10,7 +10,6 @@ This project depends on:
 * dynamic-graph-python >= 3.0.0
 * sot-core >= 3.0.0
 * pinocchio >= 1.2
-* metapod
 * [PinInvDyn](https://github.com/stack-of-tasks/invdyn)
 * [parametric-curves](https://github.com/stack-of-tasks/parametric-curves)
 
