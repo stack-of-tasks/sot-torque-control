@@ -57,7 +57,7 @@ namespace dynamicgraph
                                                                               m_accelerometerSIN)
         ,m_initSucceeded(false)
         ,m_beta(betaDef)
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         /* Commands. */
@@ -71,29 +71,29 @@ namespace dynamicgraph
         addCommand("setBeta",
                    makeCommandVoid1(*this, &MadgwickAHRS::set_beta,
                                     docCommandVoid1("Set the filter parameter beta", "double")));
-      }
+      sotDEBUGOUT(1);}
 
       void MadgwickAHRS::init(const double& dt)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_sampleFreq=1.0f/dt;
         m_initSucceeded = true;
-      }
+      sotDEBUGOUT(1);}
 
       void MadgwickAHRS::set_beta(const double& beta)
-      {
+      {sotDEBUGIN(15);
         if(beta<0.0 || beta>1.0)
           return SEND_MSG("Beta must be in [0,1]", MSG_TYPE_ERROR);
         m_beta = beta;
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_OUT_FUNCTION(imu_quat, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal imu_quat before initialization!");
@@ -117,7 +117,7 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_MADGWICKAHRS_COMPUTATION);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* --- COMMANDS ---------------------------------------------------------- */
@@ -129,7 +129,7 @@ namespace dynamicgraph
       // Fast inverse square-root
       // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
       float MadgwickAHRS::invSqrt(float x)
-      {
+      {sotDEBUGIN(15);
         /*
           float halfx = 0.5f * x;
           float y = x;
@@ -139,11 +139,11 @@ namespace dynamicgraph
           y = y * (1.5f - (halfx * y * y));
           return y;*/
         return (1.0f/sqrt(x)); //we'r not in the 70's
-      }
+      sotDEBUGOUT(1);}
 
       // IMU algorithm update
       void MadgwickAHRS::madgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az)
-      {
+      {sotDEBUGIN(15);
         float recipNorm;
         float s0, s1, s2, s3;
         float qDot1, qDot2, qDot3, qDot4;
@@ -212,7 +212,7 @@ namespace dynamicgraph
         m_q1 *= recipNorm;
         m_q2 *= recipNorm;
         m_q3 *= recipNorm;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* ------------------------------------------------------------------- */
@@ -220,19 +220,19 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void MadgwickAHRS::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "MadgwickAHRS "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
 
       void MadgwickAHRS::commandLine(const std::string& cmdLine,
                                      std::istringstream& cmdArgs,
                                      std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "MadgwickAHRS:\n"
@@ -243,7 +243,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
-      }
+      sotDEBUGOUT(1);}
 
     } // namespace torquecontrol
   } // namespace sot

@@ -263,7 +263,7 @@ namespace dynamicgraph
             ,m_timeLast(0)
             ,m_contactState(DOUBLE_SUPPORT)
 	    ,m_robot_util(RefVoidRobotUtil())
-      {
+      {sotDEBUGIN(15);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         m_zmp_des_RF.setZero();
@@ -300,18 +300,19 @@ namespace dynamicgraph
                                                     "Transition time in seconds (double)")));
 
 	
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::updateComOffset()
-      {
+      {sotDEBUGIN(15);
         const Vector3 & com = m_robot->com(m_invDyn->data());
         m_com_offset = m_zmp - com;
         m_com_offset(2) = 0.0;
         SEND_MSG("CoM offset updated: "+toString(m_com_offset), MSG_TYPE_INFO);
+	sotDEBUGOUT(1);
       }
 
       void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime)
-      {
+      {sotDEBUGIN(15);
         if(m_contactState == DOUBLE_SUPPORT)
         {
           SEND_MSG("Remove right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
@@ -331,10 +332,10 @@ namespace dynamicgraph
           else
             m_contactState = LEFT_SUPPORT;
         }
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::removeLeftFootContact(const double& transitionTime)
-      {
+      {sotDEBUGIN(15);
         if(m_contactState == DOUBLE_SUPPORT)
         {
           SEND_MSG("Remove left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
@@ -354,10 +355,10 @@ namespace dynamicgraph
           else
             m_contactState = RIGHT_SUPPORT;
         }
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime)
-      {
+      {sotDEBUGIN(15);
         if(m_contactState == LEFT_SUPPORT)
         {
           SEND_MSG("Add right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
@@ -365,10 +366,10 @@ namespace dynamicgraph
           m_invDyn->removeTask(m_taskRF->name(), transitionTime);
           m_contactState = DOUBLE_SUPPORT;
         }
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::addLeftFootContact(const double& transitionTime)
-      {
+      {sotDEBUGIN(15);
         if(m_contactState == RIGHT_SUPPORT)
         {
           SEND_MSG("Add left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
@@ -376,11 +377,11 @@ namespace dynamicgraph
           m_invDyn->removeTask(m_taskLF->name(), transitionTime);
           m_contactState = DOUBLE_SUPPORT;
         }
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::init(const double& dt, 
 						  const std::string& robotRef)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
@@ -511,14 +512,14 @@ namespace dynamicgraph
         }
         m_dt = dt;
         m_initSucceeded = true;
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(s.size()!=m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
 
@@ -559,13 +560,15 @@ namespace dynamicgraph
           for(int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i)=false;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(tau_des,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
+	  sotDEBUG(15);
           return s;
         }
         if(s.size()!=m_robot_util->m_nbJoints)
@@ -689,7 +692,7 @@ namespace dynamicgraph
         m_taskCom->Kd(kd_com);
         if(m_w_com != w_com)
         {
-//          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
           m_w_com = w_com;
           m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
         }
@@ -702,8 +705,8 @@ namespace dynamicgraph
         m_taskPosture->Kd(kd_posture);
         if(m_w_posture != w_posture)
         {
-//          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
-          m_w_posture = w_posture;
+          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
+	  m_w_posture = w_posture;
           m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
         }
 
@@ -746,7 +749,7 @@ namespace dynamicgraph
           }
         }
         m_timeLast = iter;
-
+	sotDEBUG(15);
         const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
@@ -764,7 +767,8 @@ namespace dynamicgraph
         }
         else
           getStatistics().store("solver dynamic size", 1.0);
-
+	sotDEBUG(15) << std::endl;
+	
         const HQPOutput & sol = solver->solve(hqpData);
         getProfiler().stop(PROFILE_HQP_SOLUTION);
 
@@ -777,12 +781,13 @@ namespace dynamicgraph
           s.setZero();
           return s;
         }
-
+	sotDEBUG(15);
         getStatistics().store("active inequalities", sol.activeSet.size());
         getStatistics().store("solver iterations", sol.iterations);
         if(ddx_com_ref.norm()>1e-3)
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
 
+	sotDEBUG(15);
         m_dv_urdf = m_invDyn->getAccelerations(sol);
         m_robot_util->velocity_urdf_to_sot(m_q_urdf, m_dv_urdf, m_dv_sot);
         Eigen::Matrix<double,12,1> tmp;
@@ -794,17 +799,18 @@ namespace dynamicgraph
 
         m_tau_sot += kp_pos.cwiseProduct(q_ref-q_sot.tail(m_robot_util->m_nbJoints)) +
                      kd_pos.cwiseProduct(dq_ref-v_sot.tail(m_robot_util->m_nbJoints));
-
+	sotDEBUG(15);
         getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
         m_t += m_dt;
 
         s = m_tau_sot;
-
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(M,dynamicgraph::Matrix)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal M before initialization!");
@@ -814,11 +820,13 @@ namespace dynamicgraph
           s.resize(m_robot->nv(), m_robot->nv());
         m_tau_desSOUT(iter);
         s = m_robot->mass(m_invDyn->data());
+	sotDEBUGOUT(1);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(dv_des,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal dv_des before initialization!");
@@ -828,14 +836,17 @@ namespace dynamicgraph
           s.resize(m_robot->nv());
         m_tau_desSOUT(iter);
         s = m_dv_sot;
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(f_des_right_foot,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal f_des_right_foot before initialization!");
+	  sotDEBUGOUT(15);	  
           return s;
         }
         if(s.size()!=6)
@@ -844,17 +855,21 @@ namespace dynamicgraph
         if(m_contactState == LEFT_SUPPORT)
         {
           s.setZero();
+	  sotDEBUGOUT(15);	  
           return s;
         }
         s = m_f_RF;
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(f_des_left_foot,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal f_des_left_foot before initialization!");
+	  sotDEBUGOUT(15);	  
           return s;
         }
         if(s.size()!=6)
@@ -863,28 +878,33 @@ namespace dynamicgraph
         if(m_contactState == RIGHT_SUPPORT)
         {
           s.setZero();
+	  sotDEBUGOUT(15);	  
           return s;
         }
         s = m_f_LF;
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(com_acc_des, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal com_acc_des before initialization!");
+	  sotDEBUGOUT(15);	  
           return s;
         }
         if(s.size()!=3)
           s.resize(3);
         m_tau_desSOUT(iter);
         s = m_taskCom->getDesiredAcceleration();
+	sotDEBUGOUT(16);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(com_acc, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal com_acc before initialization!");
@@ -895,10 +915,10 @@ namespace dynamicgraph
         m_tau_desSOUT(iter);
         s = m_taskCom->getAcceleration(m_dv_urdf);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_des_right_foot_local,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_des_right_foot_local before initialization!");
@@ -909,7 +929,7 @@ namespace dynamicgraph
 
         m_f_des_right_footSOUT(iter);
         if(fabs(m_f_RF(2)>1.0))
-        {
+        {sotDEBUGIN(15);
           m_zmp_des_RF_local(0) = -m_f_RF(4) / m_f_RF(2);
           m_zmp_des_RF_local(1) =  m_f_RF(3) / m_f_RF(2);
           m_zmp_des_RF_local(2) = 0.0;
@@ -918,11 +938,13 @@ namespace dynamicgraph
           m_zmp_des_RF_local.setZero();
 
         s = m_zmp_des_RF_local.head<2>();
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_des_left_foot_local,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_des_left_foot_local before initialization!");
@@ -941,11 +963,14 @@ namespace dynamicgraph
           m_zmp_des_LF_local.setZero();
 
         s = m_zmp_des_LF_local.head<2>();
+
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_des_right_foot,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_des_right_foot before initialization!");
@@ -967,14 +992,17 @@ namespace dynamicgraph
 
         m_zmp_des_RF = H_rf.act(m_zmp_des_RF);
         s = m_zmp_des_RF.head<2>();
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_des_left_foot,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_des_left_foot before initialization!");
+	  sotDEBUGOUT(15);	  
           return s;
         }
         if(s.size()!=2)
@@ -993,11 +1021,12 @@ namespace dynamicgraph
 
         m_zmp_des_LF = H_lf.act(m_zmp_des_LF);
         s = m_zmp_des_LF.head<2>();
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_des,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_des before initialization!");
@@ -1010,11 +1039,13 @@ namespace dynamicgraph
 
         m_zmp_des = (m_f_RF(2)*m_zmp_des_RF + m_f_LF(2)*m_zmp_des_LF) / (m_f_LF(2)+m_f_RF(2));
         s = m_zmp_des.head<2>();
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_ref,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_ref before initialization!");
@@ -1052,12 +1083,12 @@ namespace dynamicgraph
 
         if(f_LF(2)+f_RF(2) != 0.0)
           s = (f_RF(2)*zmp_RF.head<2>() + f_LF(2)*zmp_LF.head<2>()) / (f_LF(2)+f_RF(2));
-
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_right_foot,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_right_foot before initialization!");
@@ -1080,11 +1111,13 @@ namespace dynamicgraph
 
         m_zmp_RF = H_rf.act(m_zmp_RF);
         s = m_zmp_RF.head<2>();
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp_left_foot,dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp_left_foot before initialization!");
@@ -1106,11 +1139,13 @@ namespace dynamicgraph
 
         m_zmp_LF = H_lf.act(m_zmp_LF);
         s = m_zmp_LF.head<2>();
+	sotDEBUGOUT(1);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(zmp, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal zmp before initialization!");
@@ -1126,12 +1161,13 @@ namespace dynamicgraph
         if(f_LF(2)+f_RF(2) > 1.0)
           m_zmp = (f_RF(2)*m_zmp_RF + f_LF(2)*m_zmp_LF) / (f_LF(2)+f_RF(2));
         s = m_zmp.head<2>();
+	sotDEBUGOUT(15);	
         return s;
       }
       
       
       DEFINE_SIGNAL_OUT_FUNCTION(com,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal com before initialization!");
@@ -1142,10 +1178,10 @@ namespace dynamicgraph
         const Vector3 & com = m_robot->com(m_invDyn->data());
         s = com + m_com_offset;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(com_vel,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal com_vel before initialization!");
@@ -1156,11 +1192,11 @@ namespace dynamicgraph
         const Vector3 & com_vel = m_robot->com_vel(m_invDyn->data());
         s = com_vel;
         return s;
-      }
+      sotDEBUGOUT(1);}
       
       
       DEFINE_SIGNAL_OUT_FUNCTION(base_orientation,dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal base_orientation before initialization!");
@@ -1170,10 +1206,10 @@ namespace dynamicgraph
          * Code
          */
         return s;
-      }
+      sotDEBUGOUT(1);}
       
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_pos before initialization!");
@@ -1185,10 +1221,10 @@ namespace dynamicgraph
         m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
         return s;
-      }
+      sotDEBUGOUT(1);}
       
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_pos before initialization!");
@@ -1200,10 +1236,10 @@ namespace dynamicgraph
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_vel, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_vel before initialization!");
@@ -1213,10 +1249,10 @@ namespace dynamicgraph
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_lf, v);
         s = v.toVector();
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_vel, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_vel before initialization!");
@@ -1226,10 +1262,10 @@ namespace dynamicgraph
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_rf, v);
         s = v.toVector();
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_acc, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization!");
@@ -1241,10 +1277,10 @@ namespace dynamicgraph
         else
           s = m_contactLF->getMotionTask().getAcceleration(m_dv_urdf);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_acc, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_acc before initialization!");
@@ -1256,10 +1292,10 @@ namespace dynamicgraph
         else
           s = m_contactRF->getMotionTask().getAcceleration(m_dv_urdf);
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_acc_des, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc_des before initialization!");
@@ -1271,10 +1307,10 @@ namespace dynamicgraph
         else
           s = m_contactLF->getMotionTask().getDesiredAcceleration();
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_acc_des, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_acc_des before initialization!");
@@ -1286,7 +1322,7 @@ namespace dynamicgraph
         else
           s = m_contactRF->getMotionTask().getDesiredAcceleration();
         return s;
-      }
+      sotDEBUGOUT(1);}
 
 
       /* --- COMMANDS ---------------------------------------------------------- */
@@ -1296,7 +1332,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void InverseDynamicsBalanceController::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(15);
         os << "InverseDynamicsBalanceController "<<getName();
         try
         {
@@ -1305,12 +1341,12 @@ namespace dynamicgraph
           os<<"QP size: nVar "<<m_invDyn->nVar()<<" nEq "<<m_invDyn->nEq()<<" nIn "<<m_invDyn->nIn()<<"\n";
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
 
       void InverseDynamicsBalanceController::commandLine(const std::string& cmdLine,
                                                          std::istringstream& cmdArgs,
                                                          std::ostream& os )
-      {
+      {sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "InverseDynamicsBalanceController:\n"
@@ -1321,7 +1357,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
-      }
+      sotDEBUGOUT(1);}
       
     } // namespace torquecontrol
   } // namespace sot

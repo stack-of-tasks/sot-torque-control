@@ -63,7 +63,7 @@ namespace torque_control
                           m_collectSensorDataSINNER << ALL_INPUT_SIGNALS)
     ,sensor_offset_status(PRECOMPUTATION)
     ,current_progress(0) 
-  {
+  {sotDEBUGIN(15);
     Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
     addCommand("init", makeCommandVoid5(*this, &TorqueOffsetEstimator::init,
                                         docCommandVoid5("Initialize the estimator" ,
@@ -98,7 +98,7 @@ namespace torque_control
                                    const double& gyro_epsilon_,
                                    const std::string& ffJointName,
                                    const std::string& torsoJointName) 
-  {
+  {sotDEBUGIN(15);
     try 
     {
       /* Retrieve m_robot_util  informations */
@@ -137,7 +137,7 @@ namespace torque_control
   }
 
   void TorqueOffsetEstimator::computeOffset(const int& nIterations, const double& epsilon_) 
-  {
+  {sotDEBUGIN(15);
     if (sensor_offset_status == PRECOMPUTATION) 
     {
       SEND_MSG("Starting offset computation with no. iterations:"+ nIterations, MSG_TYPE_DEBUG);
@@ -165,7 +165,7 @@ namespace torque_control
   }
       
   DEFINE_SIGNAL_INNER_FUNCTION(collectSensorData, dummy)
-  {
+  {sotDEBUGIN(15);
     if (sensor_offset_status == INPROGRESS) 
     {
 
@@ -242,7 +242,7 @@ namespace torque_control
   }
 
   DEFINE_SIGNAL_OUT_FUNCTION(jointTorquesEstimated, dynamicgraph::Vector)
-  {
+  {sotDEBUGIN(15);
     m_collectSensorDataSINNER(iter);
 
     if (s.size() != m_model.nv-6) s.resize(m_model.nv-6);
@@ -260,7 +260,7 @@ namespace torque_control
   }
       
   void TorqueOffsetEstimator::display( std::ostream& os ) const 
-  {
+  {sotDEBUGIN(15);
     os << "TorqueOffsetEstimator"<<getName()<<":\n";
     try 
     {

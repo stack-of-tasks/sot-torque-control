@@ -60,7 +60,7 @@ namespace dynamicgraph
             ,m_n(1)
             ,m_t(0)
             ,m_iterLast(0)
-      {
+      {sotDEBUGIN(15);
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
         Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN 
@@ -130,10 +130,10 @@ namespace dynamicgraph
                                     docCommandVoid1("Stop the motion of the specified index, or of all components of the vector if index is equal to -1.",
                                                     "(int) index")));
 
-      }
+      sotDEBUGOUT(15);}
 
       void NdTrajectoryGenerator::init(const double& dt, const unsigned int& n)
-      {
+      {sotDEBUGIN(15);
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         if(n<1)
@@ -167,7 +167,7 @@ namespace dynamicgraph
         m_splineTrajGen   = new parametriccurves::Spline<double,Eigen::Dynamic>();
         m_textFileTrajGen = new parametriccurves::TextFile<double, Eigen::Dynamic>(dt, n);
         m_initSucceeded = true;
-      }
+      sotDEBUGOUT(15);}
 
       /* ------------------------------------------------------------------- */
       /* --- SIGNALS ------------------------------------------------------- */
@@ -175,9 +175,11 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(x, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+	  sotDEBUGOUT(15);	  
           return s;
         }
 
@@ -194,6 +196,7 @@ namespace dynamicgraph
             {
               SEND_MSG("Unexpected size of input signal initial_value: "+toString(initial_value.size()),MSG_TYPE_ERROR);
               getProfiler().stop(PROFILE_ND_POSITION_DESIRED_COMPUTATION);
+	      sotDEBUGOUT(15);
               return s;
             }
             for(unsigned int i=0; i<m_n; i++)
@@ -215,6 +218,7 @@ namespace dynamicgraph
               for(unsigned int i=0; i<m_n; i++)
                 s(i) = (*m_currentTrajGen[i])(m_t)[0];
             getProfiler().stop(PROFILE_ND_POSITION_DESIRED_COMPUTATION);
+	    sotDEBUGOUT(15);	    
             return s;
           }
           m_iterLast = iter;
@@ -272,12 +276,12 @@ namespace dynamicgraph
           }
         }
         getProfiler().stop(PROFILE_ND_POSITION_DESIRED_COMPUTATION);
-
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(dx, dynamicgraph::Vector)
-      {
+      {sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -297,12 +301,13 @@ namespace dynamicgraph
         else
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_currentTrajGen[i]->derivate(m_t, 1)[0];
-
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(ddx, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
@@ -324,6 +329,7 @@ namespace dynamicgraph
           for(unsigned int i=0; i<m_n; i++)
             s(i) = m_currentTrajGen[i]->derivate(m_t, 2)[0];
 
+	sotDEBUGOUT(15);
         return s;
       }
 
@@ -332,15 +338,17 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       void NdTrajectoryGenerator::getValue(const int& id)
-      {
+      {sotDEBUGIN(15);
         if(id<0 || id>=m_n)
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
 
         SEND_MSG("Current value of component "+toString(id)+" is "+toString( (*m_currentTrajGen[id])(m_t)[0]) , MSG_TYPE_INFO);
+	sotDEBUGOUT(15);
       }
 
       void NdTrajectoryGenerator::playTrajectoryFile(const std::string& fileName)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -383,10 +391,12 @@ namespace dynamicgraph
         {
           m_status[i]         = JTG_TEXT_FILE;
         }
+	sotDEBUGOUT(15);
       }
 
       void NdTrajectoryGenerator::setSpline(const std::string& filename, const double& timeToInitConf)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start spline before initialization!",MSG_TYPE_ERROR);
 
@@ -433,21 +443,25 @@ namespace dynamicgraph
           return;
         }
         m_splineReady = true;
-        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);        
+        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
+	sotDEBUGOUT(15);
       }
 
       void NdTrajectoryGenerator::startSpline()
       {
+	sotDEBUGIN(15);
         if(m_status[0]==JTG_SPLINE) return;
         m_t = 0.0;
         for(unsigned int i=0; i<m_n; i++)
         {
           m_status[i]         = JTG_SPLINE;
         }
+	sotDEBUGOUT(15);
       }
 
       void NdTrajectoryGenerator::startSinusoid(const int& id, const double& xFinal, const double& time)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
@@ -467,7 +481,8 @@ namespace dynamicgraph
         SEND_MSG("Set initial point of sinusoid to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
         m_status[i]         = JTG_SINUSOID;
         m_currentTrajGen[i] = m_sinTrajGen[i];
-        m_t = 0.0;
+        m_t = 0.0;	
+	sotDEBUGOUT(15);
       }
       /*
       void NdTrajectoryGenerator::startTriangle(const int& id, const double& xFinal, const double& time, const double& Tacc)
@@ -499,6 +514,7 @@ namespace dynamicgraph
       */
       void NdTrajectoryGenerator::startConstAcc(const int& id, const double& xFinal, const double& time)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start constant-acceleration trajectory before initialization!",MSG_TYPE_ERROR);
         if(id<0 || id>=m_n)
@@ -510,7 +526,7 @@ namespace dynamicgraph
           return SEND_MSG("You cannot move the specified component because it is already controlled.", MSG_TYPE_ERROR);
 //        if(!isJointInRange(i, xFinal))
 //          return;
-
+	
         m_constAccTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]);
         SEND_MSG("Set initial point of const-acc trajectory to "+toString((*m_noTrajGen[i])(m_t)[0]),MSG_TYPE_DEBUG);
         m_constAccTrajGen[i]->setFinalPoint(xFinal);
@@ -518,51 +534,99 @@ namespace dynamicgraph
         m_status[i]         = JTG_CONST_ACC;
         m_currentTrajGen[i] = m_constAccTrajGen[i];
         m_t = 0.0;
+	sotDEBUGOUT(15);
       }
       void NdTrajectoryGenerator::startLinearChirp(const int& id, const double& xFinal, const double& f0, const double& f1, const double& time)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
-          return SEND_MSG("Cannot start linear chirp before initialization!",MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Cannot start linear chirp before initialization!",MSG_TYPE_ERROR);
+	  }
         if(id<0 || id>=m_n)
-          return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
+	  }
         unsigned int i = id;
         if(time<=0.0)
-          return SEND_MSG("Trajectory time must be a positive number", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Trajectory time must be a positive number", MSG_TYPE_ERROR);
+	  }
         if(m_status[i]!=JTG_STOP)
-          return SEND_MSG("You cannot move the specified component because it is already controlled.", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("You cannot move the specified component because it is already controlled.", MSG_TYPE_ERROR);
+	  }
 //        if(!isJointInRange(i, xFinal))
 //          return;
         if(f0>f1)
-          return SEND_MSG("f0 "+toString(f0)+" cannot to be more than f1 "+toString(f1),MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("f0 "+toString(f0)+" cannot to be more than f1 "+toString(f1),MSG_TYPE_ERROR);
+	  }
         if(f0<=0.0)
-          return SEND_MSG("Frequency has to be positive "+toString(f0),MSG_TYPE_ERROR);
-
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Frequency has to be positive "+toString(f0),MSG_TYPE_ERROR);
+	  }
         if(!m_linChirpTrajGen[i]->setInitialPoint((*m_noTrajGen[i])(m_t)[0]))
-          return SEND_MSG("Error while setting initial point "+toString((*m_noTrajGen[i])(m_t)[0]), MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Error while setting initial point "+toString((*m_noTrajGen[i])(m_t)[0]), MSG_TYPE_ERROR);
+	  }
         if(!m_linChirpTrajGen[i]->setFinalPoint(xFinal))
-          return SEND_MSG("Error while setting final point "+toString(xFinal), MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Error while setting final point "+toString(xFinal), MSG_TYPE_ERROR);
+	  }
         if(!m_linChirpTrajGen[i]->setTimePeriod(time))
-          return SEND_MSG("Error while setting trajectory time "+toString(time), MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Error while setting trajectory time "+toString(time), MSG_TYPE_ERROR);
+	  }
         if(!m_linChirpTrajGen[i]->setInitialFrequency(f0))
-          return SEND_MSG("Error while setting initial frequency "+toString(f0), MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Error while setting initial frequency "+toString(f0), MSG_TYPE_ERROR);
+	  }
         if(!m_linChirpTrajGen[i]->setFinalFrequency(f1))
-          return SEND_MSG("Error while setting final frequency "+toString(f1), MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Error while setting final frequency "+toString(f1), MSG_TYPE_ERROR);
+	  }
         m_status[i]         = JTG_LIN_CHIRP;
         m_currentTrajGen[i] = m_linChirpTrajGen[i];
         m_t = 0.0;
+	sotDEBUGOUT(15);
       }
 
       void NdTrajectoryGenerator::move(const int& id, const double& xFinal, const double& time)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
-          return SEND_MSG("Cannot move value before initialization!",MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Cannot move value before initialization!",MSG_TYPE_ERROR);
+	  }
         unsigned int i = id;
         if(id<0 || id>=m_n)
-          return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
+	  }
         if(time<=0.0)
-          return SEND_MSG("Trajectory time must be a positive number", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("Trajectory time must be a positive number", MSG_TYPE_ERROR);
+	  }
         if(m_status[i]!=JTG_STOP)
-          return SEND_MSG("You cannot move the specified component because it is already controlled.", MSG_TYPE_ERROR);
+	  {
+	    sotDEBUGOUT(15);
+	    return SEND_MSG("You cannot move the specified component because it is already controlled.", MSG_TYPE_ERROR);
+	  }
 //        if(!isJointInRange(i, xFinal))
 //          return;
 
@@ -572,11 +636,13 @@ namespace dynamicgraph
         m_status[i] = JTG_MIN_JERK;
         m_currentTrajGen[i] = m_minJerkTrajGen[i];
         m_t = 0.0;
+	sotDEBUGOUT(15);
       }
 
 
       void NdTrajectoryGenerator::stop(const int& id)
       {
+	sotDEBUGIN(15);
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop value before initialization!",MSG_TYPE_ERROR);
 
@@ -600,6 +666,7 @@ namespace dynamicgraph
         m_splineReady = false;
         m_currentTrajGen[i] = m_noTrajGen[i];
         m_t = 0.0;
+	sotDEBUGOUT(15);
       }
 
       /* ------------------------------------------------------------------- */
@@ -629,12 +696,14 @@ namespace dynamicgraph
 
       void NdTrajectoryGenerator::display(std::ostream& os) const
       {
+	sotDEBUGIN(15);
         os << "NdTrajectoryGenerator "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
+	sotDEBUGOUT(15);
       }
 
 
@@ -642,6 +711,7 @@ namespace dynamicgraph
                                             std::istringstream& cmdArgs,
                                             std::ostream& os )
       {
+	sotDEBUGIN(15);
         if( cmdLine == "help" )
         {
           os << "sotNdTrajectoryGenerator:\n"
@@ -652,6 +722,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
+	sotDEBUGOUT(15);
       }
       
     } // namespace torquecontrol

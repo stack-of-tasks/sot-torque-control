@@ -5,7 +5,7 @@
 */
 
 #include <iostream>
-
+#include <sot/core/debug.hh>
 #include <sot/torque_control/utils/quad-estimator.hh>
 
 
@@ -18,7 +18,7 @@ QuadEstimator::QuadEstimator(const unsigned int& N,
   , sum_ti2_(0.0)
   , sum_ti3_(0.0)
   , sum_ti4_(0.0)
-{
+{sotDEBUGIN(15);
   /* Number of coefficients for a quadratic estimator: 3 */
   coeff_.resize(3);
   
@@ -74,7 +74,7 @@ QuadEstimator::QuadEstimator(const unsigned int& N,
 
 
 double QuadEstimator::getEsteeme() 
-{
+{sotDEBUGIN(15);
   return coeff_(2);
 }
 
@@ -83,7 +83,7 @@ double QuadEstimator::getEsteeme()
 void QuadEstimator::estimateRecursive(std::vector<double>& esteem,
                                        const std::vector<double>& el, 
                                        const double& time)
-{
+{sotDEBUGIN(15);
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;
@@ -179,7 +179,7 @@ void QuadEstimator::estimateRecursive(std::vector<double>& esteem,
 
 
 void QuadEstimator::fit()
-{
+{sotDEBUGIN(15);
   double sum_ti    = 0.0;
   double sum_ti2   = 0.0;
   double sum_ti3   = 0.0;
@@ -219,7 +219,7 @@ void QuadEstimator::fit()
 
 void QuadEstimator::estimate(std::vector<double>& esteem,
                             const std::vector<double>& el)
-{
+{sotDEBUGIN(15);
   if (dt_zero_)
   {
     std::cerr << "Error: dt cannot be zero" << std::endl;
@@ -276,7 +276,7 @@ void QuadEstimator::estimate(std::vector<double>& esteem,
 
 void QuadEstimator::getEstimateDerivative(std::vector<double>& estimateDerivative,
                                    const unsigned int order)
-{
+{sotDEBUGIN(15);
   switch(order)
   {
     case 0:

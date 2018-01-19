@@ -15,7 +15,7 @@
  */
 
 #include <iostream>
-
+#include <sot/core/debug.hh>
 #include <sot/torque_control/utils/causal-filter.hh>
 
 
@@ -49,16 +49,17 @@ CausalFilter::CausalFilter(const double &timestep,
   , input_buffer(Eigen::MatrixXd::Zero(xSize, filter_numerator.size()))
   , output_buffer(Eigen::MatrixXd::Zero(xSize, filter_denominator.size()-1))
   , first_sample(true)
-{
+{sotDEBUGIN(15);
   assert(timestep>0.0 && "Timestep should be > 0");
   assert(m_filter_numerator.size() == m_filter_order_m);
   assert(m_filter_denominator.size() == m_filter_order_n);
-}
+sotDEBUGOUT(1);}
 
 
 void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
                                 Eigen::VectorXd& x_output_dx_ddx)
 {
+  sotDEBUGIN(15);
   //const dynamicgraph::Vector &base_x = m_xSIN(iter);
   if(first_sample)
   {
@@ -90,6 +91,7 @@ void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
   pt_numerator = (pt_numerator+1) < m_filter_order_m ? (pt_numerator+1) : 0;
   pt_denominator = (pt_denominator+1) < m_filter_order_n-1 ? (pt_denominator+1) : 0;
   output_buffer.col(pt_denominator) = x_output_dx_ddx.head(m_x_size);
+  sotDEBUGOUT(1);  
   return;
 }
 
@@ -97,7 +99,7 @@ void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
 
 void CausalFilter::switch_filter(const Eigen::VectorXd& filter_numerator,
                                  const Eigen::VectorXd& filter_denominator)
-{
+{sotDEBUGIN(15);
   int filter_order_m = filter_numerator.size();
   int filter_order_n = filter_denominator.size();
 
@@ -125,4 +127,4 @@ void CausalFilter::switch_filter(const Eigen::VectorXd& filter_numerator,
   pt_denominator = 0;
 
   return;
-}
+sotDEBUGOUT(1);}

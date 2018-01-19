@@ -6,9 +6,8 @@
 
 
 #include <iostream>
-
+#include <sot/core/debug.hh>
 #include <sot/torque_control/utils/lin-estimator.hh>
-
 
 
 LinEstimator::LinEstimator(const unsigned int& N,
@@ -18,7 +17,7 @@ LinEstimator::LinEstimator(const unsigned int& N,
   , dim_(dim)
   , sum_ti_(0.0)
   , sum_ti2_(0.0)
-{
+{sotDEBUGIN(15);
   /* Number of coefficients for a quadratic estimator: 2 */
   coeff_.resize(2);
 
@@ -63,13 +62,13 @@ LinEstimator::LinEstimator(const unsigned int& N,
     }
   }
 
-}
+sotDEBUGOUT(1);}
 
 
 double LinEstimator::getEsteeme()
-{ 
+{sotDEBUGIN(15); 
   return coeff_(1);
-}
+sotDEBUGOUT(1);}
 
 
 
@@ -77,6 +76,7 @@ void LinEstimator::estimateRecursive(std::vector<double>& esteem,
                                      const std::vector<double>& el,
                                      const double& time)
 {
+  sotDEBUGIN(15);
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;
@@ -141,13 +141,14 @@ void LinEstimator::estimateRecursive(std::vector<double>& esteem,
   }
   sum_ti_   -= t_old;
   sum_ti2_ -= t_old*t_old;
-  
+  sotDEBUGOUT(1);  
   return;
 }
 
 
 void LinEstimator::fit()
 {
+  sotDEBUGIN(15);
   double sum_ti   = 0.0;
   double sum_titi = 0.0;
   double sum_xi   = 0.0;
@@ -168,7 +169,8 @@ void LinEstimator::fit()
   
   // the linear coefficient
   coeff_(1) = (N_*sum_tixi - sum_ti*sum_xi) / den;
-  
+
+  sotDEBUGOUT(1);
   return;
 }
 
@@ -176,12 +178,14 @@ void LinEstimator::fit()
 void LinEstimator::estimate(std::vector<double>& esteem,
                             const std::vector<double>& el)
 {
+  sotDEBUGIN(15);
   if (dt_zero_)
   {
     std::cerr << "Error: dt cannot be zero" << std::endl;
     // Return a zero vector
     for (unsigned int i = 0; i < esteem.size(); ++i)
       esteem[i] = 0.0;
+    sotDEBUGOUT(15);
     return;
   }
   
@@ -197,6 +201,7 @@ void LinEstimator::estimate(std::vector<double>& esteem,
       pt_++;
       for (unsigned int i = 0; i < esteem.size(); ++i)
         esteem[i] = el[i];
+      sotDEBUGOUT(15);
       return;
     }
     else
@@ -225,25 +230,30 @@ void LinEstimator::estimate(std::vector<double>& esteem,
     // Polynomial (position)
     esteem[i] = c1_[i]*tmed_ + c0_[i];
   }
+  sotDEBUGOUT(1);
 }
 
 void LinEstimator::getEstimateDerivative(std::vector<double>& estimateDerivative,
                                    const unsigned int order)
 {
+  sotDEBUGIN(15);
   switch(order)
   {
     case 0:
       for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c1_[i]*tmed_ + c0_[i];
+      sotDEBUGOUT(15);
       return;
 
     case 1:
       for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = c1_[i];
+      sotDEBUGOUT(15);      
       return;
 
     default:
       for (int i = 0; i < dim_; ++i)
         estimateDerivative[i] = 0.0;
   }
+  sotDEBUGOUT(1);
 }

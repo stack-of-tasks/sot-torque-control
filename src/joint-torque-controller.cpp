@@ -98,6 +98,7 @@ namespace dynamicgraph
                                                                            TORQUE_INTEGRAL_INPUT_SIGNALS )
         ,CONSTRUCT_SIGNAL_OUT(smoothSignDq,          dynamicgraph::Vector, m_jointsVelocitiesSIN )
       {
+	sotDEBUGIN(15);
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
 
         /* Commands. */
@@ -110,6 +111,7 @@ namespace dynamicgraph
 					      "Robot reference (string)")));
         addCommand("reset_integral", makeCommandVoid0(*this, &JointTorqueController::reset_integral,
                                      docCommandVoid0("Reset the integral error.")));
+	sotDEBUGOUT(15);
       }
 
 
@@ -119,6 +121,7 @@ namespace dynamicgraph
       void JointTorqueController::init(const double &timestep,
 				       const std::string &robot_ref)
       {
+	sotDEBUGIN(15);
         assert(timestep>0.0 && "Timestep should be > 0");
         if(!m_jointsVelocitiesSIN.isPlugged())
           return SEND_MSG("Init failed: signal jointsVelocities is not plugged", MSG_TYPE_ERROR);
@@ -149,12 +152,14 @@ namespace dynamicgraph
         m_tauErrIntegral.setZero(m_robot_util->m_nbJoints);
 //        m_dqDesIntegral.setZero(m_robot_util->m_nbJoints);
         m_dqErrIntegral.setZero(m_robot_util->m_nbJoints);
-      }
+	sotDEBUGOUT(15);}
 
       void JointTorqueController::reset_integral()
       {
+	sotDEBUGIN(15);
         m_tauErrIntegral.setZero();
         m_dqErrIntegral.setZero();
+	sotDEBUGOUT(15);
       }
 
       /* --- SIGNALS ---------------------------------------------------------- */
@@ -163,15 +168,21 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(u, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         const Eigen::VectorXd& q                  = m_jointsPositionsSIN(iter);
         const Eigen::VectorXd& dq                 = m_jointsVelocitiesSIN(iter);
         const Eigen::VectorXd& ddq                = m_jointsAccelerationsSIN(iter);
         const Eigen::VectorXd& tau                = m_jointsTorquesSIN(iter);
+	sotDEBUG(15) << std::endl;	
         const Eigen::VectorXd& dtau               = m_jointsTorquesDerivativeSIN(iter);
+	sotDEBUG(15) << std::endl;
         const Eigen::VectorXd& tau_d              = m_jointsTorquesDesiredSIN(iter);
-//        const Eigen::VectorXd& dtau_d             = m_jointsTorquesDesiredDerivativeSIN(iter);
+	//        const Eigen::VectorXd& dtau_d             = m_jointsTorquesDesiredDerivativeSIN(iter);
+	sotDEBUG(15) << std::endl;
         const Eigen::VectorXd& dq_des             = m_dq_desSIN(iter);
+	sotDEBUG(15) << std::endl;	
         const Eigen::VectorXd& kp                 = m_KpTorqueSIN(iter);
+	sotDEBUG(15) << std::endl;
         const Eigen::VectorXd& kd                 = m_KdTorqueSIN(iter);
         const Eigen::VectorXd& kd_vel             = m_KdVelSIN(iter);
         const Eigen::VectorXd& ki_vel             = m_KiVelSIN(iter);
@@ -186,7 +197,7 @@ namespace dynamicgraph
         const Eigen::VectorXd& motorParameterKa_p = m_motorParameterKa_pSIN(iter);
         const Eigen::VectorXd& motorParameterKa_n = m_motorParameterKa_nSIN(iter);
         const Eigen::VectorXd& polySignDq         = m_polySignDqSIN(iter);
-//        const Eigen::VectorXd& dq_thr =        m_dq_thresholdSIN(iter);
+	//        const Eigen::VectorXd& dq_thr =        m_dq_thresholdSIN(iter);
 
         m_tau_star = tau_d + kp.cwiseProduct(tau_d - tau) + tauErrInt - kd.cwiseProduct(dtau);
 
@@ -231,11 +242,13 @@ namespace dynamicgraph
         }
 
         s = m_current_des;
+	sotDEBUGOUT(15);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(torque_error_integral, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         const Eigen::VectorXd& tau =           m_jointsTorquesSIN(iter);
         const Eigen::VectorXd& tau_d =         m_jointsTorquesDesiredSIN(iter);
         const Eigen::VectorXd& err_int_sat =   m_torque_integral_saturationSIN(iter);
@@ -252,11 +265,13 @@ namespace dynamicgraph
         }
 
         s = m_tauErrIntegral;
+	sotDEBUGOUT(15);	
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(smoothSignDq, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         const Eigen::VectorXd& dq =            m_jointsVelocitiesSIN(iter);
         const Eigen::VectorXd& polySignDq =    m_polySignDqSIN(iter);
         if(s.size()!=(int)m_robot_util->m_nbJoints)
@@ -264,17 +279,20 @@ namespace dynamicgraph
 	
         for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
           s(i) = motorModel.smoothSign(dq[i], 0.1, polySignDq[i]); //TODO Use Eigen binaryexpr
+	sotDEBUGOUT(1);
         return s;
       }
 
       void JointTorqueController::display( std::ostream& os ) const
       {
+	sotDEBUGIN(15);
         os << "JointTorqueController "<<getName()<<":\n";
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
+	sotDEBUGOUT(15);
       }
 
     } // namespace torque_control

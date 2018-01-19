@@ -67,7 +67,7 @@ namespace dynamicgraph
 	    ,m_model(0)
     	    ,m_data(0)
 	    ,m_robot_util(RefVoidRobotUtil())
-      {
+      { sotDEBUGIN(1);
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         /* Commands. */
@@ -80,17 +80,17 @@ namespace dynamicgraph
                    makeCommandVoid0(*this, &FreeFlyerLocator::displayRobotUtil,
                                     docCommandVoid0("Display the robot util data set linked with this free flyer locator.")));
 
-      }
+      sotDEBUGOUT(1);}
       FreeFlyerLocator::~FreeFlyerLocator()
-      {
+      { sotDEBUGIN(1);
 	if (m_model)
 	  delete m_model;
 	if (m_data)
 	  delete m_data;
-      }
+      sotDEBUGOUT(1);}
 
       void FreeFlyerLocator::init(const std::string& robotRef)
-      {
+      { sotDEBUGIN(1);
         try 
         {
 	  /* Retrieve m_robot_util  informations */
@@ -129,7 +129,7 @@ namespace dynamicgraph
         }
         m_data = new se3::Data(*m_model);
         m_initSucceeded = true;
-      }
+      sotDEBUGOUT(1);}
 
 
 
@@ -138,7 +138,7 @@ namespace dynamicgraph
       /* ------------------------------------------------------------------- */
 
       DEFINE_SIGNAL_INNER_FUNCTION(kinematics_computations, dynamicgraph::Vector)
-      {
+      { sotDEBUGIN(1);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal kinematics_computations before initialization!");
@@ -159,10 +159,10 @@ namespace dynamicgraph
         se3::framesForwardKinematics(*m_model, *m_data);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(base6dFromFoot_encoders,dynamicgraph::Vector)
-      {
+      { sotDEBUGIN(1);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
@@ -198,10 +198,10 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_FREE_FLYER_COMPUTATION);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
       
       DEFINE_SIGNAL_OUT_FUNCTION(freeflyer_aa,dynamicgraph::Vector)
-      {
+      { sotDEBUGIN(1);
         m_base6dFromFoot_encodersSOUT(iter);
         if(!m_initSucceeded)
         {
@@ -223,10 +223,10 @@ namespace dynamicgraph
 
         s = freeflyer;
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       DEFINE_SIGNAL_OUT_FUNCTION(v,dynamicgraph::Vector)
-      {
+      { sotDEBUGIN(1);
         if(!m_initSucceeded)
         {
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
@@ -259,32 +259,32 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
 
         return s;
-      }
+      sotDEBUGOUT(1);}
 
       /* --- COMMANDS ---------------------------------------------------------- */
       void FreeFlyerLocator::displayRobotUtil()
-      {
+      { sotDEBUGIN(1);
 	m_robot_util->display(std::cout);
-      }
+      sotDEBUGOUT(1);}
 
       /* ------------------------------------------------------------------- */
       /* --- ENTITY -------------------------------------------------------- */
       /* ------------------------------------------------------------------- */
 
       void FreeFlyerLocator::display(std::ostream& os) const
-      {
+      {sotDEBUGIN(1);
         os << "FreeFlyerLocator "<<getName();
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
-      }
+      sotDEBUGOUT(1);}
 
       void FreeFlyerLocator::commandLine(const std::string& cmdLine,
                                             std::istringstream& cmdArgs,
                                             std::ostream& os )
-      {
+      { sotDEBUGIN(1);
         if( cmdLine == "help" )
         {
           os << "FreeFlyerLocator:\n"
@@ -295,7 +295,7 @@ namespace dynamicgraph
         {
           Entity::commandLine(cmdLine,cmdArgs,os);
         }
-      }
+      sotDEBUGOUT(1);}
       
     } // namespace torquecontrol
   } // namespace sot

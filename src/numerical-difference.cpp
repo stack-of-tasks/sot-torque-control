@@ -56,6 +56,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(ddx,              dynamicgraph::Vector, m_x_dx_ddxSINNER)
         ,CONSTRUCT_SIGNAL_INNER(x_dx_ddx,       dynamicgraph::Vector, m_xSIN)
       {
+	sotDEBUGIN(15);
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
         
         /* Commands. */
@@ -74,6 +75,7 @@ namespace dynamicgraph
                                               "Size of the input signal x",
                                               "Estimation delay for signal x",
                                               "Polynomial order")));
+	sotDEBUGOUT(15);
       }
 
 
@@ -83,6 +85,7 @@ namespace dynamicgraph
       void NumericalDifference::init(const double &timestep, const int& xSize,
                                      const double& delay, const int& polyOrder)
       {
+	sotDEBUGIN(15);
         assert(timestep>0.0 && "Timestep should be > 0");
         assert(delay>=1.5*timestep && "Estimation delay should be >= 1.5*timestep");
         m_dt = timestep;
@@ -101,6 +104,7 @@ namespace dynamicgraph
         m_dx_filter_std.resize(x_size);
         m_x_filter_std.resize(x_size);
         m_x_std.resize(x_size);
+	sotDEBUGOUT(15);
       }
 
       /* --- SIGNALS ---------------------------------------------------------- */
@@ -110,6 +114,7 @@ namespace dynamicgraph
       /** Signal Filtering and Differentiation. */
       DEFINE_SIGNAL_INNER_FUNCTION(x_dx_ddx, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         sotDEBUG(15)<<"Compute x_dx_ddx inner signal "<<iter<<std::endl;
 
         // read encoders and copy in std vector
@@ -130,7 +135,7 @@ namespace dynamicgraph
           s(i+x_size) = m_dx_filter_std[i];
         for(int i=0; i<x_size; i++)
           s(i+2*x_size) = m_ddx_filter_std[i];
-
+	sotDEBUGOUT(15);
         return s;
       }
 
@@ -143,46 +148,54 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(x_filtered, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         sotDEBUG(15)<<"Compute x_filtered output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
         if(s.size()!=x_size)
           s.resize(x_size);
 	s = x_dx_ddx.head(x_size);
+	sotDEBUGOUT(15);	
         return s;
       }
 
 
       DEFINE_SIGNAL_OUT_FUNCTION(dx, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         sotDEBUG(15)<<"Compute dx output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
         if(s.size()!=x_size)
 	  s.resize(x_size);
 	s = x_dx_ddx.segment(x_size,x_size);
+	sotDEBUGOUT(15);		
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(ddx, dynamicgraph::Vector)
       {
+	sotDEBUGIN(15);
         sotDEBUG(15)<<"Compute ddx output signal "<<iter<<std::endl;
 
         const dynamicgraph::Vector &x_dx_ddx = m_x_dx_ddxSINNER(iter);
         if(s.size()!=x_size)
           s.resize(x_size);
 	s = x_dx_ddx.segment(2*x_size, x_size);
+	sotDEBUGOUT(15);	
         return s;
       }
 
       void NumericalDifference::display( std::ostream& os ) const
       {
+	sotDEBUGIN(15);
         os << "NumericalDifference "<<getName()<<":\n";
         try
         {
           getProfiler().report_all(3, os);
         }
         catch (ExceptionSignal e) {}
+	sotDEBUGOUT(15);	
       }
 
     } // namespace torque_control
