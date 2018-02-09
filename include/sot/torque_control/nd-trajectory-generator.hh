@@ -50,7 +50,6 @@
 #include <parametric-curves/infinite-const-acc.hpp>
 
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 

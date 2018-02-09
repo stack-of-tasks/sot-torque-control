@@ -277,8 +277,8 @@ namespace dynamicgraph
       bool RobotUtil::
       joints_sot_to_urdf(Eigen::ConstRefVector q_sot, Eigen::RefVector q_urdf)
       {
-	assert(q_urdf.size()==m_nbJoints);
-	assert(q_sot.size()==m_nbJoints);
+	assert(q_urdf.size()==static_cast<Eigen::Index>(m_nbJoints));
+	assert(q_sot.size()==static_cast<Eigen::Index>(m_nbJoints));
 
 	if (m_nbJoints==0)
 	  {

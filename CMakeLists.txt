@@ -31,7 +31,7 @@ SET(CUSTOM_HEADER_DIR "sot/torque-control")
 # Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
 #add_compile_options(-std=c++11) # CMake 2.8.12 or newer
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 SET(PKG_CONFIG_ADDITIONAL_VARIABLES
   ${PKG_CONFIG_ADDITIONAL_VARIABLES}

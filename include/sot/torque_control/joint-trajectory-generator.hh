@@ -42,7 +42,6 @@
 #include <sot/torque_control/utils/logger.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 

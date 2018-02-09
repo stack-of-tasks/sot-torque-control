@@ -41,7 +41,6 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 
