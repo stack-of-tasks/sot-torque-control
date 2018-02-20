@@ -22,13 +22,8 @@ cm.controlDT=0.005
 
 # Initializing the input ports
 # Setting the robot configuration
-cm.base6d_encoders.value=q
-cm.dq.value=dq
-cm.bemfFactor.value = bemfFactor
-cm.max_current.value = max_current
-cm.max_tau.value= max_tau
-cm.percentageDriverDeadZoneCompensation.value = percentageDriverDeadZoneCompensation
-cm.signWindowsFilterSize.value = signWindowsFilterSize
+cm.i_max.value = max_current
+cm.u_max.value= max_tau
 cm.tau.value = tau
 cm.tau_predicted.value = tau_predicted
 
@@ -45,8 +40,5 @@ cm.addCtrlMode("torque")
 cm.ctrl_torque.value = currentDes
 cm.ctrl_pos.value = pwmDes
 cm.setCtrlMode("all","pos")
-
-cm.pwmDes.recompute(10)
-cm.pwmDes.value
 
 

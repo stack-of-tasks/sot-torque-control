@@ -104,9 +104,7 @@ class initRobotData:
   def init_and_set_controller_manager(self, cm):
     # Init should be called before addCtrlMode 
     # because the size of state vector must be known.
-    cm.init(self.controlDT,self.testRobotPath,
-            self.ctrlManagerCurrentToControlGain,
-            self.maxCurrent,self.robotRef)
+    cm.init(self.controlDT,self.testRobotPath,self.robotRef)
 
     # Set the map from joint name to joint ID
     for key in self.mapJointNameToID:
@@ -135,7 +133,4 @@ class initRobotData:
 
     cm.setRightFootSoleXYZ(self.RightFootSensorXYZ)
 
-    cm.setDefaultMaxCurrent(-10.0)
-    cm.setDefaultMaxCurrent(self.maxCurrent)
-    cm.getDefaultMaxCurrent()
 
