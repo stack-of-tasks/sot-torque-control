@@ -14,7 +14,7 @@ else
 fi
 export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/openrobots/lib/pkgconfig"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/openrobots/lib"
-export PYTHON_PATH="/tmp/_ci/install/lib/python2.7/site-packages:/tmp/_ci/install/lib/python2.7/dist-packages:${PYTHON_PATH}"
+export PYTHONPATH="/tmp/_ci/install/lib/python2.7/site-packages:/tmp/_ci/install/lib/python2.7/dist-packages:${PYTHON_PATH}"
 
 # Setup environment variables.
 . ./.travis/run ../.travis/build
