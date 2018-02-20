@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/openrobots/lib"
 export PYTHONPATH="/opt/openrobots/install/lib/python2.7/site-packages:/opt/openrobots/install/lib/python2.7/dist-packages:${PYTHON_PATH}"
 
 # Setup environment variables.
-. `dirname $0`/common.sh
+. `dirname $0`/../.travis/common.sh
 
 
 # build_package
