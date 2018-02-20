@@ -15,7 +15,7 @@ sudo free -m -t
 # Setup environment variables.
 export APT_DEPENDENCIES="doxygen libboost-system-dev libboost-test-dev libboost-filesystem-dev libboost-program-options-dev libeigen3-dev libtinyxml-dev libconsole-bridge-dev robotpkg-pinocchio robotpkg-dynamic-graph-v3 robotpkg-py27-dynamic-graph-v3 robotpkg-sot-core-v3 robotpkg-pinocchio robotpkg-tsid robotpkg-parametric-curves"
 # Add Python dependency
-export APT_DEPENDENCIES=$APT_DEPENDENCIES" libboost-python-dev robotpkg-eigenpy python2.7-dev python-numpy"
+export APT_DEPENDENCIES=$APT_DEPENDENCIES" libboost-python-dev robotpkg-eigenpy python2.7-dev python-numpy python-scipy"
 
 # When this script is called the current directory is ./custom_travis
 . ./.travis/run ../.travis/before_install

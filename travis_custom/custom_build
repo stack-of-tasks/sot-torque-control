@@ -13,7 +13,7 @@ else
   export CMAKE_ADDITIONAL_OPTIONS=" ${CMAKE_ADDITIONAL_OPTIONS} -DINSTALL_DOCUMENTATION=\"ON\""
 fi
 export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/openrobots/lib/pkgconfig"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/openrobots/lib"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/openrobots/lib:/opt/openrobots/lib/plugin"
 export PYTHONPATH="/opt/openrobots/install/lib/python2.7/site-packages:/opt/openrobots/install/lib/python2.7/dist-packages:${PYTHON_PATH}"
 
 # -*- sh-mode -*
