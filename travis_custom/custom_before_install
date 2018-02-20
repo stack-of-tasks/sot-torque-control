@@ -20,6 +20,8 @@ export APT_DEPENDENCIES=$APT_DEPENDENCIES" libboost-python-dev robotpkg-eigenpy 
 # When this script is called the current directory is ./custom_travis
 . ./.travis/run ../.travis/before_install
 
+sudo sh -c "chmod a+rw -R /opt/openrobots"
+
 # End debug mode
 set +v
 set +x
