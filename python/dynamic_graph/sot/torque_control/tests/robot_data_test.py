@@ -1,13 +1,14 @@
-
+# TO DO: Checking that this data are making sense
+# Right now this is put just to test the various functions
 import numpy
 
 class initRobotData:
-  nbJoints=30
-  testRobotPath="/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14_reduced.urdf"
+  nbJoints=29
+  testRobotPath="/opt/openrobots/share/simple_humanoid_description/urdf/simple_humanoid.urdf"
   controlDT=0.005
   maxCurrent=5
   robotRef= "control-manager-robot"
-  urdftosot=(12,13,14,15,23,24,25,26,27,28,29,16,17,18,19,20,21,22,6,7,8,9,10,11,0,1,2,3,4,5)
+  urdftosot=(12,13,14,15,23,24,25,26,27,28,16,17,18,19,20,21,22,6,7,8,9,10,11,0,1,2,3,4,5)
 
   ctrlManagerCurrentToControlGain=1.0
 
@@ -26,22 +27,21 @@ class initRobotData:
     'lar': 11, 
     'ty': 12, 
     'tp': 13, 
-    'hy': 14, 
-    'hp': 15, 
-    'rsp': 16, 
-    'rsr': 17, 
-    'rsy': 18, 
-    're': 19, 
-    'rwy': 20, 
-    'rwp': 21,
-    'rh': 22,
-    'lsp': 23,
-    'lsr': 24,
-    'lsy': 25,
-    'le': 26,
-    'lwy': 27,
-    'lwp': 28,
-    'lh': 29
+    'hp': 14, 
+    'rsp': 15, 
+    'rsr': 16, 
+    'rsy': 17, 
+    're': 18, 
+    'rwy': 19, 
+    'rwp': 20,
+    'rh': 21,
+    'lsp': 22,
+    'lsr': 23,
+    'lsy': 24,
+    'le': 25,
+    'lwy': 26,
+    'lwp': 27,
+    'lh': 28
   }
     
   mapJointLimits={
@@ -74,7 +74,6 @@ class initRobotData:
     26 : [-2.3911, 0.0349066],  
     27 : [-1.6057, 1.6057],     
     28 : [-1.6057, 1.6057],    
-    29 : [-1.0, 1.0]      
   }
     
   fMax=numpy.array([100.0,100.0,300.0,80.0,80.0,30.0])
@@ -95,8 +94,8 @@ class initRobotData:
     
   indexOfForceSensors= () 
   FootFrameNames= { 
-    "Right": "RLEG_JOINT5",
-    "Left" : "LLEG_JOINT5"
+    "Right": "RLEG_ANKLE_R",
+    "Left" : "LLEG_ANKLE_R"
   }
       
   RightFootSensorXYZ = (0.0,0.0,-0.085)
