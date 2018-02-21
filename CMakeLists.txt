@@ -165,7 +165,6 @@ INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
          
 INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
-              python/dynamic_graph/sot/torque_control/tests/robot_data_test.py
               python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
               python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
               python/dynamic_graph/sot/torque_control/tests/test_velocity_filters.py
@@ -191,8 +190,12 @@ IF(TALOS_DATA_FOUND)
   FOREACH(py_filename test_torque_offset_estimator)
     CONFIGURE_FILE(
       ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
-      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
       )
+
+    INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+
     ENDFOREACH(py_filename)
 ENDIF(TALOS_DATA_FOUND)
 
@@ -200,8 +203,10 @@ IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
   FOREACH(py_filename robot_data_test)
     CONFIGURE_FILE(
       ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
-      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
       )
+    INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
     ENDFOREACH(py_filename)
 ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
 
