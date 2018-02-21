@@ -3,7 +3,7 @@ import numpy
 
 class initRobotData:
   nbJoints=29
-  testRobotPath="@SIMPLE_HUMANOID_DESCRIPTION_DATAROOTDIR@/simple_humanoid_description/urdf/simple_humanoid.urdf"
+  testRobotPath="/opt/openrobots/share/simple_humanoid_description/urdf/simple_humanoid.urdf"
   controlDT=0.005
   maxCurrent=5
   robotRef= "control-manager-robot"
