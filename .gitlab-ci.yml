@@ -1,0 +1,39 @@
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+  GIT_SUBMODULE_STRATEGY: "recursive"
+  GIT_DEPTH: "3"
+  NAMESPACE: stack-of-tasks
+  PROJECT: sot-torque-control
+  IMAGE: "${CI_REGISTRY}/${NAMESPACE}/${PROJECT}"
+
+cache:
+  paths:
+    - build/ccache
+
+
+.robotpkg-sot-torque-control: &robotpkg-sot-torque-control
+  variables:
+    ROBOTPKG: sot-torque-control
+    CATEGORY: wip
+  before_script:
+    - mkdir -p build/ccache
+    - cd build
+    - export CCACHE_BASEDIR=${PWD}
+    - export CCACHE_DIR=${PWD}/ccache
+  script:
+    - cd /root/robotpkg/${CATEGORY}/${ROBOTPKG}
+    - echo "MASTER_REPOSITORY = git ${CI_PROJECT_DIR}" >> Makefile
+    - echo "REPOSITORY.sot-torque-control = git ${CI_PROJECT_DIR}" >> /opt/openrobots/etc/robotpkg.conf
+    - make checkout
+    - make install
+  except:
+    - gh-pages
+
+
+robotpkg-sot-torque-control-14.04:
+  <<: *robotpkg-sot-torque-control
+  image: ${IMAGE}:14.04
+
+robotpkg-sot-torque-control-16.04:
+  <<: *robotpkg-sot-torque-control
+  image: ${IMAGE}:16.04
