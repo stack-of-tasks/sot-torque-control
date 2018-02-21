@@ -10,9 +10,6 @@ import numpy as np
 from pinocchio import RobotWrapper
 from conversion_utils import config_sot_to_urdf, joints_sot_to_urdf, velocity_sot_to_urdf
 from dynamic_graph.sot.torque_control.inverse_dynamics_balance_controller import InverseDynamicsBalanceController
-from dynamic_graph.sot.torque_control.create_entities_utils import create_ctrl_manager
-import dynamic_graph.sot.torque_control.hrp2.balance_ctrl_sim_conf as balance_ctrl_conf
-import dynamic_graph.sot.torque_control.hrp2.control_manager_sim_conf as control_manager_conf
 from dynamic_graph.sot.torque_control.tests.robot_data_test import initRobotData
 
 np.set_printoptions(precision=3, suppress=True, linewidth=100);
@@ -85,7 +82,6 @@ q_sot = np.array([-0.0027421149619457344, -0.0013842807952574399, 0.642108280466
                    -0.012985322450541008, 0.04430420221275542, 0.37027327677517635, 1.4795064165303056, 
                    0.20855551221055582, -0.13188842278441873, 0.005487207370709895, -0.2586657542648506, 2.6374918629921953, -0.004223605878088189, 0.17118034021053144, 0.24171737354070008, 0.11594430024547904, -0.05264225067057105, -0.4691871937149223, 0.0031522040623960016, 0.011836097472447007, 0.18425595002313025]);
 
-ctrl_manager = create_ctrl_manager(control_manager_conf, dt);
 ctrl = create_balance_controller(dt, q_sot, balance_ctrl_conf);
 robot = RobotWrapper(initRobotData.testRobotPath, [], se3.JointModelFreeFlyer())
 index_rf = robot.index('RLEG_JOINT5');
