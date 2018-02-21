@@ -62,6 +62,7 @@ ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("tsid")
 ADD_REQUIRED_DEPENDENCY("parametric-curves")
+ADD_REQUIRED_DEPENDENCY("simple_humanoid_description")
 
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
@@ -195,6 +196,14 @@ IF(TALOS_DATA_FOUND)
     ENDFOREACH(py_filename)
 ENDIF(TALOS_DATA_FOUND)
 
+IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
+  FOREACH(py_filename robot_data_test)
+    CONFIGURE_FILE(
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
+      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+      )
+    ENDFOREACH(py_filename)
+ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
