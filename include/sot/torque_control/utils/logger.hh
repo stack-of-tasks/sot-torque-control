@@ -39,7 +39,6 @@
 #include <sot/torque_control/signal-helper.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <map>
-#include <initializer_list>
 #include <iomanip> // std::setprecision
 #include "boost/assign.hpp"
 

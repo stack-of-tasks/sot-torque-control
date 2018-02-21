@@ -41,7 +41,6 @@
 #include <sot/torque_control/utils/logger.hh>
 #include <map>
 #include <fstream>  /// to read text file
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 

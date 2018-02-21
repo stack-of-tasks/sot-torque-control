@@ -41,7 +41,6 @@
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/logger.hh>
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 //#include <boost/random/normal_distribution.hpp>
 #include <boost/math/distributions/normal.hpp> // for normal_distribution
@@ -237,9 +236,9 @@ namespace dynamicgraph {
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation
 
-        unsigned int      m_right_foot_id;
-        unsigned int      m_left_foot_id;
-        unsigned int      m_IMU_body_id;
+	se3::FrameIndex      m_right_foot_id;
+	se3::FrameIndex     m_left_foot_id;
+	se3::FrameIndex      m_IMU_body_id;
 
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention

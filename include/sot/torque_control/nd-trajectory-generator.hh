@@ -36,10 +36,6 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
-//#include <sot/torque_control/utils/trajectory-generators.hh>
 
 #include <parametric-curves/spline.hpp>
 #include <parametric-curves/constant.hpp>
@@ -49,8 +45,12 @@
 #include <parametric-curves/infinite-sinusoid.hpp>
 #include <parametric-curves/infinite-const-acc.hpp>
 
+#include <sot/torque_control/signal-helper.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
+#include <sot/torque_control/utils/logger.hh>
+//#include <sot/torque_control/utils/trajectory-generators.hh>
+
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 

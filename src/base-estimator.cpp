@@ -169,10 +169,10 @@ namespace dynamicgraph
         ,m_initSucceeded(false)
         ,m_reset_foot_pos(true)
         ,m_w_imu(0.0)
-        ,m_zmp_std_dev_lf(1.0)
         ,m_zmp_std_dev_rf(1.0)
-        ,m_fz_std_dev_lf(1.0)
+        ,m_zmp_std_dev_lf(1.0)
         ,m_fz_std_dev_rf(1.0)
+        ,m_fz_std_dev_lf(1.0)
         ,m_zmp_margin_lf(0.0)
         ,m_zmp_margin_rf(0.0)
       {

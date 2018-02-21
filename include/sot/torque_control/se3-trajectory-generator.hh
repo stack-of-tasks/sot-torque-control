@@ -42,7 +42,6 @@
 #include <sot/torque_control/utils/trajectory-generators.hh>
 #include <parametric-curves/spline.hpp>
 #include <map>
-#include <initializer_list>
 #include "boost/assign.hpp"
 
 

@@ -1,0 +1,443 @@
+#!/bin/bash
+set -e
+
+# Set debug mode
+set -x
+set -v
+
+# Setup environment variables.
+export CMAKE_ADDITIONAL_OPTIONS=" ${CMAKE_ADDITIONAL_OPTIONS} -DCMAKE_CXX_FLAGS=-DBOOST_SYSTEM_NO_DEPRECATED "
+if [[ ";${DO_INSTALL_DOC_EXCEPT_ON_BRANCH};" == *";${CI_BRANCH};"* ]]; then
+  export CMAKE_ADDITIONAL_OPTIONS=" ${CMAKE_ADDITIONAL_OPTIONS} -DINSTALL_DOCUMENTATION=\"OFF\""
+else
+  export CMAKE_ADDITIONAL_OPTIONS=" ${CMAKE_ADDITIONAL_OPTIONS} -DINSTALL_DOCUMENTATION=\"ON\""
+fi
+export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/openrobots/lib/pkgconfig"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/openrobots/lib:/opt/openrobots/lib/plugin"
+export PYTHONPATH="/opt/openrobots/install/lib/python2.7/site-packages:/opt/openrobots/install/lib/python2.7/dist-packages:${PYTHON_PATH}"
+
+# -*- sh-mode -*
+# This should be sourced, not called.
+set -e
+
+########################################
+#        -- VERBOSE HANDLING --        #
+########################################
+
+# More verbose handling for 'set -e'.
+#
+# Show a traceback if we're using bash, otherwise just a message.
+# Downloaded from: https://gist.github.com/kergoth/3885825
+on_exit () {
+    ret=$?
+    case $ret in
+        0)
+            ;;
+        *)
+            echo >&2 "Exiting with $ret from a shell command"
+            ;;
+    esac
+}
+
+on_error () {
+    local ret=$?
+    local FRAMES=${#BASH_SOURCE[@]}
+
+    echo >&2 "Traceback (most recent call last):"
+    for ((frame=FRAMES-2; frame >= 0; frame--)); do
+        local lineno=${BASH_LINENO[frame]}
+
+        printf >&2 '  File "%s", line %d, in %s\n' "${BASH_SOURCE[frame+1]}" "$lineno" "${FUNCNAME[frame+1]}"
+        sed >&2 -n "${lineno}s/^[ 	]*/    /p" "${BASH_SOURCE[frame+1]}" || true
+    done
+    printf >&2 "Exiting with %d\n" "$ret"
+    exit $ret
+}
+
+case "$BASH_VERSION" in
+    '')
+        trap on_exit EXIT
+        ;;
+    *)
+        set -o errtrace
+        trap on_error ERR
+        ;;
+esac
+
+########################################
+#        -- GLOBAL UTILITIES --        #
+########################################
+
+# git_dependency_parsing
+# ----------------------
+#
+# From an entry in GIT_DEPENDENCIES variable set git_dep, git_dep_uri and
+# git_dep_branch in the environment
+# For example given the input "jrl-umi3218/jrl-travis" the following variables
+# are defined in the environment:
+# - git_dep jrl-umi3218/jrl-travis
+# - git_dep_uri git://github.com/jrl-umi3218/jrl-traviss
+# - git_dep_branch master
+# Or, given the input git@github.com:jrl-umi3218/jrl-travis#thebranch
+# - git_dep jrl-umi3218/jrl-travis
+# - git_dep_uri git@github.com:jrl-umi3218/jrl-travis
+# - git_dep_branch thebranch
+# The second (optional) argument allows to defined the default branch (defaults
+# to master)
+git_dependency_parsing()
+{
+  _input=$1
+  export git_dep=${_input%%#*}
+  export git_dep_branch=${_input##*#}
+  if [ "$git_dep_branch" == "$git_dep" ]; then
+    if [ -e "$2" ]; then
+      export git_dep_branch=$2
+    else
+      export git_dep_branch="master"
+    fi
+  fi
+  git_dep_uri_base=${git_dep%%:*}
+  if [ "$git_dep_uri_base" == "$git_dep" ]; then
+    export git_dep_uri="git://github.com/$git_dep"
+  else
+    export git_dep_uri=$git_dep
+    export git_dep=${git_dep##*:}
+  fi
+}
+
+
+########################################
+#    -- ENVIRONMENT MANIPULATION --    #
+########################################
+
+_gitlab_setup_ci_vars()
+{
+  export CI_REQUIRE_SUDO=false
+  export CI_PULL_REQUEST=false #FIXME Can it be provided by gitlab?
+  export CI_REPO_SLUG=`echo ${CI_PROJECT_DIR}|sed -e's@/builds/@@'`
+  export CI_BRANCH=${CI_BUILD_REF_NAME}
+  export CI_OS_NAME=${CI_OS_NAME:-linux}
+}
+
+_travis_setup_ci_vars()
+{
+  export CI_REQUIRE_SUDO=${CI_REQUIRE_SUDO:-true}
+  export CI_PULL_REQUEST=${TRAVIS_PULL_REQUEST}
+  export CI_REPO_SLUG=${TRAVIS_REPO_SLUG}
+  export CI_BRANCH=${TRAVIS_BRANCH}
+  export CI_OS_NAME=${TRAVIS_OS_NAME:-linux}
+}
+
+# _setup_ci_vars
+# --------------
+#
+# Setup CI_* variables based on the CI type
+_setup_ci_vars()
+{
+  # Check which CI tool we are using, default to travis
+  export CI_TOOL=${CI_TOOL:-travis}
+
+  if [ $CI_TOOL = travis ]; then
+    _travis_setup_ci_vars
+  else
+    _gitlab_setup_ci_vars
+  fi
+}
+
+# _setup_sudo_cmd
+# ---------------
+#
+# Setup SUDO_CMD based on CI configuration
+_setup_sudo_cmd()
+{
+  if [ ${CI_REQUIRE_SUDO} = false ]; then
+    export SUDO_CMD=''
+  else
+    export SUDO_CMD='sudo'
+  fi
+}
+
+# _setup_ros
+# ----------
+#
+# Setup ROS environment if present on the system
+_setup_ros()
+{
+  if [ -f /opt/ros/${ROS_DISTRO}/setup.sh ]; then
+    . /opt/ros/${ROS_DISTRO}/setup.sh
+  fi
+}
+
+# _setup_env_vars
+# ---------------
+#
+# Setup environment variables
+_setup_env_vars()
+{
+  export LD_LIBRARY_PATH="$install_dir/lib:$LD_LIBRARY_PATH"
+  export LTDL_LIBRARY_PATH="$install_dir/lib:$LTDL_LIBRARY_PATH"
+  export PKG_CONFIG_PATH="$install_dir/lib/pkgconfig:$install_dir/share/pkgconfig:$PKG_CONFIG_PATH"
+  if type "python" > /dev/null; then
+    pythonsite_dir=`python -c "import sys, os; print(os.sep.join(['lib', 'python' + sys.version[:3], 'site-packages']))"`
+    export PYTHONPATH="$install_dir/$pythonsite_dir:$PYTHONPATH"
+  fi
+
+}
+
+# _setup_linux_env
+# ----------------
+#
+# Environment setup specific to linux
+_setup_linux_env()
+{
+  export LD_LIBRARY_PATH="$install_dir/lib/`dpkg-architecture -qDEB_BUILD_MULTIARCH`:$LD_LIBRARY_PATH"
+  export LTDL_LIBRARY_PATH="$install_dir/lib/`dpkg-architecture -qDEB_BUILD_MULTIARCH`:$LTDL_LIBRARY_PATH"
+  export PKG_CONFIG_PATH="$install_dir/lib/`dpkg-architecture -qDEB_BUILD_MULTIARCH`/pkgconfig:$PKG_CONFIG_PATH"
+}
+
+# _setup_osx_env
+# ----------------
+#
+# Environment setup specific to OSX
+_setup_osx_env()
+{
+  # Since default gcc on osx is just a front-end for LLVM...
+  if [[ ${CC} = gcc ]]; then
+    export CXX=g++-4.8
+    export CC=gcc-4.8
+  fi
+
+  export DYLD_LIBRARY_PATH="$install_dir/lib:$DYLD_LIBRARY_PATH"
+  export LTDL_LIBRARY_PATH="$install_dir/lib:$LTDL_LIBRARY_PATH"
+  export PKG_CONFIG_PATH="$install_dir/lib/pkgconfig:$PKG_CONFIG_PATH"
+}
+
+# setup_ci_env
+# ------------
+#
+# Setup the CI and environment variables
+setup_ci_env()
+{
+  _setup_ci_vars
+  _setup_sudo_cmd
+  _setup_ros
+  _setup_env_vars
+  if [[ ${CI_OS_NAME} = linux ]]; then
+    _setup_linux_env
+  fi
+  if [[ ${CI_OS_NAME} = osx ]]; then
+    _setup_osx_env
+  fi
+}
+
+# Directories.
+root_dir=`pwd`
+build_dir="/tmp/_ci/build"
+install_dir="/opt/openrobots"
+
+echo "root_dir: " $root_dir
+echo "build_dir: " $build_dir
+echo "install_dir: " $install_dir
+
+# Shortcuts.
+git_clone="git clone --quiet --recursive"
+
+# Setup all variables needed by the CI scripts
+setup_ci_env
+
+# Make cmake verbose.
+export CMAKE_VERBOSE_MAKEFILE=1
+export CTEST_OUTPUT_ON_FAILURE=1
+
+# Add default DO_*_ON_BRANCH if needed
+if [ -z ${DO_COVERAGE_ON_BRANCH+x} ]; then
+  export DO_COVERAGE_ON_BRANCH=${CI_BRANCH}
+fi
+
+if [ -z ${DO_CPPCHECK_ON_BRANCH+x} ]; then
+  export DO_CPPCHECK_ON_BRANCH=${CI_BRANCH}
+fi
+
+# Create layout.
+mkdir -p "$build_dir"
+mkdir -p "$install_dir"
+
+
+
+# build_package
+# -------------
+#
+# Build the package using the last Eigen release (3.2) which is not
+# available as a Debian package on Ubuntu 12.04.
+build_package()
+{
+    echo "--> Building package..."
+
+    cd "$build_dir"
+
+    if [[ ";${DO_COVERAGE_ON_BRANCH};" == *";${CI_BRANCH};"* ]]; then
+      cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"	\
+        -DCMAKE_CXX_FLAGS="--coverage"				\
+        -DCMAKE_EXE_LINKER_FLAGS="--coverage"			\
+        -DCMAKE_MODULE_LINKER_FLAGS="--coverage"		\
+        ${CMAKE_ADDITIONAL_OPTIONS}
+    else
+      cmake "$root_dir" -DCMAKE_INSTALL_PREFIX="$install_dir"	\
+        ${CMAKE_ADDITIONAL_OPTIONS}
+    fi
+
+    ${MAKE_PREFIX} make
+    make install
+
+    ALLOW_TESTSUITE_FAILURE=${ALLOW_TESTSUITE_FAILURE:-false}
+    make test || ${ALLOW_TESTSUITE_FAILURE}
+
+    if [[ ";${DO_CPPCHECK_ON_BRANCH};" == *";${CI_BRANCH};"* ]]; then
+      cppcheck --quiet --enable=all \
+        -I $root_dir/src -I $root_dir/tests -I $root_dir/include \
+        -I $root_dir/tests/shared-tests \
+        -I $build_dir/include -I $install_dir/include \
+        -i $build_dir/CMakeFiles \
+        $root_dir || true
+    fi
+}
+
+# debian_build_package
+# --------------------
+#
+# Use git-buildpackage and pbuilder to build the package in a sid
+# sandbox.
+debian_build_package()
+{
+    export GNUPGHOME="$root_dir/.travis/.gnupg"
+    export NAME="Thomas Moulard (Travis Automatic Builds)"
+    export DEBEMAIL="thomas.moulard+travis@gmail.com"
+
+    echo "--> Building Debian package..."
+    cd "$root_dir"
+
+    buildNumber=$(git rev-list \
+      $(git describe --tags --match "debian/*" --abbrev=0)..HEAD | wc -l) \
+      || buildNumber=1
+    dch --force-distribution --distribution ${DIST} \
+        --local ppa$buildNumber+$DIST "Travis automatic build"
+
+    echo "debian/changelog first line:"
+    head -n 1 debian/changelog
+
+    git add debian/changelog
+    git commit -m "Travis automatic commit"
+
+    ${SUDO_CMD} chmod -R 777 /var/cache/pbuilder/ccache
+
+    # If orig tarball exists, delete it.
+    rm -f "$build_dir/export/*_*.orig.tar*"
+    git-buildpackage					\
+      --git-submodules				\
+      --git-no-pristine-tar				\
+      --git-ignore-branch				\
+      --git-debian-branch=HEAD			\
+      --git-export-dir="$build_dir/export"		\
+      --git-tag					\
+      --git-upstream-branch=master			\
+      --git-dist=${DIST}				\
+      --git-pbuilder					\
+      --git-force-create				\
+      --git-ignore-new				\
+      --git-retag					\
+      -p\"gpg\\ --passphrase\\ ${GNUPG_PASSPHRASE}\" \
+      -k${DEBSIGN_KEYID} || exit 1
+
+
+    git-buildpackage			\
+      --git-submodules		\
+      --git-no-pristine-tar		\
+      --git-debian-branch=HEAD	\
+      --git-ignore-branch		\
+      --git-export-dir="$build_dir/export" \
+      --git-tag			\
+      --git-upstream-branch=master	\
+      --git-dist=${DIST}		\
+      --git-ignore-new		\
+      --git-retag			\
+      -p\"gpg --passphrase ${GNUPG_PASSPHRASE}\" \
+      -k${DEBSIGN_KEYID} \
+      -S -sa || exit 1
+}
+
+
+# setup_ros_build_environment
+# ---------------------------
+#
+# Source ROS setup scripts if they exist
+setup_ros_build_environment()
+{
+  if [ -e /opt/ros/${ROS_DISTRO}/setup.sh ]; then
+    . /opt/ros/${ROS_DISTRO}/setup.sh
+  fi
+  CATKIN_DEP_WORKSPACE=/tmp/_ci/catkin_dep_ws
+  if [ -e ${CATKIN_DEP_WORKSPACE}/devel/setup.sh ]; then
+    . ${CATKIN_DEP_WORKSPACE}/devel/setup.sh
+  fi
+  # Limit the number of parallel jobs when running catkin_make
+  PARALLEL_JOBS=${PARALLEL_JOBS:-1}
+  export ROS_PARALLEL_JOBS="-j ${PARALLEL_JOBS}"
+}
+
+# build_catkin_package
+# --------------------
+#
+# build all the packages using catkin_make.
+# Also check the installation (catkin_make install)
+# and check whether the catkin package is well written (catkin_lint)
+build_catkin_package()
+{
+    # Main package workspace
+    CATKIN_WORKSPACE=$build_dir/..
+    ln -s $root_dir/.. $CATKIN_WORKSPACE/src
+    cd $CATKIN_WORKSPACE/src
+    catkin_init_workspace
+
+    cd $CATKIN_WORKSPACE
+    catkin_make
+    for pack in `ls -d ./src/*/ ./src/*/*/`; do
+    if test -f $pack/package.xml; then
+      rosdoc_lite $pack
+    fi
+    done
+    catkin_make install
+
+    # run catkin_lint on every directory.
+    ALLOW_CATKINLINT_FAILURE=${ALLOW_CATKINLINT_FAILURE:-false}
+    catkin_lint `ls -d ./src/*/ ./src/*/*/`  || ${ALLOW_CATKINLINT_FAILURE}
+}
+
+setup_ros_build_environment
+# Realize a normal build in all branches except the one containing a
+# debian/ folder.
+if [ -d debian ]; then
+    if `test x${DIST} = x`; then
+      echo "distribution is not set, skipping this build"
+      exit 0
+    fi
+    echo "Target distribution: ${DIST}"
+    debian_build_package
+else
+    if [ ! x${DIST} = x ]; then
+      echo "skipping this build"
+      exit 0
+    fi
+    # checking if it is a ros folder. Taking appropriate measure.
+    #The current repository is a package
+    if  [[ -n $(find .  -maxdepth 2 -name package.xml) ]]; then
+      build_catkin_package
+    else
+      build_package
+    fi
+fi
+
+# End debug mode
+set +v
+set +x
+
+
