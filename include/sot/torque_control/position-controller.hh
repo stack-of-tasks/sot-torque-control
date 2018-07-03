@@ -75,6 +75,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(Kp,               dynamicgraph::Vector);  /// joint proportional gains
         DECLARE_SIGNAL_IN(Kd,               dynamicgraph::Vector);  /// joint derivative gains
         DECLARE_SIGNAL_IN(Ki,               dynamicgraph::Vector);  /// joint integral gains
+        DECLARE_SIGNAL_IN(iClamp,           dynamicgraph::Vector);
 
         DECLARE_SIGNAL_OUT(pwmDes,      dynamicgraph::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
         // DEBUG SIGNALS
@@ -98,6 +99,7 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_pwmDes;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         double            m_dt;               /// control loop time period
+        Eigen::VectorXd   m_i_term;           /// integral term
 
         /// Integral of the joint tracking errors
         Eigen::VectorXd   m_e_integral;
