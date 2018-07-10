@@ -5,7 +5,7 @@
 """
 
 from dynamic_graph import plug
-from dynamic_graph.sot.core.switch import Switch
+from dynamic_graph.sot.core.Latch import Latch
 from dynamic_graph.sot.torque_control.numerical_difference import NumericalDifference
 from dynamic_graph.sot.torque_control.joint_torque_controller import JointTorqueController
 from dynamic_graph.sot.torque_control.joint_trajectory_generator import JointTrajectoryGenerator
@@ -98,7 +98,7 @@ def create_force_traj_gen(name, initial_value, dt):
     return force_traj_gen ;
 
 def create_trajectory_switch():
-    traj_sync = Switch("traj_sync");
+    traj_sync = Latch("traj_sync");
     return traj_sync ;
 
 def connect_synchronous_trajectories(switch, list_of_traj_gens):
