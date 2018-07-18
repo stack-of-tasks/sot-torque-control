@@ -38,7 +38,7 @@ namespace dynamicgraph
 #define REF_JOINT_SIGNALS m_qRefSIN << m_dqRefSIN
 #define STATE_SIGNALS     m_base6d_encodersSIN << m_jointsVelocitiesSIN
 
-#define INPUT_SIGNALS     STATE_SIGNALS << REF_JOINT_SIGNALS << GAIN_SIGNALS
+#define INPUT_SIGNALS     STATE_SIGNALS << REF_JOINT_SIGNALS << GAIN_SIGNALS << m_iClampSIN
 
 #define OUTPUT_SIGNALS m_pwmDesSOUT << m_qErrorSOUT
 
@@ -65,6 +65,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(Kp,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(Kd,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(Ki,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(iClamp,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_OUT(pwmDes,             dynamicgraph::Vector, INPUT_SIGNALS)
             ,CONSTRUCT_SIGNAL_OUT(qError,             dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                   m_qRefSIN)
@@ -103,6 +104,8 @@ namespace dynamicgraph
           return SEND_MSG("Init failed: signal Kd is not plugged", MSG_TYPE_ERROR);
         if(!m_KiSIN.isPlugged())
           return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
+        if(!m_iClampSIN.isPlugged())
+          return SEND_MSG("Init failed: signal iClamp is not plugged", MSG_TYPE_ERROR);
 
 	/* Retrieve m_robot_util  informations */
 	std::string localName(robotRef);
@@ -116,7 +119,7 @@ namespace dynamicgraph
 
         m_dt = dt;
    
-	m_pwmDes.setZero(m_robot_util->m_nbJoints);
+	    m_pwmDes.setZero(m_robot_util->m_nbJoints);
         m_q.setZero(m_robot_util->m_nbJoints+6);
         m_dq.setZero(m_robot_util->m_nbJoints);
 
@@ -144,25 +147,46 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_PWM_DES_COMPUTATION);
         {
-          const VectorN& Kp =        m_KpSIN(iter); // n
-          const VectorN& Kd =        m_KdSIN(iter); // n
-          const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
-          const VectorN& dq =        m_jointsVelocitiesSIN(iter);     // n
+          const VectorN& Kp =        m_KpSIN(iter);     // n
+          const VectorN& Kd =        m_KdSIN(iter);     // n
+          const VectorN& Ki =        m_KiSIN(iter);     // n
+          const VectorN& iClamp =    m_iClampSIN(iter); // n
+          const VectorN6& q =        m_base6d_encodersSIN(iter);      //n+6
+          // const VectorN& dq =        m_jointsVelocitiesSIN(iter);     // n
+          const VectorN6& dq =       m_jointsVelocitiesSIN(iter);    // n+6
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
           assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
+          // assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
+          assert(dq.size()==m_robot_util->m_nbJoints+6      && "Unexpected size of signal dq");
           assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
           assert(dqRef.size()==m_robot_util->m_nbJoints   && "Unexpected size of signal dqRef");
           assert(Kp.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
           assert(Kd.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
+          assert(Ki.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Ki");
+          assert(iClamp.size()==m_robot_util->m_nbJoints  && "Unexpected size of signal iClamp");
+          
+          m_e_integral += m_dt*(qRef-q.tail(m_robot_util->m_nbJoints));
+          m_i_term = Ki.cwiseProduct(m_e_integral);
+          
+          for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
+          {
+              if(m_i_term(i) > iClamp(i))
+              {
+				  m_i_term(i) = iClamp(i);
+			  }
+			  else if(m_i_term(i) < -iClamp(i))
+			  {
+				  m_i_term(i) = -iClamp(i);
+			  }
+		  }
 
-          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq);
+          m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq.tail(m_robot_util->m_nbJoints)) + m_i_term;
 
-	if(s.size()!=m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
-	s = m_pwmDes;
+	      if(s.size()!=m_robot_util->m_nbJoints)
+              s.resize(m_robot_util->m_nbJoints);
+	      s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
 
@@ -183,8 +207,8 @@ namespace dynamicgraph
         assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
 
         if(s.size()!=m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
-	s = qRef - q.tail(m_robot_util->m_nbJoints);
+            s.resize(m_robot_util->m_nbJoints);
+	    s = qRef - q.tail(m_robot_util->m_nbJoints);
 
 
         return s;
