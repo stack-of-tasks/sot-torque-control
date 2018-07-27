@@ -28,6 +28,8 @@ SET(PROJECT_URL "https://github.com/stack-of-tasks/sot-torque-control")
 
 SET(CUSTOM_HEADER_DIR "sot/torque-control")
 
+SET(DOXYGEN_USE_MATHJAX YES)
+
 # Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
 #add_compile_options(-std=c++11) # CMake 2.8.12 or newer
