@@ -21,6 +21,7 @@ INCLUDE(cmake/lapack.cmake)
 INCLUDE(cmake/cpack.cmake)
 INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
+INCLUDE(cmake/test.cmake)
 
 SET(PROJECT_NAME sot-torque-control)
 SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
