@@ -8,6 +8,26 @@ cache:
   paths:
     - ccache
 
+.robotpkg-py-sot-torque-control: &robotpkg-py-sot-torque-control
+  except:
+    - gh-pages
+  script:
+    - mkdir -p ccache
+    - cd /root/robotpkg/wip/py-sot-torque-control
+    - git pull
+    - make checkout MASTER_REPOSITORY="dir ${CI_PROJECT_DIR}"
+    - make install
+    - cd work.$(hostname)/$(make show-var VARNAME=DISTNAME)
+    - make test
+
+robotpkg-py-sot-torque-control-14.04-release:
+  <<: *robotpkg-py-sot-torque-control
+  image: eur0c.laas.fr:5000/stack-of-tasks/sot-torque-control/py-sot-torque-control:14.04
+
+robotpkg-py-sot-torque-control-16.04-release:
+  <<: *robotpkg-py-sot-torque-control
+  image: eur0c.laas.fr:5000/stack-of-tasks/sot-torque-control/py-sot-torque-control:16.04
+
 .robotpkg-sot-torque-control: &robotpkg-sot-torque-control
   except:
     - gh-pages
@@ -29,12 +49,12 @@ robotpkg-sot-torque-control-16.04-release:
   image: eur0c.laas.fr:5000/stack-of-tasks/sot-torque-control/sot-torque-control:16.04
 
 doc-coverage:
-  <<: *robotpkg-sot-torque-control
-  image: eur0c.laas.fr:5000/stack-of-tasks/sot-torque-control/sot-torque-control:16.04
+  <<: *robotpkg-py-sot-torque-control
+  image: eur0c.laas.fr:5000/stack-of-tasks/sot-torque-control/py-sot-torque-control:16.04
   before_script:
     - echo -e 'CXXFLAGS+= --coverage\nLDFLAGS+= --coverage\nPKG_DEFAULT_OPTIONS= debug' >> /opt/openrobots/etc/robotpkg.conf
   after_script:
-    - cd /root/robotpkg/wip/sot-torque-control
+    - cd /root/robotpkg/wip/py-sot-torque-control
     - cd work.$(hostname)/$(make show-var VARNAME=DISTNAME)
     - make doc
     - mv doc/doxygen-html ${CI_PROJECT_DIR}
