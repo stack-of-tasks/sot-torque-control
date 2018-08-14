@@ -13,10 +13,6 @@
 # received a copy of the GNU Lesser General Public License along with
 # sot-torque-control. If not, see <http://www.gnu.org/licenses/>.
 
-INCLUDE(../cmake/python.cmake)
-FINDPYTHON()
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-
 # Verbosity level
 IF (NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
   ADD_DEFINITIONS(-DVP_DEBUG_MODE=${CMAKE_VERBOSITY_LEVEL} -DVP_DEBUG)
@@ -24,7 +20,9 @@ ENDIF (NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
 
 # The main include dir
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
-LINK_DIRECTORIES(${PYTHON_LIBRARY_DIRS})
+IF(BUILD_PYTHON_INTERFACE)
+  LINK_DIRECTORIES(${PYTHON_LIBRARY_DIRS})
+ENDIF(BUILD_PYTHON_INTERFACE)
 
 #define DEBUG=2 if we're building in debug mode (what for?)
 IF("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
@@ -67,7 +65,7 @@ SET(plugins
 FOREACH(plugin ${plugins})
   #retrieve plugin name
   GET_FILENAME_COMPONENT(LIBRARY_NAME ${plugin} NAME)
-  
+
   # only one source file per plugin
   ADD_LIBRARY(${LIBRARY_NAME}
     SHARED
@@ -92,8 +90,8 @@ FOREACH(plugin ${plugins})
   IF(ADDITIONAL_${LIBRARY_NAME}_LIBS)
     ADD_DEPENDENCIES(${LIBRARY_NAME} ${ADDITIONAL_${LIBRARY_NAME}_LIBS})
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${ADDITIONAL_${LIBRARY_NAME}_LIBS})
-  ENDIF(ADDITIONAL_${LIBRARY_NAME}_LIBS)	
-  
+  ENDIF(ADDITIONAL_${LIBRARY_NAME}_LIBS)
+
   # Linux dynamic loading library flags
   IF(UNIX)
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${CMAKE_DL_LIBS})
@@ -109,21 +107,25 @@ FOREACH(plugin ${plugins})
 
   # build python submodule
   # (replace minus with underscore to make Python happy)
-  STRING(REPLACE - _ PYTHON_LIBRARY_NAME ${LIBRARY_NAME})
-  DYNAMIC_GRAPH_PYTHON_MODULE("sot/torque_control/${PYTHON_LIBRARY_NAME}"
-    ${LIBRARY_NAME}
-    sot-torque-control-${PYTHON_LIBRARY_NAME}-wrap
-    )
+  IF(BUILD_PYTHON_INTERFACE)
+    STRING(REPLACE - _ PYTHON_LIBRARY_NAME ${LIBRARY_NAME})
+    DYNAMIC_GRAPH_PYTHON_MODULE("sot/torque_control/${PYTHON_LIBRARY_NAME}"
+      ${LIBRARY_NAME}
+      sot-torque-control-${PYTHON_LIBRARY_NAME}-wrap
+      )
+  ENDIF(BUILD_PYTHON_INTERFACE)
   # Install plugins
   INSTALL(TARGETS ${LIBRARY_NAME}
     DESTINATION ${DYNAMIC_GRAPH_PLUGINDIR})
 ENDFOREACH(plugin)
 
 # Bindings Python
-DYNAMIC_GRAPH_PYTHON_MODULE("sot/torque_control" ${SOTTORQUECONTROL_LIB_NAME} wrap)
+IF(BUILD_PYTHON_INTERFACE)
+  DYNAMIC_GRAPH_PYTHON_MODULE("sot/torque_control" ${SOTTORQUECONTROL_LIB_NAME} wrap)
 
-# Install empty __init__.py files in intermediate directories.
-INSTALL(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_graph/sot/torque_control/__init__.py
-  DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control
-)
+  # Install empty __init__.py files in intermediate directories.
+  INSTALL(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_graph/sot/torque_control/__init__.py
+    DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control
+  )
+ENDIF(BUILD_PYTHON_INTERFACE)

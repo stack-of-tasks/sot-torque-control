@@ -21,12 +21,15 @@ INCLUDE(cmake/lapack.cmake)
 INCLUDE(cmake/cpack.cmake)
 INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
+INCLUDE(cmake/test.cmake)
 
 SET(PROJECT_NAME sot-torque-control)
 SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
 SET(PROJECT_URL "https://github.com/stack-of-tasks/sot-torque-control")
 
 SET(CUSTOM_HEADER_DIR "sot/torque-control")
+
+SET(DOXYGEN_USE_MATHJAX YES)
 
 # Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
@@ -51,13 +54,23 @@ PKG_CONFIG_APPEND_LIBS("sot-torque-control")
 
 # Search for dependencies.
 # Boost
-SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex python)
+SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex)
+
+OPTION (BUILD_PYTHON_INTERFACE "Build the python bindings" ON)
+IF(BUILD_PYTHON_INTERFACE)
+  FINDPYTHON()
+  SET(BOOST_COMPONENTS ${BOOST_COMPONENTS} python)
+  ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
+  SET(${LIBRARY_NAME}_PYTHON_FILES python/*.py)
+  SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
+  INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIR})
+ENDIF(BUILD_PYTHON_INTERFACE)
+
 SEARCH_FOR_BOOST()
 
 SEARCH_FOR_EIGEN()
 
 ADD_REQUIRED_DEPENDENCY("dynamic-graph >= 3.0.0")
-ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("sot-core >= 3.0.0")
 ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
 ADD_REQUIRED_DEPENDENCY("tsid")
@@ -117,7 +130,6 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/common.cpp
 )
 
-SET(${LIBRARY_NAME}_PYTHON_FILES python/*.py)
 
 ADD_LIBRARY(${LIBRARY_NAME} SHARED ${${LIBRARY_NAME}_SOURCES})
 
@@ -127,11 +139,14 @@ SET_TARGET_PROPERTIES(${LIBRARY_NAME}
   INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
-PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} tsid)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} parametric-curves)
+
+IF(BUILD_PYTHON_INTERFACE)
+  PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
+ENDIF(BUILD_PYTHON_INTERFACE)
 
 
 IF(UNIX)
@@ -146,69 +161,66 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_LIBRARIES})
 
 INSTALL(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-FINDPYTHON()
+IF(BUILD_PYTHON_INTERFACE)
+  INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
+                python/dynamic_graph/sot/torque_control/main.py
+                python/dynamic_graph/sot/torque_control/create_entities_utils.py
+                python/dynamic_graph/sot/torque_control/main_sim.py
+                DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
 
-INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
-              python/dynamic_graph/sot/torque_control/main.py
-              python/dynamic_graph/sot/torque_control/create_entities_utils.py
-              python/dynamic_graph/sot/torque_control/main_sim.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
-         
-INSTALL(FILES python/dynamic_graph/sot/torque_control/identification/__init__.py
-              python/dynamic_graph/sot/torque_control/identification/identification_utils.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/identification)
-         
-INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
-              python/dynamic_graph/sot/torque_control/utils/plot_utils.py
-              python/dynamic_graph/sot/torque_control/utils/sot_utils.py
-              python/dynamic_graph/sot/torque_control/utils/filter_utils.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
-         
-INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
-              python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
-              python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
-              python/dynamic_graph/sot/torque_control/tests/test_velocity_filters.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
-         
+  INSTALL(FILES python/dynamic_graph/sot/torque_control/identification/__init__.py
+                python/dynamic_graph/sot/torque_control/identification/identification_utils.py
+                DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/identification)
+
+  INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
+                python/dynamic_graph/sot/torque_control/utils/plot_utils.py
+                python/dynamic_graph/sot/torque_control/utils/sot_utils.py
+                python/dynamic_graph/sot/torque_control/utils/filter_utils.py
+                DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
+
+  INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
+                python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
+                python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
+                python/dynamic_graph/sot/torque_control/tests/test_velocity_filters.py
+                DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+ENDIF(BUILD_PYTHON_INTERFACE)
+
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
 
 # *****************************
 # Common-sot-py PYTHON module *
 # *****************************
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIR})
-PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
-TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
-TARGET_LINK_BOOST_PYTHON(common_sot_py)
-TARGET_LINK_LIBRARIES(common_sot_py ${LIBRARY_NAME})
+IF(BUILD_PYTHON_INTERFACE)
+  PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
+  TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${LIBRARY_NAME})
+  TARGET_LINK_BOOST_PYTHON(common_sot_py)
+  INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
 
-SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
-INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
+  IF(TALOS_DATA_FOUND)
+    FOREACH(py_filename test_torque_offset_estimator)
+      CONFIGURE_FILE(
+        ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
+        ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+        )
 
-
-IF(TALOS_DATA_FOUND)
-  FOREACH(py_filename test_torque_offset_estimator)
-    CONFIGURE_FILE(
-      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
-      ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
-      )
-
-    INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
-      DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+      INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+        DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
 
     ENDFOREACH(py_filename)
-ENDIF(TALOS_DATA_FOUND)
+  ENDIF(TALOS_DATA_FOUND)
 
-IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
-  FOREACH(py_filename robot_data_test)
-    CONFIGURE_FILE(
-      ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
-      ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
-      )
-    INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
-         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+  IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
+    FOREACH(py_filename robot_data_test)
+      CONFIGURE_FILE(
+        ${PROJECT_SOURCE_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py.in
+        ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+        )
+      INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
+        DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
     ENDFOREACH(py_filename)
-ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
+  ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
+ENDIF(BUILD_PYTHON_INTERFACE)
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
