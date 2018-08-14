@@ -161,7 +161,6 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${Boost_LIBRARIES})
 
 INSTALL(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-
 IF(BUILD_PYTHON_INTERFACE)
   INSTALL(FILES python/dynamic_graph/sot/torque_control/__init__.py
                 python/dynamic_graph/sot/torque_control/main.py
