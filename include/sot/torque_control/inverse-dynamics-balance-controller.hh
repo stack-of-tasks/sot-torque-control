@@ -68,14 +68,14 @@ namespace dynamicgraph {
       {
         typedef InverseDynamicsBalanceController EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /* --- CONSTRUCTOR ---- */
         InverseDynamicsBalanceController( const std::string & name );
 
-        void init(const double& dt, 
+        void init(const double& dt,
 		  const std::string& robotRef);
         void updateComOffset();
         void removeRightFootContact(const double& transitionTime);
@@ -147,7 +147,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(wrench_right_foot,          dynamicgraph::Vector);
 
         DECLARE_SIGNAL_IN(active_joints,              dynamicgraph::Vector); /// mask with 1 for controlled joints, 0 otherwise
-        
+
         DECLARE_SIGNAL_OUT(tau_des,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(M,                         dynamicgraph::Matrix);
         DECLARE_SIGNAL_OUT(dv_des,                    dynamicgraph::Vector);
@@ -175,16 +175,13 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(left_foot_acc,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_acc_des,        dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_acc_des,         dynamicgraph::Vector);
-        
+
         /// This signal copies active_joints only if it changes from a all false or to an all false value
         DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
-        
+
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {

@@ -56,8 +56,8 @@ namespace dynamicgraph {
       {
         typedef PositionController EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /* --- CONSTRUCTOR ---- */
@@ -84,15 +84,12 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
           getLogger().sendMsg("[PositionController-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
 	RobotUtil *       m_robot_util;        /// Robot Util
         Eigen::VectorXd   m_pwmDes;
@@ -105,7 +102,7 @@ namespace dynamicgraph {
         Eigen::VectorXd m_q, m_dq;
 
       }; // class PositionController
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph

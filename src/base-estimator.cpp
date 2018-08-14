@@ -75,7 +75,7 @@ namespace dynamicgraph
           rpy(0) = atan2(M(2,1), M(2,2));  // gamma
         }
       }
-      
+
       void quanternionMult(const Eigen::Vector4d & q1, const Eigen::Vector4d & q2,  Eigen::Vector4d & q12)
       {
         q12(0) = q2(0)*q1(0)-q2(1)*q1(1)-q2(2)*q1(2)-q2(3)*q1(3);
@@ -105,7 +105,7 @@ namespace dynamicgraph
                           m_imu_quaternionSIN << m_forceLLEGSIN << m_forceRLEGSIN <<  m_dforceLLEGSIN << m_dforceRLEGSIN << \
                           m_w_lf_inSIN << m_w_rf_inSIN << m_K_fb_feet_posesSIN << m_lf_ref_xyzquatSIN << m_rf_ref_xyzquatSIN << m_accelerometerSIN << m_gyroscopeSIN
 #define OUTPUT_SIGNALS    m_qSOUT << m_vSOUT << m_q_lfSOUT << m_q_rfSOUT << m_q_imuSOUT << \
-                          m_w_lfSOUT << m_w_rfSOUT << m_w_lf_filteredSOUT << m_w_rf_filteredSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << \ 
+                          m_w_lfSOUT << m_w_rfSOUT << m_w_lf_filteredSOUT << m_w_rf_filteredSOUT << m_lf_xyzquatSOUT << m_rf_xyzquatSOUT << \
                           m_v_acSOUT << m_a_acSOUT << m_v_kinSOUT << m_v_imuSOUT << m_v_gyrSOUT << m_v_flexSOUT
 
       /// Define EntityClassName here rather than in the header file
@@ -198,15 +198,15 @@ namespace dynamicgraph
         addCommand("set_alpha_w_filter",
                    makeCommandVoid1(*this, &BaseEstimator::set_alpha_w_filter,
                                     docCommandVoid1("Set the filter parameter to filter weights",
-                                                    "double")));                                            
+                                                    "double")));
         addCommand("set_alpha_DC_acc",
                    makeCommandVoid1(*this, &BaseEstimator::set_alpha_DC_acc,
                                     docCommandVoid1("Set the filter parameter for removing DC from accelerometer data",
-                                                    "double")));                                            
+                                                    "double")));
         addCommand("set_alpha_DC_vel",
                    makeCommandVoid1(*this, &BaseEstimator::set_alpha_DC_vel,
                                     docCommandVoid1("Set the filter parameter for removing DC from velocity integrated from acceleration",
-                                                    "double")));                                            
+                                                    "double")));
         addCommand("reset_foot_positions",
                    makeCommandVoid0(*this, &BaseEstimator::reset_foot_positions,
                                     docCommandVoid0("Reset the position of the feet.")));
@@ -307,11 +307,11 @@ namespace dynamicgraph
           m_v_gyr.setZero(m_robot_util->m_nbJoints+6);
           m_sole_M_ftSens = SE3(Matrix3::Identity(),
                                 -Eigen::Map<const Vector3>(&m_robot_util->m_foot_util.m_Right_Foot_Force_Sensor_XYZ(0)));
-        
+
           m_last_vel.setZero();
           m_last_DCvel.setZero();
           m_last_DCacc.setZero(); //this is to replace by acceleration at 1st iteration
-          
+
           m_alpha_DC_acc = 0.9995;
           m_alpha_DC_vel = 0.9995;
           m_alpha_w_filter = 1.0;
@@ -353,7 +353,7 @@ namespace dynamicgraph
           return SEND_MSG("alpha should be in [0..1]", MSG_TYPE_ERROR);
         m_alpha_DC_acc = a;
       }
-      
+
       void BaseEstimator::set_alpha_DC_vel(const double& a)
       {
           if(a<0.0 || a>1.0)
@@ -526,7 +526,7 @@ namespace dynamicgraph
         //save this poses to use it if no ref is provided
         m_oMlfs_default_ref = m_oMlfs;
         m_oMrfs_default_ref = m_oMrfs;
-        
+
         sendMsg("Reference pos of left foot:\n"+toString(m_oMlfs), MSG_TYPE_INFO);
         sendMsg("Reference pos of right foot:\n"+toString(m_oMrfs), MSG_TYPE_INFO);
 
@@ -600,7 +600,7 @@ namespace dynamicgraph
         }
         if(s.size()!=m_robot_util->m_nbJoints+6)
           s.resize(m_robot_util->m_nbJoints+6);
-        
+
         const Eigen::VectorXd & qj          = m_joint_positionsSIN(iter);     //n+6
         const Eigen::Vector4d & quatIMU_vec = m_imu_quaternionSIN(iter);
         const Vector6 & ftrf                = m_forceRLEGSIN(iter);
@@ -653,15 +653,15 @@ namespace dynamicgraph
           kinematics_estimation(ftlf, m_K_lf, m_oMlfs, m_left_foot_id,  m_oMff_lf, oMlfa, lfsMff);
 
           // get rpy
-          const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);  // transform between freeflyer and body attached to IMU sensor 
+          const SE3 ffMchest(m_data->oMf[m_IMU_body_id]);  // transform between freeflyer and body attached to IMU sensor
           const SE3 chestMff(ffMchest.inverse());          // transform between body attached to IMU sensor and freeflyer
-          
+
           Vector3 rpy_chest, rpy_chest_lf, rpy_chest_rf, rpy_chest_imu; // orientation of the body which imu is attached to. (fusion, from left kine, from right kine, from imu)
 
           matrixToRpy((m_oMff_lf*ffMchest).rotation(), rpy_chest_lf);
           matrixToRpy((m_oMff_rf*ffMchest).rotation(), rpy_chest_rf);
           Eigen::Quaternion<double> quatIMU(quatIMU_vec[0], quatIMU_vec[1], quatIMU_vec[2], quatIMU_vec[3]);
-          matrixToRpy(quatIMU.toRotationMatrix(), rpy_chest_imu); 
+          matrixToRpy(quatIMU.toRotationMatrix(), rpy_chest_imu);
 
           // average (we do not take into account the IMU yaw)
           double wSum = wL + wR + m_w_imu;
@@ -684,10 +684,10 @@ namespace dynamicgraph
           base_se3_to_sot(m_q_pin.head<3>(), m_oRff, m_q_sot.head<6>());
 
           s = m_q_sot;
-          
+
           // store estimation of the base pose in SE3 format
           const SE3 oMff_est(m_oRff, m_q_pin.head<3>());
-          
+
           // feedback on feet poses
           if(m_K_fb_feet_posesSIN.isPlugged())
           {
@@ -708,7 +708,7 @@ namespace dynamicgraph
               SE3 rightDrift_delta;
               se3Interp(leftDrift ,SE3::Identity(),K_fb*wR,leftDrift_delta);
               se3Interp(rightDrift,SE3::Identity(),K_fb*wL,rightDrift_delta);
-              // if a feet is not stable on the ground (aka flying), fully update his position 
+              // if a feet is not stable on the ground (aka flying), fully update his position
               if (m_right_foot_is_stable == false)
                 rightDrift_delta = rightDrift;
               if (m_left_foot_is_stable == false)
@@ -944,7 +944,7 @@ namespace dynamicgraph
         s = m_w_rf_filtered;
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(w_lf_filtered, double)
       {
         if(!m_initSucceeded)
@@ -1023,14 +1023,14 @@ namespace dynamicgraph
           Vector6 v_kin_r = -ffMrf.act(v_rf_local).toVector(); //this is the velocity of the base in the frame of the base.
           v_kin_r.head<3>()     = m_oRff * v_kin_r.head<3>();
           v_kin_r.segment<3>(3) = m_oRff * v_kin_r.segment<3>(3);
-          
+
           m_v_kin.head<6>() = (wR*v_kin_r + wL*v_kin_l)/(wL+wR);
-          
+
           /* Compute velocity induced by the flexibility */
           Vector6 v_flex_l;
           Vector6 v_flex_r;
           v_flex_l << -dftlf[0]/m_K_lf(0), -dftlf[1]/m_K_lf(1), -dftlf[2]/m_K_lf(2),
-                      -dftlf[3]/m_K_lf(3), -dftlf[4]/m_K_lf(4), -dftlf[5]/m_K_lf(5); 
+                      -dftlf[3]/m_K_lf(3), -dftlf[4]/m_K_lf(4), -dftlf[5]/m_K_lf(5);
           v_flex_r << -dftrf[0]/m_K_rf(0), -dftrf[1]/m_K_rf(1), -dftrf[2]/m_K_rf(2),
                       -dftrf[3]/m_K_rf(3), -dftrf[4]/m_K_rf(4), -dftrf[5]/m_K_rf(5);
           const Eigen::Matrix<double, 6, 6> lfAff = ffMlf.inverse().toActionMatrix();
@@ -1040,7 +1040,7 @@ namespace dynamicgraph
                rfAff;
           Eigen::Matrix<double, 12, 1> b;
           b << v_flex_l,
-               v_flex_r;         
+               v_flex_r;
           //~ m_v_flex.head<6>() = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
           m_v_flex.head<6>() = (A.transpose() * A).ldlt().solve(A.transpose() * b);
           m_v_flex.head<3>() = m_oRff * m_v_flex.head<3>();
@@ -1068,20 +1068,20 @@ namespace dynamicgraph
 
 
           /* Get an estimate of linear velocities from filtered accelerometer integration */
-          
+
           /* rotate acceleration to express it in the world frame */
           //~ pointRotationByQuaternion(acc_imu,quatIMU_vec,acc_world); //this is false because yaw from imuquat is drifting
           const Vector3 acc_world = m_oRchest * acc_imu;
 
-          /* now, the acceleration is expressed in the world frame, 
-           * so it can be written as the sum of the proper acceleration and the 
+          /* now, the acceleration is expressed in the world frame,
+           * so it can be written as the sum of the proper acceleration and the
            * constant gravity vector. We could remove this assuming a [0,0,9.81]
-           * but we prefer to filter this signal with low frequency high pass 
-           * filter since it is robust to gravity norm error, and we know that 
+           * but we prefer to filter this signal with low frequency high pass
+           * filter since it is robust to gravity norm error, and we know that
            * globaly the robot can not accelerate continuously. */
-          
+
           ///* Extract DC component by low pass filter and remove it*/
-          if (m_isFirstIterFlag) 
+          if (m_isFirstIterFlag)
           {
             m_last_DCacc = acc_world; // Copy the first acceleration data
             m_isFirstIterFlag = false;
@@ -1095,7 +1095,7 @@ namespace dynamicgraph
           /* Then this acceleration is integrated.  */
           const Vector3 vel = m_last_vel + ACacc * m_dt;
           m_last_vel = vel;
-          /* To stabilise the integrated velocity, we add the 
+          /* To stabilise the integrated velocity, we add the
            * asumption that globaly, velocity is zero. So we remove DC again */
           const Vector3 DCvel = vel * (1-m_alpha_DC_vel) + m_last_DCvel * (m_alpha_DC_vel);
           m_last_DCvel = DCvel;
@@ -1104,7 +1104,7 @@ namespace dynamicgraph
 
           /* Express back velocity in the imu frame to get a full 6d velocity with the gyro*/
           const Vector3 imuVimu = m_oRchest.transpose() * ACvel;
-          /* Here we could remove dc from gyrometer to remove bias*/  ///TODO 
+          /* Here we could remove dc from gyrometer to remove bias*/  ///TODO
           const Motion imuWimu(imuVimu,gyr_imu);
           //const Frame & f_imu = m_model.frames[m_IMU_body_id];
           const Motion ffWchest = m_data->v[f_imu.parent];
@@ -1115,7 +1115,7 @@ namespace dynamicgraph
           m_v_imu.head<6>() = v.toVector();
           m_v_imu.head<3>() = m_oRff * m_v_imu.head<3>();
 
-          
+
           //~ m_v_sot.head<6>() = m_v_kin.head<6>();
           //~ m_v_sot.head<6>() = m_v_flex.head<6>() + m_v_kin.head<6>();
           m_v_sot.head<6>() = m_v_gyr.head<6>() + m_v_kin.head<6>();
@@ -1133,7 +1133,7 @@ namespace dynamicgraph
         getProfiler().stop(PROFILE_BASE_VELOCITY_ESTIMATION);
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(v_kin, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1145,7 +1145,7 @@ namespace dynamicgraph
         s = m_v_kin;
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(v_flex, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1157,7 +1157,7 @@ namespace dynamicgraph
         s = m_v_flex+m_v_kin;
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(v_imu, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1181,7 +1181,7 @@ namespace dynamicgraph
         s = m_v_gyr;
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(v_ac, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1193,7 +1193,7 @@ namespace dynamicgraph
         s = m_v_ac;
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(a_ac, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1204,7 +1204,7 @@ namespace dynamicgraph
         m_vSOUT(iter);
         s = m_a_ac;
         return s;
-      }      
+      }
 
       /* --- COMMANDS ---------------------------------------------------------- */
 
@@ -1221,23 +1221,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-      void BaseEstimator::commandLine(const std::string& cmdLine,
-                                      std::istringstream& cmdArgs,
-                                      std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "BaseEstimator:\n"
-             << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

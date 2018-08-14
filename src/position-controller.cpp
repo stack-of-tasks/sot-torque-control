@@ -108,14 +108,14 @@ namespace dynamicgraph
 	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
 	  m_robot_util = getRobotUtil(localName);
-	else 
+	else
 	  {
 	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
 	    return;
 	  }
 
         m_dt = dt;
-   
+
 	m_pwmDes.setZero(m_robot_util->m_nbJoints);
         m_q.setZero(m_robot_util->m_nbJoints+6);
         m_dq.setZero(m_robot_util->m_nbJoints);
@@ -205,23 +205,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-      void PositionController::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "sotPositionController:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

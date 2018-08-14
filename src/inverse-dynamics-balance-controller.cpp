@@ -51,8 +51,8 @@ namespace dynamicgraph
 
       typedef SolverHQuadProgRT<60,36,34> SolverHQuadProgRT60x36x34;
       typedef SolverHQuadProgRT<48,30,17> SolverHQuadProgRT48x30x17;
-      
-      
+
+
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
       //Size to be aligned                "-------------------------------------------------------"
@@ -299,7 +299,7 @@ namespace dynamicgraph
                                     docCommandVoid1("Remove the contact at the left foot.",
                                                     "Transition time in seconds (double)")));
 
-	
+
       }
 
       void InverseDynamicsBalanceController::updateComOffset()
@@ -378,7 +378,7 @@ namespace dynamicgraph
         }
       }
 
-      void InverseDynamicsBalanceController::init(const double& dt, 
+      void InverseDynamicsBalanceController::init(const double& dt,
 						  const std::string& robotRef)
       {
         if(dt<=0.0)
@@ -393,7 +393,7 @@ namespace dynamicgraph
           SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
           return;
         }
-	
+
         const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
         const Eigen::Vector3d& contactNormal = m_contact_normalSIN(0);
 //        const Eigen::VectorXd w_forceReg = m_weight_contact_forcesSIN(0);
@@ -427,7 +427,7 @@ namespace dynamicgraph
         {
           vector<string> package_dirs;
           m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
-					     package_dirs, 
+					     package_dirs,
 					     se3::JointModelFreeFlyer());
 
           assert(m_robot->nv()>=6);
@@ -450,7 +450,7 @@ namespace dynamicgraph
 
           m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
-          m_contactRF = new Contact6d("contact_rfoot", *m_robot, 
+          m_contactRF = new Contact6d("contact_rfoot", *m_robot,
 				      m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
                                       contactPoints, contactNormal,
                                       mu, fMin, fMaxRF, w_forces);
@@ -458,7 +458,7 @@ namespace dynamicgraph
           m_contactRF->Kd(kd_contact);
           m_invDyn->addRigidContact(*m_contactRF);
 
-          m_contactLF = new Contact6d("contact_lfoot", *m_robot, 
+          m_contactLF = new Contact6d("contact_lfoot", *m_robot,
 				      m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                       contactPoints, contactNormal,
                                       mu, fMin, fMaxLF, w_forces);
@@ -1128,8 +1128,8 @@ namespace dynamicgraph
         s = m_zmp.head<2>();
         return s;
       }
-      
-      
+
+
       DEFINE_SIGNAL_OUT_FUNCTION(com,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1157,8 +1157,8 @@ namespace dynamicgraph
         s = com_vel;
         return s;
       }
-      
-      
+
+
       DEFINE_SIGNAL_OUT_FUNCTION(base_orientation,dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1171,7 +1171,7 @@ namespace dynamicgraph
          */
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1186,7 +1186,7 @@ namespace dynamicgraph
 	tsid::math::SE3ToVector(oMi, s);
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1306,23 +1306,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-      void InverseDynamicsBalanceController::commandLine(const std::string& cmdLine,
-                                                         std::istringstream& cmdArgs,
-                                                         std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "InverseDynamicsBalanceController:\n"
-             << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

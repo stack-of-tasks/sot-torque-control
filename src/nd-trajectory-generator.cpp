@@ -63,7 +63,7 @@ namespace dynamicgraph
       {
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
-        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN 
+        Entity::signalRegistration( m_xSOUT << m_dxSOUT << m_ddxSOUT << m_initial_valueSIN
                                     <<m_triggerSIN);
 
         /* Commands. */
@@ -72,7 +72,7 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
                                                     "size of output vector signal (int)")));
-        
+
         addCommand("getValue",
                    makeCommandVoid1(*this, &NdTrajectoryGenerator::getValue,
                                     docCommandVoid1("Get the current value of the specified index.",
@@ -433,7 +433,7 @@ namespace dynamicgraph
           return;
         }
         m_splineReady = true;
-        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);        
+        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
       }
 
       void NdTrajectoryGenerator::startSpline()
@@ -636,24 +636,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-
-      void NdTrajectoryGenerator::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "sotNdTrajectoryGenerator:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

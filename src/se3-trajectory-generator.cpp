@@ -72,7 +72,7 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &SE3TrajectoryGenerator::init,
                                     docCommandVoid1("Initialize the entity.",
                                                     "Time period in seconds (double)")));
-        
+
         addCommand("getValue",
                    makeCommandVoid1(*this, &SE3TrajectoryGenerator::getValue,
                                     docCommandVoid1("Get the current value of the specified index.",
@@ -444,11 +444,11 @@ namespace dynamicgraph
             m_minJerkTrajGen[i]->set_trajectory_time(timeToInitConf);
             m_status[i] = TG_MIN_JERK;
             m_currentTrajGen[i] = m_minJerkTrajGen[i];
-          }          
+          }
           return;
         }
 
-        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);        
+        SEND_MSG("Spline Ready. Set trigger to true to start playing", MSG_TYPE_INFO);
       }
 
       void SE3TrajectoryGenerator::startSpline()
@@ -599,7 +599,7 @@ namespace dynamicgraph
         m_noTrajGen[i]->set_initial_point(m_currentTrajGen[i]->getPos());
         m_status[i] = TG_STOP;
         m_currentTrajGen[i] = m_noTrajGen[i];
-        
+
         m_splineReady=false;
         m_t=0.0;
       }
@@ -617,24 +617,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-
-      void SE3TrajectoryGenerator::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "sotSE3TrajectoryGenerator:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

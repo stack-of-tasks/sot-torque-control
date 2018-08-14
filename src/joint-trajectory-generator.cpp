@@ -89,7 +89,7 @@ namespace dynamicgraph
                                     docCommandVoid2("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "robotRef (string)")));
-        
+
         addCommand("getJoint",
                    makeCommandVoid1(*this, &JointTrajectoryGenerator::getJoint,
                                     docCommandVoid1("Get the current angle of the specified joint.",
@@ -194,7 +194,7 @@ namespace dynamicgraph
 	std::string localName(robotRef);
 	if (isNameInRobotUtil(localName))
 	  m_robot_util = getRobotUtil(localName);
-	else 
+	else
 	  {
 	    SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
 	    return;
@@ -259,7 +259,7 @@ namespace dynamicgraph
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
             if(base6d_encoders.size()!=m_robot_util->m_nbJoints+6)
             {
-              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder " + 
+              SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder " +
 				    toString(base6d_encoders.size()) + " " +
 				    toString(m_robot_util->m_nbJoints+6)
 				    );
@@ -363,7 +363,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fRightFoot, dynamicgraph::Vector)
       {
 	//        SEND_MSG("Compute force right foot iter "+toString(iter), MSG_TYPE_DEBUG);
-        generateReferenceForceSignal("fRightFoot", 
+        generateReferenceForceSignal("fRightFoot",
 				     m_robot_util->m_force_util.get_force_id_right_foot(),
 				     s, iter);
         return s;
@@ -371,7 +371,7 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, dynamicgraph::Vector)
       {
-        generateReferenceForceSignal("fLeftFoot", 
+        generateReferenceForceSignal("fLeftFoot",
 				     m_robot_util->m_force_util.get_force_id_left_foot(),
 				     s, iter);
         return s;
@@ -379,18 +379,18 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector)
       {
-        generateReferenceForceSignal("fRightHand", 
+        generateReferenceForceSignal("fRightHand",
 				     m_robot_util->
-				     m_force_util.get_force_id_right_hand(), 
+				     m_force_util.get_force_id_right_hand(),
 				     s, iter);
         return s;
       }
 
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, dynamicgraph::Vector)
       {
-        generateReferenceForceSignal("fLeftHand", 
+        generateReferenceForceSignal("fLeftHand",
 				     m_robot_util->
-				     m_force_util.get_force_id_left_hand(), 
+				     m_force_util.get_force_id_left_hand(),
 				     s, iter);
         return s;
       }
@@ -792,8 +792,8 @@ namespace dynamicgraph
         {
           SEND_MSG("The specified joint name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(map<string, Index>::const_iterator it = 
-		m_robot_util->m_name_to_id.begin(); 
+          for(map<string, Index>::const_iterator it =
+		m_robot_util->m_name_to_id.begin();
 	      it != m_robot_util->m_name_to_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
@@ -812,8 +812,8 @@ namespace dynamicgraph
         {
           SEND_MSG("The specified force name does not exist", MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(map<string, Index>::const_iterator 
-		it = m_robot_util->m_force_util.m_name_to_force_id.begin(); 
+          for(map<string, Index>::const_iterator
+		it = m_robot_util->m_force_util.m_name_to_force_id.begin();
 	      it != m_robot_util->m_force_util.m_name_to_force_id.end(); it++)
             ss<<it->first<<", ";
           SEND_MSG("Possible force names are: "+ss.str(), MSG_TYPE_INFO);
@@ -878,24 +878,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-
-      void JointTrajectoryGenerator::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "sotJointTrajectoryGenerator:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

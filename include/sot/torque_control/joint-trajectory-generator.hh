@@ -58,8 +58,8 @@ namespace dynamicgraph {
       {
         typedef JointTrajectoryGenerator EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         /* --- CONSTRUCTOR ---- */
         JointTrajectoryGenerator( const std::string & name );
 
@@ -154,18 +154,15 @@ namespace dynamicgraph {
          * @param forceName A string identifying the force to stop.
          * */
         void stopForce(const std::string& forceName);
-        
+
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
           getLogger().sendMsg("[JointTrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         enum JTG_Status
         {
@@ -212,7 +209,7 @@ namespace dynamicgraph {
         bool isForceInRange(unsigned int id, int axis, double f);
 
       }; // class JointTrajectoryGenerator
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph

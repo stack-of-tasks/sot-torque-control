@@ -58,8 +58,8 @@ namespace dynamicgraph {
       {
         typedef SE3TrajectoryGenerator EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         /* --- CONSTRUCTOR ---- */
         SE3TrajectoryGenerator( const std::string & name );
 
@@ -135,15 +135,12 @@ namespace dynamicgraph {
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
           getLogger().sendMsg("[SE3TrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         enum TG_Status
         {
@@ -181,7 +178,7 @@ namespace dynamicgraph {
         TextFileTrajectoryGenerator*                 m_textFileTrajGen;
 
       }; // class SE3TrajectoryGenerator
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph

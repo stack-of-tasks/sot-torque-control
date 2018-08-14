@@ -63,8 +63,8 @@ namespace dynamicgraph {
       {
         typedef FreeFlyerLocator EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /* --- CONSTRUCTOR ---- */
@@ -83,16 +83,13 @@ namespace dynamicgraph {
 	/// base6d_encoders with base6d in RPY
         DECLARE_SIGNAL_OUT(base6dFromFoot_encoders,   dynamicgraph::Vector);
 	/// n+6 robot velocities
-        DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);  
+        DECLARE_SIGNAL_OUT(v,                         dynamicgraph::Vector);
 
         /* --- COMMANDS --- */
 	void displayRobotUtil();
 
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
@@ -100,10 +97,10 @@ namespace dynamicgraph {
         }
 
       protected:
-        
+
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         se3::Model        *m_model;            /// Pinocchio robot model
-        se3::Data         *m_data;            /// Pinocchio robot data 
+        se3::Data         *m_data;            /// Pinocchio robot data
         se3::SE3          m_Mff;               /// SE3 Transform from center of feet to base
         se3::SE3          m_w_M_lf;
         se3::SE3          m_w_M_rf;
@@ -117,7 +114,7 @@ namespace dynamicgraph {
 	RobotUtil * m_robot_util;
 
       }; // class FreeFlyerLocator
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph

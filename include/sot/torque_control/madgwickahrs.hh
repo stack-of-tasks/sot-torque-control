@@ -88,9 +88,7 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
+
         /* --- METHODS --- */
         float invSqrt(float x);
         void madgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az) ;

@@ -213,24 +213,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-
-      void TracePlayer::commandLine(const std::string& cmdLine,
-                                    std::istringstream& cmdArgs,
-                                    std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "TracePlayer:\n"
-             << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

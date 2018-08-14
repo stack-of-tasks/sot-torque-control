@@ -76,9 +76,7 @@ namespace dynamicgraph {
       protected:
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
+
         /* --- METHODS --- */
         void update_offset_impl(int iter);
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)

@@ -58,7 +58,7 @@ namespace dynamicgraph {
       /* --- CLASS ----------------------------------------------------------- */
       /* --------------------------------------------------------------------- */
 
-        
+
       /** Compute s12 as an intermediate transform between s1 and s2 SE3 transforms**/
       void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12);
 
@@ -70,13 +70,13 @@ namespace dynamicgraph {
 
       /**  Convert from Transformation Matrix to Roll, Pitch, Yaw */
       void matrixToRpy(const Eigen::Matrix3d & M, Eigen::Vector3d & rpy);
-      
+
       /** Multiply to quaternions stored in (w,x,y,z) format */
       void quanternionMult(const Eigen::Vector4d & q1, const Eigen::Vector4d & q2,  Eigen::Vector4d & q12);
-      
+
       /** Rotate a point or a vector by a quaternion stored in (w,x,y,z) format */
       void pointRotationByQuaternion(const Eigen::Vector3d & point,const Eigen::Vector4d & quat, Eigen::Vector3d & rotatedPoint);
-      
+
       class SOTBASEESTIMATOR_EXPORT BaseEstimator
           :public::dynamicgraph::Entity
       {
@@ -91,7 +91,7 @@ namespace dynamicgraph {
         typedef boost::math::normal normal;
 
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
+
       public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -99,7 +99,7 @@ namespace dynamicgraph {
         BaseEstimator( const std::string & name );
 
         void init(const double & dt, const std::string& urdfFile);
-        
+
         void set_fz_stable_windows_size(const int & ws);
         void set_alpha_w_filter(const double & a);
         void set_alpha_DC_acc(const double & a);
@@ -168,15 +168,12 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
           getLogger().sendMsg("["+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_reset_foot_pos;   /// true after the command resetFootPositions is called
@@ -214,12 +211,12 @@ namespace dynamicgraph {
 
         double            m_alpha_DC_acc;     /// alpha parameter for DC blocker filter on acceleration data
         double            m_alpha_DC_vel;     /// alpha parameter for DC blocker filter on velocity data
-        
+
         double            m_alpha_w_filter;   /// filter parameter to filter weights (1st order low pass filter)
-        
+
         double m_w_lf_filtered;               /// filtered weight of the estimation coming from the left foot
         double m_w_rf_filtered;               /// filtered weight of the estimation coming from the right foot
-        
+
         se3::Model        m_model;            /// Pinocchio robot model
         se3::Data         *m_data;            /// Pinocchio robot data
         se3::SE3          m_oMff_lf;          /// world-to-base transformation obtained through left foot
@@ -228,10 +225,10 @@ namespace dynamicgraph {
         SE3               m_oMrfs;            /// transformation from world to right foot sole
         Vector7           m_oMlfs_xyzquat;
         Vector7           m_oMrfs_xyzquat;
-        SE3               m_oMlfs_default_ref;/// Default reference for left foot pose to use if no ref is pluged 
-        SE3               m_oMrfs_default_ref;/// Default reference for right foot pose to use if no ref is pluged 
+        SE3               m_oMlfs_default_ref;/// Default reference for left foot pose to use if no ref is pluged
+        SE3               m_oMrfs_default_ref;/// Default reference for right foot pose to use if no ref is pluged
         normal            m_normal;           /// Normal distribution
-        
+
         bool              m_isFirstIterFlag;  /// flag to detect first iteration and initialise velocity filters
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation
@@ -246,14 +243,14 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
         Matrix3           m_oRchest;          /// chest orientation in the world from angular fusion
         Matrix3           m_oRff;             /// base orientation in the world
-        
+
         /* Filter buffers*/
         Vector3 m_last_vel;
         Vector3 m_last_DCvel;
         Vector3 m_last_DCacc;
 
       }; // class BaseEstimator
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph

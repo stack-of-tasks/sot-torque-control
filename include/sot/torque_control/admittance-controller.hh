@@ -58,8 +58,8 @@ namespace dynamicgraph {
       {
         typedef AdmittanceController EntityClassName;
         DYNAMIC_GRAPH_ENTITY_DECL();
-        
-      public: 
+
+      public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         /* --- CONSTRUCTOR ---- */
@@ -102,15 +102,12 @@ namespace dynamicgraph {
         /* --- COMMANDS --- */
         /* --- ENTITY INHERITANCE --- */
         virtual void display( std::ostream& os ) const;
-        virtual void commandLine(const std::string& cmdLine,
-                                 std::istringstream& cmdArgs,
-                                 std::ostream& os);
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
           getLogger().sendMsg("["+name+"] "+msg, t, file, line);
         }
-        
+
       protected:
         Eigen::VectorXd   m_u;                /// control (i.e. motor currents)
         bool              m_firstIter;
@@ -157,7 +154,7 @@ namespace dynamicgraph {
 //        tsid::math::Vector3 m_zmp_RF;              /// 3d zmp left foot
 //        tsid::math::Vector3 m_zmp;                 /// 3d global zmp
       }; // class AdmittanceController
-      
+
     }    // namespace torque_control
   }      // namespace sot
 }        // namespace dynamicgraph
