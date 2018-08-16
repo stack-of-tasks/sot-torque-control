@@ -430,23 +430,6 @@ namespace dynamicgraph
         catch (ExceptionSignal e) {}
       }
 
-
-      void AdmittanceController::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "sotAdmittanceController:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-
       //**************************************************************************************************
       VectorXd svdSolveWithDamping(const JacobiSVD<MatrixXd>& A, const VectorXd &b, double damping)
       {
@@ -473,7 +456,7 @@ namespace dynamicgraph
 
           return res;
       }
-      
+
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph

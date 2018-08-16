@@ -75,7 +75,7 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &FreeFlyerLocator::init,
                                     docCommandVoid1("Initialize the entity.",
 						    "Robot reference (string)")));
-	
+
         addCommand("displayRobotUtil",
                    makeCommandVoid0(*this, &FreeFlyerLocator::displayRobotUtil,
                                     docCommandVoid0("Display the robot util data set linked with this free flyer locator.")));
@@ -91,16 +91,16 @@ namespace dynamicgraph
 
       void FreeFlyerLocator::init(const std::string& robotRef)
       {
-        try 
+        try
         {
 	  /* Retrieve m_robot_util  informations */
 	  std::string localName(robotRef);
 	  if (isNameInRobotUtil(localName))
-	    {	      
+	    {
 	      m_robot_util = getRobotUtil(localName);
 	      std::cerr << "m_robot_util:" << m_robot_util << std::endl;
 	    }
-	  else 
+	  else
 	    {
 	      SEND_MSG("You should have an entity controller manager initialized before",MSG_TYPE_ERROR);
 	      return;
@@ -121,9 +121,9 @@ namespace dynamicgraph
           m_q_sot.setZero(m_robot_util->m_nbJoints+6);
           m_v_pin.setZero(m_robot_util->m_nbJoints+6);
           m_v_sot.setZero(m_robot_util->m_nbJoints+6);
-        } 
-        catch (const std::exception& e) 
-        { 
+        }
+        catch (const std::exception& e)
+        {
           std::cout << e.what();
           return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
@@ -170,14 +170,14 @@ namespace dynamicgraph
         }
         if(s.size()!=m_robot_util->m_nbJoints+6)
           s.resize(m_robot_util->m_nbJoints+6);
-        
+
         m_kinematics_computationsSINNER(iter);
 
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
           const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
           assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-                    
+
           /* Compute kinematic and return q with freeflyer */
           const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
           const se3::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
@@ -199,7 +199,7 @@ namespace dynamicgraph
 
         return s;
       }
-      
+
       DEFINE_SIGNAL_OUT_FUNCTION(freeflyer_aa,dynamicgraph::Vector)
       {
         m_base6dFromFoot_encodersSOUT(iter);
@@ -212,8 +212,8 @@ namespace dynamicgraph
         //just read the data, convert to axis angle
         if(s.size()!=6)
           s.resize(6);
-        //~ const se3::SE3 & iMo = m_data->oMi[31].inverse(); 
-        const Eigen::AngleAxisd aa(m_Mff.rotation()); 
+        //~ const se3::SE3 & iMo = m_data->oMi[31].inverse();
+        const Eigen::AngleAxisd aa(m_Mff.rotation());
         Eigen::Vector6d freeflyer;
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();
 
@@ -280,23 +280,6 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-
-      void FreeFlyerLocator::commandLine(const std::string& cmdLine,
-                                            std::istringstream& cmdArgs,
-                                            std::ostream& os )
-      {
-        if( cmdLine == "help" )
-        {
-          os << "FreeFlyerLocator:\n"
-              << "\t -." << std::endl;
-          Entity::commandLine(cmdLine, cmdArgs, os);
-        }
-        else
-        {
-          Entity::commandLine(cmdLine,cmdArgs,os);
-        }
-      }
-      
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
