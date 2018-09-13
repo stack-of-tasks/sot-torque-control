@@ -1,4 +1,8 @@
-# Copyright 2014, Andrea Del Prete, LAAS/CNRS
+# Copyright 2014-2018, Andrea Del Prete, LAAS/CNRS
+# Thomas Flayols, LAAS/CNRS
+# Olivier Stasse, LAAS/CNRS
+# Florent Forget, LAAS/CNRS
+# Paul Dandignac, LAAS/CNRS
 #
 # This file is part of sot-torque-control.
 # sot-torque-control is free software: you can redistribute it and/or
@@ -64,6 +68,7 @@ ADD_REQUIRED_DEPENDENCY("tsid")
 ADD_REQUIRED_DEPENDENCY("parametric-curves")
 ADD_REQUIRED_DEPENDENCY("simple_humanoid_description")
 
+ADD_OPTIONAL_DEPENDENCY("ddp-actuator-solver")
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
@@ -196,7 +201,7 @@ IF(TALOS_DATA_FOUND)
     INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
       DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
 
-    ENDFOREACH(py_filename)
+  ENDFOREACH(py_filename)
 ENDIF(TALOS_DATA_FOUND)
 
 IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
@@ -207,8 +212,9 @@ IF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
       )
     INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
          DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
-    ENDFOREACH(py_filename)
+  ENDFOREACH(py_filename)
 ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
+
 
 SETUP_PROJECT_FINALIZE()
 SETUP_PROJECT_CPACK()
