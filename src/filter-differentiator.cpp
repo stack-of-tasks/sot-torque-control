@@ -91,10 +91,11 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void FilterDifferentiator::init(const double &timestep,
-                                      const int& xSize,
-                                      const Eigen::VectorXd& filter_numerator,
-                                      const Eigen::VectorXd& filter_denominator)
+      void FilterDifferentiator::
+      init(const double &timestep,
+	   const int& xSize,
+	   const Eigen::VectorXd& filter_numerator,
+	   const Eigen::VectorXd& filter_denominator)
       {
         m_x_size = xSize;
         m_dt = timestep;
@@ -107,8 +108,9 @@ namespace dynamicgraph
         return;
       }
 
-      void FilterDifferentiator::switch_filter(const Eigen::VectorXd& filter_numerator,
-                                               const Eigen::VectorXd& filter_denominator)
+      void FilterDifferentiator::
+      switch_filter(const Eigen::VectorXd& filter_numerator,
+		    const Eigen::VectorXd& filter_denominator)
       {
         LOG("Filter switched with "<<
             "Numerator "<< filter_numerator<<std::endl<<
