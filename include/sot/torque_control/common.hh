@@ -170,6 +170,13 @@ namespace dynamicgraph {
 	void display(std::ostream & os) const;
       };
 
+      struct HandUtil
+      {
+        std::string m_Left_Hand_Frame_Name;
+        std::string m_Right_Hand_Frame_Name;
+        void display(std::ostream & os) const;
+      };
+
       struct RobotUtil
       {
       public:
@@ -181,6 +188,9 @@ namespace dynamicgraph {
 
 	/// Foot information
 	FootUtil m_foot_util;
+
+        /// Hand information
+        HandUtil m_hand_util;
 
 	/// Map from the urdf index to the SoT index.
 	std::vector<Index> m_urdf_to_sot;

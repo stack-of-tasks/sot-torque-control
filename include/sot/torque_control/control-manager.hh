@@ -131,13 +131,17 @@ namespace dynamicgraph {
 				  const dynamicgraph::Vector &uq);
 	void setForceNameToForceId(const std::string& forceName, 
 				   const double & forceId);
-	
-	/// Commands related to FootUtil
-	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
+
+        /// Commands related to FootUtil
+        void setRightFootSoleXYZ(const dynamicgraph::Vector &);
         void setRightFootForceSensorXYZ(const dynamicgraph::Vector &);
-	void setFootFrameName(const std::string &, const std::string &);
+        void setFootFrameName(const std::string &, const std::string &);
         void setImuJointName(const std::string &);
-	void displayRobotUtil();
+        void displayRobotUtil();
+
+        /// Commands related to HandUtil
+        void setHandFrameName(const std::string &, const std::string &);
+
 	/// Set the mapping between urdf and sot.
 	void setJoints(const dynamicgraph::Vector &);
 
