@@ -228,17 +228,17 @@ namespace dynamicgraph {
 
         enum RightHandState
         {
-          HIGH_RIGHT_HAND = 0,
-          /*HIGH_RIGHT_HAND_TRANSITION = 1,*/
-          LOW_RIGHT_HAND = 1
+          TASK_RIGHT_HAND_ON = 0,
+          /*TASK_RIGHT_HAND_TRANSITION = 1,*/
+          TASK_RIGHT_HAND_OFF = 1
         };
         RightHandState         m_rightHandState;
 
         enum LeftHandState
         {
-          HIGH_LEFT_HAND = 0,
-          /*HIGH_LEFT_HAND_TRANSITION = 1,*/
-          LOW_LEFT_HAND = 1
+          TASK_LEFT_HAND_ON = 0,
+          /*TASK_LEFT_HAND_TRANSITION = 1,*/
+          TASK_LEFT_HAND_OFF = 1
         };
         LeftHandState         m_leftHandState;
         /*double            m_handsTransitionTime;*/  /// end time of the current transition (if any)
