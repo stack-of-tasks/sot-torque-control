@@ -1,3 +1,7 @@
 build
 _build*
 *~
+
+\.travis
+
+cmake
