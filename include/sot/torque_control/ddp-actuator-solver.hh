@@ -67,6 +67,7 @@ namespace dynamicgraph {
 	    DdpActuatorSolver(const std::string &name);
 	  virtual void display(std::ostream &os) const;
 
+	protected:
 	  /** Initialize the DDP.
 	   * @param timestep Control period (in seconds).
 	   * @param T  Size of the preview window (in nb of timestep).

@@ -126,7 +126,15 @@ namespace dynamicgraph
 	m_iterMax = nbItMax;
 	m_stopCrit = stopCriteria;
       }
-      
+
+      void DdpActuatorSolver::
+      display(std::ostream &os) const
+      {
+	os << " T: " << m_T
+	   << " timestep: " << m_dt
+	   << " nbItMax: " << m_iterMax
+	   << " stopCriteria: "<< m_stopCrit << std::endl;
+      }
     } // namespace torque_control
   } // namespace sot
 } // namespace dynamicgraph
