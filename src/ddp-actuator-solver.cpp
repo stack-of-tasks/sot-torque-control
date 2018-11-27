@@ -58,6 +58,10 @@ namespace dynamicgraph
 		   DISABLE_QPBOX)
       {
 	Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS );
+
+      m_zeroState.setZero();
+
+      /* Commands. */
 	addCommand("init",
 		   makeCommandVoid4(*this, &DdpActuatorSolver::param_init,
 				    docCommandVoid4("Initialize the DDP solver.",
@@ -99,19 +103,11 @@ namespace dynamicgraph
 
 	xDes << m_pos_desSIN(0), 0.0, 0.0, 0.0, 0.0;
 
-	m_solver.FirstInitSolver(xinit,xDes,m_T,m_dt,m_iterMax, m_stopCrit);
+	m_solver.initSolver(xinit,xDes);
 
 	/// --- Solve the DDP --- 
-	m_solver.solveTrajectory();
+	s = m_solver.solveTrajectory();
 
-	/// --- Get the command ---
-	DDPSolver<double,5,1>::traj lastTraj;
-	lastTraj = m_solver.getLastSolvedTrajectory();
-
-	DDPSolver<double,5,1>::commandVecTab_t uList;
-	uList = lastTraj.uList;
-
-	s = uList[0];
 	return s;
       }
 
@@ -125,6 +121,8 @@ namespace dynamicgraph
 	m_dt = timestep;
 	m_iterMax = nbItMax;
 	m_stopCrit = stopCriteria;
+      m_solver.FirstInitSolver( m_zeroState, m_zeroState,
+                                m_T ,m_dt,m_iterMax,m_stopCrit);
       }
 
       void DdpActuatorSolver::
