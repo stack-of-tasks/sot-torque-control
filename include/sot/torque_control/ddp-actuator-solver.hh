@@ -52,7 +52,7 @@ namespace dynamicgraph {
 	protected:
 	  double m_dt;
 	  double m_ambiant_temperature;
-	  DDPSolver<double,5,1>::stateVec_t m_xinit,m_xDes,m_x;
+	  DDPSolver<double,5,1>::stateVec_t m_xinit,m_xDes,m_x,m_zeroState;
 	  DDPSolver<double,5,1>::commandVec_t m_u;
 	  DCTemp m_model;
 	  CostTemp m_cost;
