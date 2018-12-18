@@ -20,6 +20,33 @@
 #include <sot/torque_control/ddp-actuator-solver.hh>
 #include <Eigen/Dense>
 
+#if DEBUG
+#define ODEBUG(x) std::cout << x << std::endl
+#else
+#define ODEBUG(x)
+#endif
+#define ODEBUG3(x) std::cout << x << std::endl
+
+#define DBGFILE "/tmp/debug-ddp_actuator_solver.dat"
+
+#define RESETDEBUG5() { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::out);		\
+    DebugFile.close();}
+#define ODEBUG5FULL(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app);		\
+    DebugFile << __FILE__ << ":"			\
+              << __FUNCTION__ << "(#"			\
+              << __LINE__ << "):" << x << std::endl;	\
+    DebugFile.close();}
+#define ODEBUG5(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app); \
+    DebugFile << x << std::endl;		\
+    DebugFile.close();}
+
+#define RESETDEBUG4()
+#define ODEBUG4FULL(x)
+#define ODEBUG4(x)
+
 namespace dynamicgraph
 {
   namespace sot
@@ -57,6 +84,7 @@ namespace dynamicgraph
 		   DISABLE_FULLDDP,
 		   DISABLE_QPBOX)
       {
+        RESETDEBUG5();
 	Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS );
 	addCommand("init",
 		   makeCommandVoid4(*this, &DdpActuatorSolver::param_init,
@@ -74,7 +102,7 @@ namespace dynamicgraph
 	/// ---- Get the information -----
 	/// Desired position
 	const dynamicgraph::Vector &
-	  pos_des = m_pos_desSIN(iter);
+          pos_des = m_pos_desSIN(iter);
 	/// Measured position 
 	const dynamicgraph::Vector &
 	  pos_joint_measure = m_pos_joint_measureSIN(iter);
@@ -86,8 +114,8 @@ namespace dynamicgraph
 	  temp_measure = m_temp_measureSIN(iter);
 	/// Measured torque
 	const dynamicgraph::Vector &
-	  tau_measure = m_tau_measureSIN(iter);
-	
+          tau_measure = m_tau_measureSIN(iter);
+
 	DDPSolver<double,5,1>::stateVec_t xinit,xDes;
 
 	/// --- Initialize solver ---
@@ -101,18 +129,24 @@ namespace dynamicgraph
 
 	m_solver.FirstInitSolver(xinit,xDes,m_T,m_dt,m_iterMax, m_stopCrit);
 
-	/// --- Solve the DDP --- 
+        ODEBUG5("FirstInitSolver")
+	/// --- Solve the DDP ---
 	m_solver.solveTrajectory();
+        ODEBUG5("Trajectory solved")
 
 	/// --- Get the command ---
 	DDPSolver<double,5,1>::traj lastTraj;
 	lastTraj = m_solver.getLastSolvedTrajectory();
+        ODEBUG5("getLastSolvedTrajectory")
 
 	DDPSolver<double,5,1>::commandVecTab_t uList;
 	uList = lastTraj.uList;
+        ODEBUG5("uList")
 
-	s = uList[0];
-	return s;
+
+        s = uList[0];
+        ODEBUG5(s)
+        return s;
       }
 
       void DdpActuatorSolver::
