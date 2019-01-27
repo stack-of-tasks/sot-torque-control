@@ -60,7 +60,7 @@ namespace dynamicgraph {
 
 
       /** Compute s12 as an intermediate transform between s1 and s2 SE3 transforms**/
-      void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12);
+      void se3Interp(const pinocchio::SE3 & s1, const pinocchio::SE3 & s2, const double alpha, pinocchio::SE3 & s12);
 
       /** Convert from Roll, Pitch, Yaw to transformation Matrix. */
       void rpyToMatrix(double r, double p, double y, Eigen::Matrix3d & R);
@@ -81,7 +81,7 @@ namespace dynamicgraph {
           :public::dynamicgraph::Entity
       {
         typedef BaseEstimator EntityClassName;
-        typedef se3::SE3 SE3;
+        typedef pinocchio::SE3 SE3;
         typedef Eigen::Vector2d Vector2;
         typedef Eigen::Vector3d Vector3;
         typedef Eigen::Vector4d Vector4;
@@ -217,10 +217,10 @@ namespace dynamicgraph {
         double m_w_lf_filtered;               /// filtered weight of the estimation coming from the left foot
         double m_w_rf_filtered;               /// filtered weight of the estimation coming from the right foot
 
-        se3::Model        m_model;            /// Pinocchio robot model
-        se3::Data         *m_data;            /// Pinocchio robot data
-        se3::SE3          m_oMff_lf;          /// world-to-base transformation obtained through left foot
-        se3::SE3          m_oMff_rf;          /// world-to-base transformation obtained through right foot
+        pinocchio::Model  m_model;            /// Pinocchio robot model
+        pinocchio::Data   *m_data;            /// Pinocchio robot data
+        pinocchio::SE3    m_oMff_lf;          /// world-to-base transformation obtained through left foot
+        pinocchio::SE3    m_oMff_rf;          /// world-to-base transformation obtained through right foot
         SE3               m_oMlfs;            /// transformation from world to left foot sole
         SE3               m_oMrfs;            /// transformation from world to right foot sole
         Vector7           m_oMlfs_xyzquat;
@@ -233,9 +233,9 @@ namespace dynamicgraph {
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation
 
-	se3::FrameIndex      m_right_foot_id;
-	se3::FrameIndex     m_left_foot_id;
-	se3::FrameIndex      m_IMU_body_id;
+	      pinocchio::FrameIndex  m_right_foot_id;
+        pinocchio::FrameIndex  m_left_foot_id;
+        pinocchio::FrameIndex  m_IMU_body_id;
 
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention
         Eigen::VectorXd   m_q_sot;            /// robot configuration according to SoT convention

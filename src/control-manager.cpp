@@ -190,7 +190,7 @@ namespace dynamicgraph
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
         vector<string> package_dirs;
-        m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+        m_robot = new robots::RobotWrapper(urdfFile, package_dirs, pinocchio::JointModelFreeFlyer());
 
         std::string localName(robotRef);
         if (!isNameInRobotUtil(localName))
@@ -659,12 +659,12 @@ namespace dynamicgraph
       bool ControlManager::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-	se3::Model::JointIndex jid = m_robot_util->get_id_from_name(name);
+	pinocchio::Model::JointIndex jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist: "+name, MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(se3::Model::JointIndex it=0; it< m_robot_util->m_nbJoints;it++)
+          for(pinocchio::Model::JointIndex it=0; it< m_robot_util->m_nbJoints;it++)
             ss<< m_robot_util->get_name_from_id(it) <<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;

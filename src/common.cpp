@@ -15,6 +15,7 @@
  */
 #include <iostream>
 
+#include <iostream>
 #include <sot/torque_control/common.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>

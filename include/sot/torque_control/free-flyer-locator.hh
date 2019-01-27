@@ -99,11 +99,11 @@ namespace dynamicgraph {
       protected:
 
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
-        se3::Model        *m_model;            /// Pinocchio robot model
-        se3::Data         *m_data;            /// Pinocchio robot data
-        se3::SE3          m_Mff;               /// SE3 Transform from center of feet to base
-        se3::SE3          m_w_M_lf;
-        se3::SE3          m_w_M_rf;
+        pinocchio::Model        *m_model;            /// Pinocchio robot model
+        pinocchio::Data         *m_data;            /// Pinocchio robot data
+        pinocchio::SE3          m_Mff;               /// SE3 Transform from center of feet to base
+        pinocchio::SE3          m_w_M_lf;
+        pinocchio::SE3          m_w_M_rf;
         long unsigned int      m_right_foot_id;
         long unsigned int      m_left_foot_id;
         Eigen::VectorXd   m_q_pin;            /// robot configuration according to pinocchio convention

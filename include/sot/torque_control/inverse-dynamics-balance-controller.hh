@@ -250,7 +250,7 @@ namespace dynamicgraph {
         tsid::math::Vector  m_q_urdf;
         tsid::math::Vector  m_v_urdf;
 
-        typedef se3::Data::Matrix6x Matrix6x;
+        typedef pinocchio::Data::Matrix6x Matrix6x;
         Matrix6x m_J_RF;
         Matrix6x m_J_LF;
         Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;

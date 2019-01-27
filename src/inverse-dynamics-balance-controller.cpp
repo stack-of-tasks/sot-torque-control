@@ -428,7 +428,7 @@ namespace dynamicgraph
           vector<string> package_dirs;
           m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
 					     package_dirs,
-					     se3::JointModelFreeFlyer());
+					     pinocchio::JointModelFreeFlyer());
 
           assert(m_robot->nv()>=6);
 	  m_robot_util->m_nbJoints = m_robot->nv()-6;
@@ -726,12 +726,12 @@ namespace dynamicgraph
           m_firstTime = false;
           m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
           //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
-          se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+          pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                             m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           m_contactLF->setReference(H_lf);
           SEND_MSG("Setting left foot reference to "+toString(H_lf), MSG_TYPE_DEBUG);
 
-          se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+          pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                             m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_contactRF->setReference(H_rf);
           SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
@@ -954,7 +954,7 @@ namespace dynamicgraph
         if(s.size()!=2)
           s.resize(2);
         m_f_des_right_footSOUT(iter);
-        se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
         if(fabs(m_f_RF(2)>1.0))
         {
@@ -980,7 +980,7 @@ namespace dynamicgraph
         if(s.size()!=2)
           s.resize(2);
         m_f_des_left_footSOUT(iter);
-        se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
         if(fabs(m_f_LF(2)>1.0))
         {
@@ -1025,7 +1025,7 @@ namespace dynamicgraph
         const Vector6 & f_LF = m_f_ref_left_footSIN(iter);
         const Vector6 & f_RF = m_f_ref_right_footSIN(iter);
 
-        se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
         Vector3 zmp_LF, zmp_RF;
         if(fabs(f_LF(2)>1.0))
@@ -1038,7 +1038,7 @@ namespace dynamicgraph
           zmp_LF.setZero();
         zmp_LF = H_lf.act(zmp_LF);
 
-        se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
         if(fabs(f_RF(2)>1.0))
         {
@@ -1067,7 +1067,7 @@ namespace dynamicgraph
           s.resize(2);
         const Vector6& f = m_wrench_right_footSIN(iter);
         assert(f.size()==6);
-        se3::SE3 H_rf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
         if(fabs(f(2)>1.0))
         {
@@ -1093,7 +1093,7 @@ namespace dynamicgraph
         if(s.size()!=2)
           s.resize(2);
         const Vector6& f = m_wrench_left_footSIN(iter);
-        se3::SE3 H_lf = m_robot->position(m_invDyn->data(),
+        pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                           m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
         if(fabs(f(2)>1.0))
         {
@@ -1180,7 +1180,7 @@ namespace dynamicgraph
           return s;
         }
         m_tau_desSOUT(iter);
-        se3::SE3 oMi;
+        pinocchio::SE3 oMi;
         s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
@@ -1195,7 +1195,7 @@ namespace dynamicgraph
           return s;
         }
         m_tau_desSOUT(iter);
-        se3::SE3 oMi;
+        pinocchio::SE3 oMi;
         s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
@@ -1209,7 +1209,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_vel before initialization!");
           return s;
         }
-        se3::Motion v;
+        pinocchio::Motion v;
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_lf, v);
         s = v.toVector();
         return s;
@@ -1222,7 +1222,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_vel before initialization!");
           return s;
         }
-        se3::Motion v;
+        pinocchio::Motion v;
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_rf, v);
         s = v.toVector();
         return s;

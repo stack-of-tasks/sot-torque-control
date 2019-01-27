@@ -89,15 +89,15 @@ namespace dynamicgraph {
 
       protected:
         RobotUtil *       m_robot_util;
-        se3::Model        m_model;            /// Pinocchio robot model
-        se3::Data         *m_data;            /// Pinocchio robot data 
+        pinocchio::Model  m_model;            /// Pinocchio robot model
+        pinocchio::Data   *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
         double epsilon;
         double gyro_epsilon;
 
         int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
         Eigen::VectorXd jointTorqueOffsets;
-        se3::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
+        pinocchio::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
 
         // stdAlignedVector encSignals;
         // stdAlignedVector accSignals;
