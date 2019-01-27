@@ -142,11 +142,11 @@ namespace dynamicgraph
         bool m_isTorqueControlled;
 
         /// robot geometric/inertial data
-        tsid::robots::RobotWrapper *                       m_robot;
-        se3::Data *                                     m_data;
+        tsid::robots::RobotWrapper *               m_robot;
+        pinocchio::Data *                          m_data;
         tsid::tasks::TaskSE3Equality *             m_contactRF;
         tsid::tasks::TaskSE3Equality *             m_contactLF;
-        unsigned int                                    m_nk; // number of contact forces
+        unsigned int                               m_nk; // number of contact forces
 
         tsid::math::Vector m_q, m_v, m_dv, m_f;
         tsid::math::Vector m_q_sot, m_v_sot, m_dv_sot;

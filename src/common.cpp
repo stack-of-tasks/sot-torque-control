@@ -14,6 +14,7 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <sot/torque_control/common.hh>
 #include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>

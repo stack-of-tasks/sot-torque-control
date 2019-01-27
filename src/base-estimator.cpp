@@ -33,18 +33,18 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
-      using namespace se3;
+      using namespace pinocchio;
       using boost::math::normal; // typedef provides default type is double.
 
-      void se3Interp(const se3::SE3 & s1, const se3::SE3 & s2, const double alpha, se3::SE3 & s12)
+      void se3Interp(const pinocchio::SE3 & s1, const pinocchio::SE3 & s2, const double alpha, pinocchio::SE3 & s12)
       {
         const Eigen::Vector3d t_( s1.translation() * alpha+
                                   s2.translation() * (1-alpha));
 
-        const Eigen::Vector3d w( se3::log3(s1.rotation()) * alpha +
-                                 se3::log3(s2.rotation()) * (1-alpha) );
+        const Eigen::Vector3d w( pinocchio::log3(s1.rotation()) * alpha +
+                                 pinocchio::log3(s2.rotation()) * (1-alpha) );
 
-        s12 =  se3::SE3(se3::exp3(w),t_);
+        s12 =  pinocchio::SE3(pinocchio::exp3(w),t_);
       }
       void rpyToMatrix(double roll, double pitch, double yaw, Eigen::Matrix3d & R)
       {
@@ -286,8 +286,8 @@ namespace dynamicgraph
             return;
           }
 
-          se3::urdf::buildModel(m_robot_util->m_urdf_filename,
-                                se3::JointModelFreeFlyer(), m_model);
+          pinocchio::urdf::buildModel(m_robot_util->m_urdf_filename,
+                                pinocchio::JointModelFreeFlyer(), m_model);
 
           assert(m_model.existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           assert(m_model.existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
@@ -328,7 +328,7 @@ namespace dynamicgraph
           SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
           return;
         }
-        m_data = new se3::Data(m_model);
+        m_data = new pinocchio::Data(m_model);
         m_initSucceeded = true;
       }
 
@@ -452,7 +452,7 @@ namespace dynamicgraph
 
       void BaseEstimator::compute_zmp(const Vector6 & w, Vector2 & zmp)
       {
-        se3::Force f(w);
+        pinocchio::Force f(w);
         f = m_sole_M_ftSens.act(f);
         if(f.linear()[2]==0.0)
           return;
@@ -501,8 +501,8 @@ namespace dynamicgraph
         rfMff = groundMfoot * rfMff;
 
         // set the world frame in between the feet
-        const Vector3 w( 0.5*(se3::log3(lfMff.rotation())+se3::log3(rfMff.rotation())) );
-        SE3 oMff = SE3(se3::exp3(w), 0.5*(lfMff.translation()+rfMff.translation()));
+        const Vector3 w( 0.5*(pinocchio::log3(lfMff.rotation())+pinocchio::log3(rfMff.rotation())) );
+        SE3 oMff = SE3(pinocchio::exp3(w), 0.5*(lfMff.translation()+rfMff.translation()));
         // add a constant offset to make the world frame match the one in OpenHRP
         oMff.translation()(0) += 9.562e-03;
 
@@ -583,8 +583,8 @@ namespace dynamicgraph
         m_q_pin.head<6>().setZero();
         m_q_pin(6) = 1.0;
         m_v_pin.head<6>().setZero();
-        se3::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
-        se3::framesForwardKinematics(m_model, *m_data);
+        pinocchio::forwardKinematics(m_model, *m_data, m_q_pin, m_v_pin);
+        pinocchio::framesForwardKinematics(m_model, *m_data);
 
         getProfiler().stop(PROFILE_BASE_KINEMATICS_COMPUTATION);
 

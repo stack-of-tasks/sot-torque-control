@@ -33,7 +33,7 @@ namespace dynamicgraph
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace std;
-      using namespace se3;
+      using namespace pinocchio;
 
       typedef Eigen::Vector6d Vector6;
 
@@ -106,11 +106,11 @@ namespace dynamicgraph
 	      return;
 	    }
 
-	  m_model = new se3::Model();
+	  m_model = new pinocchio::Model();
 	  m_model->name.assign("EmptyRobot");
 
-          se3::urdf::buildModel(m_robot_util->m_urdf_filename,
-				se3::JointModelFreeFlyer(),*m_model);
+          pinocchio::urdf::buildModel(m_robot_util->m_urdf_filename,
+				pinocchio::JointModelFreeFlyer(),*m_model);
 	  assert(m_model->nv == m_robot_util->m_nbJoints+6);
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
@@ -127,7 +127,7 @@ namespace dynamicgraph
           std::cout << e.what();
           return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
-        m_data = new se3::Data(*m_model);
+        m_data = new pinocchio::Data(*m_model);
         m_initSucceeded = true;
       }
 
@@ -155,8 +155,8 @@ namespace dynamicgraph
         m_robot_util->joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util->m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
-        se3::forwardKinematics(*m_model, *m_data, m_q_pin, m_v_pin);
-        se3::framesForwardKinematics(*m_model, *m_data);
+        pinocchio::forwardKinematics(*m_model, *m_data, m_q_pin, m_v_pin);
+        pinocchio::framesForwardKinematics(*m_model, *m_data);
 
         return s;
       }
@@ -179,11 +179,11 @@ namespace dynamicgraph
           assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
 
           /* Compute kinematic and return q with freeflyer */
-          const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
-          const se3::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
+          const pinocchio::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
+          const pinocchio::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
           // Average in SE3
-          const se3::SE3::Vector3 w(0.5*(se3::log3(iMo1.rotation())+se3::log3(iMo2.rotation())));
-          m_Mff = se3::SE3(se3::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
+          const pinocchio::SE3::Vector3 w(0.5*(pinocchio::log3(iMo1.rotation())+pinocchio::log3(iMo2.rotation())));
+          m_Mff = pinocchio::SE3(pinocchio::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
 
           // due to distance from ankle to ground
           Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ[0]);
@@ -212,7 +212,7 @@ namespace dynamicgraph
         //just read the data, convert to axis angle
         if(s.size()!=6)
           s.resize(6);
-        //~ const se3::SE3 & iMo = m_data->oMi[31].inverse();
+        //~ const pinocchio::SE3 & iMo = m_data->oMi[31].inverse();
         const Eigen::AngleAxisd aa(m_Mff.rotation());
         Eigen::Vector6d freeflyer;
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();

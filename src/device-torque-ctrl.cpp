@@ -144,8 +144,8 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
   {
     vector<string> package_dirs;
     m_robot = new robots::RobotWrapper(urdfFile, 
-				      package_dirs, se3::JointModelFreeFlyer());
-    m_data = new se3::Data(m_robot->model());
+				      package_dirs, pinocchio::JointModelFreeFlyer());
+    m_data = new pinocchio::Data(m_robot->model());
     m_robot->rotor_inertias(rotor_inertias);
     m_robot->gear_ratios(gear_ratios);
 
@@ -214,14 +214,14 @@ void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
   m_robot_util->config_sot_to_urdf(m_q_sot, m_q);
 
   m_robot->computeAllTerms(*m_data, m_q, m_v);
-  se3::SE3 H_lf = m_robot->position(*m_data,
+  pinocchio::SE3 H_lf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
   tsid::trajectories::TrajectorySample s(12, 6);
   tsid::math::SE3ToVector(H_lf, s.pos);
   m_contactLF->setReference(s);
   SEND_MSG("Setting left foot reference to "+toString(H_lf), MSG_TYPE_DEBUG);
 
-  se3::SE3 H_rf = m_robot->position(*m_data,
+  pinocchio::SE3 H_rf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
   tsid::math::SE3ToVector(H_rf, s.pos);
   m_contactRF->setReference(s);
@@ -337,7 +337,7 @@ void DeviceTorqueCtrl::integrate( const double & dt )
   {
     computeForwardDynamics();
     // integrate
-    m_q = se3::integrate(m_robot->model(), m_q, dt*m_v);
+    m_q = pinocchio::integrate(m_robot->model(), m_q, dt*m_v);
     m_v += dt*m_dv;
 
     m_robot_util->config_urdf_to_sot(m_q, m_q_sot);

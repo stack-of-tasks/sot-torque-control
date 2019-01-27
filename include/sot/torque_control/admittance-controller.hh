@@ -122,7 +122,7 @@ namespace dynamicgraph {
 
         /// tsid
         tsid::robots::RobotWrapper *        m_robot;
-        se3::Data*                          m_data;
+        pinocchio::Data*                    m_data;
 
         tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
         tsid::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
@@ -135,7 +135,7 @@ namespace dynamicgraph {
         tsid::math::Vector  m_dq_fd;            /// joint velocities computed with finite differences
         tsid::math::Vector  m_qPrev;            /// previous value of encoders
 
-        typedef se3::Data::Matrix6x Matrix6x;
+        typedef pinocchio::Data::Matrix6x Matrix6x;
         Matrix6x m_J_RF;
         Matrix6x m_J_LF;
         Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;

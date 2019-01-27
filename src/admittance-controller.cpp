@@ -155,8 +155,8 @@ namespace dynamicgraph
           vector<string> package_dirs;
           m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
                                              package_dirs,
-                                             se3::JointModelFreeFlyer());
-          m_data = new se3::Data(m_robot->model());
+                                             pinocchio::JointModelFreeFlyer());
+          m_data = new pinocchio::Data(m_robot->model());
 
           assert(m_robot->nv()>=6);
           m_robot_util->m_nbJoints = m_robot->nv()-6;
