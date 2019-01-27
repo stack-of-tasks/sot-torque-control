@@ -45,9 +45,7 @@ SET(plugins
   position-controller
   control-manager
   current-controller
-#  hrp2-device-pos-ctrl
   torque-offset-estimator
-  #hrp2-device-torque-ctrl
   free-flyer-locator
   numerical-difference
   filter-differentiator
@@ -57,12 +55,16 @@ SET(plugins
   admittance-controller
   )
 
-#set(ADDITIONAL_feature-task_LIBS feature-generic task)
-
+IF(DDP_ACTUATOR_SOLVER_FOUND)
+  SET(plugins ${plugins} ddp-actuator-solver )
+ENDIF(DDP_ACTUATOR_SOLVER_FOUND)
 
 #Plugins compilation, link, and installation
 #Compiles a plugin. The plugin library is ${LIBRARY_NAME}
 FOREACH(plugin ${plugins})
+
+  message( " Build plugin ${plugin}")
+  
   #retrieve plugin name
   GET_FILENAME_COMPONENT(LIBRARY_NAME ${plugin} NAME)
 
@@ -104,6 +106,10 @@ FOREACH(plugin ${plugins})
   PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
   PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
   PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
+
+  IF(DDP_ACTUATOR_SOLVER_FOUND)
+    PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} ddp-actuator-solver )
+  ENDIF(DDP_ACTUATOR_SOLVER_FOUND)
 
   # build python submodule
   # (replace minus with underscore to make Python happy)
