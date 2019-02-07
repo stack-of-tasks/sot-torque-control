@@ -361,7 +361,8 @@ namespace dynamicgraph
         if(m_contactState == LEFT_SUPPORT)
         {
           SEND_MSG("Add right foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
-          m_invDyn->addRigidContact(*m_contactRF);
+          const double & w_forces = m_w_forcesSIN.accessCopy();
+          m_invDyn->addRigidContact(*m_contactRF, w_forces);
           m_invDyn->removeTask(m_taskRF->name(), transitionTime);
           m_contactState = DOUBLE_SUPPORT;
         }
@@ -372,7 +373,8 @@ namespace dynamicgraph
         if(m_contactState == RIGHT_SUPPORT)
         {
           SEND_MSG("Add left foot contact in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
-          m_invDyn->addRigidContact(*m_contactLF);
+          const double & w_forces = m_w_forcesSIN.accessCopy();
+          m_invDyn->addRigidContact(*m_contactLF, w_forces);
           m_invDyn->removeTask(m_taskLF->name(), transitionTime);
           m_contactState = DOUBLE_SUPPORT;
         }
@@ -453,18 +455,18 @@ namespace dynamicgraph
           m_contactRF = new Contact6d("contact_rfoot", *m_robot,
 				      m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMaxRF, w_forces);
+                                      mu, fMin, fMaxRF);
           m_contactRF->Kp(kp_contact);
           m_contactRF->Kd(kd_contact);
-          m_invDyn->addRigidContact(*m_contactRF);
+          m_invDyn->addRigidContact(*m_contactRF, w_forces);
 
           m_contactLF = new Contact6d("contact_lfoot", *m_robot,
 				      m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                       contactPoints, contactNormal,
-                                      mu, fMin, fMaxLF, w_forces);
+                                      mu, fMin, fMaxLF);
           m_contactLF->Kp(kp_contact);
           m_contactLF->Kd(kd_contact);
-          m_invDyn->addRigidContact(*m_contactLF);
+          m_invDyn->addRigidContact(*m_contactLF, w_forces);
 
           if(m_f_ref_left_footSIN.isPlugged() && m_f_ref_right_footSIN.isPlugged())
           {
@@ -716,10 +718,10 @@ namespace dynamicgraph
         m_contactRF->setMaxNormalForce(fMaxRF);
         m_contactLF->Kp(kp_contact);
         m_contactLF->Kd(kd_contact);
-        m_contactLF->setRegularizationTaskWeight(w_forces);
         m_contactRF->Kp(kp_contact);
         m_contactRF->Kd(kd_contact);
-        m_contactRF->setRegularizationTaskWeight(w_forces);
+        m_invDyn->updateRigidContactWeights(m_contactLF->name(), w_forces);
+        m_invDyn->updateRigidContactWeights(m_contactRF->name(), w_forces);
 
         if(m_firstTime)
         {
