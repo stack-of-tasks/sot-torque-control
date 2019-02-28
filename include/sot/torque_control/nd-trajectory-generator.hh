@@ -173,7 +173,7 @@ namespace dynamicgraph {
         bool              m_splineReady;      /// true if the spline has been successfully loaded.
 
         std::vector<JTG_Status> m_status;     /// status of the component
-        std::vector<parametriccurves::AbstractCurve<double, Eigen::Vector1d>* >  m_currentTrajGen;
+        std::vector<parametriccurves::AbstractCurve<double, dynamicgraph::sot::Vector1d>* >  m_currentTrajGen;
         std::vector<parametriccurves::Constant<double, 1>* >                     m_noTrajGen;
         std::vector<parametriccurves::MinimumJerk<double, 1>* >                  m_minJerkTrajGen;
         std::vector<parametriccurves::InfiniteSinusoid<double,1>* >              m_sinTrajGen;

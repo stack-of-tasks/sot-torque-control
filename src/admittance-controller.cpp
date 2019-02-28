@@ -35,6 +35,7 @@ namespace dynamicgraph
       using namespace tsid;
       using namespace tsid::math;
       using namespace tsid::tasks;
+      using namespace dg::sot;
 
 #define PROFILE_DQ_DES_COMPUTATION "Admittance control computation"
 
@@ -229,8 +230,8 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_DQ_DES_COMPUTATION);
         {
-          const Eigen::Vector6d v_des_LF = m_vDesLeftFootSOUT(iter);
-          const Eigen::Vector6d v_des_RF = m_vDesRightFootSOUT(iter);
+          const dg::sot::Vector6d v_des_LF = m_vDesLeftFootSOUT(iter);
+          const dg::sot::Vector6d v_des_RF = m_vDesRightFootSOUT(iter);
           const Vector& q_sot            = m_encodersSIN(iter);  // n
 //          const Vector& dq_sot           = m_jointsVelocitiesSIN(iter); // n
           //const Vector& qMask            = m_controlledJointsSIN(iter); // n
@@ -291,9 +292,9 @@ namespace dynamicgraph
         const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
         const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
 
-        Eigen::Vector6d err      = fRef - f;
-        Eigen::Vector6d err_filt = fRef - f_filt;
-        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+        dg::sot::Vector6d err      = fRef - f;
+        dg::sot::Vector6d err_filt = fRef - f_filt;
+        dg::sot::Vector6d v_des    = -kp.cwiseProduct(err_filt);
 
         for(int i=0; i<6; i++)
         {
@@ -339,9 +340,9 @@ namespace dynamicgraph
         const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
         const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
 
-        Eigen::Vector6d err      = fRef - f;
-        Eigen::Vector6d err_filt = fRef - f_filt;
-        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+        dg::sot::Vector6d err      = fRef - f;
+        dg::sot::Vector6d err_filt = fRef - f_filt;
+        dg::sot::Vector6d v_des    = -kp.cwiseProduct(err_filt);
 
         for(int i=0; i<6; i++)
         {

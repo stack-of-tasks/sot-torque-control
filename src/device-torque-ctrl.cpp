@@ -32,6 +32,7 @@ using namespace dynamicgraph;
 using namespace sot::torque_control;
 using namespace tsid;
 using namespace tsid::tasks;
+using namespace dynamicgraph::sot;
 
 typedef tsid::math::ConstraintBase ConstraintBase;
 
@@ -134,8 +135,8 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
 
   m_nj = m_robot_util->m_nbJoints;
 
-  const Eigen::Vector6d& kp_contact = m_kp_constraintsSIN(0);
-  const Eigen::Vector6d& kd_contact = m_kd_constraintsSIN(0);
+  const dynamicgraph::sot::Vector6d& kp_contact = m_kp_constraintsSIN(0);
+  const dynamicgraph::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
   const Vector rotor_inertias = m_rotor_inertiasSIN(0);
   const Vector gear_ratios = m_gear_ratiosSIN(0);
   const std::string & urdfFile = m_robot_util->m_urdf_filename;
