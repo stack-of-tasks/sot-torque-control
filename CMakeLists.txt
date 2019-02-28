@@ -100,15 +100,12 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/control-manager.hh
   include/sot/torque_control/current-controller.hh
   include/sot/torque_control/commands-helper.hh
-  include/sot/torque_control/signal-helper.hh
-  include/sot/torque_control/common.hh
   include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/device-torque-ctrl.hh
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/torque-offset-estimator.hh
   include/sot/torque_control/imu_offset_compensation.hh
   include/sot/torque_control/admittance-controller.hh
-  include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
@@ -124,7 +121,6 @@ SET(${LIBRARY_NAME}_HEADERS
 #  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE)
 
 SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
-    src/logger.cpp
     src/trajectory-generators.cpp
     src/lin-estimator.cpp
     src/poly-estimator.cpp
@@ -132,7 +128,6 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/causal-filter.cpp
     src/stop-watch.cpp
     src/motor-model.cpp
-    src/common.cpp
 )
 
 
@@ -194,13 +189,9 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
 
 # *****************************
-# Common-sot-py PYTHON module *
+# PYTHON interface            *
 # *****************************
 IF(BUILD_PYTHON_INTERFACE)
-  PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
-  TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${LIBRARY_NAME})
-  TARGET_LINK_BOOST_PYTHON(common_sot_py)
-  INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
 
   IF(TALOS_DATA_FOUND)
     FOREACH(py_filename test_torque_offset_estimator)
