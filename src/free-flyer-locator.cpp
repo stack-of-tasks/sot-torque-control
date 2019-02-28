@@ -35,7 +35,7 @@ namespace dynamicgraph
       using namespace std;
       using namespace pinocchio;
 
-      typedef Eigen::Vector6d Vector6;
+      typedef dynamicgraph::sot::Vector6d Vector6;
 
 #define PROFILE_FREE_FLYER_COMPUTATION          "Free-flyer position computation"
 #define PROFILE_FREE_FLYER_VELOCITY_COMPUTATION "Free-flyer velocity computation"
@@ -214,7 +214,7 @@ namespace dynamicgraph
           s.resize(6);
         //~ const pinocchio::SE3 & iMo = m_data->oMi[31].inverse();
         const Eigen::AngleAxisd aa(m_Mff.rotation());
-        Eigen::Vector6d freeflyer;
+        dynamicgraph::sot::Vector6d freeflyer;
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();
 
         // due to distance from ankle to ground

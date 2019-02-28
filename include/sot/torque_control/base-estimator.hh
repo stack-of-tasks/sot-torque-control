@@ -88,8 +88,8 @@ namespace dynamicgraph {
         typedef Eigen::Vector2d Vector2;
         typedef Eigen::Vector3d Vector3;
         typedef Eigen::Vector4d Vector4;
-        typedef Eigen::Vector6d Vector6;
-        typedef Eigen::Vector7d Vector7;
+        typedef dynamicgraph::sot::Vector6d Vector6;
+        typedef dynamicgraph::sot::Vector7d Vector7;
         typedef Eigen::Matrix3d Matrix3;
         typedef boost::math::normal normal;
 
