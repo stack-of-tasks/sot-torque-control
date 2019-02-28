@@ -14,10 +14,10 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/se3-trajectory-generator.hh>
-#include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
 
+#include <sot/torque_control/se3-trajectory-generator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 

@@ -17,16 +17,7 @@
 #ifndef _DeviceTorqueCtrl_H_
 #define _DeviceTorqueCtrl_H_
 
-#include <dynamic-graph/entity.h>
-#include <dynamic-graph/signal.h>
-#include <dynamic-graph/signal-ptr.h>
-#include <dynamic-graph/linear-algebra.h>
-#include <sot/core/device.hh>
-#include <sot/core/abstract-sot-external-interface.hh>
-
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/common.hh>
-#include <sot/torque_control/utils/logger.hh>
+#include <Eigen/Cholesky>
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
@@ -35,7 +26,17 @@
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/tasks/task-se3-equality.hpp>
 
-#include <Eigen/Cholesky>
+#include <dynamic-graph/entity.h>
+#include <dynamic-graph/signal.h>
+#include <dynamic-graph/signal-ptr.h>
+#include <dynamic-graph/linear-algebra.h>
+#include <sot/core/device.hh>
+#include <sot/core/abstract-sot-external-interface.hh>
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/robot-utils.hh>
+
 
 namespace dgsot=dynamicgraph::sot;
 
@@ -97,7 +98,7 @@ namespace dynamicgraph
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[DeviceTorqueCtrl] "+msg, t, file, line);
+          sendMsg("[DeviceTorqueCtrl] "+msg, t, file, line);
         }
 
         /// \brief Current integration step.

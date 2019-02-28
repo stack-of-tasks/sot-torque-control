@@ -20,14 +20,16 @@
     LogFile.open(LOGFILE,std::ofstream::app); \
     LogFile << x << std::endl;		\
     LogFile.close();}
+    
 
+#include <Eigen/Dense>
 
-#include <sot/torque_control/filter-differentiator.hh>
-#include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/filter-differentiator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
-#include <Eigen/Dense>
+
 
 namespace dynamicgraph
 {

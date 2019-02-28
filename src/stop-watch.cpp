@@ -24,7 +24,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "sot/torque_control/utils/Stdafx.hh"
 
 #ifndef WIN32
 	#include <sys/time.h>
@@ -34,6 +33,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 #include <iomanip>      // std::setprecision
+#include "sot/torque_control/utils/Stdafx.hh"
 #include "sot/torque_control/utils/stop-watch.hh"
 
 using std::map;

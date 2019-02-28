@@ -37,12 +37,12 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-/* HELPER */
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
 #include <tsid/utils/stop-watch.hpp>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/common.hh>
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 /*Motor model*/
 #include <sot/torque_control/motor-model.hh>
@@ -128,7 +128,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       public:

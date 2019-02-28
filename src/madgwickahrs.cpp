@@ -12,10 +12,9 @@
 
 
 
-#include <sot/torque_control/madgwickahrs.hh>
-#include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
-
+#include <sot/core/debug.hh>
+#include <sot/torque_control/madgwickahrs.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 

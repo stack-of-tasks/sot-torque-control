@@ -37,13 +37,12 @@
 /* --------------------------------------------------------------------- */
 
 #include <iostream>
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
+
 #include <map>
 #include <fstream>  /// to read text file
 #include "boost/assign.hpp"
-
+#include <dynamic-graph/signal-helper.h>
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -127,7 +126,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[AbstrTrajGen] "+msg, t, file, line);
+          sendMsg("[AbstrTrajGen] "+msg, t, file, line);
         }
 
       public:

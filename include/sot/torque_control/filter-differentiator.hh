@@ -38,10 +38,9 @@
 /* --------------------------------------------------------------------- */
 
 /* HELPER */
-#include <sot/torque_control/signal-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
+#include <dynamic-graph/signal-helper.h>
 #include <sot/torque_control/utils/causal-filter.hh>
-#include <sot/torque_control/utils/logger.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -107,7 +106,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       public: /* --- ENTITY INHERITANCE --- */

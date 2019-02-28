@@ -15,10 +15,13 @@
 #  define SOTDDPACTUATORSOLVER_EXPORT
 #endif
 
-#include <sot/torque_control/signal-helper.hh>
+
 #include <tsid/utils/stop-watch.hpp>
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/causal-filter.hh>
-#include <sot/torque_control/utils/logger.hh>
+
 #include <ddp-actuator-solver/ddpsolver.hh>
 #include <ddp-actuator-solver/ddpsolver.hh>
 

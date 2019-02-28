@@ -38,11 +38,12 @@
 /* --------------------------------------------------------------------- */
 
 /* HELPER */
-#include <sot/torque_control/signal-helper.hh>
+#include <boost/circular_buffer.hpp>
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <boost/circular_buffer.hpp>
+
 
 /* Polynomial estimators */
 #include <sot/torque_control/utils/lin-estimator.hh>
@@ -116,7 +117,7 @@ namespace dynamicgraph {
       protected:
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       public: /* --- ENTITY INHERITANCE --- */

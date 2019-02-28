@@ -14,13 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/current-controller.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
 
-#include <sot/torque_control/commands-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
+
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/current-controller.hh>
+#include <sot/torque_control/commands-helper.hh>
 
 namespace dynamicgraph
 {
