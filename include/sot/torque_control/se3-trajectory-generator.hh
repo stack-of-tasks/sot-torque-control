@@ -36,14 +36,16 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/utils/trajectory-generators.hh>
-#include <parametric-curves/spline.hpp>
 #include <map>
 #include "boost/assign.hpp"
 
+#include <parametric-curves/spline.hpp>
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
+#include <sot/torque_control/utils/trajectory-generators.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -138,7 +140,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[SE3TrajectoryGenerator-"+name+"] "+msg, t, file, line);
+          sendMsg("[SE3TrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
 
       protected:

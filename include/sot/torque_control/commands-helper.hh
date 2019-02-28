@@ -17,13 +17,14 @@
 #ifndef __sot_torquecontrol_commands_helper_H__
 #define __sot_torquecontrol_commands_helper_H__
 
+#include <boost/function.hpp>
+
 /* --- COMMON INCLUDE -------------------------------------------------- */
 #include <dynamic-graph/command.h>
 #include <dynamic-graph/command-direct-setter.h>
 #include <dynamic-graph/command-direct-getter.h>
 #include <dynamic-graph/command-bind.h>
 
-#include <boost/function.hpp>
 
 /* --- HELPER ---------------------------------------------------------- */
 namespace dynamicgraph {

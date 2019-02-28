@@ -16,11 +16,7 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <sot/torque_control/inverse-dynamics-balance-controller.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
-
-#include <sot/torque_control/commands-helper.hh>
+#include <boost/test/unit_test.hpp>
 
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
@@ -30,7 +26,12 @@
 #include <tsid/solvers/utils.hpp>
 #include <tsid/math/utils.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include <dynamic-graph/factory.h>
+
+#include <sot/core/debug.hh>
+
+#include <sot/torque_control/commands-helper.hh>
+#include <sot/torque_control/inverse-dynamics-balance-controller.hh>
 
 namespace dynamicgraph
 {

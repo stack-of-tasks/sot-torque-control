@@ -13,15 +13,15 @@
  * have received a copy of the GNU Lesser General Public License along
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <tsid/robots/robot-wrapper.hpp>
-
-#include <sot/torque_control/control-manager.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
-
-#include <sot/torque_control/commands-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
+
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/control-manager.hh>
+#include <sot/torque_control/commands-helper.hh>
 
 using namespace tsid;
 
@@ -479,7 +479,7 @@ namespace dynamicgraph
 
       void ControlManager::setStreamPrintPeriod(const double & s)
       {
-        getLogger().setStreamPrintPeriod(s);
+        setStreamPrintPeriod(s);
       }
 
       void ControlManager::setSleepTime(const double &seconds)

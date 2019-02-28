@@ -14,12 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/numerical-difference.hh>
-#include <sot/core/debug.hh>
+#include <Eigen/Dense>
+
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/numerical-difference.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
-#include <Eigen/Dense>
+
 
 namespace dynamicgraph
 {

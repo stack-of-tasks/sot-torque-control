@@ -14,14 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/base-estimator.hh>
-#include <sot/core/debug.hh>
+#include "pinocchio/algorithm/frames.hpp"
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
 
+#include <sot/torque_control/base-estimator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
-#include "pinocchio/algorithm/frames.hpp"
 
 namespace dynamicgraph
 {

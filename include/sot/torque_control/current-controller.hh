@@ -36,10 +36,6 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/common.hh>
 #include <map>
 #include "boost/assign.hpp"
 
@@ -48,6 +44,10 @@
 #include <pinocchio/parsers/urdf.hpp>
 
 #include <tsid/robots/robot-wrapper.hpp>
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -115,7 +115,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[CurrentController-"+name+"] "+msg, t, file, line);
+          sendMsg("[CurrentController-"+name+"] "+msg, t, file, line);
         }
 
       protected:

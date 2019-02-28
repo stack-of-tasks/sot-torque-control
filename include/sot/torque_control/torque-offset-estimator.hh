@@ -37,20 +37,26 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-/* HELPER */
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/common.hh>
+
 #include <boost/circular_buffer.hpp>
 #include <Eigen/StdVector>
 
 /*Motor model*/
-#include <sot/torque_control/motor-model.hh>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <sot/torque_control/utils/stop-watch.hh>
+
+/*Motor model*/
+#include <sot/torque_control/motor-model.hh>
+
+
 namespace dynamicgraph {
   namespace sot {
     namespace torque_control {
@@ -108,7 +114,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       private:
