@@ -30,8 +30,9 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
+      using namespace dg::sot;
 
-      typedef Eigen::Vector6d Vector6;
+      typedef dg::sot::Vector6d Vector6;
 
 #define PROFILE_MADGWICKAHRS_COMPUTATION          "MadgwickAHRS computation"
 

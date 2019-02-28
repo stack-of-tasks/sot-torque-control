@@ -48,6 +48,7 @@ namespace dynamicgraph
       using namespace tsid::contacts;
       using namespace tsid::tasks;
       using namespace tsid::solvers;
+      using namespace dg::sot;
 
       typedef SolverHQuadProgRT<60,36,34> SolverHQuadProgRT60x36x34;
       typedef SolverHQuadProgRT<48,30,17> SolverHQuadProgRT48x30x17;
@@ -397,12 +398,12 @@ namespace dynamicgraph
         const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
         const Eigen::Vector3d& contactNormal = m_contact_normalSIN(0);
 //        const Eigen::VectorXd w_forceReg = m_weight_contact_forcesSIN(0);
-        const Eigen::Vector6d& kp_contact = m_kp_constraintsSIN(0);
-        const Eigen::Vector6d& kd_contact = m_kd_constraintsSIN(0);
+        const dg::sot::Vector6d& kp_contact = m_kp_constraintsSIN(0);
+        const dg::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
         const Eigen::Vector3d& kp_com = m_kp_comSIN(0);
         const Eigen::Vector3d& kd_com = m_kd_comSIN(0);
-        const Eigen::Vector6d& kp_feet = m_kp_feetSIN(0);
-        const Eigen::Vector6d& kd_feet = m_kd_feetSIN(0);
+        const dg::sot::Vector6d& kp_feet = m_kp_feetSIN(0);
+        const dg::sot::Vector6d& kd_feet = m_kd_feetSIN(0);
         const VectorN& kp_posture = m_kp_postureSIN(0);
         const VectorN& kd_posture = m_kd_postureSIN(0);
         const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
