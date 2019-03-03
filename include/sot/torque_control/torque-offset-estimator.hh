@@ -90,8 +90,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(accelerometer,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(gyroscope,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(jointTorques,             dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
+        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);	
 
       protected:
         RobotUtil *       m_robot_util;
@@ -101,7 +101,7 @@ namespace dynamicgraph {
         double epsilon;
         double gyro_epsilon;
 
-        int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
+	pinocchio::JointIndex ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
         Eigen::VectorXd jointTorqueOffsets;
         pinocchio::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
 

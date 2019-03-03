@@ -339,7 +339,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!" + toString(iter));
           return s;
         }
 
@@ -798,7 +798,7 @@ namespace dynamicgraph
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;
         }
-        id = jid;
+        id = static_cast<unsigned int>(jid);
         return true;
       }
 

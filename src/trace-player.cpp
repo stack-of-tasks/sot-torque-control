@@ -80,6 +80,7 @@ namespace dynamicgraph
 
       DEFINE_SIGNAL_OUT_FUNCTION(trigger, int)
       {
+	std::string astr = toString(iter);
         playNext();
         return s;
       }
