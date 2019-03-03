@@ -264,7 +264,9 @@ namespace dynamicgraph
           s.resize(m_robot_util->m_nbJoints);
 	
         for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
-          s(i) = motorModel.smoothSign(dq[i], 0.1, polySignDq[i]); //TODO Use Eigen binaryexpr
+          s(i) = motorModel.smoothSign(dq[i], 0.1,
+				       static_cast<unsigned int>(polySignDq[i]));
+	//TODO Use Eigen binaryexpr
         return s;
       }
 

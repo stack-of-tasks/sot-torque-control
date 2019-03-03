@@ -523,7 +523,7 @@ namespace dynamicgraph
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
       {
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         const Eigen::VectorXd& active_joints_sot = m_active_jointsSIN(iter);
@@ -549,7 +549,7 @@ namespace dynamicgraph
                 blocked_joints(i) = 0.0;
             SEND_MSG("Blocked joints: "+toString(blocked_joints.transpose()), MSG_TYPE_INFO);
             m_taskBlockedJoints->mask(blocked_joints);
-            TrajectorySample ref_zero(m_robot_util->m_nbJoints);
+            TrajectorySample ref_zero(static_cast<unsigned int>(m_robot_util->m_nbJoints));
             m_taskBlockedJoints->setReference(ref_zero);
             m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
           }
@@ -560,7 +560,7 @@ namespace dynamicgraph
           m_enabled = false ;
         }
         if (m_enabled == false)
-          for(int i=0; i<m_robot_util->m_nbJoints; i++)
+          for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
             s(i)=false;
         return s;
       }
@@ -572,7 +572,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
@@ -619,18 +619,18 @@ namespace dynamicgraph
         m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
-        assert(q_sot.size()==m_robot_util->m_nbJoints+6);
+        assert(q_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
         const VectorN6& v_sot = m_vSIN(iter);
-        assert(v_sot.size()==m_robot_util->m_nbJoints+6);
+        assert(v_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-        assert(q_ref.size()==m_robot_util->m_nbJoints);
+        assert(q_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==m_robot_util->m_nbJoints);
+        assert(dq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-        assert(ddq_ref.size()==m_robot_util->m_nbJoints);
+        assert(ddq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
 
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
@@ -638,13 +638,13 @@ namespace dynamicgraph
         const Vector3& kd_com = m_kd_comSIN(iter);
 
         const VectorN& kp_posture = m_kp_postureSIN(iter);
-        assert(kp_posture.size()==m_robot_util->m_nbJoints);
+        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_posture = m_kd_postureSIN(iter);
-        assert(kd_posture.size()==m_robot_util->m_nbJoints);
+        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
         const VectorN& kp_pos = m_kp_posSIN(iter);
-        assert(kp_pos.size()==m_robot_util->m_nbJoints);
+        assert(kp_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_pos = m_kd_posSIN(iter);
-        assert(kd_pos.size()==m_robot_util->m_nbJoints);
+        assert(kd_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
 
         const double & w_com = m_w_comSIN(iter);
         const double & w_posture = m_w_postureSIN(iter);
@@ -740,16 +740,16 @@ namespace dynamicgraph
           m_contactRF->setReference(H_rf);
           SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
         }
-        else if(m_timeLast != iter-1)
+        else if(m_timeLast != static_cast<unsigned int>(iter-1)) 
         {
           SEND_MSG("Last time "+toString(m_timeLast)+" is not current time-1: "+toString(iter), MSG_TYPE_ERROR);
-          if(m_timeLast == iter)
+          if(m_timeLast == static_cast<unsigned int>(iter))
           {
             s = m_tau_sot;
             return s;
           }
         }
-        m_timeLast = iter;
+        m_timeLast = static_cast<unsigned int>(iter);
 
         const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
@@ -782,7 +782,7 @@ namespace dynamicgraph
           return s;
         }
 
-        getStatistics().store("active inequalities", sol.activeSet.size());
+        getStatistics().store("active inequalities", static_cast<double>(sol.activeSet.size()));
         getStatistics().store("solver iterations", sol.iterations);
         if(ddx_com_ref.norm()>1e-3)
           getStatistics().store("com ff ratio", ddx_com_ref.norm()/m_taskCom->getConstraint().vector().norm());
@@ -1237,7 +1237,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_vel before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_vel before initialization! iter:" +toString(iter));
           return s;
         }
         pinocchio::Motion v;

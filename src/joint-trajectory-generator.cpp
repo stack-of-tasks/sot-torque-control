@@ -61,9 +61,9 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL(fLeftFoot,  OUT, dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL(fRightHand, OUT, dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL(fLeftHand,  OUT, dynamicgraph::Vector)
+            ,m_initSucceeded(false)	      
             ,m_firstIter(true)
-            ,m_initSucceeded(false)
-	,m_robot_util(RefVoidRobotUtil())
+	    ,m_robot_util(RefVoidRobotUtil())
       {
         BIND_SIGNAL_TO_FUNCTION(fRightFoot, OUT, dynamicgraph::Vector);
         BIND_SIGNAL_TO_FUNCTION(fLeftFoot,  OUT, dynamicgraph::Vector);
@@ -215,7 +215,7 @@ namespace dynamicgraph
         m_currentTrajGen.resize(m_robot_util->m_nbJoints);
         m_noTrajGen.resize(m_robot_util->m_nbJoints);
 
-        for(int i=0; i<m_robot_util->m_nbJoints; i++)
+        for(long unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
         {
           m_minJerkTrajGen[i]   = new MinimumJerkTrajectoryGenerator(dt,5.0,1);
           m_sinTrajGen[i]       = new SinusoidTrajectoryGenerator(dt,5.0,1);
@@ -258,7 +258,7 @@ namespace dynamicgraph
           if(m_firstIter)
           {
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-            if(base6d_encoders.size()!=m_robot_util->m_nbJoints+6)
+            if(base6d_encoders.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
             {
               SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder " +
 				    toString(base6d_encoders.size()) + " " +
@@ -271,7 +271,7 @@ namespace dynamicgraph
             m_firstIter = false;
           }
 
-          if(s.size()!=m_robot_util->m_nbJoints)
+          if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
             s.resize(m_robot_util->m_nbJoints);
 
           if(m_status[0]==JTG_TEXT_FILE)
@@ -316,13 +316,12 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization! iter: " + toString(iter) );
           return s;
         }
 
-        const dynamicgraph::Vector& q = m_qSOUT(iter);
 
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
         if(m_status[0]==JTG_TEXT_FILE)
         {
@@ -344,9 +343,8 @@ namespace dynamicgraph
           return s;
         }
 
-        const dynamicgraph::Vector& q = m_qSOUT(iter);
 
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         if(m_status[0]==JTG_TEXT_FILE)
@@ -365,7 +363,7 @@ namespace dynamicgraph
       {
 	//        SEND_MSG("Compute force right foot iter "+toString(iter), MSG_TYPE_DEBUG);
         generateReferenceForceSignal("fRightFoot",
-				     m_robot_util->m_force_util.get_force_id_right_foot(),
+				     static_cast<int>(m_robot_util->m_force_util.get_force_id_right_foot()),
 				     s, iter);
         return s;
       }
@@ -373,7 +371,7 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftFoot, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftFoot",
-				     m_robot_util->m_force_util.get_force_id_left_foot(),
+				     static_cast<int>(m_robot_util->m_force_util.get_force_id_left_foot()),
 				     s, iter);
         return s;
       }
@@ -381,8 +379,8 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fRightHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fRightHand",
-				     m_robot_util->
-				     m_force_util.get_force_id_right_hand(),
+				     static_cast<int>(m_robot_util->
+						      m_force_util.get_force_id_right_hand()),
 				     s, iter);
         return s;
       }
@@ -390,8 +388,8 @@ namespace dynamicgraph
       DEFINE_SIGNAL_OUT_FUNCTION(fLeftHand, dynamicgraph::Vector)
       {
         generateReferenceForceSignal("fLeftHand",
-				     m_robot_util->
-				     m_force_util.get_force_id_left_hand(),
+				     static_cast<int>(m_robot_util->
+						      m_force_util.get_force_id_left_hand()),
 				     s, iter);
         return s;
       }
@@ -788,7 +786,7 @@ namespace dynamicgraph
       convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-        int jid = m_robot_util->get_id_from_name(name);
+	sot::Index jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist", MSG_TYPE_ERROR);

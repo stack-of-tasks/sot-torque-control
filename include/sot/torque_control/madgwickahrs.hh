@@ -101,10 +101,10 @@ namespace dynamicgraph {
         }
 
       protected:
-        bool              m_initSucceeded;                                      /// true if the entity has been successfully initialized
-        volatile float    m_beta = betaDef;								        /// 2 * proportional gain (Kp)
-        volatile float    m_q0 = 1.0f, m_q1 = 0.0f, m_q2 = 0.0f, m_q3 = 0.0f;	/// quaternion of sensor frame
-        float             m_sampleFreq = 512.0f;		                        /// sample frequency in Hz
+        bool              m_initSucceeded;              /// true if the entity has been successfully initialized
+        volatile float    m_beta;			/// 2 * proportional gain (Kp)
+        volatile float    m_q0, m_q1, m_q2 , m_q3;	/// quaternion of sensor frame
+        float             m_sampleFreq;	                /// sample frequency in Hz
 
       }; // class MadgwickAHRS
     }    // namespace torque_control
