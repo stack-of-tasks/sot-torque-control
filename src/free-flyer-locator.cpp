@@ -41,7 +41,7 @@ namespace dynamicgraph
 #define PROFILE_FREE_FLYER_VELOCITY_COMPUTATION "Free-flyer velocity computation"
 
 #define INPUT_SIGNALS     m_base6d_encodersSIN << m_joint_velocitiesSIN
-#define OUTPUT_SIGNALS    m_base6dFromFoot_encodersSOUT << m_freeflyer_aaSOUT << m_vSOUT
+#define OUTPUT_SIGNALS     m_freeflyer_aaSOUT << m_base6dFromFoot_encodersSOUT << m_vSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -60,8 +60,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN( base6d_encoders,            dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN( joint_velocities,           dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, INPUT_SIGNALS)
-            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
 	    ,m_initSucceeded(false)
 	    ,m_model(0)
@@ -111,7 +111,7 @@ namespace dynamicgraph
 
           pinocchio::urdf::buildModel(m_robot_util->m_urdf_filename,
 				pinocchio::JointModelFreeFlyer(),*m_model);
-	  assert(m_model->nv == m_robot_util->m_nbJoints+6);
+	  assert(m_model->nv == static_cast<int>(m_robot_util->m_nbJoints+6));
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_left_foot_id = m_model->getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
@@ -147,8 +147,8 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
+        assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         m_robot_util->joints_sot_to_urdf(q.tail(m_robot_util->m_nbJoints), m_q_pin.tail(m_robot_util->m_nbJoints));
@@ -168,7 +168,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util->m_nbJoints+6)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -176,7 +176,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
           const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
 
           /* Compute kinematic and return q with freeflyer */
           const pinocchio::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
@@ -232,7 +232,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util->m_nbJoints+6)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -240,7 +240,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
           const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
+          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model->frames[m_left_foot_id];
@@ -283,4 +283,3 @@ namespace dynamicgraph
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
-

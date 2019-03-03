@@ -119,11 +119,13 @@ namespace dynamicgraph
   << m_qSIN \
   << m_vSIN \
   << m_wrench_baseSIN \
-  << m_active_jointsSIN \
   << m_wrench_left_footSIN  \
-  << m_wrench_right_footSIN
+  << m_wrench_right_footSIN \
+  << m_active_jointsSIN
 
 #define OUTPUT_SIGNALS        m_tau_desSOUT \
+  << m_MSOUT \
+  << m_dv_desSOUT \
   << m_f_des_right_footSOUT \
   << m_f_des_left_footSOUT \
   << m_zmp_des_right_footSOUT \
@@ -147,9 +149,7 @@ namespace dynamicgraph
   << m_right_foot_accSOUT \
   << m_left_foot_accSOUT \
   << m_right_foot_acc_desSOUT \
-  << m_left_foot_acc_desSOUT \
-  << m_dv_desSOUT \
-  << m_MSOUT
+  << m_left_foot_acc_desSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -203,14 +203,13 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(w_base_orientation,          double)
             ,CONSTRUCT_SIGNAL_IN(w_torques,                   double)
             ,CONSTRUCT_SIGNAL_IN(w_forces,                    double)
-            ,CONSTRUCT_SIGNAL_IN(mu,                          double)
+            ,CONSTRUCT_SIGNAL_IN(weight_contact_forces,       dynamicgraph::Vector)
+	    ,CONSTRUCT_SIGNAL_IN(mu,                          double)
+            ,CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
+            ,CONSTRUCT_SIGNAL_IN(contact_normal,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(f_min,                       double)
             ,CONSTRUCT_SIGNAL_IN(f_max_right_foot,            double)
             ,CONSTRUCT_SIGNAL_IN(f_max_left_foot,             double)
-            ,CONSTRUCT_SIGNAL_IN(dt_joint_pos_limits,         double)
-            ,CONSTRUCT_SIGNAL_IN(weight_contact_forces,       dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
-            ,CONSTRUCT_SIGNAL_IN(contact_normal,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(rotor_inertias,              dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(tau_max,                     dynamicgraph::Vector)
@@ -218,6 +217,7 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(q_max,                       dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(dq_max,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(ddq_max,                     dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(dt_joint_pos_limits,         double)
             ,CONSTRUCT_SIGNAL_IN(tau_estimated,               dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(q,                           dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(v,                           dynamicgraph::Vector)
@@ -226,6 +226,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(wrench_right_foot,           dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(active_joints,               dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_OUT(tau_des,                    dynamicgraph::Vector, INPUT_SIGNALS)
+            ,CONSTRUCT_SIGNAL_OUT(M,                          dg::Matrix, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(dv_des,                     dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(f_des_right_foot,           dynamicgraph::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(f_des_left_foot,            dynamicgraph::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(zmp_des_right_foot,         dynamicgraph::Vector, m_f_des_right_footSOUT)
@@ -242,28 +244,26 @@ namespace dynamicgraph
                                                                           m_wrench_right_footSIN<<
                                                                           m_zmp_left_footSOUT<<
                                                                           m_zmp_right_footSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(dv_des,                     dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(M,                          dg::Matrix, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com,                        dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_vel,                    dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_acc,                    dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_acc_des,                dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_vel,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_acc,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc_des,          dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_acc_des,         dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc_des,          dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_INNER(active_joints_checked,    dg::Vector, m_active_jointsSIN)
+            ,m_t(0.0)
             ,m_initSucceeded(false)
             ,m_enabled(false)
-            ,m_t(0.0)
             ,m_firstTime(true)
-            ,m_timeLast(0)
             ,m_contactState(DOUBLE_SUPPORT)
+            ,m_timeLast(0)
 	    ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -412,10 +412,10 @@ namespace dynamicgraph
         const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios_sot = m_gear_ratiosSIN(0);
 
-        assert(kp_posture.size()==m_robot_util->m_nbJoints);
-        assert(kd_posture.size()==m_robot_util->m_nbJoints);
-        assert(rotor_inertias_sot.size()==m_robot_util->m_nbJoints);
-        assert(gear_ratios_sot.size()==m_robot_util->m_nbJoints);
+        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(rotor_inertias_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(gear_ratios_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
 
         m_w_com = m_w_comSIN(0);
         m_w_posture = m_w_postureSIN(0);
@@ -1117,7 +1117,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal zmp before initialization!");
+          std::ostringstream oss("Cannot compute signal zmp before initialization!");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         if(s.size()!=2)
@@ -1138,7 +1140,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal com before initialization!");
+          std::ostringstream oss("Cannot compute signal com before initialization! iter:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         if(s.size()!=3)
@@ -1152,7 +1156,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal com_vel before initialization!");
+          std::ostringstream oss("Cannot compute signal com_vel before initialization! iter:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         if(s.size()!=3)
@@ -1167,7 +1173,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal base_orientation before initialization!");
+          std::ostringstream oss("Cannot compute signal com_vel before initialization! iter:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         /*
@@ -1180,7 +1188,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_pos before initialization!");
+          std::ostringstream oss("Cannot compute signal left_foot_pos before initialization! iter:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         m_tau_desSOUT(iter);
@@ -1195,7 +1205,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal right_foot_pos before initialization!");
+          std::ostringstream oss("Cannot compute signal rigt_foot_pos before initialization! iter:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         m_tau_desSOUT(iter);
@@ -1210,7 +1222,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_vel before initialization!");
+          std::ostringstream oss("Cannot compute signal left_foot_vel before initialization!");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         pinocchio::Motion v;
@@ -1313,4 +1327,3 @@ namespace dynamicgraph
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
-

@@ -151,12 +151,12 @@ namespace dynamicgraph
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
-          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
-          assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
-          assert(dqRef.size()==m_robot_util->m_nbJoints   && "Unexpected size of signal dqRef");
-          assert(Kp.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
-          assert(Kd.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
+          assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal dq");
+          assert(qRef.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)   && "Unexpected size of signal dqRef");
+          assert(Kp.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal Kd");
+          assert(Kd.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal Kd");
 
           m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq);
 

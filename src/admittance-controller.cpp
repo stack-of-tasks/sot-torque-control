@@ -106,9 +106,9 @@ namespace dynamicgraph
 //                                                                m_fRightHandRefSIN)
 //            ,CONSTRUCT_SIGNAL_OUT(fLeftHandError,   dynamicgraph::Vector, m_fLeftHandSIN <<
 //                                                                m_fLeftHandRefSIN)
+            ,m_firstIter(true)
             ,m_initSucceeded(false)
             ,m_useJacobianTranspose(true)
-            ,m_firstIter(true)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -370,6 +370,7 @@ namespace dynamicgraph
         if(saturating)
           SEND_INFO_STREAM_MSG("Saturate m_v_LF_int integral: "+toString(m_v_LF_int.transpose()));
         s = v_des + m_v_LF_int;
+	return s;
       }
 
 //      DEFINE_SIGNAL_OUT_FUNCTION(fRightHandError,dynamicgraph::Vector)
@@ -439,7 +440,7 @@ namespace dynamicgraph
 
           //    cout<<"b = "<<toString(b,1)<<endl;
           VectorXd tmp(A.cols());
-          int nzsv = A.nonzeroSingularValues();
+          int nzsv = static_cast<int>(A.nonzeroSingularValues());
           tmp.noalias() = A.matrixU().leftCols(nzsv).adjoint() * b;
           //    cout<<"U^T*b = "<<toString(tmp,1)<<endl;
           double sv, d2 = damping*damping;

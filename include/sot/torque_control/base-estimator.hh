@@ -236,7 +236,7 @@ namespace dynamicgraph {
 
         SE3               m_sole_M_ftSens;    /// foot sole to F/T sensor transformation
 
-	      pinocchio::FrameIndex  m_right_foot_id;
+	pinocchio::FrameIndex  m_right_foot_id;
         pinocchio::FrameIndex  m_left_foot_id;
         pinocchio::FrameIndex  m_IMU_body_id;
 
