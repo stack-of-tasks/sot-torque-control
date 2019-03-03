@@ -54,16 +54,16 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
   currentSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::currents"),
   p_gainsSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::p_gains"),
   d_gainsSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::d_gains"),
-  accelerometer_ (3),
-  gyrometer_ (3),
-  m_numericalDamping(1e-8),
-  normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
-  normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_),
-  m_isTorqueControlled(true),
   CONSTRUCT_SIGNAL_IN(kp_constraints,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(kd_constraints,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(rotor_inertias,              dynamicgraph::Vector),
-  CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector)
+  CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector),
+  accelerometer_ (3),
+  gyrometer_ (3),
+  m_isTorqueControlled(true),  
+  m_numericalDamping(1e-8),
+  normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
+  normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_)
 {
   forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRLEG");
   forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLLEG");
@@ -133,7 +133,7 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
     return;
   }
 
-  m_nj = m_robot_util->m_nbJoints;
+  m_nj = static_cast<int>(m_robot_util->m_nbJoints);
 
   const dynamicgraph::sot::Vector6d& kp_contact = m_kp_constraintsSIN(0);
   const dynamicgraph::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
@@ -188,7 +188,7 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
 
 void DeviceTorqueCtrl::setStateSize(const unsigned int& size)
 {
-  assert(size==m_nj+6);
+  assert(size==static_cast<unsigned int>(m_nj+6));
   Device::setStateSize(size);
 
   base6d_encoders_.resize(size);
@@ -281,7 +281,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
                                            m_dvBar, m_numericalDamping);
 
   // compute base of null space of constraint Jacobian
-  int r = (m_Jc_svd.singularValues().array()>1e-8).count();
+  Eigen::Index r = (m_Jc_svd.singularValues().array()>1e-8).count();
   m_Z = m_Jc_svd.matrixV().rightCols(m_nj+6-r);
 
   // compute constrained accelerations ddq_c = (Z^T*M*Z)^{-1}*Z^T*(S^T*tau - h - M*ddqBar)

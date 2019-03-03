@@ -60,10 +60,10 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(accelerometer_out, dynamicgraph::Vector, m_accelerometer_inSIN)
         ,CONSTRUCT_SIGNAL_OUT(gyrometer_out,     dynamicgraph::Vector, m_gyrometer_inSIN)
         ,m_initSucceeded(false)
+        ,m_dt(static_cast<float>(0.001))
         ,m_update_cycles_left(0)
         ,m_update_cycles(0)
-        ,m_dt(0.001)
-        ,m_a_gyro_DC_blocker(1.0)
+        ,m_a_gyro_DC_blocker(static_cast<float>(1.0))
 
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -98,7 +98,7 @@ namespace dynamicgraph
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
-        m_dt = dt;
+        m_dt = static_cast<float>(dt);
         m_initSucceeded = true;
 
         // try to read IMU calibration data from file

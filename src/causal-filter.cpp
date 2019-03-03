@@ -44,11 +44,11 @@ CausalFilter::CausalFilter(const double &timestep,
   , m_filter_order_n(filter_denominator.size())
   , m_filter_numerator(filter_numerator)
   , m_filter_denominator(filter_denominator)
+  , first_sample(true)
   , pt_numerator(0)
   , pt_denominator(0)
   , input_buffer(Eigen::MatrixXd::Zero(xSize, filter_numerator.size()))
-  , output_buffer(Eigen::MatrixXd::Zero(xSize, filter_denominator.size()-1))
-  , first_sample(true)
+  , output_buffer(Eigen::MatrixXd::Zero(xSize,filter_denominator.size()-1))
 {
   assert(timestep>0.0 && "Timestep should be > 0");
   assert(m_filter_numerator.size() == m_filter_order_m);
@@ -83,7 +83,7 @@ void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
   x_output_dx_ddx.head(m_x_size) = (input_buffer*b-output_buffer*a)/m_filter_denominator[0];
 
   //Finite Difference
-  int pt_denominator_prev = (pt_denominator == 0) ? m_filter_order_n-2 : pt_denominator-1;  
+  Eigen::Index pt_denominator_prev = (pt_denominator == 0) ? m_filter_order_n-2 : pt_denominator-1;
   x_output_dx_ddx.segment(m_x_size,m_x_size) = (x_output_dx_ddx.head(m_x_size)-output_buffer.col(pt_denominator))/m_dt;
   x_output_dx_ddx.tail(m_x_size) = (x_output_dx_ddx.head(m_x_size)-2*output_buffer.col(pt_denominator)+output_buffer.col(pt_denominator_prev))/m_dt/m_dt;
 
@@ -98,8 +98,8 @@ void CausalFilter::get_x_dx_ddx(const Eigen::VectorXd& base_x,
 void CausalFilter::switch_filter(const Eigen::VectorXd& filter_numerator,
                                  const Eigen::VectorXd& filter_denominator)
 {
-  int filter_order_m = filter_numerator.size();
-  int filter_order_n = filter_denominator.size();
+  Eigen::Index filter_order_m = filter_numerator.size();
+  Eigen::Index filter_order_n = filter_denominator.size();
 
   Eigen::VectorXd current_x(input_buffer.col(pt_numerator));
 

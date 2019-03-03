@@ -104,12 +104,12 @@ namespace dynamicgraph
         std::vector<double> newline;
         int nbLines = 0;
         bool firstIter = true;
-        int size = -1;
+	std::size_t size = -1;
         string fileNameShort = fileName.substr(1+fileName.find_last_of("/"));
         while( datafile.good() )
         {
           datafile.getline( buffer,SIZE );
-          const unsigned int gcount = datafile.gcount();
+          const std::size_t gcount = datafile.gcount();
           if( gcount>=SIZE )
             return SEND_MSG("Read error: line "+toString(nbLines)+
                             " too long in file "+fileNameShort, MSG_TYPE_ERROR);

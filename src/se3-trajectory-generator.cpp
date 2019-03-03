@@ -50,17 +50,17 @@ namespace dynamicgraph
           SE3TrajectoryGenerator(const std::string& name)
             : Entity(name)
             ,CONSTRUCT_SIGNAL_IN(initial_value,dynamicgraph::Vector)
-            ,CONSTRUCT_SIGNAL_IN(trigger,bool)
             ,CONSTRUCT_SIGNAL(x,   OUT, dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(trigger,bool)
             ,CONSTRUCT_SIGNAL_OUT(dx,  dynamicgraph::Vector, m_xSOUT)
             ,CONSTRUCT_SIGNAL_OUT(ddx, dynamicgraph::Vector, m_xSOUT)
-            ,m_firstIter(true)
             ,m_initSucceeded(false)
-            ,m_splineReady(false)
-            ,m_t(0)
+            ,m_firstIter(true)
             ,m_np(12)
             ,m_nv(6)
             ,m_iterLast(0)
+            ,m_t(0)
+            ,m_splineReady(false)
       {
         BIND_SIGNAL_TO_FUNCTION(x,   OUT, dynamicgraph::Vector);
 
@@ -146,7 +146,7 @@ namespace dynamicgraph
         m_linChirpTrajGen.resize(m_np);
         m_currentTrajGen.resize(m_np);
         m_noTrajGen.resize(m_np);
-        for(int i=0; i<m_np; i++)
+        for(unsigned int i=0; i<m_np; i++)
         {
           m_minJerkTrajGen[i]   = new MinimumJerkTrajectoryGenerator(dt,5.0,1);
           m_sinTrajGen[i]       = new SinusoidTrajectoryGenerator(dt,5.0,1);
@@ -193,7 +193,7 @@ namespace dynamicgraph
               m_currentTrajGen[i]->set_initial_point(initial_value(i));
             m_firstIter = false;
           }
-          else if(iter == m_iterLast)
+          else if(iter == static_cast<int>(m_iterLast))
           {
             if (m_triggerSIN(iter)==true && m_splineReady) startSpline();
             if(m_status[0]==TG_TEXT_FILE)
@@ -285,11 +285,12 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+	  std::ostringstream oss("Cannot compute signal positionDes before initialization! iter:");
+	  oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
 
-        const dynamicgraph::Vector& x = m_xSOUT(iter);
 
         if(s.size()!=m_nv)
           s.resize(m_nv);
@@ -315,11 +316,12 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal positionDes before initialization!");
+	  std::ostringstream oss("Cannot compute signal positionDes before initialization! iter:");
+	  oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
 
-        const dynamicgraph::Vector& x = m_xSOUT(iter);
 
         if(s.size()!=m_nv)
           s.resize(m_nv);
@@ -348,7 +350,7 @@ namespace dynamicgraph
 
       void SE3TrajectoryGenerator::getValue(const int& id)
       {
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
 
         SEND_MSG("Current value of component "+toString(id)+" is "+toString( m_currentTrajGen[id]->getPos()(0) ), MSG_TYPE_INFO);
@@ -466,7 +468,7 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start sinusoid before initialization!",MSG_TYPE_ERROR);
 
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         unsigned  int i = id;
         if(time<=0.0)
@@ -486,7 +488,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start triangle before initialization!",MSG_TYPE_ERROR);
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         unsigned int i = id;
         if(m_status[i]!=TG_STOP)
@@ -510,7 +512,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start constant-acceleration trajectory before initialization!",MSG_TYPE_ERROR);
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         unsigned int i = id;
         if(time<=0.0)
@@ -530,7 +532,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
           return SEND_MSG("Cannot start linear chirp before initialization!",MSG_TYPE_ERROR);
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         unsigned int i = id;
         if(time<=0.0)
@@ -561,7 +563,7 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot move value before initialization!",MSG_TYPE_ERROR);
         unsigned int i = id;
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         if(time<=0.0)
           return SEND_MSG("Trajectory time must be a positive number", MSG_TYPE_ERROR);
@@ -581,7 +583,6 @@ namespace dynamicgraph
         if(!m_initSucceeded)
           return SEND_MSG("Cannot stop value before initialization!",MSG_TYPE_ERROR);
 
-        const dynamicgraph::Vector& initial_value = m_initial_valueSIN.accessCopy();
         if(id==-1) //Stop entire vector
         {
           for(unsigned int i=0; i<m_np; i++)
@@ -593,7 +594,7 @@ namespace dynamicgraph
           }
           return;
         }
-        if(id<0 || id>=m_np)
+        if(id<0 || id>=static_cast<int>(m_np))
           return SEND_MSG("Index is out of bounds", MSG_TYPE_ERROR);
         unsigned int i = id;
         m_noTrajGen[i]->set_initial_point(m_currentTrajGen[i]->getPos());
