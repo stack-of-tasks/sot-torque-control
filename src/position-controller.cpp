@@ -14,10 +14,10 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/position-controller.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
 
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/position-controller.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
@@ -68,8 +68,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(pwmDes,             dynamicgraph::Vector, INPUT_SIGNALS)
             ,CONSTRUCT_SIGNAL_OUT(qError,             dynamicgraph::Vector, m_base6d_encodersSIN <<
                                                                   m_qRefSIN)
+	    ,m_robot_util(RefVoidRobotUtil())	      
             ,m_initSucceeded(false)
-	      ,m_robot_util(RefVoidRobotUtil())
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -151,18 +151,18 @@ namespace dynamicgraph
           const VectorN& qRef =      m_qRefSIN(iter);   // n
           const VectorN& dqRef =     m_dqRefSIN(iter);  // n
 
-          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-          assert(dq.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal dq");
-          assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
-          assert(dqRef.size()==m_robot_util->m_nbJoints   && "Unexpected size of signal dqRef");
-          assert(Kp.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
-          assert(Kd.size()==m_robot_util->m_nbJoints      && "Unexpected size of signal Kd");
+          assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal dq");
+          assert(qRef.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)    && "Unexpected size of signal qRef");
+          assert(dqRef.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)   && "Unexpected size of signal dqRef");
+          assert(Kp.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal Kd");
+          assert(Kd.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)      && "Unexpected size of signal Kd");
 
           m_pwmDes = Kp.cwiseProduct(qRef-q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef-dq);
 
-	if(s.size()!=m_robot_util->m_nbJoints)
-          s.resize(m_robot_util->m_nbJoints);
-	s = m_pwmDes;
+	  if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+	    s.resize(m_robot_util->m_nbJoints);
+	  s = m_pwmDes;
         }
         getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
 
@@ -179,10 +179,10 @@ namespace dynamicgraph
 
         const VectorN6& q =         m_base6d_encodersSIN(iter);     //n+6
         const VectorN& qRef =      m_qRefSIN(iter);   // n
-        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        assert(qRef.size()==m_robot_util->m_nbJoints    && "Unexpected size of signal qRef");
+        assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+        assert(qRef.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)    && "Unexpected size of signal qRef");
 
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 	s = qRef - q.tail(m_robot_util->m_nbJoints);
 

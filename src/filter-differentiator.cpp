@@ -20,14 +20,16 @@
     LogFile.open(LOGFILE,std::ofstream::app); \
     LogFile << x << std::endl;		\
     LogFile.close();}
+    
 
+#include <Eigen/Dense>
 
-#include <sot/torque_control/filter-differentiator.hh>
-#include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/filter-differentiator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
-#include <Eigen/Dense>
+
 
 namespace dynamicgraph
 {
@@ -91,10 +93,11 @@ namespace dynamicgraph
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
       /* --- COMMANDS ---------------------------------------------------------- */
-      void FilterDifferentiator::init(const double &timestep,
-                                      const int& xSize,
-                                      const Eigen::VectorXd& filter_numerator,
-                                      const Eigen::VectorXd& filter_denominator)
+      void FilterDifferentiator::
+      init(const double &timestep,
+	   const int& xSize,
+	   const Eigen::VectorXd& filter_numerator,
+	   const Eigen::VectorXd& filter_denominator)
       {
         m_x_size = xSize;
         m_dt = timestep;
@@ -107,8 +110,9 @@ namespace dynamicgraph
         return;
       }
 
-      void FilterDifferentiator::switch_filter(const Eigen::VectorXd& filter_numerator,
-                                               const Eigen::VectorXd& filter_denominator)
+      void FilterDifferentiator::
+      switch_filter(const Eigen::VectorXd& filter_numerator,
+		    const Eigen::VectorXd& filter_denominator)
       {
         LOG("Filter switched with "<<
             "Numerator "<< filter_numerator<<std::endl<<

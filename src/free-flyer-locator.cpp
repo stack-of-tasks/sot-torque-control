@@ -14,14 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/free-flyer-locator.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
+#include "pinocchio/algorithm/frames.hpp"
 
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/free-flyer-locator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
-#include "pinocchio/algorithm/frames.hpp"
 
 namespace dynamicgraph
 {
@@ -33,15 +33,15 @@ namespace dynamicgraph
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace std;
-      using namespace se3;
+      using namespace pinocchio;
 
-      typedef Eigen::Vector6d Vector6;
+      typedef dynamicgraph::sot::Vector6d Vector6;
 
 #define PROFILE_FREE_FLYER_COMPUTATION          "Free-flyer position computation"
 #define PROFILE_FREE_FLYER_VELOCITY_COMPUTATION "Free-flyer velocity computation"
 
 #define INPUT_SIGNALS     m_base6d_encodersSIN << m_joint_velocitiesSIN
-#define OUTPUT_SIGNALS    m_base6dFromFoot_encodersSOUT << m_freeflyer_aaSOUT << m_vSOUT
+#define OUTPUT_SIGNALS     m_freeflyer_aaSOUT << m_base6dFromFoot_encodersSOUT << m_vSOUT
 
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -60,8 +60,8 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN( base6d_encoders,            dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN( joint_velocities,           dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_INNER(kinematics_computations,  dynamicgraph::Vector, INPUT_SIGNALS)
-            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,CONSTRUCT_SIGNAL_OUT(freeflyer_aa,               dynamicgraph::Vector, m_base6dFromFoot_encodersSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(base6dFromFoot_encoders,    dynamicgraph::Vector, m_kinematics_computationsSINNER)
             ,CONSTRUCT_SIGNAL_OUT(v,                          dynamicgraph::Vector, m_kinematics_computationsSINNER)
 	    ,m_initSucceeded(false)
 	    ,m_model(0)
@@ -106,12 +106,12 @@ namespace dynamicgraph
 	      return;
 	    }
 
-	  m_model = new se3::Model();
+	  m_model = new pinocchio::Model();
 	  m_model->name.assign("EmptyRobot");
 
-          se3::urdf::buildModel(m_robot_util->m_urdf_filename,
-				se3::JointModelFreeFlyer(),*m_model);
-	  assert(m_model->nv == m_robot_util->m_nbJoints+6);
+          pinocchio::urdf::buildModel(m_robot_util->m_urdf_filename,
+				pinocchio::JointModelFreeFlyer(),*m_model);
+	  assert(m_model->nv == static_cast<int>(m_robot_util->m_nbJoints+6));
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
           assert(m_model->existFrame(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
           m_left_foot_id = m_model->getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
@@ -127,7 +127,7 @@ namespace dynamicgraph
           std::cout << e.what();
           return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
         }
-        m_data = new se3::Data(*m_model);
+        m_data = new pinocchio::Data(*m_model);
         m_initSucceeded = true;
       }
 
@@ -147,16 +147,16 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
-        assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
+        assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         m_robot_util->joints_sot_to_urdf(q.tail(m_robot_util->m_nbJoints), m_q_pin.tail(m_robot_util->m_nbJoints));
         m_robot_util->joints_sot_to_urdf(dq, m_v_pin.tail(m_robot_util->m_nbJoints));
 
         /* Compute kinematic and return q with freeflyer */
-        se3::forwardKinematics(*m_model, *m_data, m_q_pin, m_v_pin);
-        se3::framesForwardKinematics(*m_model, *m_data);
+        pinocchio::forwardKinematics(*m_model, *m_data, m_q_pin, m_v_pin);
+        pinocchio::framesForwardKinematics(*m_model, *m_data);
 
         return s;
       }
@@ -168,7 +168,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util->m_nbJoints+6)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -176,14 +176,14 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
           const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-          assert(q.size()==m_robot_util->m_nbJoints+6     && "Unexpected size of signal base6d_encoder");
+          assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
 
           /* Compute kinematic and return q with freeflyer */
-          const se3::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
-          const se3::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
+          const pinocchio::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
+          const pinocchio::SE3 iMo2(m_data->oMf[m_right_foot_id].inverse());
           // Average in SE3
-          const se3::SE3::Vector3 w(0.5*(se3::log3(iMo1.rotation())+se3::log3(iMo2.rotation())));
-          m_Mff = se3::SE3(se3::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
+          const pinocchio::SE3::Vector3 w(0.5*(pinocchio::log3(iMo1.rotation())+pinocchio::log3(iMo2.rotation())));
+          m_Mff = pinocchio::SE3(pinocchio::exp3(w), 0.5 * (iMo1.translation()+iMo2.translation() ));
 
           // due to distance from ankle to ground
           Eigen::Map<const Eigen::Vector3d> righ_foot_sole_xyz(&m_robot_util->m_foot_util.m_Right_Foot_Sole_XYZ[0]);
@@ -212,9 +212,9 @@ namespace dynamicgraph
         //just read the data, convert to axis angle
         if(s.size()!=6)
           s.resize(6);
-        //~ const se3::SE3 & iMo = m_data->oMi[31].inverse();
+        //~ const pinocchio::SE3 & iMo = m_data->oMi[31].inverse();
         const Eigen::AngleAxisd aa(m_Mff.rotation());
-        Eigen::Vector6d freeflyer;
+        dynamicgraph::sot::Vector6d freeflyer;
         freeflyer << m_Mff.translation(), aa.axis() * aa.angle();
 
         // due to distance from ankle to ground
@@ -232,7 +232,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=m_robot_util->m_nbJoints+6)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -240,7 +240,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
           const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==m_robot_util->m_nbJoints     && "Unexpected size of signal joint_velocities");
+          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model->frames[m_left_foot_id];
@@ -283,4 +283,3 @@ namespace dynamicgraph
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
-

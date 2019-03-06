@@ -37,20 +37,26 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-/* HELPER */
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/common.hh>
+
 #include <boost/circular_buffer.hpp>
 #include <Eigen/StdVector>
 
 /*Motor model*/
-#include <sot/torque_control/motor-model.hh>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <sot/torque_control/utils/stop-watch.hh>
+
+/*Motor model*/
+#include <sot/torque_control/motor-model.hh>
+
+
 namespace dynamicgraph {
   namespace sot {
     namespace torque_control {
@@ -84,20 +90,20 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(accelerometer,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(gyroscope,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(jointTorques,             dynamicgraph::Vector);
-        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
+        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);	
 
       protected:
         RobotUtil *       m_robot_util;
-        se3::Model        m_model;            /// Pinocchio robot model
-        se3::Data         *m_data;            /// Pinocchio robot data 
+        pinocchio::Model  m_model;            /// Pinocchio robot model
+        pinocchio::Data   *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
         double epsilon;
         double gyro_epsilon;
 
-        int ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
+	pinocchio::JointIndex ffIndex, torsoIndex;  //Index of the free-flyer and torso frames
         Eigen::VectorXd jointTorqueOffsets;
-        se3::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
+        pinocchio::SE3 m_torso_X_imu; // Definition of the imu in the chest frame.
 
         // stdAlignedVector encSignals;
         // stdAlignedVector accSignals;
@@ -108,7 +114,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       private:

@@ -1,4 +1,4 @@
-from dynamic_graph.sot.torque_control.tests.test_control_manager import cm
+from test_control_manager import cm
 
 cm.displayRobotUtil()
 

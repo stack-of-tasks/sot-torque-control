@@ -36,6 +36,8 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <map>
+#include "boost/assign.hpp"
 
 #include <parametric-curves/spline.hpp>
 #include <parametric-curves/constant.hpp>
@@ -45,13 +47,11 @@
 #include <parametric-curves/infinite-sinusoid.hpp>
 #include <parametric-curves/infinite-const-acc.hpp>
 
-#include <sot/torque_control/signal-helper.hh>
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
 //#include <sot/torque_control/utils/trajectory-generators.hh>
-
-#include <map>
-#include "boost/assign.hpp"
 
 
 namespace dynamicgraph {
@@ -148,7 +148,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[NdTrajectoryGenerator-"+name+"] "+msg, t, file, line);
+          sendMsg("[NdTrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
 
       protected:
@@ -173,7 +173,7 @@ namespace dynamicgraph {
         bool              m_splineReady;      /// true if the spline has been successfully loaded.
 
         std::vector<JTG_Status> m_status;     /// status of the component
-        std::vector<parametriccurves::AbstractCurve<double, Eigen::Vector1d>* >  m_currentTrajGen;
+        std::vector<parametriccurves::AbstractCurve<double, dynamicgraph::sot::Vector1d>* >  m_currentTrajGen;
         std::vector<parametriccurves::Constant<double, 1>* >                     m_noTrajGen;
         std::vector<parametriccurves::MinimumJerk<double, 1>* >                  m_minJerkTrajGen;
         std::vector<parametriccurves::InfiniteSinusoid<double,1>* >              m_sinTrajGen;

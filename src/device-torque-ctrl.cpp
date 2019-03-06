@@ -17,21 +17,22 @@
 #include <fstream>
 #include <map>
 
+#include <pinocchio/algorithm/joint-configuration.hpp> // integrate
 #include <tsid/math/constraint-base.hpp>
 #include <tsid/math/utils.hpp>
 
+#include <dynamic-graph/factory.h>
+#include <dynamic-graph/all-commands.h>
 #include <sot/core/debug.hh>
 
 #include "sot/torque_control/device-torque-ctrl.hh"
-#include <dynamic-graph/factory.h>
-#include <dynamic-graph/all-commands.h>
-#include <pinocchio/algorithm/joint-configuration.hpp> // integrate
 
 using namespace std;
 using namespace dynamicgraph;
 using namespace sot::torque_control;
 using namespace tsid;
 using namespace tsid::tasks;
+using namespace dynamicgraph::sot;
 
 typedef tsid::math::ConstraintBase ConstraintBase;
 
@@ -53,16 +54,16 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
   currentSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::currents"),
   p_gainsSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::p_gains"),
   d_gainsSOUT_ ("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::d_gains"),
-  accelerometer_ (3),
-  gyrometer_ (3),
-  m_numericalDamping(1e-8),
-  normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
-  normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_),
-  m_isTorqueControlled(true),
   CONSTRUCT_SIGNAL_IN(kp_constraints,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(kd_constraints,              dynamicgraph::Vector),
   CONSTRUCT_SIGNAL_IN(rotor_inertias,              dynamicgraph::Vector),
-  CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector)
+  CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector),
+  accelerometer_ (3),
+  gyrometer_ (3),
+  m_isTorqueControlled(true),  
+  m_numericalDamping(1e-8),
+  normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
+  normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_)
 {
   forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRLEG");
   forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLLEG");
@@ -132,10 +133,10 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
     return;
   }
 
-  m_nj = m_robot_util->m_nbJoints;
+  m_nj = static_cast<int>(m_robot_util->m_nbJoints);
 
-  const Eigen::Vector6d& kp_contact = m_kp_constraintsSIN(0);
-  const Eigen::Vector6d& kd_contact = m_kd_constraintsSIN(0);
+  const dynamicgraph::sot::Vector6d& kp_contact = m_kp_constraintsSIN(0);
+  const dynamicgraph::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
   const Vector rotor_inertias = m_rotor_inertiasSIN(0);
   const Vector gear_ratios = m_gear_ratiosSIN(0);
   const std::string & urdfFile = m_robot_util->m_urdf_filename;
@@ -144,8 +145,8 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
   {
     vector<string> package_dirs;
     m_robot = new robots::RobotWrapper(urdfFile, 
-				      package_dirs, se3::JointModelFreeFlyer());
-    m_data = new se3::Data(m_robot->model());
+				      package_dirs, pinocchio::JointModelFreeFlyer());
+    m_data = new pinocchio::Data(m_robot->model());
     m_robot->rotor_inertias(rotor_inertias);
     m_robot->gear_ratios(gear_ratios);
 
@@ -187,7 +188,7 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
 
 void DeviceTorqueCtrl::setStateSize(const unsigned int& size)
 {
-  assert(size==m_nj+6);
+  assert(size==static_cast<unsigned int>(m_nj+6));
   Device::setStateSize(size);
 
   base6d_encoders_.resize(size);
@@ -214,14 +215,14 @@ void DeviceTorqueCtrl::setState( const dynamicgraph::Vector& q )
   m_robot_util->config_sot_to_urdf(m_q_sot, m_q);
 
   m_robot->computeAllTerms(*m_data, m_q, m_v);
-  se3::SE3 H_lf = m_robot->position(*m_data,
+  pinocchio::SE3 H_lf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
   tsid::trajectories::TrajectorySample s(12, 6);
   tsid::math::SE3ToVector(H_lf, s.pos);
   m_contactLF->setReference(s);
   SEND_MSG("Setting left foot reference to "+toString(H_lf), MSG_TYPE_DEBUG);
 
-  se3::SE3 H_rf = m_robot->position(*m_data,
+  pinocchio::SE3 H_rf = m_robot->position(*m_data,
                                     m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
   tsid::math::SE3ToVector(H_rf, s.pos);
   m_contactRF->setReference(s);
@@ -280,7 +281,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
                                            m_dvBar, m_numericalDamping);
 
   // compute base of null space of constraint Jacobian
-  int r = (m_Jc_svd.singularValues().array()>1e-8).count();
+  Eigen::Index r = (m_Jc_svd.singularValues().array()>1e-8).count();
   m_Z = m_Jc_svd.matrixV().rightCols(m_nj+6-r);
 
   // compute constrained accelerations ddq_c = (Z^T*M*Z)^{-1}*Z^T*(S^T*tau - h - M*ddqBar)
@@ -337,7 +338,7 @@ void DeviceTorqueCtrl::integrate( const double & dt )
   {
     computeForwardDynamics();
     // integrate
-    m_q = se3::integrate(m_robot->model(), m_q, dt*m_v);
+    m_q = pinocchio::integrate(m_robot->model(), m_q, dt*m_v);
     m_v += dt*m_dv;
 
     m_robot_util->config_urdf_to_sot(m_q, m_q_sot);

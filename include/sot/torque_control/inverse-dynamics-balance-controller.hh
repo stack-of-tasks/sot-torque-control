@@ -36,10 +36,6 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
-#include <sot/torque_control/common.hh>
 #include <map>
 #include "boost/assign.hpp"
 
@@ -54,6 +50,13 @@
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
   namespace sot {
@@ -185,7 +188,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("["+name+"] "+msg, t, file, line);
+          sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       protected:
@@ -250,7 +253,7 @@ namespace dynamicgraph {
         tsid::math::Vector  m_q_urdf;
         tsid::math::Vector  m_v_urdf;
 
-        typedef se3::Data::Matrix6x Matrix6x;
+        typedef pinocchio::Data::Matrix6x Matrix6x;
         Matrix6x m_J_RF;
         Matrix6x m_J_LF;
         Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;

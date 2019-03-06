@@ -1,4 +1,8 @@
-# Copyright 2014, Andrea Del Prete, LAAS/CNRS
+# Copyright 2014-2018, Andrea Del Prete, LAAS/CNRS
+# Thomas Flayols, LAAS/CNRS
+# Olivier Stasse, LAAS/CNRS
+# Florent Forget, LAAS/CNRS
+# Paul Dandignac, LAAS/CNRS
 #
 # This file is part of sot-torque-control.
 # sot-torque-control is free software: you can redistribute it and/or
@@ -17,15 +21,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
-INCLUDE(cmake/lapack.cmake)
-INCLUDE(cmake/cpack.cmake)
 INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
 INCLUDE(cmake/test.cmake)
 
+SET(PROJECT_NAMESPACE stack-of-tasks)
 SET(PROJECT_NAME sot-torque-control)
 SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
-SET(PROJECT_URL "https://github.com/stack-of-tasks/sot-torque-control")
+SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
 SET(CUSTOM_HEADER_DIR "sot/torque-control")
 
@@ -77,6 +80,7 @@ ADD_REQUIRED_DEPENDENCY("tsid")
 ADD_REQUIRED_DEPENDENCY("parametric-curves")
 ADD_REQUIRED_DEPENDENCY("simple_humanoid_description")
 
+ADD_OPTIONAL_DEPENDENCY("ddp-actuator-solver")
 SET(SOTTORQUECONTROL_LIB_NAME ${PROJECT_NAME})
 SET(LIBRARY_NAME ${SOTTORQUECONTROL_LIB_NAME})
 
@@ -95,15 +99,12 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/control-manager.hh
   include/sot/torque_control/current-controller.hh
   include/sot/torque_control/commands-helper.hh
-  include/sot/torque_control/signal-helper.hh
-  include/sot/torque_control/common.hh
   include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/device-torque-ctrl.hh
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/torque-offset-estimator.hh
   include/sot/torque_control/imu_offset_compensation.hh
   include/sot/torque_control/admittance-controller.hh
-  include/sot/torque_control/utils/logger.hh
   include/sot/torque_control/utils/trajectory-generators.hh
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
@@ -119,7 +120,6 @@ SET(${LIBRARY_NAME}_HEADERS
 #  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE)
 
 SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
-    src/logger.cpp
     src/trajectory-generators.cpp
     src/lin-estimator.cpp
     src/poly-estimator.cpp
@@ -127,7 +127,6 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/causal-filter.cpp
     src/stop-watch.cpp
     src/motor-model.cpp
-    src/common.cpp
 )
 
 
@@ -189,13 +188,9 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
 
 # *****************************
-# Common-sot-py PYTHON module *
+# PYTHON interface            *
 # *****************************
 IF(BUILD_PYTHON_INTERFACE)
-  PYTHON_ADD_MODULE(common_sot_py src/common-py.cpp)
-  TARGET_LINK_LIBRARIES(common_sot_py ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${LIBRARY_NAME})
-  TARGET_LINK_BOOST_PYTHON(common_sot_py)
-  INSTALL(TARGETS common_sot_py DESTINATION ${PYTHON_INSTALL_DIR})
 
   IF(TALOS_DATA_FOUND)
     FOREACH(py_filename test_torque_offset_estimator)
@@ -206,6 +201,7 @@ IF(BUILD_PYTHON_INTERFACE)
 
       INSTALL(FILES ${PROJECT_BINARY_DIR}/python/dynamic_graph/sot/torque_control/tests/${py_filename}.py
         DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
+
 
     ENDFOREACH(py_filename)
   ENDIF(TALOS_DATA_FOUND)
@@ -222,5 +218,5 @@ IF(BUILD_PYTHON_INTERFACE)
   ENDIF(SIMPLE_HUMANOID_DESCRIPTION_FOUND)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
+
 SETUP_PROJECT_FINALIZE()
-SETUP_PROJECT_CPACK()

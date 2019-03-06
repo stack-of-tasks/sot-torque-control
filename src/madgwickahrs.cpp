@@ -12,10 +12,9 @@
 
 
 
-#include <sot/torque_control/madgwickahrs.hh>
-#include <sot/core/debug.hh>
 #include <dynamic-graph/factory.h>
-
+#include <sot/core/debug.hh>
+#include <sot/torque_control/madgwickahrs.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
@@ -30,8 +29,9 @@ namespace dynamicgraph
       using namespace dg;
       using namespace dg::command;
       using namespace std;
+      using namespace dg::sot;
 
-      typedef Eigen::Vector6d Vector6;
+      typedef dg::sot::Vector6d Vector6;
 
 #define PROFILE_MADGWICKAHRS_COMPUTATION          "MadgwickAHRS computation"
 
@@ -57,6 +57,11 @@ namespace dynamicgraph
                                                                               m_accelerometerSIN)
         ,m_initSucceeded(false)
         ,m_beta(betaDef)
+	,m_q0(1.0f)
+	,m_q1(0.0f)
+	,m_q2(0.0f)
+	,m_q3(0.0f)
+	,m_sampleFreq(512.0f)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -77,7 +82,7 @@ namespace dynamicgraph
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
-        m_sampleFreq=1.0f/dt;
+        m_sampleFreq=static_cast<float>(1.0f/dt);
         m_initSucceeded = true;
       }
 
@@ -85,7 +90,7 @@ namespace dynamicgraph
       {
         if(beta<0.0 || beta>1.0)
           return SEND_MSG("Beta must be in [0,1]", MSG_TYPE_ERROR);
-        m_beta = beta;
+        m_beta = static_cast<float>(beta);
       }
 
       /* ------------------------------------------------------------------- */
@@ -105,8 +110,12 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_MADGWICKAHRS_COMPUTATION);
         {
           // Update state with new measurment
-          madgwickAHRSupdateIMU(     gyroscope(0),     gyroscope(1),     gyroscope(2),
-                                     accelerometer(0), accelerometer(1), accelerometer(2));
+          madgwickAHRSupdateIMU(  static_cast<float>(gyroscope(0)),
+				  static_cast<float>(gyroscope(1)),
+				  static_cast<float>(gyroscope(2)),
+				  static_cast<float>(accelerometer(0)),
+				  static_cast<float>(accelerometer(1)),
+				  static_cast<float>(accelerometer(2)));
           if(s.size()!=4)
             s.resize(4);
           s(0) = m_q0;

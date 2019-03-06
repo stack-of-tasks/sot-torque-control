@@ -14,13 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/current-controller.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
 
-#include <sot/torque_control/commands-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
+
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/current-controller.hh>
+#include <sot/torque_control/commands-helper.hh>
 
 namespace dynamicgraph
 {
@@ -102,8 +103,8 @@ namespace dynamicgraph
                                                                                m_bemf_factorSIN)
         ,m_robot_util(RefVoidRobotUtil())
         ,m_initSucceeded(false)
-        ,m_is_first_iter(true)
         ,m_emergency_stop_triggered(false)
+        ,m_is_first_iter(true)
         ,m_iter(0)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS);
@@ -114,7 +115,7 @@ namespace dynamicgraph
                                     docCommandVoid3("Initialize the entity.",
                                                     "Time period in seconds (double)",
 						    "Robot reference (string)",
-						    "Number of iterations while control is disabled to calibrate current sensors (int)")));     
+						    "Number of iterations while control is disabled to calibrate current sensors (int)")));
 
         addCommand("reset_integral",
                    makeCommandVoid0(*this, &CurrentController::reset_integral,
@@ -205,7 +206,7 @@ namespace dynamicgraph
         //s = s.cwiseProduct(in_out_gain);
 
         // when estimating current offset set ctrl to zero
-        if(m_emergency_stop_triggered || m_iter<m_currentOffsetIters)
+        if(m_emergency_stop_triggered || m_iter<static_cast<int>(m_currentOffsetIters))
           s.setZero();
 
         return s;
@@ -225,7 +226,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& i_real                    = m_i_realSOUT(iter);
         const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
 
-        if(s.size()!=m_robot_util->m_nbJoints)
+        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
@@ -255,7 +256,7 @@ namespace dynamicgraph
         }
 
         // when estimating current offset set ctrl to zero
-        if(m_emergency_stop_triggered || m_iter<m_currentOffsetIters)
+        if(m_emergency_stop_triggered || m_iter<static_cast<int>(m_currentOffsetIters))
           s.setZero();
 
         return s;
@@ -310,15 +311,15 @@ namespace dynamicgraph
         // Compute current sensor offsets
         if (m_currentOffsetIters > 0)
         {
-          if(m_iter<m_currentOffsetIters)
+          if(m_iter<static_cast<int>(m_currentOffsetIters))
             m_i_offsets_real += (currents-m_i_offsets_real)/(m_iter+1);
-          else if(m_iter==m_currentOffsetIters)
+          else if(m_iter==static_cast<int>(m_currentOffsetIters))
           {
             SEND_MSG("Current sensor offsets computed in "+toString(m_iter)+" iterations: "+toString(m_i_offsets_real), MSG_TYPE_INFO);
             for(int i=0; i<s.size(); i++)
               if(fabs(m_i_offsets_real(i))>0.6)
               {
-                SEND_MSG("Current offset for joint "+m_robot_util->get_name_from_id(i)+ 
+                SEND_MSG("Current offset for joint "+m_robot_util->get_name_from_id(i)+
                          " is too large, suggesting that the sensor may be broken: "+toString(m_i_offsets_real(i)), MSG_TYPE_WARNING);
                 m_i_offsets_real(i) = 0.0;
               }
@@ -408,8 +409,7 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-      
+
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
-

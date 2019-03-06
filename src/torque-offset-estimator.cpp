@@ -14,13 +14,14 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/torque-offset-estimator.hh>
-#include <sot/core/debug.hh>
+#include <Eigen/Dense>
+
 #include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/torque-offset-estimator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
-#include <sot/torque_control/common.hh>
-#include <Eigen/Dense>
+
 
 namespace dynamicgraph
 {
@@ -114,8 +115,8 @@ namespace torque_control
         return;
       }
 
-      se3::urdf::buildModel(m_robot_util->m_urdf_filename,
-                            se3::JointModelFreeFlyer(), m_model);
+      pinocchio::urdf::buildModel(m_robot_util->m_urdf_filename,
+                            pinocchio::JointModelFreeFlyer(), m_model);
       // assert(m_model.nq == N_JOINTS+7);
       // assert(m_model.nv == N_JOINTS+6);
             
@@ -130,7 +131,7 @@ namespace torque_control
       SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
       return;
     }
-    m_data = new se3::Data(m_model);
+    m_data = new pinocchio::Data(m_model);
     m_torso_X_imu.rotation() = m_torso_X_imu_.block<3,3>(0,0);
     m_torso_X_imu.translation() = m_torso_X_imu_.block<3,1>(0,3);
     gyro_epsilon = gyro_epsilon_;
@@ -195,9 +196,9 @@ namespace torque_control
 
         //Get the transformation from ff(f) to torso (t) to IMU(i) frame:
         // fMi = oMf^-1 * fMt * tMi
-        se3::forwardKinematics(m_model,*m_data,enc);
-        //se3::SE3 fMi = m_data->oMi[ffIndex].inverse()*m_data->oMi[torsoIndex]*m_torso_X_imu;
-        se3::SE3 oMimu = m_data->oMi[torsoIndex]*m_torso_X_imu;
+        pinocchio::forwardKinematics(m_model,*m_data,enc);
+        //pinocchio::SE3 fMi = m_data->oMi[ffIndex].inverse()*m_data->oMi[torsoIndex]*m_torso_X_imu;
+        pinocchio::SE3 oMimu = m_data->oMi[torsoIndex]*m_torso_X_imu;
 
         //Move the IMU signal to the base frame.
         //angularAcceleration is zero. Intermediate frame acc and velocities are zero
@@ -208,7 +209,7 @@ namespace torque_control
         //Set fixed for DEBUG
         //m_model.gravity.linear() = m_model.gravity981;
 
-        const Eigen::VectorXd& tau_rnea = se3::rnea(m_model, *m_data, enc,
+        const Eigen::VectorXd& tau_rnea = pinocchio::rnea(m_model, *m_data, enc,
                                                     Eigen::VectorXd::Zero(m_model.nv),
                                                     Eigen::VectorXd::Zero(m_model.nv));
         const Eigen::VectorXd current_offset = tau - tau_rnea.tail(m_model.nv-6);

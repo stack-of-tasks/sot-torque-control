@@ -13,15 +13,15 @@
  * have received a copy of the GNU Lesser General Public License along
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <tsid/robots/robot-wrapper.hpp>
-
-#include <sot/torque_control/control-manager.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
-
-#include <sot/torque_control/commands-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
+
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/control-manager.hh>
+#include <sot/torque_control/commands-helper.hh>
 
 using namespace tsid;
 
@@ -190,7 +190,7 @@ namespace dynamicgraph
         m_emergency_stop_triggered = false; 
         m_initSucceeded = true;
         vector<string> package_dirs;
-        m_robot = new robots::RobotWrapper(urdfFile, package_dirs, se3::JointModelFreeFlyer());
+        m_robot = new robots::RobotWrapper(urdfFile, package_dirs, pinocchio::JointModelFreeFlyer());
 
         std::string localName(robotRef);
         if (!isNameInRobotUtil(localName))
@@ -254,7 +254,7 @@ namespace dynamicgraph
             }
 
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
-            assert(ctrl.size()==m_robot_util->m_nbJoints);
+            assert(ctrl.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
 
             if(m_jointCtrlModesCountDown[i]==0)
               s(i) = ctrl(i);
@@ -262,7 +262,7 @@ namespace dynamicgraph
             {
               cm_id_prev = m_jointCtrlModes_previous[i].id;
               const dynamicgraph::Vector& ctrl_prev = (*m_ctrlInputsSIN[cm_id_prev])(iter);
-              assert(ctrl_prev.size()==m_robot_util->m_nbJoints);
+              assert(ctrl_prev.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
 
               double alpha = m_jointCtrlModesCountDown[i]/CTRL_MODE_TRANSITION_TIME_STEP;
 //              SEND_MSG("Joint "+toString(i)+" changing ctrl mode from "+toString(cm_id_prev)+
@@ -281,7 +281,7 @@ namespace dynamicgraph
         }
         getProfiler().stop(PROFILE_PWM_DESIRED_COMPUTATION);
 
-        usleep(1e6*m_sleep_time);
+        usleep(static_cast<unsigned int>(1e6*m_sleep_time));
         if(m_sleep_time>=0.1)
         {
           for(unsigned int i=0; i<m_ctrlInputsSIN.size(); i++)
@@ -310,7 +310,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& i_real                 = m_i_measuredSIN(iter);
         const dynamicgraph::Vector& tau_predicted          = m_tau_predictedSIN(iter);
 
-        for(int i=0;i<m_emergencyStopSIN.size();i++)
+        for(std::size_t i=0;i<m_emergencyStopSIN.size();i++)
         {
           if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter)) 
           {
@@ -479,7 +479,7 @@ namespace dynamicgraph
 
       void ControlManager::setStreamPrintPeriod(const double & s)
       {
-        getLogger().setStreamPrintPeriod(s);
+        setStreamPrintPeriod(s);
       }
 
       void ControlManager::setSleepTime(const double &seconds)
@@ -497,20 +497,20 @@ namespace dynamicgraph
           getClassName()+"("+getName()+")::input(bool)::emergencyStop_"+name));
 
         // register the new signals and add the new signal dependecy
-        unsigned int i = m_emergencyStopSIN.size()-1;
+	Eigen::Index i = m_emergencyStopSIN.size()-1;
         m_u_safeSOUT.addDependency(*m_emergencyStopSIN[i]);
         Entity::signalRegistration(*m_emergencyStopSIN[i]);
       }
 
       void ControlManager::setNameToId(const std::string &jointName,
-                                      const double & jointId)
+				       const double & jointId)
       {
 	if(!m_initSucceeded)
 	  {
 	    SEND_WARNING_STREAM_MSG("Cannot set joint name from joint id  before initialization!");
 	    return;
 	  }
-	m_robot_util->set_name_to_id(jointName,jointId);
+	m_robot_util->set_name_to_id(jointName,static_cast<Eigen::Index>(jointId));
       }
 
       void ControlManager::setJointLimitsFromId( const double &jointId,
@@ -548,7 +548,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-	m_robot_util->m_force_util.set_name_to_force_id(forceName,forceId);
+	m_robot_util->m_force_util.set_name_to_force_id(forceName,static_cast<Eigen::Index>(forceId));
       }
 
       void ControlManager::setJoints(const dg::Vector & urdf_to_sot)
@@ -659,12 +659,12 @@ namespace dynamicgraph
       bool ControlManager::convertJointNameToJointId(const std::string& name, unsigned int& id)
       {
         // Check if the joint name exists
-	se3::Model::JointIndex jid = m_robot_util->get_id_from_name(name);
+	sot::Index jid = m_robot_util->get_id_from_name(name);
         if (jid<0)
         {
           SEND_MSG("The specified joint name does not exist: "+name, MSG_TYPE_ERROR);
           std::stringstream ss;
-          for(se3::Model::JointIndex it=0; it< m_robot_util->m_nbJoints;it++)
+          for(pinocchio::Model::JointIndex it=0; it< m_robot_util->m_nbJoints;it++)
             ss<< m_robot_util->get_name_from_id(it) <<", ";
           SEND_MSG("Possible joint names are: "+ss.str(), MSG_TYPE_INFO);
           return false;

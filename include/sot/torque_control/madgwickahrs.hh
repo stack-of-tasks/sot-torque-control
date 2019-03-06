@@ -47,12 +47,14 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-
-#include <sot/torque_control/signal-helper.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/logger.hh>
 #include <map>
 #include "boost/assign.hpp"
+
+/* HELPER */
+#include <dynamic-graph/signal-helper.h>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
+
 
 #define betaDef		0.01f		// 2 * proportional g
 
@@ -95,14 +97,14 @@ namespace dynamicgraph {
         //void madgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          getLogger().sendMsg("[MadgwickAHRS-"+name+"] "+msg, t, file, line);
+          sendMsg("[MadgwickAHRS-"+name+"] "+msg, t, file, line);
         }
 
       protected:
-        bool              m_initSucceeded;                                      /// true if the entity has been successfully initialized
-        volatile float    m_beta = betaDef;								        /// 2 * proportional gain (Kp)
-        volatile float    m_q0 = 1.0f, m_q1 = 0.0f, m_q2 = 0.0f, m_q3 = 0.0f;	/// quaternion of sensor frame
-        float             m_sampleFreq = 512.0f;		                        /// sample frequency in Hz
+        bool              m_initSucceeded;              /// true if the entity has been successfully initialized
+        volatile float    m_beta;			/// 2 * proportional gain (Kp)
+        volatile float    m_q0, m_q1, m_q2 , m_q3;	/// quaternion of sensor frame
+        float             m_sampleFreq;	                /// sample frequency in Hz
 
       }; // class MadgwickAHRS
     }    // namespace torque_control

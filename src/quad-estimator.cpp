@@ -258,7 +258,7 @@ void QuadEstimator::estimate(std::vector<double>& esteem,
   {
     c0_[i] = 0.0; c1_[i] = 0.0; c2_[i] = 0.0;
     // Retrieve the data in the window
-    for (int j = 0; j < N_; ++j)
+    for (unsigned int j = 0; j < N_; ++j)
     {
       idx = (pt_+j);
       if (idx >= N_ ) idx -= N_;

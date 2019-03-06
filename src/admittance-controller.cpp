@@ -14,12 +14,12 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sot/torque_control/admittance-controller.hh>
-#include <sot/core/debug.hh>
-#include <dynamic-graph/factory.h>
-
-#include <sot/torque_control/commands-helper.hh>
 #include <tsid/utils/stop-watch.hpp>
+#include <dynamic-graph/factory.h>
+#include <sot/core/debug.hh>
+#include <sot/torque_control/admittance-controller.hh>
+#include <sot/torque_control/commands-helper.hh>
+
 
 namespace dynamicgraph
 {
@@ -35,6 +35,7 @@ namespace dynamicgraph
       using namespace tsid;
       using namespace tsid::math;
       using namespace tsid::tasks;
+      using namespace dg::sot;
 
 #define PROFILE_DQ_DES_COMPUTATION "Admittance control computation"
 
@@ -105,9 +106,9 @@ namespace dynamicgraph
 //                                                                m_fRightHandRefSIN)
 //            ,CONSTRUCT_SIGNAL_OUT(fLeftHandError,   dynamicgraph::Vector, m_fLeftHandSIN <<
 //                                                                m_fLeftHandRefSIN)
+            ,m_firstIter(true)
             ,m_initSucceeded(false)
             ,m_useJacobianTranspose(true)
-            ,m_firstIter(true)
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
@@ -155,8 +156,8 @@ namespace dynamicgraph
           vector<string> package_dirs;
           m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
                                              package_dirs,
-                                             se3::JointModelFreeFlyer());
-          m_data = new se3::Data(m_robot->model());
+                                             pinocchio::JointModelFreeFlyer());
+          m_data = new pinocchio::Data(m_robot->model());
 
           assert(m_robot->nv()>=6);
           m_robot_util->m_nbJoints = m_robot->nv()-6;
@@ -229,8 +230,8 @@ namespace dynamicgraph
 
         getProfiler().start(PROFILE_DQ_DES_COMPUTATION);
         {
-          const Eigen::Vector6d v_des_LF = m_vDesLeftFootSOUT(iter);
-          const Eigen::Vector6d v_des_RF = m_vDesRightFootSOUT(iter);
+          const dg::sot::Vector6d v_des_LF = m_vDesLeftFootSOUT(iter);
+          const dg::sot::Vector6d v_des_RF = m_vDesRightFootSOUT(iter);
           const Vector& q_sot            = m_encodersSIN(iter);  // n
 //          const Vector& dq_sot           = m_jointsVelocitiesSIN(iter); // n
           //const Vector& qMask            = m_controlledJointsSIN(iter); // n
@@ -291,9 +292,9 @@ namespace dynamicgraph
         const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
         const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
 
-        Eigen::Vector6d err      = fRef - f;
-        Eigen::Vector6d err_filt = fRef - f_filt;
-        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+        dg::sot::Vector6d err      = fRef - f;
+        dg::sot::Vector6d err_filt = fRef - f_filt;
+        dg::sot::Vector6d v_des    = -kp.cwiseProduct(err_filt);
 
         for(int i=0; i<6; i++)
         {
@@ -339,9 +340,9 @@ namespace dynamicgraph
         const Vector6d& f_sat   = m_force_integral_saturationSIN(iter);
         const Vector6d& dz      = m_force_integral_deadzoneSIN(iter);
 
-        Eigen::Vector6d err      = fRef - f;
-        Eigen::Vector6d err_filt = fRef - f_filt;
-        Eigen::Vector6d v_des    = -kp.cwiseProduct(err_filt);
+        dg::sot::Vector6d err      = fRef - f;
+        dg::sot::Vector6d err_filt = fRef - f_filt;
+        dg::sot::Vector6d v_des    = -kp.cwiseProduct(err_filt);
 
         for(int i=0; i<6; i++)
         {
@@ -369,6 +370,7 @@ namespace dynamicgraph
         if(saturating)
           SEND_INFO_STREAM_MSG("Saturate m_v_LF_int integral: "+toString(m_v_LF_int.transpose()));
         s = v_des + m_v_LF_int;
+	return s;
       }
 
 //      DEFINE_SIGNAL_OUT_FUNCTION(fRightHandError,dynamicgraph::Vector)
@@ -438,7 +440,7 @@ namespace dynamicgraph
 
           //    cout<<"b = "<<toString(b,1)<<endl;
           VectorXd tmp(A.cols());
-          int nzsv = A.nonzeroSingularValues();
+          int nzsv = static_cast<int>(A.nonzeroSingularValues());
           tmp.noalias() = A.matrixU().leftCols(nzsv).adjoint() * b;
           //    cout<<"U^T*b = "<<toString(tmp,1)<<endl;
           double sv, d2 = damping*damping;

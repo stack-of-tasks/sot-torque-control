@@ -1,7 +1,25 @@
-#include <sot/torque_control/imu_offset_compensation.hh>
-#include <sot/core/debug.hh>
+/*
+ * Copyright 2017, Andrea Del Prete, LAAS-CNRS
+ *
+ * This file is part of sot-torque-control.
+ * sot-torque-control is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
+ * sot-torque-control is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.  You should
+ * have received a copy of the GNU Lesser General Public License along
+ * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
 #include <dynamic-graph/factory.h>
 
+#include <sot/core/debug.hh>
+#include <sot/torque_control/imu_offset_compensation.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/utils/stop-watch.hh>
 
@@ -42,10 +60,10 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_OUT(accelerometer_out, dynamicgraph::Vector, m_accelerometer_inSIN)
         ,CONSTRUCT_SIGNAL_OUT(gyrometer_out,     dynamicgraph::Vector, m_gyrometer_inSIN)
         ,m_initSucceeded(false)
+        ,m_dt(0.001f)
         ,m_update_cycles_left(0)
         ,m_update_cycles(0)
-        ,m_dt(0.001)
-        ,m_a_gyro_DC_blocker(1.0)
+        ,m_a_gyro_DC_blocker(1.0f)
 
       {
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
@@ -80,7 +98,7 @@ namespace dynamicgraph
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
-        m_dt = dt;
+        m_dt = static_cast<float>(dt);
         m_initSucceeded = true;
 
         // try to read IMU calibration data from file
