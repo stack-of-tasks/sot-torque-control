@@ -322,8 +322,8 @@ namespace dynamicgraph
             ,m_contactState(DOUBLE_SUPPORT)
             ,m_timeLast(0)
             ,m_contactState(DOUBLE_SUPPORT)
-            ,m_rightHandState(LOW_RIGHT_HAND)
-            ,m_leftHandState(LOW_LEFT_HAND)
+            ,m_rightHandState(TASK_RIGHT_HAND_OFF)
+            ,m_leftHandState(TASK_LEFT_HAND_OFF)
 	    ,m_robot_util(RefVoidRobotUtil())
       {
         RESETDEBUG5();
@@ -433,7 +433,7 @@ namespace dynamicgraph
       
       void InverseDynamicsBalanceController::addTaskRightHand(/*const double& transitionTime*/)
       {
-        if(m_rightHandState == LOW_RIGHT_HAND)
+        if(m_rightHandState == TASK_RIGHT_HAND_OFF)
         {
           SEND_MSG("Adds right hand SE3 task in "/*+toString(transitionTime)+" s"*/, MSG_TYPE_INFO);
           const double & w_hands = m_w_handsSIN.accessCopy();
@@ -441,17 +441,17 @@ namespace dynamicgraph
         }
         /*if(transitionTime>m_dt)
         {
-          m_rightHandState = HIGH_RIGHT_HAND_TRANSITION;
+          m_rightHandState = TASK_RIGHT_HAND_TRANSITION;
           m_handsTransitionTime = m_t + transitionTime;
         }
         else
-          m_rightHandState = HIGH_RIGHT_HAND;*/
-        m_rightHandState = HIGH_RIGHT_HAND;
+          m_rightHandState = TASK_RIGHT_HAND_ON;*/
+        m_rightHandState = TASK_RIGHT_HAND_ON;
       }
 
       void InverseDynamicsBalanceController::addTaskLeftHand(/*const double& transitionTime*/)
       {
-        if(m_leftHandState == LOW_LEFT_HAND)
+        if(m_leftHandState == TASK_LEFT_HAND_OFF)
         {
           SEND_MSG("Raise left hand in "/*+toString(transitionTime)+" s"*/, MSG_TYPE_INFO);
           const double & w_hands = m_w_handsSIN.accessCopy();
@@ -459,12 +459,12 @@ namespace dynamicgraph
         }
         /*if(transitionTime>m_dt)
         {
-          m_leftHandState = HIGH_LEFT_HAND_TRANSITION;
+          m_leftHandState = TASK_LEFT_HAND_TRANSITION;
           m_handsTransitionTime = m_t + transitionTime;
         }
         else
-          m_leftHandState = HIGH_LEFT_HAND;*/
-        m_leftHandState = HIGH_LEFT_HAND;
+          m_leftHandState = TASK_LEFT_HAND_ON;*/
+        m_leftHandState = TASK_LEFT_HAND_ON;
       }
 
       void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime)
@@ -493,21 +493,21 @@ namespace dynamicgraph
 
       void InverseDynamicsBalanceController::removeTaskRightHand(const double& transitionTime)
       {
-        if(m_rightHandState == HIGH_RIGHT_HAND)
+        if(m_rightHandState == TASK_RIGHT_HAND_ON)
         {
           SEND_MSG("Removes right hand SE3 task in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
           m_invDyn->removeTask(m_taskRH->name(), transitionTime);
-          m_rightHandState = LOW_RIGHT_HAND;
+          m_rightHandState = TASK_RIGHT_HAND_OFF;
         }
       }
 
       void InverseDynamicsBalanceController::removeTaskLeftHand(const double& transitionTime)
       {
-        if(m_leftHandState == HIGH_LEFT_HAND)
+        if(m_leftHandState == TASK_LEFT_HAND_ON)
         {
           SEND_MSG("Removes left hand SE3 task in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
           m_invDyn->removeTask(m_taskLH->name(), transitionTime);
-          m_leftHandState = LOW_LEFT_HAND;
+          m_leftHandState = TASK_LEFT_HAND_OFF;
         }
       }
 
@@ -758,13 +758,13 @@ namespace dynamicgraph
         {
           m_contactState = LEFT_SUPPORT;
         }
-        /*if(m_rightHandState == HIGH_RIGHT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
+        /*if(m_rightHandState == TASK_RIGHT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
         {
-              m_rightHandState = HIGH_RIGHT_HAND;
+              m_rightHandState = TASK_RIGHT_HAND_ON;
                 }
-        if(m_leftHandState == HIGH_LEFT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
+        if(m_leftHandState == TASK_LEFT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
         {
-              m_leftHandState = HIGH_LEFT_HAND;
+              m_leftHandState = TASK_LEFT_HAND_ON;
                 }*/
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
@@ -831,7 +831,7 @@ namespace dynamicgraph
           m_taskLF->Kp(kp_feet);
           m_taskLF->Kd(kd_feet);
         }
-        if(m_rightHandState == HIGH_RIGHT_HAND /*|| m_rightHandState == HIGH_RIGHT_HAND_TRANSITION*/)
+        if(m_rightHandState == TASK_RIGHT_HAND_ON /*|| m_rightHandState == TASK_RIGHT_HAND_TRANSITION*/)
         {
           const Eigen::Matrix<double,12,1>& x_rh_ref = m_rh_ref_posSIN(iter);
           const Vector6& dx_rh_ref =  m_rh_ref_velSIN(iter);
@@ -845,7 +845,7 @@ namespace dynamicgraph
           m_taskRH->Kp(kp_hands);
           m_taskRH->Kd(kd_hands);
         }
-        if(m_leftHandState == HIGH_LEFT_HAND /*|| m_leftHandState == HIGH_LEFT_HAND_TRANSITION*/)
+        if(m_leftHandState == TASK_LEFT_HAND_ON /*|| m_leftHandState == TASK_LEFT_HAND_TRANSITION*/)
         {
           const Eigen::Matrix<double,12,1>& x_lh_ref = m_lh_ref_posSIN(iter);
           const Vector6& dx_lh_ref =  m_lh_ref_velSIN(iter);
