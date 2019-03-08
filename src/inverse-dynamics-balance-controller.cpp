@@ -300,7 +300,6 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(com_acc,                    dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_acc_des,                dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_hand_pos,              dg::Vector, m_tau_desSOUT)
@@ -321,7 +320,6 @@ namespace dynamicgraph
             ,m_firstTime(true)
             ,m_contactState(DOUBLE_SUPPORT)
             ,m_timeLast(0)
-            ,m_contactState(DOUBLE_SUPPORT)
             ,m_rightHandState(TASK_RIGHT_HAND_OFF)
             ,m_leftHandState(TASK_LEFT_HAND_OFF)
 	    ,m_robot_util(RefVoidRobotUtil())
@@ -1398,7 +1396,7 @@ namespace dynamicgraph
           return s;
         }
         m_tau_desSOUT(iter);
-        se3::SE3 oMi;
+        pinocchio::SE3 oMi;
         s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_lh, oMi);
         tsid::math::SE3ToVector(oMi, s);
@@ -1431,7 +1429,7 @@ namespace dynamicgraph
           return s;
         }
         m_tau_desSOUT(iter);
-        se3::SE3 oMi;
+        pinocchio::SE3 oMi;
         s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rh, oMi);
         tsid::math::SE3ToVector(oMi, s);
@@ -1460,7 +1458,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal left_hand_vel before initialization!");
           return s;
         }
-        se3::Motion v;
+        pinocchio::Motion v;
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_lh, v);
         s = v.toVector();
         return s;
@@ -1487,7 +1485,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_vel before initialization!");
           return s;
         }
-        se3::Motion v;
+        pinocchio::Motion v;
         m_robot->frameVelocity(m_invDyn->data(), m_frame_id_rh, v);
         s = v.toVector();
         return s;
