@@ -176,7 +176,7 @@ namespace dynamicgraph
         DIST normalDistribution_;
         GEN  normalRandomNumberGenerator_;
 
-        RobotUtil * m_robot_util;
+        RobotUtilShrPtr m_robot_util;
       };
 
     }   // end namespace torque_control

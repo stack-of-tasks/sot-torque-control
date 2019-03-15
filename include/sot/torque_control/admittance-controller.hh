@@ -146,7 +146,7 @@ namespace dynamicgraph {
         tsid::math::Vector6 m_v_RF_int;
         tsid::math::Vector6 m_v_LF_int;
 
-        RobotUtil * m_robot_util;
+        RobotUtilShrPtr m_robot_util;
 
 //        tsid::math::Vector3 m_zmp_des_LF;          /// 3d desired zmp left foot
 //        tsid::math::Vector3 m_zmp_des_RF;          /// 3d desired zmp left foot

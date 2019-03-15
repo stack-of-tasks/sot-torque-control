@@ -182,7 +182,7 @@ namespace dynamicgraph {
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
 
-	RobotUtil     *m_robot_util;
+	RobotUtilShrPtr m_robot_util;
 
         std::vector<int>  m_iterForceSignals;
 

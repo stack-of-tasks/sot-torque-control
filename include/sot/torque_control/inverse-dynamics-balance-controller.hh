@@ -308,7 +308,7 @@ namespace dynamicgraph {
         tsid::math::Vector6 m_v_LF_int;
 
         unsigned int m_timeLast;
-        RobotUtil * m_robot_util;
+        RobotUtilShrPtr m_robot_util;
 
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control

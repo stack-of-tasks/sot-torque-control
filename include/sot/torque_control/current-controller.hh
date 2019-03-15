@@ -119,7 +119,7 @@ namespace dynamicgraph {
         }
 
       protected:
-	RobotUtil * m_robot_util;
+	RobotUtilShrPtr m_robot_util;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         bool    m_emergency_stop_triggered;
         double  m_dt;               /// control loop time period

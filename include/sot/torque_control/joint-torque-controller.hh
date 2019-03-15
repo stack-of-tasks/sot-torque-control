@@ -124,7 +124,7 @@ namespace dynamicgraph {
 //        Eigen::VectorXd m_dqDesIntegral; /// integral of the desired velocity
         Eigen::VectorXd m_dqErrIntegral; /// integral of the velocity error
 
-	RobotUtil * m_robot_util;
+	RobotUtilShrPtr m_robot_util;
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {

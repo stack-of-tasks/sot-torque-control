@@ -115,7 +115,7 @@ namespace dynamicgraph {
         Eigen::VectorXd   m_v_pin;            /// robot velocities according to pinocchio convention
         Eigen::VectorXd   m_v_sot;            /// robot velocities according to SoT convention
 
-	RobotUtil * m_robot_util;
+	RobotUtilShrPtr m_robot_util;
 
       }; // class FreeFlyerLocator
 

@@ -94,7 +94,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);	
 
       protected:
-        RobotUtil *       m_robot_util;
+        RobotUtilShrPtr       m_robot_util;
         pinocchio::Model  m_model;            /// Pinocchio robot model
         pinocchio::Data   *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider

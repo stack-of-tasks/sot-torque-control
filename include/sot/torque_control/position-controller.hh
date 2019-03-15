@@ -93,7 +93,7 @@ namespace dynamicgraph {
         }
 
       protected:
-	RobotUtil *       m_robot_util;        /// Robot Util
+	RobotUtilShrPtr       m_robot_util;        /// Robot Util
         Eigen::VectorXd   m_pwmDes;
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         double            m_dt;               /// control loop time period

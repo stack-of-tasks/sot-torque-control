@@ -187,28 +187,28 @@ namespace dynamicgraph
 
       void ControlManager::init(const double & dt,
                                 const std::string & urdfFile,
-                                const std::string &robotRef)
+                                const std::string & robotRef)
       {
         if(dt<=0.0)
           return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
         m_dt = dt;
-        m_emergency_stop_triggered = false; 
+        m_emergency_stop_triggered = false;
         m_initSucceeded = true;
         vector<string> package_dirs;
         m_robot = new robots::RobotWrapper(urdfFile, package_dirs, pinocchio::JointModelFreeFlyer());
-
         std::string localName(robotRef);
         if (!isNameInRobotUtil(localName))
         {
             m_robot_util = createRobotUtil(localName);
+            std::cout << "createRobotUtil success" << std::endl;
         }
         else
         {
             m_robot_util = getRobotUtil(localName);
+            std::cout << "getRobotUtil success" << std::endl;
         }
-
+        std::cout << m_robot_util->m_urdf_filename << std::endl;
         m_robot_util->m_urdf_filename = urdfFile;
-
         addCommand("getJointsUrdfToSot",
                    makeDirectGetter(*this, &m_robot_util->m_dgv_urdf_to_sot,
                                     docDirectSetter("Display map Joints From URDF to SoT.",
@@ -317,7 +317,7 @@ namespace dynamicgraph
 
         for(std::size_t i=0;i<m_emergencyStopSIN.size();i++)
         {
-          if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter)) 
+          if ((*m_emergencyStopSIN[i]).isPlugged() && (*m_emergencyStopSIN[i])(iter))
           {
             m_emergency_stop_triggered = true;
             SEND_MSG("Emergency Stop has been triggered by an external entity", MSG_TYPE_ERROR);
@@ -408,7 +408,7 @@ namespace dynamicgraph
         CtrlMode cm;
         if(convertStringToCtrlMode(ctrlMode,cm)==false)
           return;
-          
+
         if(jointName=="all")
         {
           for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)
@@ -527,7 +527,7 @@ namespace dynamicgraph
 	    SEND_WARNING_STREAM_MSG("Cannot set joints limits from joint id  before initialization!");
 	    return;
 	  }
-	
+
 	m_robot_util->set_joint_limits_for_id((Index)jointId,lq,uq);
       }
 
@@ -600,7 +600,7 @@ namespace dynamicgraph
 	  m_robot_util->m_foot_util.m_Left_Foot_Frame_Name = FrameName;
 	else if (FootName=="Right")
 	  m_robot_util->m_foot_util.m_Right_Foot_Frame_Name = FrameName;
-	else 
+	else
 	  SEND_WARNING_STREAM_MSG("Did not understand the foot name !" + FootName);
       }
 
@@ -619,7 +619,7 @@ namespace dynamicgraph
         else
           SEND_WARNING_STREAM_MSG("Did not understand the hand name !" + HandName);
       }
-      
+
       void ControlManager::setImuJointName(const std::string &JointName)
       {
         if(!m_initSucceeded)
@@ -629,7 +629,7 @@ namespace dynamicgraph
         }
         m_robot_util->m_imu_joint_name = JointName;
       }
-      
+
       void ControlManager::displayRobotUtil()
       {
 	m_robot_util->display(std::cout);
@@ -729,7 +729,7 @@ namespace dynamicgraph
         }
         catch (ExceptionSignal e) {}
       }
-      
+
     } // namespace torquecontrol
   } // namespace sot
 } // namespace dynamicgraph
