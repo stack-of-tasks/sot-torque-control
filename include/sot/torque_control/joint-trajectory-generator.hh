@@ -163,7 +163,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[JointTrajectoryGenerator-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[JointTrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
 
       protected:

@@ -199,15 +199,15 @@ namespace dynamicgraph
         std::string localName(robotRef);
         if (!isNameInRobotUtil(localName))
         {
-            m_robot_util = createRobotUtil(localName);
-            std::cout << "createRobotUtil success" << std::endl;
+	  m_robot_util = createRobotUtil(localName);
+	  SEND_MSG("createRobotUtil success\n", MSG_TYPE_INFO);
         }
         else
         {
-            m_robot_util = getRobotUtil(localName);
-            std::cout << "getRobotUtil success" << std::endl;
+	  m_robot_util = getRobotUtil(localName);
+	  SEND_MSG("getRobotUtil success\n",MSG_TYPE_INFO);
         }
-        std::cout << m_robot_util->m_urdf_filename << std::endl;
+        SEND_MSG( m_robot_util->m_urdf_filename,MSG_TYPE_INFO);
         m_robot_util->m_urdf_filename = urdfFile;
         addCommand("getJointsUrdfToSot",
                    makeDirectGetter(*this, &m_robot_util->m_dgv_urdf_to_sot,

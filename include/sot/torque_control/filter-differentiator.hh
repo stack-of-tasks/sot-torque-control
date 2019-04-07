@@ -106,7 +106,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("["+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       public: /* --- ENTITY INHERITANCE --- */
