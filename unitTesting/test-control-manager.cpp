@@ -26,16 +26,6 @@
 using boost::test_tools::output_test_stream;
 namespace dyn_sot_tc = dynamicgraph::sot::torque_control;
 
-void robot_utils_for_simple_humanoid()
-{
-  std::string robotName("simple_humanoid");
-  robot_util = createRobotUtil(robotName);
-  
-  robot_util->m_urdf_filename =
-    boost::unit_test::framework::master_test_suite().argv[1];
-
-  
-}
 
 BOOST_AUTO_TEST_CASE(testControlManager)
 {
