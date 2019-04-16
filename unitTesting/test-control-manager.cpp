@@ -29,7 +29,6 @@ namespace dyn_sot_tc = dynamicgraph::sot::torque_control;
 
 BOOST_AUTO_TEST_CASE(testControlManager)
 {
-  RealTimeLogger& rtl = RealTimeLogger::instance();
   dgADD_OSTREAM_TO_RTLOG (std::cout);
   
   dyn_sot_tc::ControlManager &a_control_manager =

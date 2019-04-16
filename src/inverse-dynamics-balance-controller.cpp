@@ -178,18 +178,18 @@ namespace dynamicgraph
   << m_com_accSOUT \
   << m_com_acc_desSOUT \
   << m_base_orientationSOUT \
-  << m_right_foot_posSOUT \
   << m_left_foot_posSOUT \
-  << m_right_hand_posSOUT \
+  << m_right_foot_posSOUT \
   << m_left_hand_posSOUT \
-  << m_right_foot_velSOUT \
+  << m_right_hand_posSOUT \
   << m_left_foot_velSOUT \
-  << m_right_hand_velSOUT \
+  << m_right_foot_velSOUT \
   << m_left_hand_velSOUT \
-  << m_right_foot_accSOUT \
+  << m_right_hand_velSOUT \
   << m_left_foot_accSOUT \
-  << m_right_hand_accSOUT \
+  << m_right_foot_accSOUT \
   << m_left_hand_accSOUT \
+  << m_right_hand_accSOUT \
   << m_right_foot_acc_desSOUT \
   << m_left_foot_acc_desSOUT
 
@@ -300,18 +300,19 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(com_acc,                    dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(com_acc_des,                dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_hand_pos,              dg::Vector, m_tau_desSOUT)
+	    ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_hand_pos,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_vel,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_hand_vel,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_hand_vel,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_vel,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_acc,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_hand_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_hand_acc,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_foot_acc_des,          dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_acc_des,          dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_INNER(active_joints_checked,    dg::Vector, m_active_jointsSIN)
             ,m_t(0.0)
@@ -319,9 +320,9 @@ namespace dynamicgraph
             ,m_enabled(false)
             ,m_firstTime(true)
             ,m_contactState(DOUBLE_SUPPORT)
-            ,m_timeLast(0)
             ,m_rightHandState(TASK_RIGHT_HAND_OFF)
             ,m_leftHandState(TASK_LEFT_HAND_OFF)
+            ,m_timeLast(0)	      
 	    ,m_robot_util(RefVoidRobotUtil())
       {
         RESETDEBUG5();
@@ -428,7 +429,7 @@ namespace dynamicgraph
             m_contactState = RIGHT_SUPPORT;
         }
       }
-      
+
       void InverseDynamicsBalanceController::addTaskRightHand(/*const double& transitionTime*/)
       {
         if(m_rightHandState == TASK_RIGHT_HAND_OFF)
@@ -623,7 +624,7 @@ namespace dynamicgraph
           m_taskPosture->Kp(kp_posture);
           m_taskPosture->Kd(kd_posture);
           m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
-          
+
           m_taskRH = new TaskSE3Equality("task-rh", *m_robot, m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
           m_taskRH->Kp(kp_hands);
           m_taskRH->Kd(kd_hands);
@@ -926,7 +927,7 @@ namespace dynamicgraph
           m_contactRF->setReference(H_rf);
           SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
         }
-        else if(m_timeLast != static_cast<unsigned int>(iter-1)) 
+        else if(m_timeLast != static_cast<unsigned int>(iter-1))
         {
           SEND_MSG("Last time "+toString(m_timeLast)+" is not current time-1: "+toString(iter), MSG_TYPE_ERROR);
           if(m_timeLast == static_cast<unsigned int>(iter))
@@ -1455,7 +1456,9 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal left_hand_vel before initialization!");
+	  std::ostringstream oss("Cannot compute signal left_hand_vel before initialization!:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
           return s;
         }
         pinocchio::Motion v;
@@ -1482,7 +1485,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_vel before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_vel before initialization! "+toString(iter));
           return s;
         }
         pinocchio::Motion v;
@@ -1495,7 +1498,7 @@ namespace dynamicgraph
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization! "+toString(iter));
           return s;
         }
         m_tau_desSOUT(iter);
