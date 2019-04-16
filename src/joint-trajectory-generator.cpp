@@ -258,7 +258,7 @@ namespace dynamicgraph
           if(m_firstIter)
           {
             const dynamicgraph::Vector& base6d_encoders = m_base6d_encodersSIN(iter);
-            if(base6d_encoders.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+            if(base6d_encoders.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
             {
               SEND_ERROR_STREAM_MSG("Unexpected size of signal base6d_encoder " +
 				    toString(base6d_encoders.size()) + " " +
@@ -271,7 +271,7 @@ namespace dynamicgraph
             m_firstIter = false;
           }
 
-          if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+          if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
             s.resize(m_robot_util->m_nbJoints);
 
           if(m_status[0]==JTG_TEXT_FILE)
@@ -321,7 +321,7 @@ namespace dynamicgraph
         }
 
 
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
         if(m_status[0]==JTG_TEXT_FILE)
         {
@@ -344,7 +344,7 @@ namespace dynamicgraph
         }
 
 
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         if(m_status[0]==JTG_TEXT_FILE)

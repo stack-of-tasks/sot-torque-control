@@ -33,6 +33,33 @@
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/inverse-dynamics-balance-controller.hh>
 
+#if DEBUG
+#define ODEBUG(x) std::cout << x << std::endl
+#else
+#define ODEBUG(x)
+#endif
+#define ODEBUG3(x) std::cout << x << std::endl
+
+#define DBGFILE "/tmp/debug-sot-torqe-control.dat"
+
+#define RESETDEBUG5() { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::out);		\
+    DebugFile.close();}
+#define ODEBUG5FULL(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app);		\
+    DebugFile << __FILE__ << ":"			\
+              << __FUNCTION__ << "(#"			\
+              << __LINE__ << "):" << x << std::endl;	\
+    DebugFile.close();}
+#define ODEBUG5(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app); \
+    DebugFile << x << std::endl;		\
+    DebugFile.close();}
+
+#define RESETDEBUG4()
+#define ODEBUG4FULL(x)
+#define ODEBUG4(x)
+
 namespace dynamicgraph
 {
   namespace sot
@@ -74,6 +101,12 @@ namespace dynamicgraph
   << m_lf_ref_posSIN \
   << m_lf_ref_velSIN \
   << m_lf_ref_accSIN \
+  << m_rh_ref_posSIN \
+  << m_rh_ref_velSIN \
+  << m_rh_ref_accSIN \
+  << m_lh_ref_posSIN \
+  << m_lh_ref_velSIN \
+  << m_lh_ref_accSIN \
   << m_posture_ref_posSIN \
   << m_posture_ref_velSIN \
   << m_posture_ref_accSIN \
@@ -90,12 +123,15 @@ namespace dynamicgraph
   << m_kd_comSIN \
   << m_kp_feetSIN \
   << m_kd_feetSIN \
+  << m_kp_handsSIN \
+  << m_kd_handsSIN \
   << m_kp_postureSIN \
   << m_kd_postureSIN \
   << m_kp_posSIN \
   << m_kd_posSIN \
   << m_w_comSIN \
   << m_w_feetSIN \
+  << m_w_handsSIN \
   << m_w_postureSIN \
   << m_w_base_orientationSIN \
   << m_w_torquesSIN \
@@ -142,12 +178,18 @@ namespace dynamicgraph
   << m_com_accSOUT \
   << m_com_acc_desSOUT \
   << m_base_orientationSOUT \
-  << m_right_foot_posSOUT \
   << m_left_foot_posSOUT \
-  << m_right_foot_velSOUT \
+  << m_right_foot_posSOUT \
+  << m_left_hand_posSOUT \
+  << m_right_hand_posSOUT \
   << m_left_foot_velSOUT \
-  << m_right_foot_accSOUT \
+  << m_right_foot_velSOUT \
+  << m_left_hand_velSOUT \
+  << m_right_hand_velSOUT \
   << m_left_foot_accSOUT \
+  << m_right_foot_accSOUT \
+  << m_left_hand_accSOUT \
+  << m_right_hand_accSOUT \
   << m_right_foot_acc_desSOUT \
   << m_left_foot_acc_desSOUT
 
@@ -177,6 +219,12 @@ namespace dynamicgraph
     	    ,CONSTRUCT_SIGNAL_IN(lf_ref_pos,                  dynamicgraph::Vector)
     	    ,CONSTRUCT_SIGNAL_IN(lf_ref_vel,                  dynamicgraph::Vector)
     	    ,CONSTRUCT_SIGNAL_IN(lf_ref_acc,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(rh_ref_pos,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(rh_ref_vel,                  dynamicgraph::Vector)
+    	    ,CONSTRUCT_SIGNAL_IN(rh_ref_acc,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lh_ref_pos,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lh_ref_vel,                  dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(lh_ref_acc,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_pos,             dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_vel,             dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(posture_ref_acc,             dynamicgraph::Vector)
@@ -193,12 +241,15 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_IN(kd_com,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_feet,                     dynamicgraph::Vector)
     	    ,CONSTRUCT_SIGNAL_IN(kd_feet,                     dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(kp_hands,                    dynamicgraph::Vector)
+            ,CONSTRUCT_SIGNAL_IN(kd_hands,                    dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_posture,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_posture,                  dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kp_pos,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(kd_pos,                      dynamicgraph::Vector)
             ,CONSTRUCT_SIGNAL_IN(w_com,                       double)
      	    ,CONSTRUCT_SIGNAL_IN(w_feet,                      double)
+            ,CONSTRUCT_SIGNAL_IN(w_hands,                     double)
             ,CONSTRUCT_SIGNAL_IN(w_posture,                   double)
             ,CONSTRUCT_SIGNAL_IN(w_base_orientation,          double)
             ,CONSTRUCT_SIGNAL_IN(w_torques,                   double)
@@ -250,12 +301,18 @@ namespace dynamicgraph
             ,CONSTRUCT_SIGNAL_OUT(com_acc_des,                dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(base_orientation,           dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
+	    ,CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_hand_pos,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_pos,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_vel,             dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_vel,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_hand_vel,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_vel,              dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(right_foot_acc,             dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_acc,              dg::Vector, m_tau_desSOUT)
-            ,CONSTRUCT_SIGNAL_OUT(right_foot_acc_des,         dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_hand_acc,             dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(left_hand_acc,              dg::Vector, m_tau_desSOUT)
+            ,CONSTRUCT_SIGNAL_OUT(right_foot_acc_des,          dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_OUT(left_foot_acc_des,          dg::Vector, m_tau_desSOUT)
             ,CONSTRUCT_SIGNAL_INNER(active_joints_checked,    dg::Vector, m_active_jointsSIN)
             ,m_t(0.0)
@@ -263,9 +320,12 @@ namespace dynamicgraph
             ,m_enabled(false)
             ,m_firstTime(true)
             ,m_contactState(DOUBLE_SUPPORT)
-            ,m_timeLast(0)
+            ,m_rightHandState(TASK_RIGHT_HAND_OFF)
+            ,m_leftHandState(TASK_LEFT_HAND_OFF)
+            ,m_timeLast(0)	      
 	    ,m_robot_util(RefVoidRobotUtil())
       {
+        RESETDEBUG5();
         Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
         m_zmp_des_RF.setZero();
@@ -300,8 +360,20 @@ namespace dynamicgraph
                    makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeLeftFootContact,
                                     docCommandVoid1("Remove the contact at the left foot.",
                                                     "Transition time in seconds (double)")));
-
-
+        addCommand("addTaskRightHand",
+                   makeCommandVoid0(*this, &InverseDynamicsBalanceController::addTaskRightHand,
+                                    docCommandVoid0("Adds an SE3 task for the right hand.")));
+        addCommand("removeTaskRightHand",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeTaskRightHand,
+                                    docCommandVoid1("Removes the SE3 task for the right hand.",
+                                                    "Transition time in seconds (double)")));
+        addCommand("addTaskLeftHand",
+                   makeCommandVoid0(*this, &InverseDynamicsBalanceController::addTaskLeftHand,
+                                    docCommandVoid0("Raises the left hand.")));
+        addCommand("removeTaskLeftHand",
+                   makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeTaskLeftHand,
+                                    docCommandVoid1("lowers the left hand.",
+                                                    "Transition time in seconds (double)")));
       }
 
       void InverseDynamicsBalanceController::updateComOffset()
@@ -358,6 +430,42 @@ namespace dynamicgraph
         }
       }
 
+      void InverseDynamicsBalanceController::addTaskRightHand(/*const double& transitionTime*/)
+      {
+        if(m_rightHandState == TASK_RIGHT_HAND_OFF)
+        {
+          SEND_MSG("Adds right hand SE3 task in "/*+toString(transitionTime)+" s"*/, MSG_TYPE_INFO);
+          const double & w_hands = m_w_handsSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskRH, w_hands, 1);
+        }
+        /*if(transitionTime>m_dt)
+        {
+          m_rightHandState = TASK_RIGHT_HAND_TRANSITION;
+          m_handsTransitionTime = m_t + transitionTime;
+        }
+        else
+          m_rightHandState = TASK_RIGHT_HAND_ON;*/
+        m_rightHandState = TASK_RIGHT_HAND_ON;
+      }
+
+      void InverseDynamicsBalanceController::addTaskLeftHand(/*const double& transitionTime*/)
+      {
+        if(m_leftHandState == TASK_LEFT_HAND_OFF)
+        {
+          SEND_MSG("Raise left hand in "/*+toString(transitionTime)+" s"*/, MSG_TYPE_INFO);
+          const double & w_hands = m_w_handsSIN.accessCopy();
+          m_invDyn->addMotionTask(*m_taskLH, w_hands, 1);
+        }
+        /*if(transitionTime>m_dt)
+        {
+          m_leftHandState = TASK_LEFT_HAND_TRANSITION;
+          m_handsTransitionTime = m_t + transitionTime;
+        }
+        else
+          m_leftHandState = TASK_LEFT_HAND_ON;*/
+        m_leftHandState = TASK_LEFT_HAND_ON;
+      }
+
       void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime)
       {
         if(m_contactState == LEFT_SUPPORT)
@@ -379,6 +487,26 @@ namespace dynamicgraph
           m_invDyn->addRigidContact(*m_contactLF, w_forces);
           m_invDyn->removeTask(m_taskLF->name(), transitionTime);
           m_contactState = DOUBLE_SUPPORT;
+        }
+      }
+
+      void InverseDynamicsBalanceController::removeTaskRightHand(const double& transitionTime)
+      {
+        if(m_rightHandState == TASK_RIGHT_HAND_ON)
+        {
+          SEND_MSG("Removes right hand SE3 task in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
+          m_invDyn->removeTask(m_taskRH->name(), transitionTime);
+          m_rightHandState = TASK_RIGHT_HAND_OFF;
+        }
+      }
+
+      void InverseDynamicsBalanceController::removeTaskLeftHand(const double& transitionTime)
+      {
+        if(m_leftHandState == TASK_LEFT_HAND_ON)
+        {
+          SEND_MSG("Removes left hand SE3 task in "+toString(transitionTime)+" s", MSG_TYPE_INFO);
+          m_invDyn->removeTask(m_taskLH->name(), transitionTime);
+          m_leftHandState = TASK_LEFT_HAND_OFF;
         }
       }
 
@@ -405,6 +533,8 @@ namespace dynamicgraph
         const dg::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
         const Eigen::Vector3d& kp_com = m_kp_comSIN(0);
         const Eigen::Vector3d& kd_com = m_kd_comSIN(0);
+        const dg::sot::Vector6d& kd_hands = m_kd_handsSIN(0);
+        const dg::sot::Vector6d& kp_hands = m_kp_handsSIN(0);
         const dg::sot::Vector6d& kp_feet = m_kp_feetSIN(0);
         const dg::sot::Vector6d& kd_feet = m_kd_feetSIN(0);
         const VectorN& kp_posture = m_kp_postureSIN(0);
@@ -412,11 +542,12 @@ namespace dynamicgraph
         const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios_sot = m_gear_ratiosSIN(0);
 
-        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(rotor_inertias_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(gear_ratios_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(kd_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(rotor_inertias_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(gear_ratios_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
+        m_w_hands = m_w_handsSIN(0);
         m_w_com = m_w_comSIN(0);
         m_w_posture = m_w_postureSIN(0);
         const double & w_forces = m_w_forcesSIN(0);
@@ -494,11 +625,23 @@ namespace dynamicgraph
           m_taskPosture->Kd(kd_posture);
           m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
 
+          m_taskRH = new TaskSE3Equality("task-rh", *m_robot, m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
+          m_taskRH->Kp(kp_hands);
+          m_taskRH->Kd(kd_hands);
+
+          m_taskLH = new TaskSE3Equality("task-lh", *m_robot, m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
+          m_taskLH->Kp(kp_hands);
+          m_taskLH->Kd(kd_hands);
+
           m_sampleCom = TrajectorySample(3);
           m_samplePosture = TrajectorySample(m_robot->nv()-6);
+          m_sampleRH = TrajectorySample(3);
 
           m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
           m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+
+          m_frame_id_rh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
+          m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
 
           m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
                                                           "eiquadprog-fast");
@@ -523,7 +666,7 @@ namespace dynamicgraph
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
       {
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         const Eigen::VectorXd& active_joints_sot = m_active_jointsSIN(iter);
@@ -572,7 +715,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
@@ -614,23 +757,31 @@ namespace dynamicgraph
         {
           m_contactState = LEFT_SUPPORT;
         }
+        /*if(m_rightHandState == TASK_RIGHT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
+        {
+              m_rightHandState = TASK_RIGHT_HAND_ON;
+                }
+        if(m_leftHandState == TASK_LEFT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
+        {
+              m_leftHandState = TASK_LEFT_HAND_ON;
+                }*/
 
         getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
         m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
-        assert(q_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
+        assert(q_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6));
         const VectorN6& v_sot = m_vSIN(iter);
-        assert(v_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
+        assert(v_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6));
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-        assert(q_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(q_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(dq_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-        assert(ddq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(ddq_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
@@ -638,14 +789,15 @@ namespace dynamicgraph
         const Vector3& kd_com = m_kd_comSIN(iter);
 
         const VectorN& kp_posture = m_kp_postureSIN(iter);
-        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_posture = m_kd_postureSIN(iter);
-        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kd_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kp_pos = m_kp_posSIN(iter);
-        assert(kp_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_pos.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_pos = m_kd_posSIN(iter);
-        assert(kd_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kd_pos.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
+        /*const double & w_hands = m_w_handsSIN(iter);*/
         const double & w_com = m_w_comSIN(iter);
         const double & w_posture = m_w_postureSIN(iter);
         const double & w_forces = m_w_forcesSIN(iter);
@@ -677,6 +829,34 @@ namespace dynamicgraph
           m_taskLF->setReference(m_sampleLF);
           m_taskLF->Kp(kp_feet);
           m_taskLF->Kd(kd_feet);
+        }
+        if(m_rightHandState == TASK_RIGHT_HAND_ON /*|| m_rightHandState == TASK_RIGHT_HAND_TRANSITION*/)
+        {
+          const Eigen::Matrix<double,12,1>& x_rh_ref = m_rh_ref_posSIN(iter);
+          const Vector6& dx_rh_ref =  m_rh_ref_velSIN(iter);
+          const Vector6& ddx_rh_ref = m_rh_ref_accSIN(iter);
+          const Vector6& kp_hands = m_kp_handsSIN(iter);
+          const Vector6& kd_hands = m_kd_handsSIN(iter);
+          m_sampleRH.pos = x_rh_ref;
+          m_sampleRH.vel = dx_rh_ref;
+          m_sampleRH.acc = ddx_rh_ref;
+          m_taskRH->setReference(m_sampleRH);
+          m_taskRH->Kp(kp_hands);
+          m_taskRH->Kd(kd_hands);
+        }
+        if(m_leftHandState == TASK_LEFT_HAND_ON /*|| m_leftHandState == TASK_LEFT_HAND_TRANSITION*/)
+        {
+          const Eigen::Matrix<double,12,1>& x_lh_ref = m_lh_ref_posSIN(iter);
+          const Vector6& dx_lh_ref =  m_lh_ref_velSIN(iter);
+          const Vector6& ddx_lh_ref = m_lh_ref_accSIN(iter);
+          const Vector6& kp_hands = m_kp_handsSIN(iter);
+          const Vector6& kd_hands = m_kd_handsSIN(iter);
+          m_sampleLH.pos = x_lh_ref;
+          m_sampleLH.vel = dx_lh_ref;
+          m_sampleLH.acc = ddx_lh_ref;
+          m_taskLH->setReference(m_sampleLH);
+          m_taskLH->Kp(kp_hands);
+          m_taskLH->Kd(kd_hands);
         }
 
         getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
@@ -711,6 +891,13 @@ namespace dynamicgraph
           m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
         }
 
+        /*m_sampleRH.pos = x_rh_ref;
+        m_sampleRH.vel = dx_rh_ref;
+        m_sampleRH.acc = ddx_rh_ref;
+        m_taskRH->setReference(m_sampleRH);
+        m_taskRH->Kp(kp_hands);
+        m_taskRH->Kd(kd_hands);*/
+
         const double & fMin = m_f_minSIN(0);
         const double & fMaxRF = m_f_max_right_footSIN(iter);
         const double & fMaxLF = m_f_max_left_footSIN(iter);
@@ -740,7 +927,7 @@ namespace dynamicgraph
           m_contactRF->setReference(H_rf);
           SEND_MSG("Setting right foot reference to "+toString(H_rf), MSG_TYPE_DEBUG);
         }
-        else if(m_timeLast != static_cast<unsigned int>(iter-1)) 
+        else if(m_timeLast != static_cast<unsigned int>(iter-1))
         {
           SEND_MSG("Last time "+toString(m_timeLast)+" is not current time-1: "+toString(iter), MSG_TYPE_ERROR);
           if(m_timeLast == static_cast<unsigned int>(iter))
@@ -752,6 +939,7 @@ namespace dynamicgraph
         m_timeLast = static_cast<unsigned int>(iter);
 
         const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+
         getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
         getProfiler().start(PROFILE_HQP_SOLUTION);
@@ -1201,6 +1389,22 @@ namespace dynamicgraph
         return s;
       }
 
+      DEFINE_SIGNAL_OUT_FUNCTION(left_hand_pos, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left hand_pos before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        pinocchio::SE3 oMi;
+        s.resize(12);
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_lh, oMi);
+        tsid::math::SE3ToVector(oMi, s);
+        return s;
+      }
+
+
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1215,6 +1419,21 @@ namespace dynamicgraph
         s.resize(12);
         m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
 	tsid::math::SE3ToVector(oMi, s);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_hand_pos, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_pos before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+        pinocchio::SE3 oMi;
+        s.resize(12);
+        m_robot->framePosition(m_invDyn->data(), m_frame_id_rh, oMi);
+        tsid::math::SE3ToVector(oMi, s);
         return s;
       }
 
@@ -1233,6 +1452,21 @@ namespace dynamicgraph
         return s;
       }
 
+      DEFINE_SIGNAL_OUT_FUNCTION(left_hand_vel, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+	  std::ostringstream oss("Cannot compute signal left_hand_vel before initialization!:");
+          oss << iter;
+          SEND_WARNING_STREAM_MSG(oss.str());
+          return s;
+        }
+        pinocchio::Motion v;
+        m_robot->frameVelocity(m_invDyn->data(), m_frame_id_lh, v);
+        s = v.toVector();
+        return s;
+      }
+
       DEFINE_SIGNAL_OUT_FUNCTION(right_foot_vel, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
@@ -1246,11 +1480,25 @@ namespace dynamicgraph
         return s;
       }
 
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_hand_vel, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_vel before initialization! "+toString(iter));
+          return s;
+        }
+        pinocchio::Motion v;
+        m_robot->frameVelocity(m_invDyn->data(), m_frame_id_rh, v);
+        s = v.toVector();
+        return s;
+      }
+
       DEFINE_SIGNAL_OUT_FUNCTION(left_foot_acc, dynamicgraph::Vector)
       {
         if(!m_initSucceeded)
         {
-          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization!");
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_foot_acc before initialization! "+toString(iter));
           return s;
         }
         m_tau_desSOUT(iter);
@@ -1258,6 +1506,18 @@ namespace dynamicgraph
           s = m_taskLF->getAcceleration(m_dv_urdf);
         else
           s = m_contactLF->getMotionTask().getAcceleration(m_dv_urdf);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(left_hand_acc, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal left_hand_acc before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+          s = m_contactLH->getMotionTask().getAcceleration(m_dv_urdf);
         return s;
       }
 
@@ -1273,6 +1533,18 @@ namespace dynamicgraph
           s = m_taskRF->getAcceleration(m_dv_urdf);
         else
           s = m_contactRF->getMotionTask().getAcceleration(m_dv_urdf);
+        return s;
+      }
+
+      DEFINE_SIGNAL_OUT_FUNCTION(right_hand_acc, dynamicgraph::Vector)
+      {
+        if(!m_initSucceeded)
+        {
+          SEND_WARNING_STREAM_MSG("Cannot compute signal right_hand_acc before initialization!");
+          return s;
+        }
+        m_tau_desSOUT(iter);
+          s = m_contactRH->getMotionTask().getAcceleration(m_dv_urdf);
         return s;
       }
 

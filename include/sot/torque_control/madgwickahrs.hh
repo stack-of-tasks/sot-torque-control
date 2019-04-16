@@ -97,7 +97,7 @@ namespace dynamicgraph {
         //void madgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[MadgwickAHRS-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[MadgwickAHRS-"+name+"] "+msg, t, file, line);
         }
 
       protected:

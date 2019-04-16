@@ -20,6 +20,65 @@
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/ddp-actuator-solver.hh>
 
+#include <ddp-actuator-solver/examples/dctemp.hh>
+#include <ddp-actuator-solver/examples/costtemp.hh>
+
+#if DEBUG
+#define ODEBUG(x) std::cout << x << std::endl
+#else
+#define ODEBUG(x)
+#endif
+#define ODEBUG3(x) std::cout << x << std::endl
+
+#define DBGFILE "/tmp/debug-ddp_actuator_solver.dat"
+
+#define RESETDEBUG5() { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::out);		\
+    DebugFile.close();}
+#define ODEBUG5FULL(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app);		\
+    DebugFile << __FILE__ << ":"			\
+              << __FUNCTION__ << "(#"			\
+              << __LINE__ << "):" << x << std::endl;	\
+    DebugFile.close();}
+#define ODEBUG5(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app); \
+    DebugFile << x << std::endl;		\
+    DebugFile.close();}
+
+#define RESETDEBUG4()
+#define ODEBUG4FULL(x)
+#define ODEBUG4(x)
+
+#include <ddp-actuator-solver/examples/dctemp.hh>
+#include <ddp-actuator-solver/examples/costtemp.hh>
+
+#if DEBUG
+#define ODEBUG(x) std::cout << x << std::endl
+#else
+#define ODEBUG(x)
+#endif
+#define ODEBUG3(x) std::cout << x << std::endl
+
+#define DBGFILE "/tmp/debug-ddp_actuator_solver.dat"
+
+#define RESETDEBUG5() { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::out);		\
+    DebugFile.close();}
+#define ODEBUG5FULL(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app);		\
+    DebugFile << __FILE__ << ":"			\
+              << __FUNCTION__ << "(#"			\
+              << __LINE__ << "):" << x << std::endl;	\
+    DebugFile.close();}
+#define ODEBUG5(x) { std::ofstream DebugFile;	\
+    DebugFile.open(DBGFILE,std::ofstream::app); \
+    DebugFile << x << std::endl;		\
+    DebugFile.close();}
+
+#define RESETDEBUG4()
+#define ODEBUG4FULL(x)
+#define ODEBUG4(x)
 
 namespace dynamicgraph
 {
@@ -48,6 +107,7 @@ namespace dynamicgraph
 	  CONSTRUCT_SIGNAL_IN (pos_joint_measure, dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_IN (dx_measure,        dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_IN (tau_measure,       dynamicgraph::Vector),
+          CONSTRUCT_SIGNAL_IN (tau_des,           dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_IN (temp_measure,      dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_OUT(tau,               dynamicgraph::Vector, m_pos_desSIN),
 	  m_T(3000),
@@ -58,6 +118,7 @@ namespace dynamicgraph
 		   DISABLE_FULLDDP,
 		   DISABLE_QPBOX)
       {
+        RESETDEBUG5();
 	Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS );
 
       m_zeroState.setZero();
@@ -79,7 +140,7 @@ namespace dynamicgraph
 	/// ---- Get the information -----
 	/// Desired position
 	const dynamicgraph::Vector &
-	  pos_des = m_pos_desSIN(iter);
+          pos_des = m_pos_desSIN(iter);
 	/// Measured position 
 	const dynamicgraph::Vector &
 	  pos_joint_measure = m_pos_joint_measureSIN(iter);
@@ -91,8 +152,11 @@ namespace dynamicgraph
 	  temp_measure = m_temp_measureSIN(iter);
 	/// Measured torque
 	const dynamicgraph::Vector &
-	  tau_measure = m_tau_measureSIN(iter);
-	
+          tau_measure = m_tau_measureSIN(iter);
+        /// Desired torque
+        const dynamicgraph::Vector &
+          tau_des = m_tau_desSIN(iter);
+
 	DDPSolver<double,5,1>::stateVec_t xinit,xDes;
 
 	/// --- Initialize solver ---
@@ -100,16 +164,41 @@ namespace dynamicgraph
 	  dx_measure(0),
 	  temp_measure(0),
 	  tau_measure(0),
-	  m_ambiant_temperature;
+          //m_ambiant_temperature;
+          25.0;
 
-	xDes << m_pos_desSIN(0), 0.0, 0.0, 0.0, 0.0;
+        xDes << m_pos_desSIN(0), 0.0, 25.0, m_tau_desSIN(0), 25.0;
+        ODEBUG5(xinit);
+        ODEBUG5("");
+        ODEBUG5(xDes);
 
-	m_solver.initSolver(xinit,xDes);
+        DCTemp model;
+        CostTemp cost;
+        DDPSolver<double,5,1> m_solver(model,cost,0,0);
 
-	/// --- Solve the DDP --- 
-	s = m_solver.solveTrajectory();
+        m_solver.FirstInitSolver(xinit,xDes,m_T,m_dt,m_iterMax, m_stopCrit);
+        ODEBUG5("FirstInitSolver");
 
-	return s;
+	/// --- Solve the DDP ---
+        m_solver.solveTrajectory();
+        ODEBUG5("Trajectory solved");
+
+        /// --- Get the command ---
+        DDPSolver<double,5,1>::traj lastTraj;
+        lastTraj = m_solver.getLastSolvedTrajectory();
+        ODEBUG5("getLastSolvedTrajectory");
+
+        DDPSolver<double,5,1>::commandVecTab_t uList;
+        uList = lastTraj.uList;
+        ODEBUG5("uList");
+
+
+        //s = uList[0];
+        s.resize(32);
+        s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, uList[0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+        //s.setZero(32);
+        ODEBUG5(s);
+        return s;
       }
 
       void DdpActuatorSolver::

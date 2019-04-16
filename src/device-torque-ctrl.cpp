@@ -281,7 +281,7 @@ void DeviceTorqueCtrl::computeForwardDynamics()
                                            m_dvBar, m_numericalDamping);
 
   // compute base of null space of constraint Jacobian
-  Eigen::Index r = (m_Jc_svd.singularValues().array()>1e-8).count();
+  Eigen::VectorXd::Index r = (m_Jc_svd.singularValues().array()>1e-8).count();
   m_Z = m_Jc_svd.matrixV().rightCols(m_nj+6-r);
 
   // compute constrained accelerations ddq_c = (Z^T*M*Z)^{-1}*Z^T*(S^T*tau - h - M*ddqBar)

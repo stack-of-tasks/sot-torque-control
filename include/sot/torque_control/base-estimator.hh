@@ -174,14 +174,14 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("["+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       protected:
         bool              m_initSucceeded;    /// true if the entity has been successfully initialized
         bool              m_reset_foot_pos;   /// true after the command resetFootPositions is called
         double            m_dt;               /// sampling time step
-        RobotUtil *       m_robot_util;
+        RobotUtilShrPtr       m_robot_util;
 
         bool              m_left_foot_is_stable;    /// True if left foot as been stable for the last 'm_fz_stable_windows_size' samples
         bool              m_right_foot_is_stable;   /// True if right foot as been stable for the last 'm_fz_stable_windows_size' samples

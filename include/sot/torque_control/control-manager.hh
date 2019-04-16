@@ -88,9 +88,9 @@ namespace dynamicgraph {
         /* --- CONSTRUCTOR ---- */
         ControlManager( const std::string & name);
 
-	/// Initialize
-	/// @param dt: control interval
-	/// @param urdfFile: path to the URDF model of the robot
+        /// Initialize
+        /// @param dt: control interval
+        /// @param urdfFile: path to the URDF model of the robot
         void init(const double & dt,
                   const std::string & urdfFile,
                   const std::string & robotRef);
@@ -112,35 +112,39 @@ namespace dynamicgraph {
 
         /* --- COMMANDS --- */
 
-	/// Commands related to the control mode.
+        /// Commands related to the control mode.
         void addCtrlMode(const std::string& name);
         void ctrlModes();
         void getCtrlMode(const std::string& jointName);
         void setCtrlMode(const std::string& jointName, const std::string& ctrlMode);
         void setCtrlMode(const int jid, const CtrlMode& cm);
-	
-        void resetProfiler();
-	
-	/// Commands related to joint name and joint id
-	void setNameToId(const std::string& jointName, const double & jointId);
-	void setJointLimitsFromId(const double &jointId, 
-				const double &lq, const double &uq);
 
-	/// Command related to ForceUtil
-	void setForceLimitsFromId(const double &jointId, 
-				  const dynamicgraph::Vector &lq, 
-				  const dynamicgraph::Vector &uq);
-	void setForceNameToForceId(const std::string& forceName, 
-				   const double & forceId);
-	
-	/// Commands related to FootUtil
-	void setRightFootSoleXYZ(const dynamicgraph::Vector &);
+        void resetProfiler();
+
+        /// Commands related to joint name and joint id
+        void setNameToId(const std::string& jointName, const double & jointId);
+        void setJointLimitsFromId(const double &jointId,
+                                const double &lq, const double &uq);
+
+        /// Command related to ForceUtil
+        void setForceLimitsFromId(const double &jointId,
+                                  const dynamicgraph::Vector &lq,
+                                  const dynamicgraph::Vector &uq);
+        void setForceNameToForceId(const std::string& forceName,
+                                   const double & forceId);
+
+        /// Commands related to FootUtil
+        void setRightFootSoleXYZ(const dynamicgraph::Vector &);
         void setRightFootForceSensorXYZ(const dynamicgraph::Vector &);
-	void setFootFrameName(const std::string &, const std::string &);
+        void setFootFrameName(const std::string &, const std::string &);
         void setImuJointName(const std::string &);
-	void displayRobotUtil();
-	/// Set the mapping between urdf and sot.
-	void setJoints(const dynamicgraph::Vector &);
+        void displayRobotUtil();
+
+        /// Commands related to HandUtil
+        void setHandFrameName(const std::string &, const std::string &);
+
+        /// Set the mapping between urdf and sot.
+        void setJoints(const dynamicgraph::Vector &);
 
         void setStreamPrintPeriod(const double & s);
         void setSleepTime(const double &seconds);
@@ -151,11 +155,11 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[ControlManager-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[ControlManager-"+name+"] "+msg, t, file, line);
         }
 
       protected:
-        RobotUtil *                   m_robot_util;
+        RobotUtilShrPtr               m_robot_util;
         tsid::robots::RobotWrapper *  m_robot;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         double  m_dt;               /// control loop time period

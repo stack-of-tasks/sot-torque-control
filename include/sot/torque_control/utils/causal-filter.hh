@@ -41,8 +41,8 @@ public:
 private:
   double m_dt;      /// sampling timestep of the input signal
   int m_x_size;
-  Eigen::Index m_filter_order_m;
-  Eigen::Index m_filter_order_n;
+  Eigen::VectorXd::Index m_filter_order_m;
+  Eigen::VectorXd::Index m_filter_order_n;
 
   Eigen::VectorXd m_filter_numerator;
   Eigen::VectorXd m_filter_denominator;

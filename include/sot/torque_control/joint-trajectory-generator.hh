@@ -163,7 +163,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[JointTrajectoryGenerator-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[JointTrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
 
       protected:
@@ -182,7 +182,7 @@ namespace dynamicgraph {
         bool              m_firstIter;        /// true if it is the first iteration, false otherwise
         double            m_dt;               /// control loop time period
 
-	RobotUtil     *m_robot_util;
+	RobotUtilShrPtr m_robot_util;
 
         std::vector<int>  m_iterForceSignals;
 

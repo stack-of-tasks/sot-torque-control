@@ -84,7 +84,7 @@ namespace dynamicgraph {
         void update_offset_impl(int iter);
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[ImuOffsetCompensation-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[ImuOffsetCompensation-"+name+"] "+msg, t, file, line);
         }
 
       protected:

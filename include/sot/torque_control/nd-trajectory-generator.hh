@@ -148,7 +148,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[NdTrajectoryGenerator-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[NdTrajectoryGenerator-"+name+"] "+msg, t, file, line);
         }
 
       protected:
