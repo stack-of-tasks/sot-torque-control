@@ -259,7 +259,7 @@ namespace dynamicgraph
             }
 
             const dynamicgraph::Vector& ctrl = (*m_ctrlInputsSIN[cm_id])(iter);
-            assert(ctrl.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+            assert(ctrl.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
             if(m_jointCtrlModesCountDown[i]==0)
               s(i) = ctrl(i);
@@ -267,7 +267,7 @@ namespace dynamicgraph
             {
               cm_id_prev = m_jointCtrlModes_previous[i].id;
               const dynamicgraph::Vector& ctrl_prev = (*m_ctrlInputsSIN[cm_id_prev])(iter);
-              assert(ctrl_prev.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+              assert(ctrl_prev.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
               double alpha = m_jointCtrlModesCountDown[i]/CTRL_MODE_TRANSITION_TIME_STEP;
 //              SEND_MSG("Joint "+toString(i)+" changing ctrl mode from "+toString(cm_id_prev)+
@@ -502,7 +502,7 @@ namespace dynamicgraph
           getClassName()+"("+getName()+")::input(bool)::emergencyStop_"+name));
 
         // register the new signals and add the new signal dependecy
-	Eigen::Index i = m_emergencyStopSIN.size()-1;
+	Eigen::VectorXd::Index i = m_emergencyStopSIN.size()-1;
         m_u_safeSOUT.addDependency(*m_emergencyStopSIN[i]);
         Entity::signalRegistration(*m_emergencyStopSIN[i]);
       }
@@ -515,7 +515,7 @@ namespace dynamicgraph
 	    SEND_WARNING_STREAM_MSG("Cannot set joint name from joint id  before initialization!");
 	    return;
 	  }
-	m_robot_util->set_name_to_id(jointName,static_cast<Eigen::Index>(jointId));
+	m_robot_util->set_name_to_id(jointName,static_cast<Eigen::VectorXd::Index>(jointId));
       }
 
       void ControlManager::setJointLimitsFromId( const double &jointId,
@@ -553,7 +553,7 @@ namespace dynamicgraph
 	    return;
 	  }
 
-	m_robot_util->m_force_util.set_name_to_force_id(forceName,static_cast<Eigen::Index>(forceId));
+	m_robot_util->m_force_util.set_name_to_force_id(forceName,static_cast<Eigen::VectorXd::Index>(forceId));
       }
 
       void ControlManager::setJoints(const dg::Vector & urdf_to_sot)

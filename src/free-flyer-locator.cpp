@@ -147,8 +147,8 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
-        assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
+        assert(q.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+        assert(dq.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         m_robot_util->joints_sot_to_urdf(q.tail(m_robot_util->m_nbJoints), m_q_pin.tail(m_robot_util->m_nbJoints));
@@ -168,7 +168,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal base6dFromFoot_encoders before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -176,7 +176,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_COMPUTATION);
         {
           const Eigen::VectorXd& q= m_base6d_encodersSIN(iter);     //n+6
-          assert(q.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
+          assert(q.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6)     && "Unexpected size of signal base6d_encoder");
 
           /* Compute kinematic and return q with freeflyer */
           const pinocchio::SE3 iMo1(m_data->oMf[m_left_foot_id].inverse());
@@ -232,7 +232,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -240,7 +240,7 @@ namespace dynamicgraph
         getProfiler().start(PROFILE_FREE_FLYER_VELOCITY_COMPUTATION);
         {
           const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
+          assert(dq.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
           /* Compute foot velocities */
           const Frame & f_lf = m_model->frames[m_left_foot_id];

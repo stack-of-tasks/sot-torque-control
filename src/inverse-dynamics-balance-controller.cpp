@@ -542,10 +542,10 @@ namespace dynamicgraph
         const VectorN& rotor_inertias_sot = m_rotor_inertiasSIN(0);
         const VectorN& gear_ratios_sot = m_gear_ratiosSIN(0);
 
-        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(rotor_inertias_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
-        assert(gear_ratios_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(kd_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(rotor_inertias_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+        assert(gear_ratios_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
         m_w_hands = m_w_handsSIN(0);
         m_w_com = m_w_comSIN(0);
@@ -666,7 +666,7 @@ namespace dynamicgraph
       /** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
       DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector)
       {
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         const Eigen::VectorXd& active_joints_sot = m_active_jointsSIN(iter);
@@ -715,7 +715,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         getProfiler().start(PROFILE_TAU_DES_COMPUTATION);
@@ -770,18 +770,18 @@ namespace dynamicgraph
         m_w_feetSIN(iter);
         m_active_joints_checkedSINNER(iter);
         const VectorN6& q_sot = m_qSIN(iter);
-        assert(q_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
+        assert(q_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6));
         const VectorN6& v_sot = m_vSIN(iter);
-        assert(v_sot.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6));
+        assert(v_sot.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6));
         const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
         const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
         const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
         const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-        assert(q_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(q_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-        assert(dq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(dq_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-        assert(ddq_ref.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(ddq_ref.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
         const Vector6& kp_contact = m_kp_constraintsSIN(iter);
         const Vector6& kd_contact = m_kd_constraintsSIN(iter);
@@ -789,13 +789,13 @@ namespace dynamicgraph
         const Vector3& kd_com = m_kd_comSIN(iter);
 
         const VectorN& kp_posture = m_kp_postureSIN(iter);
-        assert(kp_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_posture = m_kd_postureSIN(iter);
-        assert(kd_posture.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kd_posture.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kp_pos = m_kp_posSIN(iter);
-        assert(kp_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kp_pos.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
         const VectorN& kd_pos = m_kd_posSIN(iter);
-        assert(kd_pos.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints));
+        assert(kd_pos.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
         /*const double & w_hands = m_w_handsSIN(iter);*/
         const double & w_com = m_w_comSIN(iter);

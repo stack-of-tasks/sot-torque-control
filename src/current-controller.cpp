@@ -226,7 +226,7 @@ namespace dynamicgraph
         const dynamicgraph::Vector& i_real                    = m_i_realSOUT(iter);
         const dynamicgraph::Vector& in_out_gain               = m_in_out_gainSIN(iter);
 
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
           s.resize(m_robot_util->m_nbJoints);
 
         for(unsigned int i=0; i<m_robot_util->m_nbJoints; i++)

@@ -574,8 +574,8 @@ namespace dynamicgraph
 
         const Eigen::VectorXd& qj= m_joint_positionsSIN(iter);     //n+6
         const Eigen::VectorXd& dq= m_joint_velocitiesSIN(iter);
-        assert(qj.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_positions");
-        assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
+        assert(qj.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_positions");
+        assert(dq.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
         /* convert sot to pinocchio joint order */
         m_robot_util->joints_sot_to_urdf(qj, m_q_pin.tail(m_robot_util->m_nbJoints));
@@ -602,7 +602,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & qj          = m_joint_positionsSIN(iter);     //n+6
@@ -631,7 +631,7 @@ namespace dynamicgraph
             wR = 0.0;
         }
 
-        assert(qj.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints) && "Unexpected size of signal joint_positions");
+        assert(qj.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) && "Unexpected size of signal joint_positions");
 
         // if both weights are zero set them to a small positive value to avoid division by zero
         if(wR==0.0 && wL==0.0)
@@ -820,7 +820,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_lf before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
@@ -837,7 +837,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_rf before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
@@ -854,7 +854,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal q_imu before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         const Eigen::VectorXd & q = m_qSOUT(iter);
@@ -968,7 +968,7 @@ namespace dynamicgraph
           SEND_WARNING_STREAM_MSG("Cannot compute signal v before initialization!");
           return s;
         }
-        if(s.size()!=static_cast<Eigen::Index>(m_robot_util->m_nbJoints+6))
+        if(s.size()!=static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints+6))
           s.resize(m_robot_util->m_nbJoints+6);
 
         m_kinematics_computationsSINNER(iter);
@@ -981,7 +981,7 @@ namespace dynamicgraph
           const Eigen::Vector3d& gyr_imu     = m_gyroscopeSIN(iter);
           const Vector6 & dftrf              = m_dforceRLEGSIN(iter);
           const Vector6 & dftlf              = m_dforceLLEGSIN(iter);
-          assert(dq.size()==static_cast<Eigen::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
+          assert(dq.size()==static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)     && "Unexpected size of signal joint_velocities");
 
           // if the weights are not specified by the user through the input signals w_lf, w_rf
           // then compute them
