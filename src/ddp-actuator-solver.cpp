@@ -91,7 +91,7 @@ namespace dynamicgraph
       using namespace dynamicgraph;
       using namespace dynamicgraph::command;
       using namespace Eigen;
-      
+
       /// Define EntityClassName here rather than in the header file
       /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
       typedef DdpActuatorSolver EntityClassName;
@@ -110,13 +110,13 @@ namespace dynamicgraph
           CONSTRUCT_SIGNAL_IN (tau_des,           dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_IN (temp_measure,      dynamicgraph::Vector),
 	  CONSTRUCT_SIGNAL_OUT(tau,               dynamicgraph::Vector, m_pos_desSIN),
-	  m_T(3000),
 	  m_dt(1e-3),
-	  m_iterMax(100),
-	  m_stopCrit(1e-5),
 	  m_solver(m_model,m_cost,
 		   DISABLE_FULLDDP,
-		   DISABLE_QPBOX)
+		   DISABLE_QPBOX),
+	  m_T(3000),
+	  m_stopCrit(1e-5),
+	  m_iterMax(100)
       {
         RESETDEBUG5();
 	Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS );
@@ -141,7 +141,7 @@ namespace dynamicgraph
 	/// Desired position
 	const dynamicgraph::Vector &
           pos_des = m_pos_desSIN(iter);
-	/// Measured position 
+	/// Measured position
 	const dynamicgraph::Vector &
 	  pos_joint_measure = m_pos_joint_measureSIN(iter);
 	/// Measured speed
@@ -167,7 +167,7 @@ namespace dynamicgraph
           //m_ambiant_temperature;
           25.0;
 
-        xDes << m_pos_desSIN(0), 0.0, 25.0, m_tau_desSIN(0), 25.0;
+        xDes << pos_des, 0.0, 25.0, tau_des, 25.0;
         ODEBUG5(xinit);
         ODEBUG5("");
         ODEBUG5(xDes);
@@ -226,4 +226,3 @@ namespace dynamicgraph
     } // namespace torque_control
   } // namespace sot
 } // namespace dynamicgraph
-      
