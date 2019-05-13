@@ -115,11 +115,11 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[CurrentController-"+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("[CurrentController-"+name+"] "+msg, t, file, line);
         }
 
       protected:
-	RobotUtil * m_robot_util;
+	RobotUtilShrPtr m_robot_util;
         bool    m_initSucceeded;    /// true if the entity has been successfully initialized
         bool    m_emergency_stop_triggered;
         double  m_dt;               /// control loop time period

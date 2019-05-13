@@ -85,6 +85,10 @@ namespace dynamicgraph {
         void removeLeftFootContact(const double& transitionTime);
         void addRightFootContact(const double& transitionTime);
         void addLeftFootContact(const double& transitionTime);
+        void addTaskRightHand(/*const double& transitionTime*/);
+        void removeTaskRightHand(const double& transitionTime);
+        void addTaskLeftHand(/*const double& transitionTime*/);
+        void removeTaskLeftHand(const double& transitionTime);
 
         /* --- SIGNALS --- */
         DECLARE_SIGNAL_IN(com_ref_pos,                dynamicgraph::Vector);
@@ -96,6 +100,12 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(lf_ref_pos,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(lf_ref_vel,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(lf_ref_acc,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rh_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rh_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(rh_ref_acc,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lh_ref_pos,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lh_ref_vel,                 dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(lh_ref_acc,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_vel,            dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(posture_ref_acc,            dynamicgraph::Vector);
@@ -113,6 +123,8 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(kd_com,                     dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_feet,                    dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_feet,                    dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kp_hands,                   dynamicgraph::Vector);
+        DECLARE_SIGNAL_IN(kd_hands,                   dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_posture,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kd_posture,                 dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(kp_pos,                     dynamicgraph::Vector);
@@ -120,6 +132,7 @@ namespace dynamicgraph {
 
         DECLARE_SIGNAL_IN(w_com,                      double);
         DECLARE_SIGNAL_IN(w_feet,                     double);
+        DECLARE_SIGNAL_IN(w_hands,                    double);
         DECLARE_SIGNAL_IN(w_posture,                  double);
         DECLARE_SIGNAL_IN(w_base_orientation,         double);
         DECLARE_SIGNAL_IN(w_torques,                  double);
@@ -172,10 +185,16 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(base_orientation,          dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_pos,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_pos,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_hand_pos,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_hand_pos,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_vel,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_vel,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_hand_vel,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_hand_vel,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_acc,            dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_acc,             dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(right_hand_acc,            dynamicgraph::Vector);
+        DECLARE_SIGNAL_OUT(left_hand_acc,             dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(right_foot_acc_des,        dynamicgraph::Vector);
         DECLARE_SIGNAL_OUT(left_foot_acc_des,         dynamicgraph::Vector);
 
@@ -188,7 +207,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("["+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       protected:
@@ -210,8 +229,28 @@ namespace dynamicgraph {
         ContactState      m_contactState;
         double            m_contactTransitionTime;  /// end time of the current contact transition (if any)
 
+        enum RightHandState
+        {
+          TASK_RIGHT_HAND_ON = 0,
+          /*TASK_RIGHT_HAND_TRANSITION = 1,*/
+          TASK_RIGHT_HAND_OFF = 1
+        };
+        RightHandState         m_rightHandState;
+
+        enum LeftHandState
+        {
+          TASK_LEFT_HAND_ON = 0,
+          /*TASK_LEFT_HAND_TRANSITION = 1,*/
+          TASK_LEFT_HAND_OFF = 1
+        };
+        LeftHandState         m_leftHandState;
+        /*double            m_handsTransitionTime;*/  /// end time of the current transition (if any)
+
         int m_frame_id_rf;  /// frame id of right foot
         int m_frame_id_lf;  /// frame id of left foot
+
+        int m_frame_id_rh;  /// frame id of right hand
+        int m_frame_id_lh;  /// frame id of left hand
 
         /// tsid
         tsid::robots::RobotWrapper *                       m_robot;
@@ -221,19 +260,26 @@ namespace dynamicgraph {
         tsid::InverseDynamicsFormulationAccForce * m_invDyn;
         tsid::contacts::Contact6d *                m_contactRF;
         tsid::contacts::Contact6d *                m_contactLF;
+        tsid::contacts::Contact6d *                m_contactRH;
+        tsid::contacts::Contact6d *                m_contactLH;
         tsid::tasks::TaskComEquality *             m_taskCom;
         tsid::tasks::TaskSE3Equality *             m_taskRF;
         tsid::tasks::TaskSE3Equality *             m_taskLF;
+        tsid::tasks::TaskSE3Equality *             m_taskRH;
+        tsid::tasks::TaskSE3Equality *             m_taskLH;
         tsid::tasks::TaskJointPosture *            m_taskPosture;
         tsid::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
         tsid::trajectories::TrajectorySample       m_sampleCom;
         tsid::trajectories::TrajectorySample       m_sampleRF;
         tsid::trajectories::TrajectorySample       m_sampleLF;
+        tsid::trajectories::TrajectorySample       m_sampleRH;
+        tsid::trajectories::TrajectorySample       m_sampleLH;
         tsid::trajectories::TrajectorySample       m_samplePosture;
 
         double m_w_com;
         double m_w_posture;
+        double m_w_hands;
 
         tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
         tsid::math::Vector  m_dv_urdf;             /// desired accelerations (urdf order)
@@ -262,7 +308,7 @@ namespace dynamicgraph {
         tsid::math::Vector6 m_v_LF_int;
 
         unsigned int m_timeLast;
-        RobotUtil * m_robot_util;
+        RobotUtilShrPtr m_robot_util;
 
       }; // class InverseDynamicsBalanceController
     }    // namespace torque_control

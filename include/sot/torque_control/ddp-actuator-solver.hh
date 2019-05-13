@@ -34,7 +34,7 @@ namespace dynamicgraph {
 
 #define ALL_INPUT_SIGNALS m_pos_desSIN << m_pos_motor_measureSIN \
       << m_pos_joint_measureSIN << m_dx_measureSIN		 \
-      << m_tau_measureSIN << m_temp_measureSIN 
+      << m_tau_measureSIN << m_temp_measureSIN << m_tau_desSIN
 
 #define ALL_OUTPUT_SIGNALS  m_tauSOUT
       
@@ -49,7 +49,8 @@ namespace dynamicgraph {
 	  DECLARE_SIGNAL_IN(pos_joint_measure,  dynamicgraph::Vector);
 	  DECLARE_SIGNAL_IN(dx_measure,         dynamicgraph::Vector);
 	  DECLARE_SIGNAL_IN(tau_measure,        dynamicgraph::Vector);
-	  DECLARE_SIGNAL_IN(temp_measure,        dynamicgraph::Vector);	  
+          DECLARE_SIGNAL_IN(tau_des,            dynamicgraph::Vector);
+          DECLARE_SIGNAL_IN(temp_measure,       dynamicgraph::Vector);
 	  DECLARE_SIGNAL_OUT(tau,               dynamicgraph::Vector);
 
 	protected:

@@ -98,7 +98,7 @@ namespace dynamicgraph
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("[DeviceTorqueCtrl] "+msg, t, file, line);
+	  Entity::sendMsg("[DeviceTorqueCtrl] "+msg, t, file, line);
         }
 
         /// \brief Current integration step.
@@ -176,7 +176,7 @@ namespace dynamicgraph
         DIST normalDistribution_;
         GEN  normalRandomNumberGenerator_;
 
-        RobotUtil * m_robot_util;
+        RobotUtilShrPtr m_robot_util;
       };
 
     }   // end namespace torque_control

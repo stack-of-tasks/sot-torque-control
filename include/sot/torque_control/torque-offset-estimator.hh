@@ -94,7 +94,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);	
 
       protected:
-        RobotUtil *       m_robot_util;
+        RobotUtilShrPtr       m_robot_util;
         pinocchio::Model  m_model;            /// Pinocchio robot model
         pinocchio::Data   *m_data;            /// Pinocchio robot data 
         int n_iterations;   //Number of iterations to consider
@@ -114,7 +114,7 @@ namespace dynamicgraph {
 
         void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
         {
-          sendMsg("["+name+"] "+msg, t, file, line);
+	  Entity::sendMsg("["+name+"] "+msg, t, file, line);
         }
 
       private:
