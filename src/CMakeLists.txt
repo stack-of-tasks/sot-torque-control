@@ -35,24 +35,23 @@ ENDIF(UNIX)
 
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
+  admittance-controller  
   base-estimator
+  control-manager
+  current-controller
+  device-torque-ctrl  
+  filter-differentiator  
+  free-flyer-locator
+  imu_offset_compensation  
+  inverse-dynamics-balance-controller
   joint-torque-controller
   joint-trajectory-generator
   nd-trajectory-generator
+  numerical-difference  
+  position-controller  
   se3-trajectory-generator
-  madgwickahrs
-  inverse-dynamics-balance-controller
-  position-controller
-  control-manager
-  current-controller
   torque-offset-estimator
-  free-flyer-locator
-  numerical-difference
-  filter-differentiator
-  device-torque-ctrl
   trace-player
-  imu_offset_compensation
-  admittance-controller
   )
 
 IF(DDP_ACTUATOR_SOLVER_FOUND)

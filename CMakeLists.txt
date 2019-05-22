@@ -102,7 +102,6 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/control-manager.hh
   include/sot/torque_control/current-controller.hh
   include/sot/torque_control/commands-helper.hh
-  include/sot/torque_control/madgwickahrs.hh
   include/sot/torque_control/device-torque-ctrl.hh
   include/sot/torque_control/trace-player.hh
   include/sot/torque_control/torque-offset-estimator.hh
@@ -112,9 +111,7 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/lin-estimator.hh
   include/sot/torque_control/utils/poly-estimator.hh
   include/sot/torque_control/utils/quad-estimator.hh
-  include/sot/torque_control/utils/causal-filter.hh
   include/sot/torque_control/utils/Stdafx.hh
-  include/sot/torque_control/utils/stop-watch.hh
   include/sot/torque_control/utils/vector-conversions.hh
   )
 
@@ -127,8 +124,6 @@ SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/lin-estimator.cpp
     src/poly-estimator.cpp
     src/quad-estimator.cpp
-    src/causal-filter.cpp
-    src/stop-watch.cpp
     src/motor-model.cpp
 )
 
