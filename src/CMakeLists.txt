@@ -40,7 +40,6 @@ SET(plugins
   control-manager
   current-controller
   device-torque-ctrl  
-  filter-differentiator  
   free-flyer-locator
   imu_offset_compensation  
   inverse-dynamics-balance-controller
