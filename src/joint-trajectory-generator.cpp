@@ -19,7 +19,7 @@
 #include <sot/core/debug.hh>
 #include <sot/torque_control/joint-trajectory-generator.hh>
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <sot/core/stop-watch.hh>
 
 #include "../include/sot/torque_control/stc-commands.hh"
 

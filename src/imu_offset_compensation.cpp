@@ -21,7 +21,7 @@
 #include <sot/core/debug.hh>
 #include <sot/torque_control/imu_offset_compensation.hh>
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <sot/core/stop-watch.hh>
 
 
 namespace dynamicgraph

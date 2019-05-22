@@ -42,7 +42,7 @@
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
-#include <sot/torque_control/utils/stop-watch.hh>
+#include <sot/core/stop-watch.hh>
 
 
 /* Polynomial estimators */
