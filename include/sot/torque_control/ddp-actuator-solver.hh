@@ -20,7 +20,7 @@
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-#include <sot/torque_control/utils/causal-filter.hh>
+#include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
 #include <ddp-actuator-solver/ddpsolver.hh>
