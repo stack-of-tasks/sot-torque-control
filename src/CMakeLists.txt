@@ -45,7 +45,6 @@ SET(plugins
   inverse-dynamics-balance-controller
   joint-torque-controller
   joint-trajectory-generator
-  nd-trajectory-generator
   numerical-difference  
   position-controller  
   se3-trajectory-generator
