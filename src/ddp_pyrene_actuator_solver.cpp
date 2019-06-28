@@ -134,9 +134,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
   ODEBUG5("FirstInitSolver");
 
   /// --- Solve the DDP ---
-  int N = 100;
-  for(int i=0;i<N;i++) m_solver.solveTrajectory();
-
   m_solver.solveTrajectory();
   ODEBUG5("Trajectory solved");
 
