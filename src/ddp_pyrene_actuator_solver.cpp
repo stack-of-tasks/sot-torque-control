@@ -76,7 +76,7 @@ DdpPyreneActuatorSolver(const std::string &name)
     CONSTRUCT_SIGNAL_IN (pos_des,           dynamicgraph::Vector),
     CONSTRUCT_SIGNAL_IN (pos_joint_measure, dynamicgraph::Vector),
     CONSTRUCT_SIGNAL_IN (dx_joint_measure,  dynamicgraph::Vector),
-    CONSTRUCT_SIGNAL_OUT(tau,               dynamicgraph::Vector, m_pos_desSIN),
+    CONSTRUCT_SIGNAL_OUT(tau,               dynamicgraph::Vector, ALL_INPUT_SIGNALS),
     m_dt(1e-3),
     m_T(50),
     m_stopCrit(1e-3),
@@ -99,12 +99,18 @@ DdpPyreneActuatorSolver(const std::string &name)
                                       "Size of the preview window (in nb of samples)",
                                       "Max. nb. of iterations",
                                       "Stopping criteria")));
-
+      m_initSucceeded = true;
     }
 
 /* --- COMMANDS ---------------------------------------------------------- */
 DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector) 
 {
+    if (!m_initSucceeded)
+    {
+      SEND_WARNING_STREAM_MSG("Cannot compute signal tau before initialization!");
+      return s;
+    }
+    
   /// ---- Get the information -----
   /// Desired position
   const dynamicgraph::Vector &
@@ -116,16 +122,21 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
   const dynamicgraph::Vector &
   dx_joint_measure = m_dx_joint_measureSIN(iter);
 
-  m_xinit << pos_joint_measure(0),
-             dx_joint_measure(0);
+  DDPSolver<double, 2, 1>::stateVec_t xinit, xDes;
 
-  m_xDes << pos_des, 0.0;
-  
+  xinit << pos_joint_measure(0),
+           dx_joint_measure(0);
 
-  m_solver.FirstInitSolver(m_xinit, m_xDes, m_T, m_dt, m_iterMax, m_stopCrit);
+  xDes << pos_des, 0.0;
+  ODEBUG5(xDes);
+
+  m_solver.FirstInitSolver(xinit, xDes, m_T, m_dt, m_iterMax, m_stopCrit);
   ODEBUG5("FirstInitSolver");
 
   /// --- Solve the DDP ---
+  int N = 100;
+  for(int i=0;i<N;i++) m_solver.solveTrajectory();
+
   m_solver.solveTrajectory();
   ODEBUG5("Trajectory solved");
 
@@ -136,11 +147,10 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
 
   DDPSolver<double, 2, 1>::commandVecTab_t uList;
   uList = lastTraj.uList;
-  ODEBUG5("uList");
 
   //s = uList[0];
   s.resize(32);
-  s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, uList[0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+  s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, uList[m_T-1](0,0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
   //s.setZero(32);
   ODEBUG5(s);
   return s;
@@ -151,6 +161,13 @@ void DdpPyreneActuatorSolver::param_init(const double &timestep,
                                    const int &nbItMax,
                                    const double &stopCriteria) 
 {
+  if (!m_pos_desSIN.isPlugged())
+    return SEND_MSG("Init failed: signal pos_des is not plugged", MSG_TYPE_ERROR);
+  if (!m_pos_joint_measureSIN.isPlugged())
+    return SEND_MSG("Init failed: signal pos_joint_measure is not plugged", MSG_TYPE_ERROR);
+  if (!m_dx_joint_measureSIN.isPlugged())
+    return SEND_MSG("Init failed: signal dx_joint_measure is not plugged", MSG_TYPE_ERROR);
+
   m_T = T;
   m_dt = timestep;
   m_iterMax = nbItMax;

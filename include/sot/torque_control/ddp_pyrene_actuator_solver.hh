@@ -15,7 +15,7 @@
 /* --------------------------------------------------------------------- */
 
 #if defined (WIN32)
-#  if defined (sot_simple_ddp_actuator_EXPORTS)
+#  if defined (sot_ddp_pyrene_actuator_EXPORTS)
 #    define SOTDDPPYRENEACTUATORSOLVER_EXPORT __declspec(dllexport)
 #  else
 #    define SOTDDPPYRENEACTUATORSOLVER_EXPORT __declspec(dllimport)
@@ -66,7 +66,8 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 
 	protected:
 		double m_dt;
-		DDPSolver<double, 2, 1>::stateVec_t m_xinit, m_xDes, m_x, m_zeroState;
+		bool m_initSucceeded;
+		DDPSolver<double, 2, 1>::stateVec_t m_zeroState;
 		DDPSolver<double, 2, 1>::commandVec_t m_u;
 		unsigned int m_T;
 		double m_stopCrit;
