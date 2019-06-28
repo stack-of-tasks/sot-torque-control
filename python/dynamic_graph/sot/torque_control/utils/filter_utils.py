@@ -1,4 +1,4 @@
-from dynamic_graph.sot.torque_control.filter_differentiator import FilterDifferentiator
+from dynamic_graph.sot.core.filter_differentiator import FilterDifferentiator
 
 def create_butter_lp_filter_Wn_05_N_2(name, dt, size):
     lp_filter = FilterDifferentiator(name);
