@@ -27,7 +27,7 @@
 #endif
 #define ODEBUG3(x) std::cout << x << std::endl
 
-#define DBGFILE "/tmp/debug-simple_ddp_actuator_solver.dat"
+#define DBGFILE "/tmp/debug-ddp_pyrene_actuator_solver.dat"
 
 #define RESETDEBUG5() { std::ofstream DebugFile;  \
     DebugFile.open(DBGFILE,std::ofstream::out);   \
@@ -68,7 +68,7 @@ using namespace Eigen;
 typedef DdpPyreneActuatorSolver EntityClassName;
 
 /* --- DG FACTORY ------------------------------------------------------- */
-DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(SimpleDdpActuatorSolver, "SimpleDdpActuatorSolver");
+DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(DdpPyreneActuatorSolver, "DdpPyreneActuatorSolver");
 
 DdpPyreneActuatorSolver::
 DdpPyreneActuatorSolver(const std::string &name)
@@ -90,7 +90,6 @@ DdpPyreneActuatorSolver(const std::string &name)
       Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS );
 
       m_zeroState.setZero();
-      m_firstIter = true;
 
       /* Commands. */
       addCommand("init",
@@ -121,11 +120,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
              dx_joint_measure(0);
 
   m_xDes << pos_des, 0.0;
-  ODEBUG5(xinit);
-  ODEBUG5("");
-  ODEBUG5(xDes);
+  
 
-  m_solver.FirstInitSolver(xinit, xDes, m_T, m_dt, m_iterMax, m_stopCrit);
+  m_solver.FirstInitSolver(m_xinit, m_xDes, m_T, m_dt, m_iterMax, m_stopCrit);
   ODEBUG5("FirstInitSolver");
 
   /// --- Solve the DDP ---
@@ -149,22 +146,23 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
   return s;
 }
 
-void SimpleDdpActuatorSolver::param_init(const double &timestep,
+void DdpPyreneActuatorSolver::param_init(const double &timestep,
                                    const int &T,
                                    const int &nbItMax,
-                                   const double &stopCriteria,
-                                   const double &tauLim) 
+                                   const double &stopCriteria) 
 {
   m_T = T;
   m_dt = timestep;
   m_iterMax = nbItMax;
   m_stopCrit = stopCriteria;
-  m_cost.setTauLimit(tauLim);
+  m_cost.setTauLimit(70);
+  m_cost.setJointLimit(0.0, -2.35619449019);
+  m_cost.setJointVelLimit(30.0, -30.0);
   m_solver.FirstInitSolver( m_zeroState, m_zeroState,
                             m_T , m_dt, m_iterMax, m_stopCrit);
 }
 
-void SimpleDdpActuatorSolver::display(std::ostream &os) const 
+void DdpPyreneActuatorSolver::display(std::ostream &os) const 
 {
   os << " T: " << m_T
      << " timestep: " << m_dt

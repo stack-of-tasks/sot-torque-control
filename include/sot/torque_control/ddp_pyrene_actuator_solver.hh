@@ -32,7 +32,7 @@
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-#include <sot/torque_control/utils/causal-filter.hh>
+#include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
 
@@ -85,8 +85,7 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 		void param_init(const double &timestep,
 						const int &T,
 						const int &nbItMax,
-						const double &stopCriteria,
-						const double &tauLim);
+						const double &stopCriteria);
 
 };
 } // namespace torque_control
