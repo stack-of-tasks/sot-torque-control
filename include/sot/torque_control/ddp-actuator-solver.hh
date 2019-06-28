@@ -23,7 +23,6 @@
 #include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
-#include <ddp-actuator-solver/ddpsolver.hh>
 
 #include <ddp-actuator-solver/examples/dctemp.hh>
 #include <ddp-actuator-solver/examples/costtemp.hh>
