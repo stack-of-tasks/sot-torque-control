@@ -19,6 +19,7 @@
 #include <sot/core/debug.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/ddp_pyrene_actuator_solver.hh>
+#include <math.h>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl
@@ -59,7 +60,7 @@ using namespace dynamicgraph;
 using namespace dynamicgraph::command;
 using namespace Eigen;
 
-#define ALL_INPUT_SIGNALS m_pos_desSIN << m_pos_joint_measureSIN << m_dx_joint_measureSIN 
+#define ALL_INPUT_SIGNALS m_pos_desSIN << m_pos_joint_measureSIN << m_dx_joint_measureSIN << m_tau_desSIN
 
 #define ALL_OUTPUT_SIGNALS  m_tauSOUT
 
@@ -76,6 +77,7 @@ DdpPyreneActuatorSolver(const std::string &name)
     CONSTRUCT_SIGNAL_IN (pos_des,           dynamicgraph::Vector),
     CONSTRUCT_SIGNAL_IN (pos_joint_measure, dynamicgraph::Vector),
     CONSTRUCT_SIGNAL_IN (dx_joint_measure,  dynamicgraph::Vector),
+    CONSTRUCT_SIGNAL_IN (tau_des,           dynamicgraph::Vector),
     CONSTRUCT_SIGNAL_OUT(tau,               dynamicgraph::Vector, ALL_INPUT_SIGNALS),
     m_dt(1e-3),
     m_T(50),
@@ -135,6 +137,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
   /// Measured joint speed
   const dynamicgraph::Vector &
   dx_joint_measure = m_dx_joint_measureSIN(iter);
+  /// Desired torque
+  const dynamicgraph::Vector &
+  tau_des = m_tau_desSIN(iter);
 
   DDPSolver<double, 2, 1>::stateVec_t xinit, xDes;
 
@@ -159,10 +164,11 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
   DDPSolver<double, 2, 1>::commandVecTab_t uList;
   uList = lastTraj.uList;
 
-  //s = uList[0];
-  s.resize(32);
-  s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, uList[m_T-1](0,0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-  //s.setZero(32);
+  s = tau_des;
+  if (!isnan(uList[m_T-1](0,0)))
+  {    
+    s[25] = -uList[m_T-1](0,0);
+  }
   ODEBUG5(s);
   return s;
 }

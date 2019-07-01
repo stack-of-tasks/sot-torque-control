@@ -59,6 +59,7 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 		DECLARE_SIGNAL_IN(pos_des,            dynamicgraph::Vector);
 		DECLARE_SIGNAL_IN(pos_joint_measure,  dynamicgraph::Vector);
 		DECLARE_SIGNAL_IN(dx_joint_measure,   dynamicgraph::Vector);
+		DECLARE_SIGNAL_IN(tau_des,            dynamicgraph::Vector);
 		DECLARE_SIGNAL_OUT(tau,               dynamicgraph::Vector);
 
 		/* --- ENTITY INHERITANCE --- */
