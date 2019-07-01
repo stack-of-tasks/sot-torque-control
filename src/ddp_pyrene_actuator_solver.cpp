@@ -99,6 +99,20 @@ DdpPyreneActuatorSolver(const std::string &name)
                                       "Size of the preview window (in nb of samples)",
                                       "Max. nb. of iterations",
                                       "Stopping criteria")));
+      addCommand("setLoadParam",
+           makeCommandVoid3(*this, &DdpPyreneActuatorSolver::setLoadParam,
+                            docCommandVoid3("Setter of the Load parameters.",
+                                "Mass of the load [g].",
+                                "X coordinate of the Load",
+                                "Y coordinate of the Load")));
+      addCommand("setLoadMass",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setLoadMass,
+                            docCommandVoid1("Set the Load mass.",
+                                "Mass of the load [g].")));
+      addCommand("removeLoad",
+            makeCommandVoid0(*this, &DdpPyreneActuatorSolver::removeLoad,
+                        docCommandVoid0("Remove the Load.")));
+
       m_initSucceeded = true;
     }
 
@@ -176,6 +190,20 @@ void DdpPyreneActuatorSolver::param_init(const double &timestep,
                             m_T , m_dt, m_iterMax, m_stopCrit);
 }
 
+void DdpPyreneActuatorSolver::setLoadParam(const double& mass, const double& coordX, const double& coordY)
+{
+  m_model.setLoadParam(mass, coordX, coordY);
+}
+
+void DdpPyreneActuatorSolver::setLoadMass(const double& mass)
+{
+  m_model.setLoadMass(mass);
+}
+
+void DdpPyreneActuatorSolver::removeLoad()
+{
+  m_model.removeLoad();
+}
 void DdpPyreneActuatorSolver::display(std::ostream &os) const 
 {
   os << " T: " << m_T

@@ -36,7 +36,7 @@
 
 #include <ddp-actuator-solver/ddpsolver.hh>
 
-#include <ddp-actuator-solver/examples/costFunction.hh>
+#include <ddp-actuator-solver/examples/pyreneCostFunction.hh>
 #include <ddp-actuator-solver/examples/PyreneActuator.hh>
 
 
@@ -87,6 +87,11 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 						const int &T,
 						const int &nbItMax,
 						const double &stopCriteria);
+
+		// /* --- SETTER LOAD --- */
+		void setLoadParam(const double& mass, const double& coordX, const double& coordY);
+		void setLoadMass(const double& mass);
+		void removeLoad();
 
 };
 } // namespace torque_control
