@@ -101,6 +101,20 @@ DdpPyreneActuatorSolver(const std::string &name)
                                       "Size of the preview window (in nb of samples)",
                                       "Max. nb. of iterations",
                                       "Stopping criteria")));
+      addCommand("setTorqueLimit",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setTorqueLimit,
+                            docCommandVoid1("Set the Torque limit.",
+                                "Limit of the motor torque.")));
+      addCommand("setJointLimit",
+           makeCommandVoid2(*this, &DdpPyreneActuatorSolver::setJointLimit,
+                            docCommandVoid2("Set the angular limits of the joint.",
+                                "Upper limit",
+                                "Lower limit.")));
+      addCommand("setJointVelLimit",
+           makeCommandVoid2(*this, &DdpPyreneActuatorSolver::setJointVelLimit,
+                            docCommandVoid2("Set the angular velocity limits of the joint.",
+                                "Upper limit",
+                                "Lower limit.")));
       addCommand("setLoadParam",
            makeCommandVoid3(*this, &DdpPyreneActuatorSolver::setLoadParam,
                             docCommandVoid3("Setter of the Load parameters.",
@@ -114,6 +128,23 @@ DdpPyreneActuatorSolver(const std::string &name)
       addCommand("removeLoad",
             makeCommandVoid0(*this, &DdpPyreneActuatorSolver::removeLoad,
                         docCommandVoid0("Remove the Load.")));
+
+      addCommand("setCostGainState",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setCostGainState,
+                            docCommandVoid1("Set the Gain of the state cost matrix.",
+                                "Matrix of Gains.")));
+      addCommand("setCostGainCommand",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setCostGainCommand,
+                            docCommandVoid1("Set the Gain of the command cost matrix.",
+                                "Matrix of Gains.")));
+      addCommand("setCostGainStateConstraint",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setCostGainStateConstraint,
+                            docCommandVoid1("Set the Gain of the constraints on the state.",
+                                "Matrix of Gains.")));
+      addCommand("setCostGainTorqueConstraint",
+           makeCommandVoid1(*this, &DdpPyreneActuatorSolver::setCostGainTorqueConstraint,
+                            docCommandVoid1("Set the Gain of the torque constraints.",
+                                "Matrix of Gains.")));
 
       m_initSucceeded = true;
     }
@@ -196,6 +227,21 @@ void DdpPyreneActuatorSolver::param_init(const double &timestep,
                             m_T , m_dt, m_iterMax, m_stopCrit);
 }
 
+void DdpPyreneActuatorSolver::setTorqueLimit(const double& tau)
+{
+  m_cost.setTauLimit(tau);
+}
+
+void DdpPyreneActuatorSolver::setJointLimit(const double& upperLim, const double& lowerLim)
+{
+  m_cost.setJointLimit(upperLim, lowerLim);
+}
+
+void DdpPyreneActuatorSolver::setJointVelLimit(const double& upperLim, const double& lowerLim)
+{
+  m_cost.setJointVelLimit(upperLim, lowerLim);
+}
+
 void DdpPyreneActuatorSolver::setLoadParam(const double& mass, const double& coordX, const double& coordY)
 {
   m_model.setLoadParam(mass, coordX, coordY);
@@ -210,6 +256,31 @@ void DdpPyreneActuatorSolver::removeLoad()
 {
   m_model.removeLoad();
 }
+
+void DdpPyreneActuatorSolver::setCostGainState(const dynamicgraph::Vector& Q)
+{
+  const CostFunction<double,2,1>::stateMat_t Q_new = Eigen::Map<const CostFunction<double,2,1>::stateMat_t, Eigen::Unaligned >(Q.data(),2,1);
+  m_cost.setCostGainState(Q_new);
+}
+
+void DdpPyreneActuatorSolver::setCostGainStateConstraint(const dynamicgraph::Vector& W)
+{
+  const CostFunction<double,2,1>::stateMat_t W_new = Eigen::Map<const CostFunction<double,2,1>::stateMat_t, Eigen::Unaligned >(W.data(),2,1);
+  m_cost.setCostGainStateConstraint(W_new);
+}
+
+void DdpPyreneActuatorSolver::setCostGainCommand(const dynamicgraph::Vector& R)
+{
+  const CostFunction<double,2,1>::commandMat_t R_new = Eigen::Map<const CostFunction<double,2,1>::commandMat_t, Eigen::Unaligned >(R.data(),1);
+  m_cost.setCostGainCommand(R_new);
+}
+
+void DdpPyreneActuatorSolver::setCostGainTorqueConstraint(const dynamicgraph::Vector& P)
+{
+  const CostFunction<double,2,1>::commandMat_t P_new = Eigen::Map<const CostFunction<double,2,1>::commandMat_t, Eigen::Unaligned >(P.data(),1);
+  m_cost.setCostGainTorqueConstraint(P_new);
+}
+
 void DdpPyreneActuatorSolver::display(std::ostream &os) const 
 {
   os << " T: " << m_T
