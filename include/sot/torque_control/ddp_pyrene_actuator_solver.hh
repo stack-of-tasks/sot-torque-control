@@ -28,6 +28,7 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <vector>
 #include <tsid/utils/stop-watch.hpp>
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
@@ -82,17 +83,27 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 		* @param T  Size of the preview window (in nb of timestep).
 		* @param nbItMax Maximum number of iterations.
 		* @param stopCriteria The value of the stopping criteria.
-		* @param tauLim Maximum torque to be applied on joint.
 		*/
 		void param_init(const double &timestep,
 						const int &T,
 						const int &nbItMax,
 						const double &stopCriteria);
 
+		// /* --- SETTER LIM --- */
+		void setTorqueLimit(const double& tau);
+		void setJointLimit(const double& upperLim, const double& lowerLim);
+		void setJointVelLimit(const double& upperLim, const double& lowerLim);
+
 		// /* --- SETTER LOAD --- */
 		void setLoadParam(const double& mass, const double& coordX, const double& coordY);
 		void setLoadMass(const double& mass);
 		void removeLoad();
+
+		// /* --- SETTER GAINS --- */
+		void setCostGainState(const dynamicgraph::Vector& Q);
+    	void setCostGainStateConstraint(const dynamicgraph::Vector& W);
+    	void setCostGainCommand(const dynamicgraph::Vector& R);
+    	void setCostGainTorqueConstraint(const dynamicgraph::Vector& P);
 
 };
 } // namespace torque_control
