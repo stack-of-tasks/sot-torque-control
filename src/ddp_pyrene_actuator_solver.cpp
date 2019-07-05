@@ -14,6 +14,7 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define EIGEN_NO_MALLOC
 #include <Eigen/Dense>
 #include <dynamic-graph/factory.h>
 #include <sot/core/debug.hh>
@@ -82,7 +83,7 @@ DdpPyreneActuatorSolver(const std::string &name)
     m_dt(1e-3),
     m_T(50),
     m_stopCrit(1e-3),
-    m_iterMax(100),
+    m_iterMax(10),
     m_solver(m_model, m_cost,
              DISABLE_FULLDDP,
              DISABLE_QPBOX)
@@ -178,29 +179,33 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector)
            dx_joint_measure(0);
 
   xDes << pos_des, 0.0;
-  ODEBUG5(xDes);
+  //ODEBUG(xDes);
 
-  m_solver.FirstInitSolver(xinit, xDes, m_T, m_dt, m_iterMax, m_stopCrit);
-  ODEBUG5("FirstInitSolver");
+  m_solver.initSolver(xinit, xDes);
+  //ODEBUG("FirstInitSolver");
 
   /// --- Solve the DDP ---
   m_solver.solveTrajectory();
-  ODEBUG5("Trajectory solved");
+  //ODEBUG("Trajectory solved");
 
   /// --- Get the command ---
   DDPSolver<double, 2, 1>::traj lastTraj;
   lastTraj = m_solver.getLastSolvedTrajectory();
-  ODEBUG5("getLastSolvedTrajectory");
+  //ODEBUG("getLastSolvedTrajectory");
 
   DDPSolver<double, 2, 1>::commandVecTab_t uList;
   uList = lastTraj.uList;
 
-  s = tau_des;
-  if (!isnan(uList[m_T-1](0,0)))
+  s = m_previous_tau;
+  double tau_ddp = uList[0](0,0);
+  if (!isnan(tau_ddp))
   {    
-    s[25] = -uList[m_T-1](0,0);
+    s[25] = tau_ddp;
   }
-  ODEBUG5(s);
+  
+  m_previous_tau = s;
+  //ODEBUG(s);
+
   return s;
 }
 
@@ -216,11 +221,13 @@ void DdpPyreneActuatorSolver::param_init(const double &timestep,
   if (!m_dx_joint_measureSIN.isPlugged())
     return SEND_MSG("Init failed: signal dx_joint_measure is not plugged", MSG_TYPE_ERROR);
 
+  m_previous_tau.resize(32);
+  m_previous_tau.setZero();
   m_T = T;
   m_dt = timestep;
   m_iterMax = nbItMax;
   m_stopCrit = stopCriteria;
-  m_cost.setTauLimit(70);
+  m_cost.setTauLimit(70.0);
   m_cost.setJointLimit(0.0, -2.35619449019);
   m_cost.setJointVelLimit(30.0, -30.0);
   m_solver.FirstInitSolver( m_zeroState, m_zeroState,
