@@ -67,6 +67,7 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 		virtual void display(std::ostream &os) const;
 
 	protected:
+		dynamicgraph::Vector m_previous_tau;
 		double m_dt;
 		bool m_initSucceeded;
 		DDPSolver<double, 2, 1>::stateVec_t m_zeroState;
