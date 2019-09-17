@@ -7,19 +7,13 @@
 #include <sot/core/debug.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 
-namespace dynamicgraph
-{
-  namespace sot
-  {
-    namespace torque_control
-    {
-      namespace dynamicgraph = ::dynamicgraph;
-      using namespace dynamicgraph;
-      using namespace dynamicgraph::command;
+namespace dynamicgraph {
+namespace sot {
+namespace torque_control {
+namespace dynamicgraph = ::dynamicgraph;
+using namespace dynamicgraph;
+using namespace dynamicgraph::command;
 
-
-
-    } // namespace torquecontrol
-  } // namespace sot
-} // namespace dynamicgraph
-
+}  // namespace torque_control
+}  // namespace sot
+}  // namespace dynamicgraph

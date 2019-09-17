@@ -1,4 +1,4 @@
-/* 
+/*
    Oscar Efrain RAMOS PONCE, LAAS-CNRS
    Date: 28/10/2014
    Object to estimate a polynomial that fits some data.
@@ -10,16 +10,13 @@
 #include <Eigen/Dense>
 #include <vector>
 
-
 /**
  * Compute the pseudo-inverse using Eigen
  * @param [in] matrix_in is the input matrix.
  * @param [out] pseudo_inv is the pseudo-inverse of the input matrix.
  * @param [in] pinvtoler is the tolerance in the SVD decomposition
- */ 
-void pinv(const Eigen::MatrixXd& matrix_in, 
-          Eigen::MatrixXd& pseudo_inv, 
-          const double& pinvtoler = 1.0e-6);
+ */
+void pinv(const Eigen::MatrixXd& matrix_in, Eigen::MatrixXd& pseudo_inv, const double& pinvtoler = 1.0e-6);
 
 /**
  * Object to fit a polynomial of a given order. It provides a generic fitting
@@ -29,21 +26,16 @@ void pinv(const Eigen::MatrixXd& matrix_in,
  * based on the specific case.
  *
  */
-class PolyEstimator
-{
-
-public:
-
+class PolyEstimator {
+ public:
   /**
    * Create a polynomial estimator on a window of length N
    * @param order is the order of the polynomial estimator.
    * @param N is the window length.
    * @param dt is the control (sampling) time
-   */ 
-  PolyEstimator(const unsigned int& order, 
-                const unsigned int& N,
-                const double& dt);
-  
+   */
+  PolyEstimator(const unsigned int& order, const unsigned int& N, const double& dt);
+
   /**
    * Estimate the generic polynomial given a new element. The order of the
    * polynomial is specified in the constructor. Note that this function can be
@@ -53,10 +45,8 @@ public:
    * @param [in] data_element is the new data vector.
    * @param [in] time is the time stamp corresponding to the new data.
    */
-  void estimate(std::vector<double>& estimee,
-                const std::vector<double>& data_element, 
-                const double& time);
-  
+  void estimate(std::vector<double>& estimee, const std::vector<double>& data_element, const double& time);
+
   /**
    * Estimate the polynomial given a new element assuming a constant time
    * difference. This constant time difference between consecutive samples is
@@ -65,9 +55,8 @@ public:
    * @param [out] estimee is the calculated estimation.
    * @param [in] data_element is the new data vector.
    */
-  virtual void estimate(std::vector<double>& estimee,
-                        const std::vector<double>& data_element) = 0;
-  
+  virtual void estimate(std::vector<double>& estimee, const std::vector<double>& data_element) = 0;
+
   /**
    * Estimate the polynomial given a new element using a recursive
    * algorithm. This method is faster. However, it takes the time as it is (it
@@ -76,8 +65,7 @@ public:
    * @param [in] data_element is the new data.
    * @param [in] time is the time stamp corresponding to the new data.
    */
-  virtual void estimateRecursive(std::vector<double>& estimee,
-                                 const std::vector<double>& data_element, 
+  virtual void estimateRecursive(std::vector<double>& estimee, const std::vector<double>& data_element,
                                  const double& time) = 0;
 
   /**
@@ -85,9 +73,8 @@ public:
    * @param [out] estimeeDerivative is the calculated time derivative.
    * @param [in] order The order of the derivative (e.g. 1 means the first derivative).
    */
-  virtual void getEstimateDerivative(std::vector<double>& estimeeDerivative,
-                                     const unsigned int order) = 0;
-  
+  virtual void getEstimateDerivative(std::vector<double>& estimeeDerivative, const unsigned int order) = 0;
+
   /**
    * Set the size of the filter window.
    * @param [in] N size
@@ -100,14 +87,13 @@ public:
    */
   unsigned int getWindowLength();
 
-protected:
-
+ protected:
   /**
    * Find the regressor which best fits in least square sense the last N data
    * sample couples. The order of the regressor is given in the constructor.
-   */ 
+   */
   virtual void fit();
-  
+
   /**
    * Get the estimation when using the generic fit function (in poly-estimator)
    */
@@ -116,10 +102,10 @@ protected:
   /// Order of the polynomial estimator
   unsigned int order_;
 
-  /// Window length 
+  /// Window length
   unsigned int N_;
 
-  /// Sampling (control) time 
+  /// Sampling (control) time
   double dt_;
 
   /// Indicate that dt is zero (dt is invalid)
@@ -130,17 +116,17 @@ protected:
   bool first_run_;
 
   /// All the data (N elements of size dim)
-  std::vector< std::vector<double> > elem_list_;
+  std::vector<std::vector<double> > elem_list_;
 
   /// Time vector corresponding to each element in elem_list_
-  std::vector< double > time_list_;
+  std::vector<double> time_list_;
 
   /// Circular index to each data and time element
   unsigned int pt_;
 
   /// Coefficients for the least squares solution
   Eigen::VectorXd coeff_;
- 
+
   /// Time vector setting the lowest time to zero (for numerical stability).
   std::vector<double> t_;
 
@@ -151,9 +137,7 @@ protected:
   /// Matrix containing time components. It is only used for the generic fit
   /// computation, such that the estimation is \f$c = R^{\#} x\f$, where \f$x\f$
   /// is the data vector.
-  Eigen::MatrixXd R_; 
-
+  Eigen::MatrixXd R_;
 };
 
-
-#endif 
+#endif

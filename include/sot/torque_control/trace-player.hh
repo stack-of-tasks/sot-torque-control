@@ -10,16 +10,15 @@
 /* --- API ------------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#if defined (WIN32)
-#  if defined (__sot_torque_control_trace_player_H__)
-#    define SOTTRACEPLAYER_EXPORT __declspec(dllexport)
-#  else
-#    define SOTTRACEPLAYER_EXPORT __declspec(dllimport)
-#  endif
+#if defined(WIN32)
+#if defined(__sot_torque_control_trace_player_H__)
+#define SOTTRACEPLAYER_EXPORT __declspec(dllexport)
 #else
-#  define SOTTRACEPLAYER_EXPORT
+#define SOTTRACEPLAYER_EXPORT __declspec(dllimport)
 #endif
-
+#else
+#define SOTTRACEPLAYER_EXPORT
+#endif
 
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
@@ -34,72 +33,63 @@
 #include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 
-
 namespace dynamicgraph {
-  namespace sot {
-    namespace torque_control {
+namespace sot {
+namespace torque_control {
 
-      /* --------------------------------------------------------------------- */
-      /* --- CLASS ----------------------------------------------------------- */
-      /* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+/* --- CLASS ----------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
 
+/**
+ * @brief Entity to play data saved using a Tracer.
+ *
+ * A typical use of this entity would be to call the command
+ * addOutputSignal for every file you previously saved with
+ * the Tracer. Then you can either call the command
+ * playNext, or you can call recompute on the output
+ * signal "trigger".
+ */
+class SOTTRACEPLAYER_EXPORT TracePlayer : public ::dynamicgraph::Entity {
+  typedef TracePlayer EntityClassName;
+  DYNAMIC_GRAPH_ENTITY_DECL();
 
-      /**
-       * @brief Entity to play data saved using a Tracer.
-       *
-       * A typical use of this entity would be to call the command
-       * addOutputSignal for every file you previously saved with
-       * the Tracer. Then you can either call the command
-       * playNext, or you can call recompute on the output
-       * signal "trigger".
-       */
-      class SOTTRACEPLAYER_EXPORT TracePlayer
-        :public::dynamicgraph::Entity
-      {
-        typedef TracePlayer EntityClassName;
-        DYNAMIC_GRAPH_ENTITY_DECL();
+ public:
+  /* --- CONSTRUCTOR ---- */
+  TracePlayer(const std::string& name);
 
-      public:
+  void init(const double& dt);
 
-        /* --- CONSTRUCTOR ---- */
-        TracePlayer( const std::string & name );
+  /* --- SIGNALS --- */
+  typedef dynamicgraph::Signal<dynamicgraph::Vector, int> OutputSignalType;
+  std::map<std::string, OutputSignalType*> m_outputSignals;
+  DECLARE_SIGNAL_OUT(trigger, int);
 
-        void init(const double& dt);
+  /* --- COMMANDS --- */
+  void addOutputSignal(const std::string& fileName, const std::string& signalName);
+  void playNext();
+  void rewind();
+  void clear();
 
-        /* --- SIGNALS --- */
-        typedef dynamicgraph::Signal<dynamicgraph::Vector, int> OutputSignalType;
-        std::map<std::string, OutputSignalType* > m_outputSignals;
-        DECLARE_SIGNAL_OUT(trigger, int);
+  /* --- ENTITY INHERITANCE --- */
+  virtual void display(std::ostream& os) const;
 
-        /* --- COMMANDS --- */
-        void addOutputSignal(const std::string & fileName,
-                             const std::string & signalName);
-        void playNext();
-        void rewind();
-        void clear();
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* file = "", int line = 0) {
+    Entity::sendMsg("[" + name + "] " + msg, t, file, line);
+  }
 
-        /* --- ENTITY INHERITANCE --- */
-        virtual void display( std::ostream& os ) const;
+ protected:
+  typedef dynamicgraph::Vector DataType;
+  typedef std::list<DataType> DataHistoryType;
+  typedef DataHistoryType::const_iterator DataPointerType;
 
-        void sendMsg(const std::string& msg, MsgType t=MSG_TYPE_INFO, const char* file="", int line=0)
-        {
-	  Entity::sendMsg("["+name+"] "+msg, t, file, line);
-        }
+  std::map<std::string, DataHistoryType> m_data;
+  std::map<std::string, DataPointerType> m_dataPointers;
 
-      protected:
-        typedef dynamicgraph::Vector            DataType;
-        typedef std::list< DataType >           DataHistoryType;
-        typedef DataHistoryType::const_iterator DataPointerType;
+};  // class TraceReader
 
-        std::map<std::string, DataHistoryType> m_data;
-        std::map<std::string, DataPointerType> m_dataPointers;
+}  // namespace torque_control
+}  // namespace sot
+}  // namespace dynamicgraph
 
-      }; // class TraceReader
-
-    }    // namespace torque_control
-  }      // namespace sot
-}        // namespace dynamicgraph
-
-
-
-#endif // #ifndef __sot_torque_control_trace_reader_H__
+#endif  // #ifndef __sot_torque_control_trace_reader_H__
