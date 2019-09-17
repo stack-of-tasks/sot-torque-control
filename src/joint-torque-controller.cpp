@@ -1,17 +1,6 @@
 /*
  * Copyright 2015, Andrea Del Prete, LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-dyninv is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <Eigen/Dense>
@@ -70,7 +59,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(jointsVelocities,        dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsAccelerations,     dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsTorques,           dynamicgraph::Vector)
-        ,CONSTRUCT_SIGNAL_IN(jointsTorquesDerivative, dynamicgraph::Vector)	  
+        ,CONSTRUCT_SIGNAL_IN(jointsTorquesDerivative, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(jointsTorquesDesired,    dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(dq_des,                  dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(KpTorque,                     dynamicgraph::Vector)   // proportional gain for torque feedback controller
@@ -78,7 +67,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_IN(KdTorque,                     dynamicgraph::Vector)   // derivative gain for torque feedback controller
         ,CONSTRUCT_SIGNAL_IN(KdVel,                        dynamicgraph::Vector)   // derivative gain for velocity feedback
         ,CONSTRUCT_SIGNAL_IN(KiVel,                        dynamicgraph::Vector)   // integral gain for velocity feedback
-        ,CONSTRUCT_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector)	  
+        ,CONSTRUCT_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(coulomb_friction_compensation_percentage, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_p, dynamicgraph::Vector)
         ,CONSTRUCT_SIGNAL_IN(motorParameterKt_n, dynamicgraph::Vector)
@@ -94,7 +83,7 @@ namespace dynamicgraph
                                                                            VEL_CONTROL_INPUT_SIGNALS <<
                                                                            MODEL_INPUT_SIGNALS <<
                                                                            m_torque_error_integralSOUT)
-        ,CONSTRUCT_SIGNAL_OUT(smoothSignDq,          dynamicgraph::Vector, m_jointsVelocitiesSIN )	  
+        ,CONSTRUCT_SIGNAL_OUT(smoothSignDq,          dynamicgraph::Vector, m_jointsVelocitiesSIN )
         ,CONSTRUCT_SIGNAL_OUT(torque_error_integral, dynamicgraph::Vector, m_jointsTorquesSIN <<
                                                                            m_jointsTorquesDesiredSIN <<
                                                                            TORQUE_INTEGRAL_INPUT_SIGNALS )
@@ -262,7 +251,7 @@ namespace dynamicgraph
         const Eigen::VectorXd& polySignDq =    m_polySignDqSIN(iter);
         if(s.size()!=(int)m_robot_util->m_nbJoints)
           s.resize(m_robot_util->m_nbJoints);
-	
+
         for(int i=0; i<(int)m_robot_util->m_nbJoints; i++)
           s(i) = motorModel.smoothSign(dq[i], 0.1,
 				       static_cast<unsigned int>(polySignDq[i]));

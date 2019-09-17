@@ -1,17 +1,6 @@
 /*
  * Copyright 2014-2017, Andrea Del Prete, Rohan Budhiraja LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-dyninv is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <Eigen/Dense>
@@ -59,7 +48,7 @@ namespace dynamicgraph
         ,CONSTRUCT_SIGNAL_INNER(x_dx_ddx,       dynamicgraph::Vector, m_xSIN)
       {
         Entity::signalRegistration( ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
-        
+
         /* Commands. */
         addCommand("getTimestep",
                    makeDirectGetter(*this,&m_dt,

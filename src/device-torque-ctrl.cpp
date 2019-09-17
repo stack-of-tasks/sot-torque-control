@@ -1,17 +1,6 @@
 /*
  * Copyright 2014, Andrea Del Prete, LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-torque-control is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <fstream>
@@ -60,7 +49,7 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName):
   CONSTRUCT_SIGNAL_IN(gear_ratios,                 dynamicgraph::Vector),
   accelerometer_ (3),
   gyrometer_ (3),
-  m_isTorqueControlled(true),  
+  m_isTorqueControlled(true),
   m_numericalDamping(1e-8),
   normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
   normalRandomNumberGenerator_(randomNumberGenerator_,normalDistribution_)
@@ -144,7 +133,7 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef)
   try
   {
     vector<string> package_dirs;
-    m_robot = new robots::RobotWrapper(urdfFile, 
+    m_robot = new robots::RobotWrapper(urdfFile,
 				      package_dirs, pinocchio::JointModelFreeFlyer());
     m_data = new pinocchio::Data(m_robot->model());
     m_robot->rotor_inertias(rotor_inertias);

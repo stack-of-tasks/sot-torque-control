@@ -1,17 +1,6 @@
 /*
  * Copyright 2015, Andrea Del Prete, LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-torque-control is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __sot_torque_control_JointTorqueController_H__
@@ -94,7 +83,7 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(KiVel,                  dynamicgraph::Vector);      /// integral gain for velocity feedback
         DECLARE_SIGNAL_IN(torque_integral_saturation, dynamicgraph::Vector);  /// integral error saturation
 
- 
+
 //        DECLARE_SIGNAL_IN(dq_threshold,           dynamicgraph::Vector);      /// velocity sign threshold
 //        DECLARE_SIGNAL_IN(ddq_threshold,          dynamicgraph::Vector);      /// acceleration sign threshold
 

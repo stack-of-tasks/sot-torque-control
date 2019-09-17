@@ -1,17 +1,6 @@
 /*
  * Copyright 2014, Andrea Del Prete, LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-torque-control is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -19,7 +8,7 @@
 #include <cassert>
 #include <sot/torque_control/motor-model.hh>
 /// i = Kt*tau + Kv*dq + Ka*ddq + sign(dq)Kf
-/// tau = i/Kt - (Kv/Kt)*dq - (Ka/Kt)*ddq - sign(dq)(Kf/Kt)  
+/// tau = i/Kt - (Kv/Kt)*dq - (Ka/Kt)*ddq - sign(dq)(Kf/Kt)
 namespace dynamicgraph {
   namespace sot {
     namespace torque_control {
@@ -50,7 +39,7 @@ namespace dynamicgraph {
             double Kv = 0.5* ( Kv_p * (1+signDq) + Kv_n * (1-signDq) );
             double Ka = 0.5* ( Ka_p * (1+signDq) + Ka_n * (1-signDq) );
             double Kf = 0.5* ( Kf_p * (1+signDq) + Kf_n * (1-signDq) );
-            
+
             current = Kt * torque + Kv*dq + Ka*ddq + signDq*Kf;
 
             return current;
@@ -70,7 +59,7 @@ namespace dynamicgraph {
             assert(Kv_n>=0.0 && "Kv_n should be >= 0");
             assert(Ka_p>=0.0 && "Ka_p should be >= 0");
             assert(Ka_n>=0.0 && "Ka_n should be >= 0");
-            
+
             double signDq = this->smoothSign(dq,0.1,poly); //in [-1;1]
             double torque;
 
@@ -79,8 +68,8 @@ namespace dynamicgraph {
             double Kv = 0.5* ( Kv_p * (1+signDq) + Kv_n * (1-signDq) );
             double Ka = 0.5* ( Ka_p * (1+signDq) + Ka_n * (1-signDq) );
             double Kf = 0.5* ( Kf_p * (1+signDq) + Kf_n * (1-signDq) );
-            
-            torque = (current/Kt) - (Kv/Kt)*dq - (Ka/Kt)*ddq - signDq*(Kf/Kt) ; 
+
+            torque = (current/Kt) - (Kv/Kt)*dq - (Ka/Kt)*ddq - signDq*(Kf/Kt) ;
 
             return torque;
         }

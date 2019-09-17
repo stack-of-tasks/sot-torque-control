@@ -1,17 +1,6 @@
 /*
  * Copyright 2014-2017, Andrea Del Prete, Rohan Budhiraja LAAS-CNRS
  *
- * This file is part of sot-torque-control.
- * sot-torque-control is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
- * sot-torque-control is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.  You should
- * have received a copy of the GNU Lesser General Public License along
- * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __sot_torque_control_TorqueOffsetEstimator_H__
@@ -91,12 +80,12 @@ namespace dynamicgraph {
         DECLARE_SIGNAL_IN(gyroscope,                dynamicgraph::Vector);
         DECLARE_SIGNAL_IN(jointTorques,             dynamicgraph::Vector);
         DECLARE_SIGNAL_INNER(collectSensorData,     dummy);
-        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);	
+        DECLARE_SIGNAL_OUT(jointTorquesEstimated,   dynamicgraph::Vector);
 
       protected:
         RobotUtilShrPtr       m_robot_util;
         pinocchio::Model  m_model;            /// Pinocchio robot model
-        pinocchio::Data   *m_data;            /// Pinocchio robot data 
+        pinocchio::Data   *m_data;            /// Pinocchio robot data
         int n_iterations;   //Number of iterations to consider
         double epsilon;
         double gyro_epsilon;
