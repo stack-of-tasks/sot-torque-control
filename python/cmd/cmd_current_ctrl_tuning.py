@@ -1,29 +1,29 @@
-create_topic(robot.ros, robot.device.currents,                    'i');
-create_topic(robot.ros, robot.device.control,                    'ctrl');
-create_topic(robot.ros, robot.ctrl_manager.currents_real,         'i_real');
-create_topic(robot.ros, robot.ctrl_manager.pwmDes,                'i_des')
-create_topic(robot.ros, robot.device.robotState,                  'robotState')
-create_topic(robot.ros, robot.ctrl_manager.pwmDesSafe,            'ctrl')
-create_topic(robot.ros, robot.ctrl_manager.current_errors,        'i_err');
-create_topic(robot.ros, robot.estimator_ft.jointsTorques,       'tau');
-create_topic(robot.ros, robot.torque_ctrl.jointsTorquesDesired, 'tau_des');
+create_topic(robot.ros, robot.device.currents, 'i')
+create_topic(robot.ros, robot.device.control, 'ctrl')
+create_topic(robot.ros, robot.ctrl_manager.currents_real, 'i_real')
+create_topic(robot.ros, robot.ctrl_manager.pwmDes, 'i_des')
+create_topic(robot.ros, robot.device.robotState, 'robotState')
+create_topic(robot.ros, robot.ctrl_manager.pwmDesSafe, 'ctrl')
+create_topic(robot.ros, robot.ctrl_manager.current_errors, 'i_err')
+create_topic(robot.ros, robot.estimator_ft.jointsTorques, 'tau')
+create_topic(robot.ros, robot.torque_ctrl.jointsTorquesDesired, 'tau_des')
 
 # set dz comp and bemf comp to zero
-robot.ctrl_manager.percentageDriverDeadZoneCompensation.value = 30*(0.,)
-robot.ctrl_manager.percentage_bemf_compensation.value = 30*(0.,)
-robot.ctrl_manager.ki_current.value = 30*(0.,)
+robot.ctrl_manager.percentageDriverDeadZoneCompensation.value = 30 * (0., )
+robot.ctrl_manager.percentage_bemf_compensation.value = 30 * (0., )
+robot.ctrl_manager.ki_current.value = 30 * (0., )
 
 # create trajectory generator for torque
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
 torque_traj_gen = NdTrajectoryGenerator('torque_traj_gen')
-torque_traj_gen.initial_value.value = 30*(0.0,)
+torque_traj_gen.initial_value.value = 30 * (0.0, )
 torque_traj_gen.init(robot.timeStep, 30)
 plug(torque_traj_gen.x, robot.torque_ctrl.jointsTorquesDesired)
 
 # create trajectory generator for current
 from dynamic_graph.sot.torque_control.nd_trajectory_generator import NdTrajectoryGenerator
 cur_traj_gen = NdTrajectoryGenerator('cur_traj_gen')
-cur_traj_gen.initial_value.value = 30*(0.0,)
+cur_traj_gen.initial_value.value = 30 * (0.0, )
 cur_traj_gen.init(robot.timeStep, 30)
 plug(cur_traj_gen.x, robot.ctrl_manager.ctrl_torque)
 

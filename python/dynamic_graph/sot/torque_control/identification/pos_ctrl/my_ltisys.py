@@ -2,7 +2,17 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
+import numpy
+import scipy
+import scipy.integrate as integrate
+import scipy.interpolate as interpolate
+import scipy.linalg as linalg
+# from scipy.lib.six import xrange
+from numpy import (array, asarray, atleast_1d, atleast_2d, diag, dot, eye, linspace, nan_to_num, ones, poly, product,
+                   r_, real, squeeze, transpose, zeros, zeros_like)
+from scipy.signal.filter_design import freqs, normalize, tf2zpk, zpk2tf
 
 #
 # Author: Travis Oliphant 2001
@@ -13,21 +23,10 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote abcd_normalize.
 #
 
-from scipy.signal.filter_design import tf2zpk, zpk2tf, normalize, freqs
-import numpy
-from numpy import product, zeros, array, dot, transpose, ones, \
-    nan_to_num, zeros_like, linspace
-import scipy.interpolate as interpolate
-import scipy.integrate as integrate
-import scipy.linalg as linalg
-import scipy
-#from scipy.lib.six import xrange
-from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
-     squeeze, diag, asarray
-
-__all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
-           'freqresp']
+__all__ = [
+    'tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
+    'step2', 'bode', 'freqresp'
+]
 
 
 def tf2ss(num, den):
@@ -53,7 +52,7 @@ def tf2ss(num, den):
     #
     #   A, B, C, and D follow quite naturally.
     #
-    num, den = normalize(num, den)   # Strips zeros, checks arrays
+    num, den = normalize(num, den)  # Strips zeros, checks arrays
     nn = len(num.shape)
     if nn == 1:
         num = asarray([num], num.dtype)
@@ -100,7 +99,7 @@ def _shape_or_none(M):
     if M is not None:
         return M.shape
     else:
-        return (None,) * 2
+        return (None, ) * 2
 
 
 def _choice_not_none(*args):
@@ -302,7 +301,7 @@ class lti(object):
                 self.outputs = self.num.shape[0]
             else:
                 self.outputs = 1
-        elif N == 3:      # Zero-pole-gain form
+        elif N == 3:  # Zero-pole-gain form
             self._zeros, self._poles, self._gain = args
             self._update(N)
             # make sure we have numpy arrays
@@ -313,7 +312,7 @@ class lti(object):
                 self.outputs = self.zeros.shape[0]
             else:
                 self.outputs = 1
-        elif N == 4:       # State-space form
+        elif N == 4:  # State-space form
             self._A, self._B, self._C, self._D = abcd_normalize(*args)
             self._update(N)
             self.inputs = self.B.shape[-1]
@@ -332,7 +331,7 @@ class lti(object):
             repr(self.B),
             repr(self.C),
             repr(self.D),
-            )
+        )
 
     @property
     def num(self):
@@ -421,12 +420,10 @@ class lti(object):
             self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
         if N == 3:
             self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-            self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
-                                                        self.poles, self.gain)
+            self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles, self.gain)
         if N == 4:
             self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                          self.C, self.D)
+            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B, self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -566,8 +563,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
             U = U.reshape(-1, 1)
         sU = U.shape
         if sU[0] != len(T):
-            raise ValueError("U must have the same number of rows "
-                             "as elements in T.")
+            raise ValueError("U must have the same number of rows " "as elements in T.")
 
         if sU[1] != sys.inputs:
             raise ValueError("The number of inputs in U (%d) is not "
@@ -575,19 +571,21 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
                              "inputs (%d)" % (sU[1], sys.inputs))
         # Create a callable that uses linear interpolation to
         # calculate the input at any time.
-        ufunc = interpolate.interp1d(T, U, kind='linear',
-                                     axis=0, bounds_error=False)
+        ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
             return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
+
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
+
         def fprime(x, t, sys):
             """The vector field of the linear system."""
             return dot(sys.A, x)
-        xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
+
+        xout = integrate.odeint(fprime, X0, T, args=(sys, ), **kwargs)
         yout = dot(sys.C, transpose(xout))
 
     return T, squeeze(transpose(yout)), xout
@@ -656,8 +654,7 @@ def lsim(system, U, T, X0=None, interp=1):
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
     if sU[0] != len(T):
-        raise ValueError("U must have the same number of rows "
-                         "as elements in T.")
+        raise ValueError("U must have the same number of rows " "as elements in T.")
     if sU[1] != sys.inputs:
         raise ValueError("System does not define that many inputs.")
 
@@ -677,13 +674,13 @@ def lsim(system, U, T, X0=None, interp=1):
 
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1, ATm1)
-    I = eye(A.shape[0], dtype=A.dtype)
+    I = eye(A.shape[0], dtype=A.dtype)  # noqa
     GTmI = GT - I
     F1T = dot(dot(BT, GTmI), ATm1)
     if interp:
         F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
 
-    for k in xrange(1, len(T)):
+    for k in range(1, len(T)):
         dt1 = T[k] - T[k - 1]
         if dt1 != dt:
             dt = dt1
@@ -698,8 +695,7 @@ def lsim(system, U, T, X0=None, interp=1):
         if interp:
             xout[k] = xout[k] + dot((U[k] - U[k - 1]), F2T)
 
-    yout = (squeeze(dot(U, transpose(sys.D))) +
-            squeeze(dot(xout, transpose(sys.C))))
+    yout = (squeeze(dot(U, transpose(sys.D))) + squeeze(dot(xout, transpose(sys.C))))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -1094,8 +1090,7 @@ def freqresp(system, w=None, n=10000):
         sys = lti(*system)
 
     if sys.inputs != 1 or sys.outputs != 1:
-        raise ValueError("freqresp() requires a SISO (single input, single "
-                         "output) system.")
+        raise ValueError("freqresp() requires a SISO (single input, single " "output) system.")
 
     if w is not None:
         worN = w
