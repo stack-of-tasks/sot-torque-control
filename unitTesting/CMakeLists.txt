@@ -46,6 +46,6 @@ IF(BUILD_PYTHON_INTERFACE)
     )
 
   foreach(localtest ${LIST_OF_TESTS})
-#    ADD_PYTHON_UNIT_TEST(${localtest} unitTesting/${localtest} "src")
+    ADD_PYTHON_UNIT_TEST(${localtest} unitTesting/${localtest})
   endforeach()
 ENDIF(BUILD_PYTHON_INTERFACE)
