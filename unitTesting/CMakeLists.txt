@@ -9,11 +9,12 @@ MACRO(SOT_TOR_CTR_TEST NAME)
     ADD_TEST(test-${NAME} ${RUNTIME_OUTPUT_DIRECTORY}/test-${NAME} ${test-${NAME}-args} )
   ELSE (test-${NAME}-args)
     ADD_TEST(test-${NAME} ${RUNTIME_OUTPUT_DIRECTORY}/test-${NAME} )
-  ENDIF (test-${NAME}-args)    
+  ENDIF (test-${NAME}-args)
 
   TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME})
   ADD_DEPENDENCIES(test-${NAME} ${PROJECT_NAME})
   PKG_CONFIG_USE_DEPENDENCY(test-${NAME} pinocchio)
+  PKG_CONFIG_USE_DEPENDENCY(test-${NAME} dynamic-graph)
 
   IF (test-${NAME}-libs)
     TARGET_LINK_LIBRARIES(test-${NAME} ${test-${NAME}-libs})
