@@ -5,18 +5,18 @@
 # Paul Dandignac, LAAS/CNRS
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+SET(PROJECT_NAMESPACE stack-of-tasks)
+SET(PROJECT_NAME sot-torque-control)
+SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
+SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/eigen.cmake)
 INCLUDE(cmake/python.cmake)
 INCLUDE(cmake/test.cmake)
-
-SET(PROJECT_NAMESPACE stack-of-tasks)
-SET(PROJECT_NAME sot-torque-control)
-SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
-SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
 SET(CUSTOM_HEADER_DIR "sot/torque_control")
 
@@ -31,7 +31,8 @@ SET(PKG_CONFIG_ADDITIONAL_VARIABLES
   plugindir
   )
 
-SETUP_PROJECT()
+CMAKE_POLICY(SET CMP0048 OLD)
+PROJECT(${PROJECT_NAME} CXX)
 
 OPTION (INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
 IF(INITIALIZE_WITH_NAN)
@@ -83,5 +84,3 @@ ENDIF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(unitTesting)
-
-SETUP_PROJECT_FINALIZE()
