@@ -6,4 +6,5 @@ initial_value = (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.)
 se3tg = SE3TrajectoryGenerator("se3tg_test")
 se3tg.init(initRobotData.controlDT)
 se3tg.initial_value.value = initial_value
+se3tg.trigger.value = 1
 se3tg.x.recompute(10)
