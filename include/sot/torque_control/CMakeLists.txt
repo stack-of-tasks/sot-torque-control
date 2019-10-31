@@ -16,6 +16,9 @@ SET(${LIBRARY_NAME}_HEADERS
   torque-offset-estimator.hh
   imu_offset_compensation.hh
   admittance-controller.hh
+  )
+
+SET(${LIBRARY_NAME}_HEADERS_UTILS
   utils/trajectory-generators.hh
   utils/lin-estimator.hh
   utils/poly-estimator.hh
@@ -25,3 +28,4 @@ SET(${LIBRARY_NAME}_HEADERS
   )
 
 INSTALL(FILES ${${LIBRARY_NAME}_HEADERS} DESTINATION include/${CUSTOM_HEADER_DIR})
+INSTALL(FILES ${${LIBRARY_NAME}_HEADERS_UTILS} DESTINATION include/${CUSTOM_HEADER_DIR}/utils)
