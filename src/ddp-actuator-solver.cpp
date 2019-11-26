@@ -13,6 +13,7 @@
  * have received a copy of the GNU Lesser General Public License along
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define EIGEN_RUNTIME_NO_MALLOC
 
 #include <Eigen/Dense>
 #include <dynamic-graph/factory.h>
