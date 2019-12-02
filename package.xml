@@ -1,0 +1,41 @@
+<package format="2">
+  <name>sot-torque-control</name>
+  <version>1.4.0</version>
+  <description>
+    Collection of dynamic-graph entities aimed at implementing torque control
+    on different robots.
+  </description>
+  <maintainer email="ostasse@laas.fr">Olivier Stasse</maintainer>
+
+  <license>BSD</license>
+
+  <url type="repository">http://www.github.com/stack-of-tasks/sot-torque-control</url>
+  <url type="bugtracker">http://www.github.com/stack-of-tasks/sot-torque-control/issues</url>
+  <author>Andrea Del Prete</author>
+  <author>Thomas Flayols</author>
+  <author email="adelpret@laas.fr">adelpret@laas.fr</author>
+  <author email="tflayols@laas.fr">tflayols@laas.fr</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend version_gte="1.1" version_lt="2.0">genmsg</build_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>sot-core</build_depend>
+  <build_depend>pinocchio</build_depend>  
+
+  <build_depend>roscpp</build_depend>  
+  <build_export_depend>pinocchio</build_export_depend>
+  <build_export_depend>sot-core</build_export_depend>
+
+  <exec_depend>pinocchio</exec_depend>
+  <exec_depend>sot-core</exec_depend>
+  
+  <test_depend>gtest</test_depend>
+
+  <doc_depend>doxygen</doc_depend>
+  <doc_depend>dynamic_graph</doc_depend>
+ 
+
+  <export>
+  </export>
+</package>
