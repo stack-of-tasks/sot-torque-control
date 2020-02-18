@@ -63,6 +63,16 @@ namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
 
+enum ControlOutput {
+  CONTROL_OUTPUT_VELOCITY = 0,
+  CONTROL_OUTPUT_TORQUE = 1,
+  CONTROL_OUTPUT_SIZE = 2
+};
+
+const std::string ControlOutput_s[] = {
+  "velocity", "torque"
+};
+
 /* --------------------------------------------------------------------- */
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
@@ -78,8 +88,10 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
   /* --- CONSTRUCTOR ---- */
   SimpleInverseDyn( const std::string & name );
 
-  void init(const double& dt,
-            const std::string& robotRef);
+  void init(const double& dt, const std::string& robotRef);
+
+  virtual void setControlOutputType(const std::string& type);
+  
   // void updateComOffset();
 
   /* --- SIGNALS --- */
@@ -93,13 +105,29 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
 
   DECLARE_SIGNAL_IN(kp_pos,                     dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_pos,                     dynamicgraph::Vector);
-  
+
   DECLARE_SIGNAL_IN(com_ref_pos,                dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_vel,                dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_acc,                dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_com,                     dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_com,                     dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(w_com,                      double);
+
+  DECLARE_SIGNAL_IN(kp_contact,                 dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_contact,                 dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_forces,                   double);
+  DECLARE_SIGNAL_IN(mu,                         double);
+  DECLARE_SIGNAL_IN(contact_points,             dynamicgraph::Matrix);
+  DECLARE_SIGNAL_IN(contact_normal,             dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(f_min,                      double);
+  DECLARE_SIGNAL_IN(f_max,                      double);
+
+  DECLARE_SIGNAL_IN(waist_ref_pos,              dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(waist_ref_vel,              dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(waist_ref_acc,              dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_waist,                   dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_waist,                   dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_waist,                    double);
 
   DECLARE_SIGNAL_IN(q,                          dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v,                          dynamicgraph::Vector);
@@ -108,12 +136,13 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
 
   DECLARE_SIGNAL_OUT(tau_des,                   dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(dv_des,                    dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(v_des,                    dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(q_des,                    dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(u,                         dynamicgraph::Vector);
 
 
-  // DECLARE_SIGNAL_IN(waist_ref_pos,              dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(waist_ref_vel,              dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(waist_ref_acc,              dynamicgraph::Vector);
+  // DECLARE_SIGNAL_OUT(check_Ma_tau,              dynamicgraph::Vector);
+
   // DECLARE_SIGNAL_IN(rf_ref_pos,                 dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(rf_ref_vel,                 dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(rf_ref_acc,                 dynamicgraph::Vector);
@@ -123,28 +152,14 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
   // DECLARE_SIGNAL_IN(f_ref_right_foot,           dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(f_ref_left_foot,            dynamicgraph::Vector);
 
-  // DECLARE_SIGNAL_IN(kp_contact,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kd_contact,                 dynamicgraph::Vector);
-
   // DECLARE_SIGNAL_IN(kp_feet,                    dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(kd_feet,                    dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(kp_hands,                   dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(kd_hands,                   dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kp_waist,                   dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kd_waist,                   dynamicgraph::Vector);
 
 
   // DECLARE_SIGNAL_IN(w_feet,                     double);
-  // DECLARE_SIGNAL_IN(w_waist,                    double);
   // DECLARE_SIGNAL_IN(w_torques,                  double);
-  // DECLARE_SIGNAL_IN(w_forces,                   double);
-
-  // DECLARE_SIGNAL_IN(mu,                         double);
-  // DECLARE_SIGNAL_IN(contact_points,             dynamicgraph::Matrix);
-  // DECLARE_SIGNAL_IN(contact_normal,             dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(f_min,                      double);
-  // DECLARE_SIGNAL_IN(f_max_right_foot,           double);
-  // DECLARE_SIGNAL_IN(f_max_left_foot,            double);
 
   // DECLARE_SIGNAL_IN(tau_max,                    dynamicgraph::Vector);
   // DECLARE_SIGNAL_IN(q_min,                      dynamicgraph::Vector);
@@ -185,20 +200,20 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
   tsid::solvers::SolverHQPBase *           m_hqpSolver;
 
   tsid::InverseDynamicsFormulationAccForce * m_invDyn;
-  // tsid::contacts::Contact6d *                m_contactRF;
-  // tsid::contacts::Contact6d *                m_contactLF;
+  tsid::contacts::Contact6d *                m_contactRF;
+  tsid::contacts::Contact6d *                m_contactLF;
   tsid::tasks::TaskComEquality *             m_taskCom;
-  // tsid::tasks::TaskSE3Equality *             m_taskWaist;
+  tsid::tasks::TaskSE3Equality *             m_taskWaist;
   tsid::tasks::TaskJointPosture *            m_taskPosture;
   tsid::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
   tsid::trajectories::TrajectorySample       m_sampleCom;
-  // tsid::trajectories::TrajectorySample       m_sampleWaist;
+  tsid::trajectories::TrajectorySample       m_sampleWaist;
   tsid::trajectories::TrajectorySample       m_samplePosture;
 
   double m_w_com;
   double m_w_posture;
-  // double m_w_waist;
+  double m_w_waist;
 
   tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
   tsid::math::Vector  m_dv_urdf;             /// desired accelerations (urdf order)
@@ -222,6 +237,7 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
 
   unsigned int m_timeLast;
   RobotUtilShrPtr m_robot_util;
+  ControlOutput     m_ctrlMode;         /// ctrl mode desired for the output (velocity or torque)
 
 }; // class SimpleInverseDyn
 }    // namespace torque_control
