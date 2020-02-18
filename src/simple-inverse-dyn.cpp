@@ -397,6 +397,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const Vector6& dx_waist_ref =  m_waist_ref_velSIN(iter);
   const Vector6& ddx_waist_ref = m_waist_ref_accSIN(iter);
   const VectorN& q_ref =   m_posture_ref_posSIN(iter);
+  // std::cout << "q_ref.size() = " << q_ref.size() << std::endl;
+  // std::cout << "m_robot_util->m_nbJoints = " << static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) << std::endl;
   assert(q_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
   assert(dq_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
