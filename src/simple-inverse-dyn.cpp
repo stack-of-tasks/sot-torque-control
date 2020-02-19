@@ -536,11 +536,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
       s = m_tau_sot;
       return s;
     }
-  } else if (m_ctrlMode == CONTROL_OUTPUT_TORQUE){
-    // In velocity close the TSID loop on itself (v_des, q_des), in torque on the (q,v) of the robot.
-    m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
-    m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
   }
+  // else if (m_ctrlMode == CONTROL_OUTPUT_TORQUE){
+  //   // In velocity close the TSID loop on itself (v_des, q_des), in torque on the (q,v) of the robot.
+  //   m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
+  //   m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
+  // }
   m_timeLast = static_cast<unsigned int>(iter);
 
   const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
