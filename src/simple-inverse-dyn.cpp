@@ -113,32 +113,6 @@ using namespace dg::sot;
   << m_vSIN \
   << m_active_jointsSIN
 
-
-// << m_rf_ref_posSIN \
-// << m_rf_ref_velSIN \
-// << m_rf_ref_accSIN \
-// << m_lf_ref_posSIN \
-// << m_lf_ref_velSIN \
-// << m_lf_ref_accSIN \
-// << m_f_ref_right_footSIN \
-// << m_f_ref_left_footSIN \
-
-// << m_kp_feetSIN \
-// << m_kd_feetSIN \
-// << m_w_feetSIN \ 
-// << m_w_torquesSIN \
-// << m_tau_maxSIN \
-// << m_q_minSIN \
-// << m_q_maxSIN \
-// << m_dq_maxSIN \
-// << m_ddq_maxSIN \
-// << m_dt_joint_pos_limitsSIN \
-// << m_tau_estimatedSIN \  
-// << m_wrench_baseSIN \
-// << m_wrench_left_footSIN  \
-// << m_wrench_right_footSIN \
-//
-
 #define OUTPUT_SIGNALS m_tau_desSOUT << m_dv_desSOUT << m_v_desSOUT << m_q_desSOUT << m_uSOUT
 
 
@@ -208,8 +182,6 @@ SimpleInverseDyn(const std::string& name)
   Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
 
   m_com_offset.setZero();
-  // m_v_RF_int.setZero();
-  // m_v_LF_int.setZero();
 
   /* Commands. */
   addCommand("init",
@@ -223,17 +195,17 @@ SimpleInverseDyn(const std::string& name)
                               docCommandVoid1("Set the type of control output.",
                                               "Control type: velocity or torque (string)")));
 
-  // addCommand("updateComOffset",
-  //            makeCommandVoid0(*this, &SimpleInverseDyn::updateComOffset,
-  //                             docCommandVoid0("Update the offset on the CoM based on the CoP measurement.")));
+  addCommand("updateComOffset",
+             makeCommandVoid0(*this, &SimpleInverseDyn::updateComOffset,
+                              docCommandVoid0("Update the offset on the CoM based on the CoP measurement.")));
 
 }
 
-// void SimpleInverseDyn::updateComOffset() {
-//   const Vector3 & com = m_robot->com(m_invDyn->data());
-//   m_com_offset(2) = 0.0;
-//   SEND_MSG("CoM offset updated: " + toString(m_com_offset), MSG_TYPE_INFO);
-// }
+void SimpleInverseDyn::updateComOffset() {
+  const Vector3 & com = m_robot->com(m_invDyn->data());
+  m_com_offset = com;
+  SEND_MSG("CoM offset updated: " + toString(m_com_offset), MSG_TYPE_INFO);
+}
 
 void SimpleInverseDyn::setControlOutputType(const std::string& type) {
   for (int i = 0; i < CONTROL_OUTPUT_SIZE; i++)
@@ -297,8 +269,6 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
     m_q_urdf.setZero(m_robot->nq());
     m_v_urdf.setZero(m_robot->nv());
     m_dv_urdf.setZero(m_robot->nv());
-    // m_J_RF.setZero(6, m_robot->nv());
-    // m_J_LF.setZero(6, m_robot->nv());
 
     m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
@@ -349,12 +319,6 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
     m_sampleWaist = TrajectorySample(6);
     m_samplePosture = TrajectorySample(m_robot->nv() - 6);
 
-    // m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
-    // m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
-
-    // m_frame_id_rh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
-    // m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
-
     m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST,
                                                     "eiquadprog-fast");
     m_hqpSolver->resize(m_invDyn->nVar(), m_invDyn->nEq(), m_invDyn->nIn());
@@ -378,7 +342,6 @@ DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
   const Eigen::VectorXd& active_joints_sot = m_active_jointsSIN(iter);
   if (m_enabled == false) {
     if (active_joints_sot.any()) {
-
       /* from all OFF to some ON */
       m_enabled = true ;
       s = active_joints_sot;
@@ -420,7 +383,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
 
-  // m_w_feetSIN(iter);
   m_active_joints_checkedSINNER(iter);
 
   const VectorN6& q_robot = m_qSIN(iter);
@@ -435,8 +397,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const Vector6& dx_waist_ref =  m_waist_ref_velSIN(iter);
   const Vector6& ddx_waist_ref = m_waist_ref_accSIN(iter);
   const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-  // std::cout << "q_ref.size() = " << q_ref.size() << std::endl;
-  // std::cout << "m_robot_util->m_nbJoints = " << static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) << std::endl;
   assert(q_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
   assert(dq_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
@@ -472,7 +432,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   m_taskCom->Kp(kp_com);
   m_taskCom->Kd(kd_com);
   if (m_w_com != w_com) {
-//          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
     m_w_com = w_com;
     m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
   }
@@ -484,7 +443,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   m_taskWaist->Kp(kp_waist);
   m_taskWaist->Kd(kd_waist);
   if (m_w_waist != w_waist) {
-//          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
     m_w_waist = w_waist;
     m_invDyn->updateTaskWeight(m_taskWaist->name(), w_waist);
   }
@@ -496,7 +454,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   m_taskPosture->Kp(kp_posture);
   m_taskPosture->Kd(kd_posture);
   if (m_w_posture != w_posture) {
-//          SEND_MSG("Change posture from "+toString(m_w_posture)+" to "+toString(w_posture), MSG_TYPE_INFO);
     m_w_posture = w_posture;
     m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
   }
@@ -566,20 +523,10 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   getStatistics().store("active inequalities", static_cast<double>(sol.activeSet.size()));
   getStatistics().store("solver iterations", sol.iterations);
-  // if (ddx_com_ref.norm() > 1e-3)
-  //   getStatistics().store("com ff ratio", ddx_com_ref.norm() / m_taskCom->getConstraint().vector().norm());
 
   m_dv_urdf = m_invDyn->getAccelerations(sol);
   m_robot_util->velocity_urdf_to_sot(m_q_urdf, m_dv_urdf, m_dv_sot);
-  // Eigen::Matrix<double, 12, 1> tmp;
-  // if (m_invDyn->getContactForces(m_contactRF->name(), sol, tmp))
-  //   m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
-  // if (m_invDyn->getContactForces(m_contactLF->name(), sol, tmp))
-  //   m_f_LF = m_contactLF->getForceGeneratorMatrix() * tmp;
   m_robot_util->joints_urdf_to_sot(m_invDyn->getActuatorForces(sol), m_tau_sot);
-
-  // m_tau_sot += kp_pos.cwiseProduct(q_ref - q_sot.tail(m_robot_util->m_nbJoints)) +
-  //              kd_pos.cwiseProduct(dq_ref - v_sot.tail(m_robot_util->m_nbJoints));
 
   getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
   m_t += m_dt;

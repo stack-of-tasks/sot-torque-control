@@ -88,12 +88,6 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
   /* --- CONSTRUCTOR ---- */
   SimpleInverseDyn( const std::string & name );
 
-  void init(const double& dt, const std::string& robotRef);
-
-  virtual void setControlOutputType(const std::string& type);
-  
-  // void updateComOffset();
-
   /* --- SIGNALS --- */
 
   DECLARE_SIGNAL_IN(posture_ref_pos,            dynamicgraph::Vector);
@@ -136,47 +130,16 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
 
   DECLARE_SIGNAL_OUT(tau_des,                   dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(dv_des,                    dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(v_des,                    dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(q_des,                    dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(v_des,                     dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(q_des,                     dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(u,                         dynamicgraph::Vector);
 
-
-  // DECLARE_SIGNAL_OUT(check_Ma_tau,              dynamicgraph::Vector);
-
-  // DECLARE_SIGNAL_IN(rf_ref_pos,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(rf_ref_vel,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(rf_ref_acc,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(lf_ref_pos,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(lf_ref_vel,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(lf_ref_acc,                 dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(f_ref_right_foot,           dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(f_ref_left_foot,            dynamicgraph::Vector);
-
-  // DECLARE_SIGNAL_IN(kp_feet,                    dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kd_feet,                    dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kp_hands,                   dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(kd_hands,                   dynamicgraph::Vector);
-
-
-  // DECLARE_SIGNAL_IN(w_feet,                     double);
-  // DECLARE_SIGNAL_IN(w_torques,                  double);
-
-  // DECLARE_SIGNAL_IN(tau_max,                    dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(q_min,                      dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(q_max,                      dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(dq_max,                     dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(ddq_max,                    dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(dt_joint_pos_limits,        double);
-
-  // DECLARE_SIGNAL_IN(tau_estimated,              dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(wrench_base,                dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(wrench_left_foot,           dynamicgraph::Vector);
-  // DECLARE_SIGNAL_IN(wrench_right_foot,          dynamicgraph::Vector);
-
-  /// This signal copies active_joints only if it changes from a all false or to an all false value
-
-
   /* --- COMMANDS --- */
+
+  void init(const double& dt, const std::string& robotRef);
+  virtual void setControlOutputType(const std::string& type);  
+  void updateComOffset();
+
   /* --- ENTITY INHERITANCE --- */
   virtual void display( std::ostream& os ) const;
 
@@ -186,20 +149,21 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
 
  protected:
 
-  double            m_dt;               /// control loop time period
-  double            m_t;
-  bool              m_initSucceeded;    /// true if the entity has been successfully initialized
-  bool              m_enabled;          /// True if controler is enabled
-  bool              m_firstTime;        /// True at the first iteration of the controller
+  double m_dt;               /// control loop time period
+  double m_t;                /// current time
+  bool   m_initSucceeded;    /// true if the entity has been successfully initialized
+  bool   m_enabled;          /// True if controler is enabled
+  bool   m_firstTime;        /// True at the first iteration of the controller
 
-  // int m_frame_id_rf;  /// frame id of right foot
-  // int m_frame_id_lf;  /// frame id of left foot
-
-  /// tsid
+  /// TSID
+  /// Robot
   tsid::robots::RobotWrapper *             m_robot;
-  tsid::solvers::SolverHQPBase *           m_hqpSolver;
 
+  /// Solver and problem formulation
+  tsid::solvers::SolverHQPBase *           m_hqpSolver;
   tsid::InverseDynamicsFormulationAccForce * m_invDyn;
+
+  /// TASKS
   tsid::contacts::Contact6d *                m_contactRF;
   tsid::contacts::Contact6d *                m_contactLF;
   tsid::tasks::TaskComEquality *             m_taskCom;
@@ -207,43 +171,34 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
   tsid::tasks::TaskJointPosture *            m_taskPosture;
   tsid::tasks::TaskJointPosture *            m_taskBlockedJoints;
 
+  /// Trajectories of the tasks
   tsid::trajectories::TrajectorySample       m_sampleCom;
   tsid::trajectories::TrajectorySample       m_sampleWaist;
   tsid::trajectories::TrajectorySample       m_samplePosture;
 
+  /// Weights of the Tasks (which can be changed)
   double m_w_com;
   double m_w_posture;
   double m_w_waist;
 
-  tsid::math::Vector  m_dv_sot;              /// desired accelerations (sot order)
-  tsid::math::Vector  m_dv_urdf;             /// desired accelerations (urdf order)
-  tsid::math::Vector  m_v_sot;
-  tsid::math::Vector  m_q_sot;
-  // tsid::math::Vector  m_f;                   /// desired force coefficients (24d)
-  // tsid::math::Vector6 m_f_RF;                /// desired 6d wrench right foot
-  // tsid::math::Vector6 m_f_LF;                /// desired 6d wrench left foot
-  tsid::math::Vector3 m_com_offset;          /// 3d CoM offset
-  tsid::math::Vector  m_tau_sot;
-  tsid::math::Vector  m_q_urdf;
-  tsid::math::Vector  m_v_urdf;
+  /// Computed solutions (accelerations and torques) and their derivatives
+  tsid::math::Vector  m_dv_sot;   /// desired accelerations (sot order)
+  tsid::math::Vector  m_dv_urdf;  /// desired accelerations (urdf order)
+  tsid::math::Vector  m_v_sot;    /// desired velocities (sot order)
+  tsid::math::Vector  m_v_urdf;   /// desired and current velocities (urdf order) (close the TSID loop on it)
+  tsid::math::Vector  m_q_sot;    /// desired positions (sot order)
+  tsid::math::Vector  m_q_urdf;   /// desired and current positions (urdf order) (close the TSID loop on it)
+  tsid::math::Vector  m_tau_sot;  /// desired torques (sot order)
 
-  // typedef pinocchio::Data::Matrix6x Matrix6x;
-  // Matrix6x m_J_RF;
-  // Matrix6x m_J_LF;
-  // Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;
-  // Eigen::ColPivHouseholderQR<Matrix6x> m_J_LF_QR;
-  // tsid::math::Vector6 m_v_RF_int;
-  // tsid::math::Vector6 m_v_LF_int;
+  tsid::math::Vector3 m_com_offset;  /// 3d CoM offset  
 
-  unsigned int m_timeLast;
-  RobotUtilShrPtr m_robot_util;
-  ControlOutput     m_ctrlMode;         /// ctrl mode desired for the output (velocity or torque)
+  unsigned int m_timeLast;           /// Final time of the control loop
+  RobotUtilShrPtr m_robot_util;      /// Share pointer to the robot utils methods
+  ControlOutput m_ctrlMode;          /// ctrl mode desired for the output (velocity or torque)
 
 }; // class SimpleInverseDyn
-}    // namespace torque_control
-}      // namespace sot
-}        // namespace dynamicgraph
-
-
+} // namespace torque_control
+} // namespace sot
+} // namespace dynamicgraph
 
 #endif // #ifndef __sot_torque_control_simple_inverse_dyn_H__
