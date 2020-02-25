@@ -1,6 +1,6 @@
 # Running a test
 
-In the following, we quickly demonstrate how to run a test with sot-torque-control and <a href="https://gepgitlab.laas.fr/nramuzat/talos-torque-control">talos-torque-control</a>.
+In the following, we quickly demonstrate how to run a test with sot-torque-control and <a href="https://gepgitlab.laas.fr/pyrene-dev/talos-torque-control.git">talos-torque-control</a>.
 
 ## Start the simulation
 
