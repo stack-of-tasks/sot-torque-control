@@ -2,7 +2,6 @@ from dynamic_graph.sot.core.filter_differentiator import FilterDifferentiator
 from numpy import arctan2, imag, pi, real, unwrap
 from pylab import grid, plot, show, subplot, subplots_adjust, title, xlabel, ylabel, ylim
 
-
 def create_butter_lp_filter_Wn_05_N_2(name, dt, size):
     lp_filter = FilterDifferentiator(name)
     # from scipy.signal import butter

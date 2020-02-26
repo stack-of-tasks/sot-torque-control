@@ -84,32 +84,106 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
 
 #define ZERO_FORCE_THRESHOLD 1e-3
 
-#define INPUT_SIGNALS                                                                                                 \
-  m_com_ref_posSIN << m_com_ref_velSIN << m_com_ref_accSIN << m_rf_ref_posSIN << m_rf_ref_velSIN << m_rf_ref_accSIN   \
-                   << m_lf_ref_posSIN << m_lf_ref_velSIN << m_lf_ref_accSIN << m_rh_ref_posSIN << m_rh_ref_velSIN     \
-                   << m_rh_ref_accSIN << m_lh_ref_posSIN << m_lh_ref_velSIN << m_lh_ref_accSIN                        \
-                   << m_posture_ref_posSIN << m_posture_ref_velSIN << m_posture_ref_accSIN                            \
-                   << m_base_orientation_ref_posSIN << m_base_orientation_ref_velSIN << m_base_orientation_ref_accSIN \
-                   << m_f_ref_right_footSIN << m_f_ref_left_footSIN << m_kp_base_orientationSIN                       \
-                   << m_kd_base_orientationSIN << m_kp_constraintsSIN << m_kd_constraintsSIN << m_kp_comSIN           \
-                   << m_kd_comSIN << m_kp_feetSIN << m_kd_feetSIN << m_kp_handsSIN << m_kd_handsSIN                   \
-                   << m_kp_postureSIN << m_kd_postureSIN << m_kp_posSIN << m_kd_posSIN << m_w_comSIN << m_w_feetSIN   \
-                   << m_w_handsSIN << m_w_postureSIN << m_w_base_orientationSIN << m_w_torquesSIN << m_w_forcesSIN    \
-                   << m_weight_contact_forcesSIN << m_muSIN << m_contact_pointsSIN << m_contact_normalSIN             \
-                   << m_f_minSIN << m_f_max_right_footSIN << m_f_max_left_footSIN << m_rotor_inertiasSIN              \
-                   << m_gear_ratiosSIN << m_tau_maxSIN << m_q_minSIN << m_q_maxSIN << m_dq_maxSIN << m_ddq_maxSIN     \
-                   << m_dt_joint_pos_limitsSIN << m_tau_estimatedSIN << m_qSIN << m_vSIN << m_wrench_baseSIN          \
-                   << m_wrench_left_footSIN << m_wrench_right_footSIN << m_active_jointsSIN
+#define INPUT_SIGNALS m_com_ref_posSIN \
+  << m_com_ref_velSIN \
+  << m_com_ref_accSIN \
+  << m_rf_ref_posSIN \
+  << m_rf_ref_velSIN \
+  << m_rf_ref_accSIN \
+  << m_lf_ref_posSIN \
+  << m_lf_ref_velSIN \
+  << m_lf_ref_accSIN \
+  << m_rh_ref_posSIN \
+  << m_rh_ref_velSIN \
+  << m_rh_ref_accSIN \
+  << m_lh_ref_posSIN \
+  << m_lh_ref_velSIN \
+  << m_lh_ref_accSIN \
+  << m_posture_ref_posSIN \
+  << m_posture_ref_velSIN \
+  << m_posture_ref_accSIN \
+  << m_base_orientation_ref_posSIN \
+  << m_base_orientation_ref_velSIN \
+  << m_base_orientation_ref_accSIN \
+  << m_f_ref_right_footSIN \
+  << m_f_ref_left_footSIN \
+  << m_kp_base_orientationSIN \
+  << m_kd_base_orientationSIN \
+  << m_kp_constraintsSIN \
+  << m_kd_constraintsSIN \
+  << m_kp_comSIN \
+  << m_kd_comSIN \
+  << m_kp_feetSIN \
+  << m_kd_feetSIN \
+  << m_kp_handsSIN \
+  << m_kd_handsSIN \
+  << m_kp_postureSIN \
+  << m_kd_postureSIN \
+  << m_kp_posSIN \
+  << m_kd_posSIN \
+  << m_w_comSIN \
+  << m_w_feetSIN \
+  << m_w_handsSIN \
+  << m_w_postureSIN \
+  << m_w_base_orientationSIN \
+  << m_w_torquesSIN \
+  << m_w_forcesSIN \
+  << m_weight_contact_forcesSIN \
+  << m_muSIN \
+  << m_contact_pointsSIN \
+  << m_contact_normalSIN \
+  << m_f_minSIN \
+  << m_f_max_right_footSIN \
+  << m_f_max_left_footSIN \
+  << m_rotor_inertiasSIN \
+  << m_gear_ratiosSIN \
+  << m_tau_maxSIN \
+  << m_q_minSIN \
+  << m_q_maxSIN \
+  << m_dq_maxSIN \
+  << m_ddq_maxSIN \
+  << m_dt_joint_pos_limitsSIN \
+  << m_tau_estimatedSIN \
+  << m_qSIN \
+  << m_vSIN \
+  << m_wrench_baseSIN \
+  << m_wrench_left_footSIN  \
+  << m_wrench_right_footSIN \
+  << m_active_jointsSIN
 
-#define OUTPUT_SIGNALS                                                                                        \
-  m_tau_desSOUT << m_MSOUT << m_dv_desSOUT << m_f_des_right_footSOUT << m_f_des_left_footSOUT                 \
-                << m_zmp_des_right_footSOUT << m_zmp_des_left_footSOUT << m_zmp_des_right_foot_localSOUT      \
-                << m_zmp_des_left_foot_localSOUT << m_zmp_desSOUT << m_zmp_refSOUT << m_zmp_right_footSOUT    \
-                << m_zmp_left_footSOUT << m_zmpSOUT << m_comSOUT << m_com_velSOUT << m_com_accSOUT            \
-                << m_com_acc_desSOUT << m_base_orientationSOUT << m_left_foot_posSOUT << m_right_foot_posSOUT \
-                << m_left_hand_posSOUT << m_right_hand_posSOUT << m_left_foot_velSOUT << m_right_foot_velSOUT \
-                << m_left_hand_velSOUT << m_right_hand_velSOUT << m_left_foot_accSOUT << m_right_foot_accSOUT \
-                << m_left_hand_accSOUT << m_right_hand_accSOUT << m_right_foot_acc_desSOUT << m_left_foot_acc_desSOUT
+#define OUTPUT_SIGNALS m_tau_desSOUT \
+  << m_MSOUT \
+  << m_dv_desSOUT \
+  << m_f_des_right_footSOUT \
+  << m_f_des_left_footSOUT \
+  << m_zmp_des_right_footSOUT \
+  << m_zmp_des_left_footSOUT \
+  << m_zmp_des_right_foot_localSOUT \
+  << m_zmp_des_left_foot_localSOUT \
+  << m_zmp_desSOUT \
+  << m_zmp_refSOUT \
+  << m_zmp_right_footSOUT \
+  << m_zmp_left_footSOUT \
+  << m_zmpSOUT \
+  << m_comSOUT \
+  << m_com_velSOUT \
+  << m_com_accSOUT \
+  << m_com_acc_desSOUT \
+  << m_base_orientationSOUT \
+  << m_left_foot_posSOUT \
+  << m_right_foot_posSOUT \
+  << m_left_hand_posSOUT \
+  << m_right_hand_posSOUT \
+  << m_left_foot_velSOUT \
+  << m_right_foot_velSOUT \
+  << m_left_hand_velSOUT \
+  << m_right_hand_velSOUT \
+  << m_left_foot_accSOUT \
+  << m_right_foot_accSOUT \
+  << m_left_hand_accSOUT \
+  << m_right_hand_accSOUT \
+  << m_right_foot_acc_desSOUT \
+  << m_left_foot_acc_desSOUT
 
 /// Define EntityClassName here rather than in the header file
 /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -205,9 +279,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(zmp_ref, dynamicgraph::Vector, m_f_ref_left_footSIN << m_f_ref_right_footSIN),
       CONSTRUCT_SIGNAL_OUT(zmp_right_foot, dg::Vector, m_wrench_right_footSIN),
       CONSTRUCT_SIGNAL_OUT(zmp_left_foot, dg::Vector, m_wrench_left_footSIN),
-      CONSTRUCT_SIGNAL_OUT(
-          zmp, dg::Vector,
-          m_wrench_left_footSIN << m_wrench_right_footSIN << m_zmp_left_footSOUT << m_zmp_right_footSOUT),
+      CONSTRUCT_SIGNAL_OUT(zmp, dg::Vector, m_wrench_left_footSIN << m_wrench_right_footSIN << m_zmp_left_footSOUT << m_zmp_right_footSOUT),
       CONSTRUCT_SIGNAL_OUT(com, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_vel, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_acc, dg::Vector, m_tau_desSOUT),
@@ -606,11 +678,11 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   /*if(m_rightHandState == TASK_RIGHT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
   {
         m_rightHandState = TASK_RIGHT_HAND_ON;
-          }
+  }
   if(m_leftHandState == TASK_LEFT_HAND_TRANSITION && m_t >= m_handsTransitionTime)
   {
         m_leftHandState = TASK_LEFT_HAND_ON;
-          }*/
+  }*/
 
   getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
   m_w_feetSIN(iter);
