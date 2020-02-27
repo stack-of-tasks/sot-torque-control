@@ -9,8 +9,6 @@
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/ddp-actuator-solver.hh>
 
-#include <ddp-actuator-solver/examples/dctemp.hh>
-#include <ddp-actuator-solver/examples/costtemp.hh>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl
