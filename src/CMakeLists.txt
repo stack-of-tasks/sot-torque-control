@@ -71,6 +71,7 @@ SET(plugins
 
 IF(DDP_ACTUATOR_SOLVER_FOUND)
   SET(plugins ${plugins} ddp-actuator-solver )
+  SET(plugins ${plugins} ddp_pyrene_actuator_solver )
 ENDIF(DDP_ACTUATOR_SOLVER_FOUND)
 
 #Plugins compilation, link, and installation
