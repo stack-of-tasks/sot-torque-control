@@ -38,7 +38,7 @@
 #include <ddp-actuator-solver/ddpsolver.hh>
 
 #include <ddp-actuator-solver/examples/pyreneCostFunction.hh>
-#include <ddp-actuator-solver/examples/PyreneActuator.hh>
+#include <ddp-actuator-solver/examples/pyreneActuator.hh>
 
 
 namespace dynamicgraph {
@@ -75,7 +75,7 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
 		unsigned int m_T;
 		double m_stopCrit;
 		unsigned int m_iterMax;
-		PyreneActuator m_model;
+		pyreneActuator m_model;
 		CostFunctionPyreneActuator m_cost;
 		DDPSolver<double, 2, 1>  m_solver;
 
