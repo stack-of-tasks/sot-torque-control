@@ -12,6 +12,10 @@ SET(PROJECT_NAME sot-torque-control)
 SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
 SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
+OPTION(BUILD_PYTHON_INTERFACE "Build the python bindings" ON)
+OPTION(INSTALL_PYTHON_INTERFACE_ONLY "Install *ONLY* the python binding" OFF)
+OPTION(INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
+
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/eigen.cmake)
@@ -19,11 +23,11 @@ INCLUDE(cmake/python.cmake)
 INCLUDE(cmake/test.cmake)
 
 SET(CUSTOM_HEADER_DIR "sot/torque_control")
-
 SET(DOXYGEN_USE_MATHJAX YES)
-
-# Disable -Werror on Unix for now.
 SET(CXX_DISABLE_WERROR True)
+IF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+  SET(PROJECT_USE_CMAKE_EXPORT TRUE)
+ENDIF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
 
 SET(PKG_CONFIG_ADDITIONAL_VARIABLES
   ${PKG_CONFIG_ADDITIONAL_VARIABLES}
@@ -34,7 +38,6 @@ SET(PKG_CONFIG_ADDITIONAL_VARIABLES
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 
-OPTION (INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
 IF(INITIALIZE_WITH_NAN)
   MESSAGE(STATUS "Initialize with NaN all the Eigen entries.")
   ADD_DEFINITIONS(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
@@ -45,10 +48,6 @@ PKG_CONFIG_APPEND_LIBS("sot-torque-control")
 # Search for dependencies.
 # Boost
 SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex)
-
-# Default option for python.
-OPTION (BUILD_PYTHON_INTERFACE "Build the python bindings" ON)
-OPTION (INSTALL_PYTHON_INTERFACE_ONLY "Install *ONLY* the python binding" OFF)
 
 IF(BUILD_PYTHON_INTERFACE)
   FINDPYTHON()
