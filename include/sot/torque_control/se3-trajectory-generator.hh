@@ -121,8 +121,8 @@ class SOTSE3TRAJECTORYGENERATOR_EXPORT SE3TrajectoryGenerator : public ::dynamic
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* file = "", int line = 0) {
-    Entity::sendMsg("[SE3TrajectoryGenerator-" + name + "] " + msg, t, file, line);
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+    logger_.stream(t) << ("[SE3TrajectoryGenerator-" + name + "] " + msg) << '\n';
   }
 
  protected:

@@ -106,8 +106,8 @@ class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Ent
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* file = "", int line = 0) {
-    Entity::sendMsg("[CurrentController-" + name + "] " + msg, t, file, line);
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+    logger_.stream(t) << ("[CurrentController-" + name + "] " + msg) << '\n';
   }
 
  protected:
