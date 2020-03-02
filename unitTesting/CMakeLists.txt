@@ -11,19 +11,16 @@ MACRO(SOT_TOR_CTR_TEST NAME)
     ADD_TEST(test-${NAME} ${RUNTIME_OUTPUT_DIRECTORY}/test-${NAME} )
   ENDIF (test-${NAME}-args)
 
-  TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME})
+  TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME}
+    dynamic-graph::dynamic-graph
+    pinocchio::pinocchio
+    ${Boost_LIBRARIES})
   ADD_DEPENDENCIES(test-${NAME} ${PROJECT_NAME})
-  PKG_CONFIG_USE_DEPENDENCY(test-${NAME} pinocchio)
-  PKG_CONFIG_USE_DEPENDENCY(test-${NAME} dynamic-graph)
 
   IF (test-${NAME}-libs)
     TARGET_LINK_LIBRARIES(test-${NAME} ${test-${NAME}-libs})
     ADD_DEPENDENCIES(test-${NAME} ${test-${NAME}-libs})
   ENDIF (test-${NAME}-libs)
-
-  # Link against Boost.
-  TARGET_LINK_LIBRARIES(test-${NAME} ${Boost_LIBRARIES})
-
 ENDMACRO(SOT_TOR_CTR_TEST)
 
 SET(urdfpath
