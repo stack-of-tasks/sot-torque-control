@@ -32,13 +32,10 @@ BOOST_AUTO_TEST_CASE(testControlManager) {
   dyn_sot_tc::ControlManager &a_control_manager = *(dynamic_cast<dyn_sot_tc::ControlManager *>(
       dynamicgraph::FactoryStorage::getInstance()->newEntity("ControlManager", "a_control_manager")));
 
-  if (boost::unit_test::framework::master_test_suite().argc != 3) BOOST_CHECK(false);
-
   a_control_manager.setLoggerVerbosityLevel(dynamicgraph::VERBOSITY_ALL);
 
-  std::string urdfFile = boost::unit_test::framework::master_test_suite().argv[1];
   std::string robotRef("simple_humanoid_description");
-  a_control_manager.init(0.001, urdfFile, robotRef);
+  a_control_manager.init(0.001, URDF_FULL_PATH, robotRef);
 
   dynamicgraph::Vector av;
   a_control_manager.m_uSOUT.needUpdate(6);

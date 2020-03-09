@@ -23,8 +23,8 @@
 
 #include <ddp-actuator-solver/ddpsolver.hh>
 
-#include <ddp-actuator-solver/examples/dctemp.hh>
-#include <ddp-actuator-solver/examples/costtemp.hh>
+#include <ddp-actuator-solver/temperature_control/dctemp.hh>
+#include <ddp-actuator-solver/temperature_control/costtemp.hh>
 
 namespace dynamicgraph {
 namespace sot {
