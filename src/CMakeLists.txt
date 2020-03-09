@@ -1,52 +1,69 @@
 # Copyright 2014, Andrea Del Prete, LAAS/CNRS
 #
-# This file is part of sot-torque-control.
-# sot-torque-control is free software: you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public License
-# as published by the Free Software Foundation, either version 3 of
-# the License, or (at your option) any later version.
-#
-# sot-torque-control is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Lesser Public License for more details.  You should have
-# received a copy of the GNU Lesser General Public License along with
-# sot-torque-control. If not, see <http://www.gnu.org/licenses/>.
 
 # Verbosity level
-IF (NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
+IF(NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
   ADD_DEFINITIONS(-DVP_DEBUG_MODE=${CMAKE_VERBOSITY_LEVEL} -DVP_DEBUG)
-ENDIF (NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
-
-# The main include dir
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
-IF(BUILD_PYTHON_INTERFACE)
-  LINK_DIRECTORIES(${PYTHON_LIBRARY_DIRS})
-ENDIF(BUILD_PYTHON_INTERFACE)
-
-#define DEBUG=2 if we're building in debug mode (what for?)
-IF("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
-  ADD_DEFINITIONS(-DDEBUG=2)
-ENDIF ("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
+ENDIF(NOT (\"${CMAKE_VERBOSITY_LEVEL}\" STREQUAL \"\"))
 
 IF(UNIX)
   ADD_DEFINITIONS(-pthread)
 ENDIF(UNIX)
 
+SET(${LIBRARY_NAME}_SOURCES
+  trajectory-generators.cpp
+  lin-estimator.cpp
+  poly-estimator.cpp
+  quad-estimator.cpp
+  motor-model.cpp
+  )
+
+ADD_LIBRARY(${LIBRARY_NAME} SHARED ${${LIBRARY_NAME}_SOURCES})
+
+SET_TARGET_PROPERTIES(${LIBRARY_NAME}
+  PROPERTIES
+  SOVERSION ${PROJECT_VERSION}
+  INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+
+TARGET_LINK_LIBRARIES(${LIBRARY_NAME}
+  dynamic-graph::dynamic-graph
+  sot-core::sot-core
+  pinocchio::pinocchio
+  ${Boost_LIBRARIES})
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} tsid)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} parametric-curves)
+
+IF(BUILD_PYTHON_INTERFACE)
+  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} dynamic-graph-python::dynamic-graph-python)
+ENDIF(BUILD_PYTHON_INTERFACE)
+
+IF(UNIX)
+  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${CMAKE_DL_LIBS})
+  IF(NOT APPLE)
+    TARGET_LINK_LIBRARIES(${LIBRARY_NAME} pthread)
+  ENDIF(NOT APPLE)
+ENDIF(UNIX)
+
+IF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+  INSTALL(TARGETS ${LIBRARY_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ENDIF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+
+
 #This project will create many plugins as shared libraries, listed here
 SET(plugins
-  admittance-controller  
+  admittance-controller
   base-estimator
   control-manager
   current-controller
-  device-torque-ctrl  
+  device-torque-ctrl
   free-flyer-locator
-  imu_offset_compensation  
+  imu_offset_compensation
   inverse-dynamics-balance-controller
+  simple-inverse-dyn
   joint-torque-controller
   joint-trajectory-generator
-  numerical-difference  
-  position-controller  
+  numerical-difference
+  position-controller
   se3-trajectory-generator
   torque-offset-estimator
   trace-player
@@ -61,7 +78,7 @@ ENDIF(DDP_ACTUATOR_SOLVER_FOUND)
 FOREACH(plugin ${plugins})
 
   message( " Build plugin ${plugin}")
-  
+
   #retrieve plugin name
   GET_FILENAME_COMPONENT(LIBRARY_NAME ${plugin} NAME)
 
@@ -100,9 +117,7 @@ FOREACH(plugin ${plugins})
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME} dl pthread)
   ENDIF(UNIX AND NOT APPLE)
 
-  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} dynamic-graph::dynamic-graph)
-  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} sot-core::sot-core)
-  PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} pinocchio)
+  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} dynamic-graph::dynamic-graph sot-core::sot-core pinocchio::pinocchio)
 
   IF(DDP_ACTUATOR_SOLVER_FOUND)
     SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/find-external/qpOASES")
@@ -121,7 +136,7 @@ FOREACH(plugin ${plugins})
       sot-torque-control-${PYTHON_LIBRARY_NAME}-wrap
       )
   ENDIF(BUILD_PYTHON_INTERFACE)
-  IF (NOT INSTALL_PYTHON_INTERFACE_ONLY)
+  IF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
     # Install plugins
     INSTALL(TARGETS ${LIBRARY_NAME}
       EXPORT ${TARGETS_EXPORT_NAME}
@@ -137,5 +152,5 @@ IF(BUILD_PYTHON_INTERFACE)
   INSTALL(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_graph/sot/torque_control/__init__.py
     DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control
-  )
+    )
 ENDIF(BUILD_PYTHON_INTERFACE)

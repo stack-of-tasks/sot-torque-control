@@ -9,20 +9,18 @@ MACRO(SOT_TOR_CTR_TEST NAME)
     ADD_TEST(test-${NAME} ${RUNTIME_OUTPUT_DIRECTORY}/test-${NAME} ${test-${NAME}-args} )
   ELSE (test-${NAME}-args)
     ADD_TEST(test-${NAME} ${RUNTIME_OUTPUT_DIRECTORY}/test-${NAME} )
-  ENDIF (test-${NAME}-args)    
+  ENDIF (test-${NAME}-args)
 
-  TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME})
+  TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME}
+    dynamic-graph::dynamic-graph
+    pinocchio::pinocchio
+    ${Boost_LIBRARIES})
   ADD_DEPENDENCIES(test-${NAME} ${PROJECT_NAME})
-  PKG_CONFIG_USE_DEPENDENCY(test-${NAME} pinocchio)
 
   IF (test-${NAME}-libs)
     TARGET_LINK_LIBRARIES(test-${NAME} ${test-${NAME}-libs})
     ADD_DEPENDENCIES(test-${NAME} ${test-${NAME}-libs})
   ENDIF (test-${NAME}-libs)
-
-  # Link against Boost.
-  TARGET_LINK_LIBRARIES(test-${NAME} ${Boost_LIBRARIES})
-
 ENDMACRO(SOT_TOR_CTR_TEST)
 
 SET(urdfpath
@@ -45,6 +43,6 @@ IF(BUILD_PYTHON_INTERFACE)
     )
 
   foreach(localtest ${LIST_OF_TESTS})
-#    ADD_PYTHON_UNIT_TEST(${localtest} unitTesting/${localtest} "src")
+    ADD_PYTHON_UNIT_TEST(${localtest} unitTesting/${localtest})
   endforeach()
 ENDIF(BUILD_PYTHON_INTERFACE)

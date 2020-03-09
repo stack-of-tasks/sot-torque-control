@@ -5,31 +5,34 @@
 """
 
 import random
+
 from dynamic_graph import plug
-from dynamic_graph.sot.application.velocity.precomputed_tasks import *
-from dynamic_graph.sot.core import seq_play
 from dynamic_graph.ros import RosImport
+from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
+
 
 def randTuple(size):
-    v = ();
-    for i in range(0,size-1):
-        v = v + (random.random(),);
-    return v;
+    v = ()
+    for i in range(0, size - 1):
+        v = v + (random.random(), )
+    return v
 
 
 def test_ros(robot):
     # SCRIPT PARAMETERS
-    createRosTopics = 1;        # 1=true, 0=false
-    nj              = 30;       # number of joints
+    createRosTopics = 1
+    # 1=true, 0=false
+    nj = 30
+    # number of joints
 
-    app = Application(robot);
-    dq_des = nj*(0.0,);    
-    app.robot.device.control.value = dq_des;
+    app = Application(robot)
+    dq_des = nj * (0.0, )
+    app.robot.device.control.value = dq_des
 
-    if(createRosTopics==1):
-        ros = RosImport('rosImport');
-        ros.add('vector', 'robotStateRos', 'robotState');
-        plug(robot.device.robotState, ros.robotStateRos);
-        robot.device.after.addSignal('rosImport.trigger');
-    
+    if (createRosTopics == 1):
+        ros = RosImport('rosImport')
+        ros.add('vector', 'robotStateRos', 'robotState')
+        plug(robot.device.robotState, ros.robotStateRos)
+        robot.device.after.addSignal('rosImport.trigger')
+
     return ros

@@ -1,6 +1,6 @@
 <package format="2">
   <name>sot-torque-control</name>
-  <version>1.4.0</version>
+  <version>1.5.1</version>
   <description>
     Collection of dynamic-graph entities aimed at implementing torque control
     on different robots.
@@ -21,20 +21,18 @@
 
   <build_depend>roscpp</build_depend>
   <build_depend>sot-core</build_depend>
-  <build_depend>pinocchio</build_depend>  
+  <build_depend>pinocchio</build_depend>
 
-  <build_depend>roscpp</build_depend>  
+  <build_depend>roscpp</build_depend>
   <build_export_depend>pinocchio</build_export_depend>
   <build_export_depend>sot-core</build_export_depend>
 
   <exec_depend>pinocchio</exec_depend>
   <exec_depend>sot-core</exec_depend>
-  
   <test_depend>gtest</test_depend>
 
   <doc_depend>doxygen</doc_depend>
   <doc_depend>dynamic_graph</doc_depend>
- 
 
   <export>
   </export>

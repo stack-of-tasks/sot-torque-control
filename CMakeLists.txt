@@ -4,65 +4,32 @@
 # Florent Forget, LAAS/CNRS
 # Paul Dandignac, LAAS/CNRS
 #
-# This file is part of sot-torque-control.
-# sot-torque-control is free software: you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public License
-# as published by the Free Software Foundation, either version 3 of
-# the License, or (at your option) any later version.
-#
-# sot-torque-control is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Lesser Public License for more details.  You should have
-# received a copy of the GNU Lesser General Public License along with
-# sot-torque-control. If not, see <http://www.gnu.org/licenses/>.
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 SET(PROJECT_NAMESPACE stack-of-tasks)
 SET(PROJECT_NAME sot-torque-control)
 SET(PROJECT_DESCRIPTION "Collection of dynamic-graph entities aimed at implementing torque control on different robots.")
 SET(PROJECT_URL "https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME}")
 
-# Export CMake Target
-SET(PROJECT_USE_CMAKE_EXPORT TRUE)
+OPTION(BUILD_PYTHON_INTERFACE "Build the python bindings" ON)
+OPTION(INSTALL_PYTHON_INTERFACE_ONLY "Install *ONLY* the python binding" OFF)
+OPTION(INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
 
-# Disable -Werror on Unix for now.
+SET(CUSTOM_HEADER_DIR "sot/torque_control")
+SET(DOXYGEN_USE_MATHJAX YES)
 SET(CXX_DISABLE_WERROR True)
-#add_compile_options(-std=c++11) # CMake 2.8.12 or newer
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+IF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+  SET(PROJECT_USE_CMAKE_EXPORT TRUE)
+ENDIF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
 
 INCLUDE(cmake/base.cmake)
-
-SET(CUSTOM_HEADER_DIR "sot/torque-control")
-
-SET(DOXYGEN_USE_MATHJAX YES)
-
-# Specify the project.
-cmake_policy(SET CMP0048 NEW)
-PROJECT(${PROJECT_NAME}
-  LANGUAGES
-  CXX
-  VERSION
-  ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
-  )
-
-find_package (Boost REQUIRED
-  regex filesystem system thread program_options unit_test_framework)
-find_package (Eigen3 REQUIRED NO_MODULE)
-
+INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
-INCLUDE(cmake/test.cmake)
 
-SET(PKG_CONFIG_ADDITIONAL_VARIABLES
-  ${PKG_CONFIG_ADDITIONAL_VARIABLES}
-  plugindirname
-  plugindir
-  )
+COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
+PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 
-
-OPTION (INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" ON)
 IF(INITIALIZE_WITH_NAN)
   MESSAGE(STATUS "Initialize with NaN all the Eigen entries.")
   ADD_DEFINITIONS(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
@@ -70,23 +37,22 @@ ENDIF(INITIALIZE_WITH_NAN)
 
 PKG_CONFIG_APPEND_LIBS("sot-torque-control")
 
-# Default option for python.
-OPTION (BUILD_PYTHON_INTERFACE "Build the python bindings" ON)
-OPTION (INSTALL_PYTHON_INTERFACE_ONLY "Install *ONLY* the python binding" OFF)
+SET(BOOST_COMPONENTS thread filesystem program_options unit_test_framework system regex)
 
 IF(BUILD_PYTHON_INTERFACE)
   FINDPYTHON()
   SET(BOOST_COMPONENTS ${BOOST_COMPONENTS} python)
-  ADD_REQUIRED_DEPENDENCY("dynamic-graph-python >= 3.0.0")
-  SET(${LIBRARY_NAME}_PYTHON_FILES python/*.py)
-  SET(PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
-  INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIR})
+  ADD_PROJECT_DEPENDENCY(dynamic-graph-python 3.0.0 REQUIRED PKG_CONFIG_REQUIRES "dynamic-graph-python >= 3.0.0")
+  SET(PYTHON_LIBRARY_DIR dynamic_graph/sot/torque_control)
+  SET(PYTHON_INSTALL_DIR ${PYTHON_SITELIB}/${PYTHON_LIBRARY_DIR})
+  INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_DIR})
 ENDIF(BUILD_PYTHON_INTERFACE)
 
-# Declare dependencies
-ADD_PROJECT_DEPENDENCY(dynamic-graph)
-ADD_PROJECT_DEPENDENCY(sot-core)
-ADD_REQUIRED_DEPENDENCY("pinocchio >= 1.2")
+SEARCH_FOR_BOOST()
+ADD_PROJECT_DEPENDENCY(Eigen3 REQUIRED PKG_CONFIG_REQUIRES eigen3)
+ADD_PROJECT_DEPENDENCY(dynamic-graph 3.8.0 REQUIRED PKG_CONFIG_REQUIRES "dynamic-graph >= 3.8.0")
+ADD_PROJECT_DEPENDENCY(sot-core 4.8.0 REQUIRED PKG_CONFIG_REQUIRES "sot-core >= 4.8.0")
+ADD_PROJECT_DEPENDENCY(pinocchio 2.3.1 REQUIRED PKG_CONFIG_REQUIRES "pinocchio >= 2.3.1")
 ADD_REQUIRED_DEPENDENCY("tsid")
 ADD_REQUIRED_DEPENDENCY("parametric-curves")
 ADD_REQUIRED_DEPENDENCY("simple_humanoid_description")
@@ -121,10 +87,6 @@ SET(${LIBRARY_NAME}_HEADERS
   include/sot/torque_control/utils/vector-conversions.hh
   )
 
-#INSTALL(FILES ${${LIBRARY_NAME}_HEADERS}
-#  DESTINATION include/sot/torque-control
-#  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE)
-
 SET(${LIBRARY_NAME}_SOURCES ${${LIBRARY_NAME}_HEADERS}
     src/trajectory-generators.cpp
     src/lin-estimator.cpp
@@ -148,9 +110,8 @@ PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} tsid)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} parametric-curves)
 
 IF(BUILD_PYTHON_INTERFACE)
-  PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph-python)
+  ADD_SUBDIRECTORY(python/${PYTHON_LIBRARY_DIR})
 ENDIF(BUILD_PYTHON_INTERFACE)
-
 
 IF(UNIX)
   TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${CMAKE_DL_LIBS})
@@ -174,24 +135,24 @@ IF(BUILD_PYTHON_INTERFACE)
     python/dynamic_graph/sot/torque_control/create_entities_utils.py
     python/dynamic_graph/sot/torque_control/main_sim.py
     DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control)
-  
+
   INSTALL(FILES
     python/dynamic_graph/sot/torque_control/identification/__init__.py
     python/dynamic_graph/sot/torque_control/identification/identification_utils.py
     DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/identification)
-  
+
   INSTALL(FILES python/dynamic_graph/sot/torque_control/utils/__init__.py
     python/dynamic_graph/sot/torque_control/utils/plot_utils.py
     python/dynamic_graph/sot/torque_control/utils/sot_utils.py
     python/dynamic_graph/sot/torque_control/utils/filter_utils.py
     DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/utils)
-  
+
   INSTALL(FILES python/dynamic_graph/sot/torque_control/tests/__init__.py
     python/dynamic_graph/sot/torque_control/tests/test_control_manager.py
     python/dynamic_graph/sot/torque_control/tests/test_balance_ctrl_openhrp.py
     python/dynamic_graph/sot/torque_control/tests/test_velocity_filters.py
     DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/torque_control/tests)
-  
+
 ENDIF(BUILD_PYTHON_INTERFACE)
 
 ADD_SUBDIRECTORY(src)
@@ -231,4 +192,9 @@ IF(BUILD_PYTHON_INTERFACE)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
 
-SETUP_PROJECT_PACKAGE_FINALIZE()
+IF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+  ADD_SUBDIRECTORY(include/${CUSTOM_HEADER_DIR})
+ENDIF(NOT INSTALL_PYTHON_INTERFACE_ONLY)
+
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(unitTesting)
