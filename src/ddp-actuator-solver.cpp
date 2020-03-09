@@ -10,45 +10,6 @@
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/ddp-actuator-solver.hh>
 
-#include <ddp-actuator-solver/examples/dctemp.hh>
-#include <ddp-actuator-solver/examples/costtemp.hh>
-
-#if DEBUG
-#define ODEBUG(x) std::cout << x << std::endl
-#else
-#define ODEBUG(x)
-#endif
-#define ODEBUG3(x) std::cout << x << std::endl
-
-#define DBGFILE "/tmp/debug-ddp_actuator_solver.dat"
-
-#define RESETDEBUG5()                            \
-  {                                              \
-    std::ofstream DebugFile;                     \
-    DebugFile.open(DBGFILE, std::ofstream::out); \
-    DebugFile.close();                           \
-  }
-#define ODEBUG5FULL(x)                                                                          \
-  {                                                                                             \
-    std::ofstream DebugFile;                                                                    \
-    DebugFile.open(DBGFILE, std::ofstream::app);                                                \
-    DebugFile << __FILE__ << ":" << __FUNCTION__ << "(#" << __LINE__ << "):" << x << std::endl; \
-    DebugFile.close();                                                                          \
-  }
-#define ODEBUG5(x)                               \
-  {                                              \
-    std::ofstream DebugFile;                     \
-    DebugFile.open(DBGFILE, std::ofstream::app); \
-    DebugFile << x << std::endl;                 \
-    DebugFile.close();                           \
-  }
-
-#define RESETDEBUG4()
-#define ODEBUG4FULL(x)
-#define ODEBUG4(x)
-
-#include <ddp-actuator-solver/examples/dctemp.hh>
-#include <ddp-actuator-solver/examples/costtemp.hh>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl

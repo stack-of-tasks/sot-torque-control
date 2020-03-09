@@ -53,3 +53,4 @@ You can find the full installation procedure in the <a href="md_doc_installation
 
 Quick instructions on how to run a test can be found <a href="md_doc_running.html">here</a>.
 
+Instructions for running a simulation or an experiment using the DDP on the right elbow of Pyrene can be found <a href="md_doc_ddpRun.html">here</a>.
