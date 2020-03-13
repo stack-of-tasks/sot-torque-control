@@ -51,13 +51,13 @@ initialConfig = (0., 0., 0.648702, 0., 0. , 0.,                  # Free flyer
 #-----------------------------------------------------------------------------
 from pinocchio.robot_wrapper import RobotWrapper
 import pinocchio as se3
-from dynamic_graph.sot.dynamics_pinocchio import fromSotToPinocchio
+from dynamic_graph.sot.dynamic_pinocchio import fromSotToPinocchio
 pinocchioRobot = RobotWrapper(urdfPath, urdfDir, se3.JointModelFreeFlyer())
 pinocchioRobot.initDisplay(loadModel=True)
 pinocchioRobot.display(fromSotToPinocchio(initialConfig))
 
 
-from dynamic_graph.sot.dynamics_pinocchio.humanoid_robot import HumanoidRobot
+from dynamic_graph.sot.dynamic_pinocchio.humanoid_robot import HumanoidRobot
 robot = HumanoidRobot(robotName, pinocchioRobot.model,
                       pinocchioRobot.data, initialConfig, OperationalPointsMap)
 
