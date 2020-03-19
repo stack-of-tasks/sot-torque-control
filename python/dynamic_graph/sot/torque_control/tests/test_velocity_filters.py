@@ -3,7 +3,9 @@ import sys
 from time import sleep
 
 import numpy as np
+
 from dynamic_graph import plug
+from dynamic_graph.sot.core.operator import Selec_of_vector
 # from dynamic_graph.sot.torque_control.create_entities_utils import create_estimators
 # from dynamic_graph.sot.torque_control.create_entities_utils import create_position_controller
 # from dynamic_graph.sot.torque_control.create_entities_utils import create_trajectory_generator
@@ -57,7 +59,6 @@ def get_default_conf():
 
 
 def create_base_encoders(robot):
-    from dynamic_graph.sot.core import Selec_of_vector
     base_encoders = Selec_of_vector('base_encoders')
     plug(robot.device.robotState, base_encoders.sin)
     base_encoders.selec(0, NJ + 6)

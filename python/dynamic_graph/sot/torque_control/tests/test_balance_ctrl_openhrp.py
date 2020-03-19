@@ -8,7 +8,7 @@ from time import sleep
 
 from dynamic_graph import plug
 from dynamic_graph.ros import RosPublish
-from dynamic_graph.sot.core import Selec_of_vector
+from dynamic_graph.sot.core.operator import Selec_of_vector
 from dynamic_graph.sot.torque_control.create_entities_utils import NJ
 from dynamic_graph.sot.torque_control.main import main_v3
 from dynamic_graph.sot.torque_control.utils.sot_utils import Bunch, start_sot

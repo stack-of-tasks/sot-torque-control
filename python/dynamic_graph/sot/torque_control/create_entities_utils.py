@@ -6,6 +6,7 @@
 
 from dynamic_graph import plug
 from dynamic_graph.sot.core.Latch import Latch
+from dynamic_graph.sot.core.operator import Add_of_vector, Selec_of_vector
 from dynamic_graph.sot.torque_control.admittance_controller import AdmittanceController
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.current_controller import CurrentController
@@ -24,7 +25,6 @@ NJ = 30
 
 
 def create_encoders(robot):
-    from dynamic_graph.sot.core import Selec_of_vector
     encoders = Selec_of_vector('qn')
     plug(robot.device.robotState, encoders.sin)
     encoders.selec(6, NJ + 6)
@@ -148,7 +148,6 @@ def create_floatingBase(robot):
     floatingBase = FromLocalToGLobalFrame(robot.flex_est, "FloatingBase")
     plug(robot.ff_locator.freeflyer_aa, floatingBase.sinPos)
 
-    from dynamic_graph.sot.core import Selec_of_vector
     base_vel_no_flex = Selec_of_vector('base_vel_no_flex')
     plug(robot.ff_locator.v, base_vel_no_flex.sin)
     base_vel_no_flex.selec(0, 6)
@@ -281,7 +280,6 @@ def create_balance_controller(robot, conf, motor_params, dt, robot_name='robot')
         plug(robot.ff_locator.v, ctrl.v)
 
     try:
-        from dynamic_graph.sot.core import Selec_of_vector
         robot.ddq_des = Selec_of_vector('ddq_des')
         plug(ctrl.dv_des, robot.ddq_des.sin)
         robot.ddq_des.selec(6, NJ + 6)
@@ -455,7 +453,6 @@ def create_admittance_ctrl(robot, conf, dt=0.001, robot_name='robot'):
     admit_ctrl.force_integral_deadzone.value = conf.force_integral_deadzone
 
     # connect it to torque control
-    from dynamic_graph.sot.core import Add_of_vector
     robot.sum_torque_adm = Add_of_vector('sum_torque_adm')
     plug(robot.inv_dyn.tau_des, robot.sum_torque_adm.sin1)
     plug(admit_ctrl.u, robot.sum_torque_adm.sin2)
