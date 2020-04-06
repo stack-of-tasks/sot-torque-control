@@ -464,6 +464,10 @@ void InverseDynamicsBalanceController::addRightFootContact(const double& transit
   if (m_contactState == LEFT_SUPPORT) {
     SEND_MSG("Add right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
     const double& w_forces = m_w_forcesSIN.accessCopy();
+    TrajectorySample traj_ref = m_taskRF->getReference();
+    pinocchio::SE3 ref;
+    vectorToSE3(traj_ref.pos, ref);
+    m_contactRF->setReference(ref);
     m_invDyn->addRigidContact(*m_contactRF, w_forces);
     m_invDyn->removeTask(m_taskRF->name(), transitionTime);
     m_contactState = DOUBLE_SUPPORT;
@@ -474,6 +478,10 @@ void InverseDynamicsBalanceController::addLeftFootContact(const double& transiti
   if (m_contactState == RIGHT_SUPPORT) {
     SEND_MSG("Add left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
     const double& w_forces = m_w_forcesSIN.accessCopy();
+    TrajectorySample traj_ref = m_taskLF->getReference();
+    pinocchio::SE3 ref;
+    vectorToSE3(traj_ref.pos, ref);
+    m_contactLF->setReference(ref);
     m_invDyn->addRigidContact(*m_contactLF, w_forces);
     m_invDyn->removeTask(m_taskLF->name(), transitionTime);
     m_contactState = DOUBLE_SUPPORT;
