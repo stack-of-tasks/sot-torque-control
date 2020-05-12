@@ -120,6 +120,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(kd_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_tau, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_IN(w_com, double);
   DECLARE_SIGNAL_IN(w_am, double);
@@ -147,7 +148,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(ddq_max, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(dt_joint_pos_limits, double);
 
-  DECLARE_SIGNAL_IN(tau_estimated, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(tau_measured, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_measured, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_base, dynamicgraph::Vector);
@@ -182,7 +184,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(am_dL_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(base_orientation, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(right_foot_pos_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(left_foot_pos_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_vel, dynamicgraph::Vector);
@@ -195,7 +199,6 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(left_hand_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_acc_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_acc_des, dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(time, double);
 
   /// This signal copies active_joints only if it changes from a all false or to an all false value
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
@@ -203,10 +206,6 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  protected:
   double m_dt;  /// control loop time period

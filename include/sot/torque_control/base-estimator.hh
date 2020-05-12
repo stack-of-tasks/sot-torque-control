@@ -160,10 +160,6 @@ class SOTBASEESTIMATOR_EXPORT BaseEstimator : public ::dynamicgraph::Entity {
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
-
  protected:
   bool m_initSucceeded;   /// true if the entity has been successfully initialized
   bool m_reset_foot_pos;  /// true after the command resetFootPositions is called

@@ -90,10 +90,6 @@ class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator : public ::dynamicgraph
 
   // stdAlignedVector stdVecJointTorqueOffsets;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
-
  private:
   enum { PRECOMPUTATION, INPROGRESS, COMPUTED } sensor_offset_status;
 

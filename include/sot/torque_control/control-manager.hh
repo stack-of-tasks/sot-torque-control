@@ -130,10 +130,6 @@ class SOTCONTROLMANAGER_EXPORT ControlManager : public ::dynamicgraph::Entity {
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[ControlManager-" + name + "] " + msg) << '\n';
-  }
-
  protected:
   RobotUtilShrPtr m_robot_util;
   tsid::robots::RobotWrapper* m_robot;
