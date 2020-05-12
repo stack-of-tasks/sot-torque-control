@@ -41,7 +41,7 @@
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include <pinocchio/algorithm/joint-configuration.hpp>
 
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/solvers/solver-HQP-base.hpp>
@@ -92,6 +92,9 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_pos, dynamicgraph::Vector);
 
+  DECLARE_SIGNAL_IN(tau_measured, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_tau, dynamicgraph::Vector);
+
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector);
@@ -117,6 +120,7 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
 
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_measured, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
 
@@ -125,19 +129,18 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   DECLARE_SIGNAL_OUT(v_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(q_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(u, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(com, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
 
   /* --- COMMANDS --- */
 
   void init(const double& dt, const std::string& robotRef);
   virtual void setControlOutputType(const std::string& type);
-  void updateComOffset();
+  void updateComOffset(const dynamicgraph::Vector& com_measured);
 
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  protected:
   double m_dt;           /// control loop time period
@@ -146,6 +149,9 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   bool m_enabled;        /// True if controler is enabled
   bool m_firstTime;      /// True at the first iteration of the controller
 
+  int m_frame_id_rf;  /// frame id of right foot
+  int m_frame_id_lf;  /// frame id of left foot
+  
   /// TSID
   /// Robot
   tsid::robots::RobotWrapper* m_robot;
