@@ -1113,7 +1113,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_pd_des, dynamicgraph::Vector) {
       kp_pos.cwiseProduct(m_q_sot.tail(m_robot_util->m_nbJoints) - q_robot.tail(m_robot_util->m_nbJoints)) +
       kd_pos.cwiseProduct(m_v_sot.tail(m_robot_util->m_nbJoints) - v_robot.tail(m_robot_util->m_nbJoints));
 
-  s += kp_tau.cwiseProduct(tau_measured- s);
+  s += kp_tau.cwiseProduct(tau_measured - s);
 
   return s;
 }

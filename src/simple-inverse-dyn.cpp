@@ -508,7 +508,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   m_invDyn->updateRigidContactWeights(m_contactRF->name(), w_forces);
 
   if (m_firstTime) {
-    SEND_ERROR_STREAM_MSG("FIRST TIME iter " + toString(iter));
     m_firstTime = false;    
     m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
     m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
@@ -518,12 +517,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
                                             m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
     m_contactLF->setReference(H_lf);
-    SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_ERROR);
+    SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_INFO);
 
     pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
                                             m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
     m_contactRF->setReference(H_rf);
-    SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_ERROR);
+    SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_INFO);
   } else if (m_timeLast != static_cast<unsigned int>(iter - 1)) {
     SEND_MSG("Last time " + toString(m_timeLast) + " is not current time-1: " + toString(iter), MSG_TYPE_ERROR);
     if (m_timeLast == static_cast<unsigned int>(iter)) {
@@ -533,7 +532,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   }
   else if (m_ctrlMode == CONTROL_OUTPUT_TORQUE){
     // In velocity close the TSID loop on itself (v_des, q_des), in torque on the (q,v) of the robot.
-    SEND_ERROR_STREAM_MSG("CONTROL_OUTPUT_TORQUE iter " + toString(iter));
     m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
     m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
   }
