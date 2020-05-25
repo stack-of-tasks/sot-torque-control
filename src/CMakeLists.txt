@@ -18,12 +18,9 @@ SET(plugins
   se3-trajectory-generator
   torque-offset-estimator
   trace-player
+  ddp-actuator-solver
+  ddp_pyrene_actuator_solver
   )
-
-IF(DDP_ACTUATOR_SOLVER_FOUND)
-  SET(plugins ${plugins} ddp-actuator-solver)
-  SET(plugins ${plugins} ddp_pyrene_actuator_solver)
-ENDIF(DDP_ACTUATOR_SOLVER_FOUND)
 
 FOREACH(plugin ${plugins})
   GET_FILENAME_COMPONENT(LIBRARY_NAME ${plugin} NAME)
