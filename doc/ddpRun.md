@@ -1,6 +1,6 @@
 # Running the DDP on the right elbow joint of Pyrene
 
-In the following, we demonstrate how to run a test with  sot-torque-control, <a href="https://github.com/stack-of-tasks/ddp-actuator-solver">ddp-actuator-solver</a> and <a href="https://gepgitlab.laas.fr/pyrene-dev/talos-torque-control.git">talos-torque-control</a>.
+In the following, we demonstrate how to run a test with  sot-torque-control, <a href="https://github.com/stack-of-tasks/ddp-actuator-solver">ddp-actuator-solver</a> and <a href="https://gitlab.laas.fr/pyrene-dev/talos-torque-control.git">talos-torque-control</a>.
 
 ## Start the simulation
 

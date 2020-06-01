@@ -21,8 +21,8 @@
 
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![Building Status](https://travis-ci.org/stack-of-tasks/sot-torque-control.svg?branch=master)](https://travis-ci.org/stack-of-tasks/sot-torque-control)
-[![Pipeline status](https://gepgitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/pipeline.svg)](https://gepgitlab.laas.fr/stack-of-tasks/sot-torque-control/commits/master)
-[![Coverage report](https://gepgitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/coverage.svg?job=doc-coverage)](http://projects.laas.fr/gepetto/doc/stack-of-tasks/sot-torque-control/master/coverage/)
+[![Pipeline status](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/pipeline.svg)](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/commits/master)
+[![Coverage report](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/coverage.svg?job=doc-coverage)](http://projects.laas.fr/gepetto/doc/stack-of-tasks/sot-torque-control/master/coverage/)
 
 The library sot-torque-control contains a collection of dynamic-graph entities aimed at implementing torque control on different robots.
 You can find a description of the main entities in the following <a href="https://github.com/stack-of-tasks/sot-torque-control/wiki">wiki</a>.
