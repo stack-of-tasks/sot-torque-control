@@ -39,6 +39,7 @@
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-angular-momentum-equality.hpp>
+// #include "tsid/tasks/task-angular-momentum-integral-equality.hpp"
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
@@ -51,6 +52,10 @@
 namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
+
+enum ControlOutput { CONTROL_OUTPUT_VELOCITY = 0, CONTROL_OUTPUT_TORQUE = 1, CONTROL_OUTPUT_SIZE = 2 };
+
+const std::string ControlOutput_s[] = {"velocity", "torque"};
 
 /* --------------------------------------------------------------------- */
 /* --- CLASS ----------------------------------------------------------- */
@@ -68,6 +73,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
 
   void init(const double& dt, const std::string& robotRef);
   void updateComOffset();
+  virtual void setControlOutputType(const std::string& type);
   void removeRightFootContact(const double& transitionTime);
   void removeLeftFootContact(const double& transitionTime);
   void addRightFootContact(const double& transitionTime);
@@ -155,6 +161,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(wrench_base, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_right_foot, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(ref_phase, int);
 
   DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
 
@@ -177,6 +184,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(zmp_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(zmp, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(com_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc_des, dynamicgraph::Vector);
@@ -187,6 +195,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(right_foot_pos_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos_quat, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(lf_est, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(rf_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_vel, dynamicgraph::Vector);
@@ -292,6 +302,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector6 m_f_RF;              /// desired 6d wrench right foot
   tsid::math::Vector6 m_f_LF;              /// desired 6d wrench left foot
   tsid::math::Vector3 m_com_offset;        /// 3d CoM offset
+  tsid::math::Vector3 m_dcom_offset;        /// 3d CoM offset
   tsid::math::Vector3 m_zmp_des_LF;        /// 3d desired zmp left foot
   tsid::math::Vector3 m_zmp_des_RF;        /// 3d desired zmp left foot
   tsid::math::Vector3 m_zmp_des_LF_local;  /// 3d desired zmp left foot expressed in local frame
@@ -303,6 +314,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
 
 
   typedef pinocchio::Data::Matrix6x Matrix6x;
+  pinocchio::Data m_estim_data;
   Matrix6x m_J_RF;
   Matrix6x m_J_LF;
   Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;
@@ -310,8 +322,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector6 m_v_RF_int;
   tsid::math::Vector6 m_v_LF_int;
 
-  unsigned int m_timeLast;
-  RobotUtilShrPtr m_robot_util;
+  unsigned int m_timeLast;        /// Final time of the control loop
+  RobotUtilShrPtr m_robot_util;   /// Share pointer to the robot utils methods
+  ControlOutput m_ctrlMode;       /// ctrl mode desired for the output (velocity or torque)
 
 };  // class InverseDynamicsBalanceController
 }  // namespace torque_control

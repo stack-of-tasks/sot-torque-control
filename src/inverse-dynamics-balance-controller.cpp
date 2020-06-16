@@ -7,6 +7,10 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <pinocchio/algorithm/center-of-mass.hpp>
+#include <pinocchio/algorithm/compute-all-terms.hpp>
+#include <pinocchio/algorithm/frames.hpp>
+
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
 #include <tsid/solvers/solver-HQP-factory.hxx>
@@ -19,7 +23,6 @@
 
 #include <sot/core/debug.hh>
 
-#include "pinocchio/algorithm/center-of-mass.hpp"
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/inverse-dynamics-balance-controller.hh>
 
@@ -157,6 +160,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_wrench_baseSIN \
   << m_wrench_left_footSIN  \
   << m_wrench_right_footSIN \
+  << m_ref_phaseSIN \
   << m_active_jointsSIN
 
 #define OUTPUT_SIGNALS m_tau_desSOUT \
@@ -177,6 +181,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_zmp_left_footSOUT \
   << m_zmpSOUT \
   << m_comSOUT \
+  << m_com_estSOUT \
   << m_com_velSOUT \
   << m_com_accSOUT \
   << m_com_acc_desSOUT \
@@ -187,6 +192,8 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_left_foot_pos_quatSOUT \
   << m_right_foot_posSOUT \
   << m_right_foot_pos_quatSOUT \
+  << m_lf_estSOUT \
+  << m_rf_estSOUT \
   << m_left_hand_posSOUT \
   << m_right_hand_posSOUT \
   << m_left_foot_velSOUT \
@@ -287,6 +294,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(wrench_base, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(wrench_left_foot, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(wrench_right_foot, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(ref_phase, int),
       CONSTRUCT_SIGNAL_IN(active_joints, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_OUT(tau_des, dynamicgraph::Vector, INPUT_SIGNALS),
       CONSTRUCT_SIGNAL_OUT(M, dg::Matrix, m_tau_desSOUT),
@@ -306,6 +314,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(zmp_left_foot, dg::Vector, m_wrench_left_footSIN),
       CONSTRUCT_SIGNAL_OUT(zmp, dg::Vector, m_wrench_left_footSIN << m_wrench_right_footSIN << m_zmp_left_footSOUT << m_zmp_right_footSOUT),
       CONSTRUCT_SIGNAL_OUT(com, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(com_est, dg::Vector, INPUT_SIGNALS << m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_vel, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_acc, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_acc_des, dg::Vector, m_tau_desSOUT),
@@ -315,7 +324,9 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(right_foot_pos, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_foot_pos_quat, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(left_foot_pos, dg::Vector, m_tau_desSOUT),
-      CONSTRUCT_SIGNAL_OUT(left_foot_pos_quat, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(left_foot_pos_quat, dg::Vector, m_tau_desSOUT),      
+      CONSTRUCT_SIGNAL_OUT(lf_est, dg::Vector, INPUT_SIGNALS << m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(rf_est, dg::Vector, INPUT_SIGNALS << m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_hand_pos, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(left_hand_pos, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_foot_vel, dg::Vector, m_tau_desSOUT),
@@ -337,7 +348,8 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       m_rightHandState(TASK_RIGHT_HAND_OFF),
       m_leftHandState(TASK_LEFT_HAND_OFF),
       m_timeLast(0),
-      m_robot_util(RefVoidRobotUtil()) {
+      m_robot_util(RefVoidRobotUtil()),
+      m_ctrlMode(CONTROL_OUTPUT_TORQUE) {
   RESETDEBUG5();
   Entity::signalRegistration(INPUT_SIGNALS << OUTPUT_SIGNALS);
 
@@ -350,6 +362,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
   m_zmp_LF.setZero();
   m_zmp.setZero();
   m_com_offset.setZero();
+  m_dcom_offset.setZero();
   m_v_RF_int.setZero();
   m_v_LF_int.setZero();
 
@@ -362,6 +375,11 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
              makeCommandVoid0(*this, &InverseDynamicsBalanceController::updateComOffset,
                               docCommandVoid0("Update the offset on the CoM based on the CoP measurement.")));
 
+  /* SET of control output type. */
+  addCommand("setControlOutputType",
+             makeCommandVoid1(*this, &InverseDynamicsBalanceController::setControlOutputType,
+                              docCommandVoid1("Set the type of control output.",
+                                              "Control type: velocity or torque (string)")));
   addCommand("removeRightFootContact",
              makeCommandVoid1(
                  *this, &InverseDynamicsBalanceController::removeRightFootContact,
@@ -395,6 +413,16 @@ void InverseDynamicsBalanceController::updateComOffset() {
   m_com_offset = m_zmp - com;
   m_com_offset(2) = 0.0;
   SEND_MSG("CoM offset updated: " + toString(m_com_offset), MSG_TYPE_INFO);
+}
+
+void InverseDynamicsBalanceController::setControlOutputType(const std::string& type) {
+  for (int i = 0; i < CONTROL_OUTPUT_SIZE; i++)
+    if (type == ControlOutput_s[i]) {
+      m_ctrlMode = (ControlOutput)i;
+      sotDEBUG(25) << "Control output type: " << ControlOutput_s[i] << endl;
+      return;
+    }
+  sotDEBUG(25) << "Unrecognized control output type: " << type << endl;
 }
 
 void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime) {
@@ -478,8 +506,13 @@ void InverseDynamicsBalanceController::addRightFootContact(const double& transit
     // vectorToSE3(traj_ref.pos, ref);
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
     m_contactRF->setReference(ref);
-    m_invDyn->addRigidContact(*m_contactRF, w_forces);
     m_invDyn->removeTask(m_taskRF->name(), transitionTime);
+    bool res = m_invDyn->addRigidContact(*m_contactRF, w_forces);
+    if (!res) {
+      const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+      SEND_MSG("Error while adding right foot contact." + tsid::solvers::HQPDataToString(hqpData, false),
+               MSG_TYPE_ERROR);
+    }
     m_contactState = DOUBLE_SUPPORT;
   }
 }
@@ -493,8 +526,13 @@ void InverseDynamicsBalanceController::addLeftFootContact(const double& transiti
     // vectorToSE3(traj_ref.pos, ref);
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
     m_contactLF->setReference(ref);
-    m_invDyn->addRigidContact(*m_contactLF, w_forces);
     m_invDyn->removeTask(m_taskLF->name(), transitionTime);
+    bool res = m_invDyn->addRigidContact(*m_contactLF, w_forces);
+    if (!res) {
+      const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+      SEND_MSG("Error while adding left foot contact." + tsid::solvers::HQPDataToString(hqpData, false),
+               MSG_TYPE_ERROR);
+    }    
     m_contactState = DOUBLE_SUPPORT;
   }
 }
@@ -589,6 +627,8 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_v_urdf.setZero(m_robot->nv());
     m_J_RF.setZero(6, m_robot->nv());
     m_J_LF.setZero(6, m_robot->nv());
+
+    m_estim_data = pinocchio::Data(m_robot->model());
 
     m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
@@ -773,6 +813,22 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
       addLeftFootContact(0.0);
     }
   }
+  // use reference phases (if plugged) to determine contact phase
+  if (m_ref_phaseSIN.isPlugged()) {
+    ContactState ref_phase = ContactState(m_ref_phaseSIN(iter));
+
+    if (m_contactState == DOUBLE_SUPPORT && ref_phase != DOUBLE_SUPPORT) {
+      if (ref_phase == LEFT_SUPPORT) {
+        removeRightFootContact(0.0);
+      } else {        
+        removeLeftFootContact(0.0);
+      }
+    } else if (m_contactState == LEFT_SUPPORT && ref_phase == DOUBLE_SUPPORT) {
+      addRightFootContact(0.0);
+    } else if (m_contactState == RIGHT_SUPPORT && ref_phase == DOUBLE_SUPPORT) {
+      addLeftFootContact(0.0);
+    }
+  }
 
   if (m_contactState == RIGHT_SUPPORT_TRANSITION && m_t >= m_contactTransitionTime) {
     m_contactState = RIGHT_SUPPORT;
@@ -836,31 +892,73 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const double& w_forces = m_w_forcesSIN(iter);
   const double & w_base_orientation = m_w_base_orientationSIN(iter);
 
+  if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+    // BASE ESTIMATOR computation to have com and feet estimations 
+    // Used to regulate on estimation (desired value of tasks are the estimations)
+    // -> only in velocity because close the TSID loop on itself (v_des, q_des)
+    // In torque close loop on the (q,v) of the base estimator (with freeflyer) -> not needed
+    Vector q_base_estimator, v_base_estimator;
+    q_base_estimator.setZero(m_robot->nq());
+    v_base_estimator.setZero(m_robot->nv());
+    m_robot_util->config_sot_to_urdf(q_sot, q_base_estimator);
+    m_robot_util->velocity_sot_to_urdf(q_base_estimator, v_sot, v_base_estimator);
+    pinocchio::computeAllTerms(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
+    pinocchio::centerOfMass(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
+  }
+
   if (m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION) {
     const Eigen::Matrix<double, 12, 1>& x_rf_ref = m_rf_ref_posSIN(iter);
     const Vector6& dx_rf_ref = m_rf_ref_velSIN(iter);
     const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
-    m_sampleRF.pos = x_rf_ref;
+
+    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+      // Right foot estimation
+      Eigen::Matrix<double, 12, 1> rf_estim, rf_data;
+      pinocchio::SE3 rf_estim_se3, rf_data_se3;
+      m_robot->framePosition(m_estim_data, m_frame_id_rf, rf_estim_se3);
+      tsid::math::SE3ToVector(rf_estim_se3, rf_estim);
+      m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, rf_data_se3);
+      tsid::math::SE3ToVector(rf_data_se3, rf_data);
+      m_sampleRF.pos = x_rf_ref - rf_estim + rf_data;
+    } else {
+      m_sampleRF.pos = x_rf_ref;
+    }
+
     m_sampleRF.vel = dx_rf_ref;
     m_sampleRF.acc = ddx_rf_ref;
     m_taskRF->setReference(m_sampleRF);
     m_taskRF->Kp(kp_feet);
     m_taskRF->Kd(kd_feet);
+
   } else if (m_contactState == RIGHT_SUPPORT || m_contactState == RIGHT_SUPPORT_TRANSITION) {
     const Eigen::Matrix<double, 12, 1>& x_lf_ref = m_lf_ref_posSIN(iter);
     const Vector6& dx_lf_ref = m_lf_ref_velSIN(iter);
     const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
-    m_sampleLF.pos = x_lf_ref;
+
+    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+      // Left foot estimation
+      Eigen::Matrix<double, 12, 1> lf_estim, lf_data;
+      pinocchio::SE3 lf_estim_se3, lf_data_se3;
+      m_robot->framePosition(m_estim_data, m_frame_id_lf, lf_estim_se3);
+      tsid::math::SE3ToVector(lf_estim_se3, lf_estim);
+      m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, lf_data_se3);
+      tsid::math::SE3ToVector(lf_data_se3, lf_data);
+      m_sampleLF.pos = x_lf_ref - lf_estim + lf_data;
+    } else {
+      m_sampleLF.pos = x_lf_ref;
+    }
+    
     m_sampleLF.vel = dx_lf_ref;
     m_sampleLF.acc = ddx_lf_ref;
     m_taskLF->setReference(m_sampleLF);
     m_taskLF->Kp(kp_feet);
     m_taskLF->Kd(kd_feet);
   }
+
   if (m_rightHandState == TASK_RIGHT_HAND_ON /*|| m_rightHandState == TASK_RIGHT_HAND_TRANSITION*/) {
     const Eigen::Matrix<double, 12, 1>& x_rh_ref = m_rh_ref_posSIN(iter);
     const Vector6& dx_rh_ref = m_rh_ref_velSIN(iter);
@@ -891,10 +989,16 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
   getProfiler().start(PROFILE_PREPARE_INV_DYN);
-  m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
-  m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
-
-  m_sampleCom.pos = x_com_ref - m_com_offset;
+  
+  if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+    // COM estimation    
+    const Vector3& com = m_robot->com(m_invDyn->data());
+    // const Vector3& dcom = m_robot->com_vel(m_invDyn->data());
+    // m_dcom_offset = dcom - data.vcom[0];
+    m_sampleCom.pos = x_com_ref - m_estim_data.com[0] + com; //- m_com_offset
+  } else {
+    m_sampleCom.pos = x_com_ref - m_com_offset;
+  }
   m_sampleCom.vel = dx_com_ref;
   m_sampleCom.acc = ddx_com_ref;
   m_taskCom->setReference(m_sampleCom);
@@ -963,6 +1067,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   if (m_firstTime) {
     m_firstTime = false;
+    m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
+    m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
     m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
     //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
     pinocchio::SE3 H_lf = m_robot->position(
@@ -980,7 +1086,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
       s = m_tau_sot;
       return s;
     }
+  } else if (m_ctrlMode == CONTROL_OUTPUT_TORQUE){
+    // In velocity close the TSID loop on itself (v_des, q_des), in torque on the (q,v) of the robot.
+    m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
+    m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
   }
+
   m_timeLast = static_cast<unsigned int>(iter);
 
   const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -1104,7 +1215,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_pd_des, dynamicgraph::Vector) {
   assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
   const VectorN6& v_robot = m_vSIN(iter);
   assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  const VectorN6& tau_measured = m_tau_measuredSIN(iter);
+  const VectorN& tau_measured = m_tau_measuredSIN(iter);
   assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   m_q_desSOUT(iter);
@@ -1394,6 +1505,32 @@ DEFINE_SIGNAL_OUT_FUNCTION(com, dynamicgraph::Vector) {
   return s;
 }
 
+DEFINE_SIGNAL_OUT_FUNCTION(com_est, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal com_est before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  if (s.size() != 3) s.resize(3);
+
+  const VectorN6& q_sot = m_qSIN(iter);
+  assert(q_sot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  const VectorN6& v_sot = m_vSIN(iter);
+  assert(v_sot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+
+  Vector q_base_estimator, v_base_estimator;
+  q_base_estimator.setZero(m_robot->nq());
+  v_base_estimator.setZero(m_robot->nv());
+  m_robot_util->config_sot_to_urdf(q_sot, q_base_estimator);
+  m_robot_util->velocity_sot_to_urdf(q_base_estimator, v_sot, v_base_estimator);
+
+  pinocchio::Data data = pinocchio::Data(m_robot->model());
+  pinocchio::centerOfMass(m_robot->model(), data, q_base_estimator, v_base_estimator);
+  s = data.com[0];
+  return s;
+}
+
 DEFINE_SIGNAL_OUT_FUNCTION(com_vel, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
     std::ostringstream oss("Cannot compute signal com_vel before initialization! iter:");
@@ -1442,7 +1579,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos_quat, dynamicgraph::Vector) {
     SEND_WARNING_STREAM_MSG(oss.str());
     return s;
   }
-  m_tau_desSOUT(iter);
+  // m_tau_desSOUT(iter);
   const dg::Vector& x_lf_ref = m_lf_ref_posSIN(iter);
   pinocchio::SE3 oMi;
   oMi.translation(x_lf_ref.head<3>() );
@@ -1450,6 +1587,23 @@ DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos_quat, dynamicgraph::Vector) {
   s.resize(7);
   // m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
   tsid::math::SE3ToXYZQUAT(oMi, s);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(lf_est, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal lf_est before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  if (s.size() != 3) s.resize(3);
+
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 lf_se3;
+  s.resize(12);
+  m_robot->framePosition(m_estim_data, m_frame_id_lf, lf_se3);
+  tsid::math::SE3ToVector(lf_se3, s);
   return s;
 }
 
@@ -1496,6 +1650,23 @@ DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos_quat, dynamicgraph::Vector) {
   s.resize(7);
   // m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
   tsid::math::SE3ToXYZQUAT(oMi, s);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(rf_est, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal rf_est before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  if (s.size() != 3) s.resize(3);
+
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 rf_se3;
+  s.resize(12);
+  m_robot->framePosition(m_estim_data, m_frame_id_rf, rf_se3);
+  tsid::math::SE3ToVector(rf_se3, s);
   return s;
 }
 
