@@ -618,7 +618,7 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
       m_robot->gear_ratios(gear_ratios_urdf);
     }   
     
-    m_q_sot.setZero(m_robot->nq());
+    m_q_sot.setZero(m_robot->nv());
     m_v_sot.setZero(m_robot->nv());
     m_dv_sot.setZero(m_robot->nv());
     m_tau_sot.setZero(m_robot->nv() - 6);
