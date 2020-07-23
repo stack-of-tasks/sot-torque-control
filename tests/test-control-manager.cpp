@@ -40,5 +40,5 @@ BOOST_AUTO_TEST_CASE(testControlManager) {
   dynamicgraph::Vector av;
   a_control_manager.m_uSOUT.needUpdate(6);
 
-  RealTimeLogger::destroy();
+  dynamicgraph::RealTimeLogger::destroy();
 }

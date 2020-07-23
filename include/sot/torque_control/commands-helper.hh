@@ -17,6 +17,7 @@
 /* --- HELPER ---------------------------------------------------------- */
 namespace dynamicgraph {
 namespace sot {
+namespace dg = dynamicgraph;
 namespace torquecontrol {
 using ::dynamicgraph::command::docCommandVerbose;
 using ::dynamicgraph::command::docCommandVoid0;
