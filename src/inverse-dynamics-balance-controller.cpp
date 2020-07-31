@@ -91,6 +91,8 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
 #define INPUT_SIGNALS m_com_ref_posSIN \
   << m_com_ref_velSIN \
   << m_com_ref_accSIN \
+  << m_com_adm_ref_posSIN \
+  << m_com_adm_ref_velSIN \
   << m_am_ref_LSIN \
   << m_am_ref_dLSIN \
   << m_rf_ref_posSIN \
@@ -225,6 +227,8 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_adm_ref_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_adm_ref_vel, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(am_ref_L, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(am_ref_dL, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(rf_ref_pos, dynamicgraph::Vector),
@@ -654,7 +658,22 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_taskCom = new TaskComEquality("task-com", *m_robot);
     m_taskCom->Kp(kp_com);
     m_taskCom->Kd(kd_com);
-    m_invDyn->addMotionTask(*m_taskCom, m_w_com, 0);
+    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+      Eigen::VectorXd mask_com_height(3);
+      mask_com_height << 0, 0, 1;
+      m_taskCom->setMask(mask_com_height);
+
+      m_taskComAdm  = new TaskComEquality("task-com-adm", *m_robot);
+      m_taskComAdm->Kp(kp_com);
+      m_taskComAdm->Kd(kd_com);
+      Eigen::VectorXd mask_com_adm(3);
+      mask_com_adm << 1, 1, 0;
+      m_taskComAdm->setMask(mask_com_adm);
+      m_invDyn->addMotionTask(*m_taskComAdm, m_w_com, 1);
+      m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
+    } else {
+      m_invDyn->addMotionTask(*m_taskCom, m_w_com, 0);
+    }
 
     // TASK ANGULAR MOMENTUM
     m_taskAM = new TaskAMEquality("task-am", *m_robot);
@@ -701,7 +720,10 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
 
     // TRAJECTORIES INIT
     m_sampleCom = TrajectorySample(3);
-    // m_sampleAM = TrajectorySample(3);
+    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+      m_sampleComAdm = TrajectorySample(3);
+    }
+    m_sampleAM = TrajectorySample(3);
     m_sampleWaist = TrajectorySample(6);
     m_samplePosture = TrajectorySample(m_robot->nv() - 6);
     m_sampleRH = TrajectorySample(3);
@@ -892,19 +914,19 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const double& w_forces = m_w_forcesSIN(iter);
   const double & w_base_orientation = m_w_base_orientationSIN(iter);
 
-  if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+  // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
     // BASE ESTIMATOR computation to have com and feet estimations 
     // Used to regulate on estimation (desired value of tasks are the estimations)
     // -> only in velocity because close the TSID loop on itself (v_des, q_des)
     // In torque close loop on the (q,v) of the base estimator (with freeflyer) -> not needed
-    Vector q_base_estimator, v_base_estimator;
-    q_base_estimator.setZero(m_robot->nq());
-    v_base_estimator.setZero(m_robot->nv());
-    m_robot_util->config_sot_to_urdf(q_sot, q_base_estimator);
-    m_robot_util->velocity_sot_to_urdf(q_base_estimator, v_sot, v_base_estimator);
-    pinocchio::computeAllTerms(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
-    pinocchio::centerOfMass(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
-  }
+    // Vector q_base_estimator, v_base_estimator;
+    // q_base_estimator.setZero(m_robot->nq());
+    // v_base_estimator.setZero(m_robot->nv());
+    // m_robot_util->config_sot_to_urdf(q_sot, q_base_estimator);
+    // m_robot_util->velocity_sot_to_urdf(q_base_estimator, v_sot, v_base_estimator);
+    // pinocchio::computeAllTerms(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
+    // pinocchio::centerOfMass(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
+  // }
 
   if (m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION) {
     const Eigen::Matrix<double, 12, 1>& x_rf_ref = m_rf_ref_posSIN(iter);
@@ -913,18 +935,18 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
 
-    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-      // Right foot estimation
-      Eigen::Matrix<double, 12, 1> rf_estim, rf_data;
-      pinocchio::SE3 rf_estim_se3, rf_data_se3;
-      m_robot->framePosition(m_estim_data, m_frame_id_rf, rf_estim_se3);
-      tsid::math::SE3ToVector(rf_estim_se3, rf_estim);
-      m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, rf_data_se3);
-      tsid::math::SE3ToVector(rf_data_se3, rf_data);
-      m_sampleRF.pos = x_rf_ref - rf_estim + rf_data;
-    } else {
-      m_sampleRF.pos = x_rf_ref;
-    }
+    // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+    //   // Right foot estimation
+    //   Eigen::Matrix<double, 12, 1> rf_estim, rf_data;
+    //   pinocchio::SE3 rf_estim_se3, rf_data_se3;
+    //   m_robot->framePosition(m_estim_data, m_frame_id_rf, rf_estim_se3);
+    //   tsid::math::SE3ToVector(rf_estim_se3, rf_estim);
+    //   m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, rf_data_se3);
+    //   tsid::math::SE3ToVector(rf_data_se3, rf_data);
+    //   m_sampleRF.pos = x_rf_ref - rf_estim + rf_data;
+    // } else {
+    m_sampleRF.pos = x_rf_ref;
+    // }
 
     m_sampleRF.vel = dx_rf_ref;
     m_sampleRF.acc = ddx_rf_ref;
@@ -939,18 +961,18 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
 
-    if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-      // Left foot estimation
-      Eigen::Matrix<double, 12, 1> lf_estim, lf_data;
-      pinocchio::SE3 lf_estim_se3, lf_data_se3;
-      m_robot->framePosition(m_estim_data, m_frame_id_lf, lf_estim_se3);
-      tsid::math::SE3ToVector(lf_estim_se3, lf_estim);
-      m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, lf_data_se3);
-      tsid::math::SE3ToVector(lf_data_se3, lf_data);
-      m_sampleLF.pos = x_lf_ref - lf_estim + lf_data;
-    } else {
-      m_sampleLF.pos = x_lf_ref;
-    }
+    // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
+    //   // Left foot estimation
+    //   Eigen::Matrix<double, 12, 1> lf_estim, lf_data;
+    //   pinocchio::SE3 lf_estim_se3, lf_data_se3;
+    //   m_robot->framePosition(m_estim_data, m_frame_id_lf, lf_estim_se3);
+    //   tsid::math::SE3ToVector(lf_estim_se3, lf_estim);
+    //   m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, lf_data_se3);
+    //   tsid::math::SE3ToVector(lf_data_se3, lf_data);
+    //   m_sampleLF.pos = x_lf_ref - lf_estim + lf_data;
+    // } else {
+    m_sampleLF.pos = x_lf_ref;
+    // }
     
     m_sampleLF.vel = dx_lf_ref;
     m_sampleLF.acc = ddx_lf_ref;
@@ -992,23 +1014,34 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   
   if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
     // COM estimation    
-    const Vector3& com = m_robot->com(m_invDyn->data());
+    // const Vector3& com = m_robot->com(m_invDyn->data());
     // const Vector3& dcom = m_robot->com_vel(m_invDyn->data());
     // m_dcom_offset = dcom - data.vcom[0];
-    m_sampleCom.pos = x_com_ref - m_estim_data.com[0] + com; //- m_com_offset
-  } else {
-    m_sampleCom.pos = x_com_ref - m_com_offset;
+    // m_sampleCom.pos = x_com_ref - m_estim_data.com[0] + com; //- m_com_offset
+    const Vector3& x_com_adm_ref = m_com_adm_ref_posSIN(iter);
+    const Vector3& dx_com_adm_ref = m_com_adm_ref_velSIN(iter);
+    m_sampleComAdm.pos = x_com_adm_ref;
+    m_sampleComAdm.vel = dx_com_adm_ref;
+    m_taskComAdm->setReference(m_sampleComAdm);
+    m_taskComAdm->Kp(kp_com);
+    m_taskComAdm->Kd(kd_com);
+    // if (m_w_com != w_com) {
+    //   //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+    //   m_w_com = w_com;
+    //   m_invDyn->updateTaskWeight(m_taskComAdm->name(), w_com);
+    // }
   }
+  m_sampleCom.pos = x_com_ref - m_com_offset;
   m_sampleCom.vel = dx_com_ref;
   m_sampleCom.acc = ddx_com_ref;
   m_taskCom->setReference(m_sampleCom);
   m_taskCom->Kp(kp_com);
   m_taskCom->Kd(kd_com);
-  if (m_w_com != w_com) {
-    //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
-    m_w_com = w_com;
-    m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
-  }
+  // if (m_w_com != w_com) {
+  //   //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+  //   m_w_com = w_com;
+  //   m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
+  // }
 
   m_sampleAM.vel = L_am_ref;
   m_sampleAM.acc = dL_am_ref;

@@ -87,6 +87,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_adm_ref_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_adm_ref_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(am_ref_L, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(am_ref_dL, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(rf_ref_pos, dynamicgraph::Vector);
@@ -266,6 +268,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::contacts::Contact6d* m_contactRH;
   tsid::contacts::Contact6d* m_contactLH;
   tsid::tasks::TaskComEquality* m_taskCom;
+  tsid::tasks::TaskComEquality* m_taskComAdm;
   tsid::tasks::TaskAMEquality* m_taskAM;
   tsid::tasks::TaskSE3Equality* m_taskWaist;
   tsid::tasks::TaskSE3Equality* m_taskRF;
@@ -276,6 +279,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
+  tsid::trajectories::TrajectorySample m_sampleComAdm;
   tsid::trajectories::TrajectorySample m_sampleAM;
   tsid::trajectories::TrajectorySample m_sampleRF;
   tsid::trajectories::TrajectorySample m_sampleLF;
