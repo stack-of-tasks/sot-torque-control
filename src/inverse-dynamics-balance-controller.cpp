@@ -427,7 +427,7 @@ void InverseDynamicsBalanceController::setControlOutputType(const std::string& t
 
 void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime) {
   if (m_contactState == DOUBLE_SUPPORT) {
-    SEND_MSG("Remove right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Remove right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     bool res = m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -447,7 +447,7 @@ void InverseDynamicsBalanceController::removeRightFootContact(const double& tran
 
 void InverseDynamicsBalanceController::removeLeftFootContact(const double& transitionTime) {
   if (m_contactState == DOUBLE_SUPPORT) {
-    SEND_MSG("Remove left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Remove left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     bool res = m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -499,7 +499,7 @@ void InverseDynamicsBalanceController::addTaskLeftHand(/*const double& transitio
 
 void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime) {
   if (m_contactState == LEFT_SUPPORT) {
-    SEND_MSG("Add right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Add right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     const double& w_forces = m_w_forcesSIN.accessCopy();
     // TrajectorySample traj_ref = m_taskRF->getReference();
     pinocchio::SE3 ref;
@@ -519,7 +519,7 @@ void InverseDynamicsBalanceController::addRightFootContact(const double& transit
 
 void InverseDynamicsBalanceController::addLeftFootContact(const double& transitionTime) {
   if (m_contactState == RIGHT_SUPPORT) {
-    SEND_MSG("Add left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Add left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     const double& w_forces = m_w_forcesSIN.accessCopy();
     // TrajectorySample traj_ref = m_taskLF->getReference();
     pinocchio::SE3 ref;
@@ -720,7 +720,6 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
       assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
       const dg::Vector& com_measured = m_com_measuredSIN(0);
       assert(com_measured.size() == 3);
-      SEND_MSG("COM_measured: " + toString(com_measured), MSG_TYPE_ERROR);
 
       m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
       m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
@@ -728,7 +727,6 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
       pinocchio::Data data = pinocchio::Data(m_robot->model());
       pinocchio::centerOfMass(m_robot->model(), data, m_q_urdf, m_v_urdf);
       m_com_offset = com_measured - data.com[0];
-      SEND_MSG("Update COM: " + toString(m_com_offset), MSG_TYPE_ERROR);
     }
 
     m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST, "eiquadprog-fast");
