@@ -5,6 +5,7 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
+#include <sot/torque_control/inverse-dynamics-balance-controller.hh>
 #include <boost/test/unit_test.hpp>
 
 #include <pinocchio/algorithm/center-of-mass.hpp>
@@ -24,7 +25,6 @@
 #include <sot/core/debug.hh>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/inverse-dynamics-balance-controller.hh>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl

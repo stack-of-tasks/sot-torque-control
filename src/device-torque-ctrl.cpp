@@ -6,6 +6,7 @@
 #include <fstream>
 #include <map>
 
+#include "sot/torque_control/device-torque-ctrl.hh"
 #include <pinocchio/algorithm/joint-configuration.hpp>  // integrate
 #include <tsid/math/constraint-base.hpp>
 #include <tsid/math/utils.hpp>
@@ -13,8 +14,6 @@
 #include <dynamic-graph/factory.h>
 #include <dynamic-graph/all-commands.h>
 #include <sot/core/debug.hh>
-
-#include "sot/torque_control/device-torque-ctrl.hh"
 
 using namespace std;
 using namespace dynamicgraph;

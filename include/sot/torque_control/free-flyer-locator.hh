@@ -23,9 +23,11 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-#include <map>
-#include "boost/assign.hpp"
 
+#include <map>
+#include <pinocchio/spatial/fwd.hpp>
+#include "boost/assign.hpp"
+#include <sot/core/robot-utils.hh>
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
@@ -37,7 +39,6 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {

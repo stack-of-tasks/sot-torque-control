@@ -24,15 +24,18 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <map>
-#include "boost/assign.hpp"
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
+#include <tsid/robots/robot-wrapper.hpp>
 
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 #include "pinocchio/algorithm/joint-configuration.hpp"
 
-#include <tsid/robots/robot-wrapper.hpp>
+#include <map>
+#include "boost/assign.hpp"
+
 #include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/contacts/contact-6d.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
@@ -45,7 +48,6 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 
 #include <sot/torque_control/utils/vector-conversions.hh>
 

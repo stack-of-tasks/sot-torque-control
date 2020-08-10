@@ -14,6 +14,7 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sot/torque_control/simple-inverse-dyn.hh>
 #include <boost/test/unit_test.hpp>
 
 #include <tsid/utils/stop-watch.hpp>
@@ -29,7 +30,6 @@
 #include <pinocchio/algorithm/frames.hpp>
 
 #include <sot/torque_control/commands-helper.hh>
-#include <sot/torque_control/simple-inverse-dyn.hh>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl

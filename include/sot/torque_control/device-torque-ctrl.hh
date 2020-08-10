@@ -12,6 +12,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/tasks/task-se3-equality.hpp>
 
@@ -24,7 +26,6 @@
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
-#include <sot/core/robot-utils.hh>
 
 namespace dgsot = dynamicgraph::sot;
 

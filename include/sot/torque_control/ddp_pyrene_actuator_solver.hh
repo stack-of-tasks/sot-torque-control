@@ -28,11 +28,11 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <sot/core/robot-utils.hh>
 #include <vector>
 #include <tsid/utils/stop-watch.hpp>
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
