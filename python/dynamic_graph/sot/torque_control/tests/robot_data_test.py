@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 
 class initRobotData:
@@ -76,7 +76,7 @@ class initRobotData:
         28: [-1.6057, 1.6057],
     }
 
-    fMax = numpy.array([100.0, 100.0, 300.0, 80.0, 80.0, 30.0])
+    fMax = np.array([100.0, 100.0, 300.0, 80.0, 80.0, 30.0])
     fMin = -fMax
     mapForceIdToForceLimits = {0: [fMin, fMax], 1: [fMin, fMax], 2: [fMin, fMax], 3: [fMin, fMax]}
 
@@ -102,18 +102,18 @@ class initRobotData:
 
         # Set the force limits for each id
         for key in self.mapForceIdToForceLimits:
-            cm.setForceLimitsFromId(key, tuple(self.mapForceIdToForceLimits[key][0]),
-                                    tuple(self.mapForceIdToForceLimits[key][1]))
+            cm.setForceLimitsFromId(key, np.array(self.mapForceIdToForceLimits[key][0]),
+                                    np.array(self.mapForceIdToForceLimits[key][1]))
 
         # Set the force sensor id for each sensor name
         for key in self.mapNameToForceId:
             cm.setForceNameToForceId(key, self.mapNameToForceId[key])
 
         # Set the map from the urdf joint list to the sot joint list
-        cm.setJointsUrdfToSot(self.urdftosot)
+        cm.setJointsUrdfToSot(np.array(self.urdftosot))
 
         # Set the foot frame name
         for key in self.FootFrameNames:
             cm.setFootFrameName(key, self.FootFrameNames[key])
 
-        cm.setRightFootSoleXYZ(self.RightFootSensorXYZ)
+        cm.setRightFootSoleXYZ(np.array(self.RightFootSensorXYZ))

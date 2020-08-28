@@ -7,7 +7,7 @@ SET(urdfpath ${SIMPLE_HUMANOID_DESCRIPTION_PKGDATAROOTDIR}/simple_humanoid_descr
 MACRO(SOT_TOR_CTR_TEST NAME)
   ADD_UNIT_TEST(test-${NAME} test-${NAME}.cpp)
 
-  TARGET_LINK_LIBRARIES(test-${NAME} ${PROJECT_NAME} ${Boost_LIBRARIES} ${NAME}
+  TARGET_LINK_LIBRARIES(test-${NAME} PRIVATE ${PROJECT_NAME} Boost::unit_test_framework ${NAME}
     dynamic-graph::dynamic-graph pinocchio::pinocchio)
   TARGET_COMPILE_DEFINITIONS(test-${NAME} PUBLIC URDF_FULL_PATH="${urdfpath}")
 ENDMACRO(SOT_TOR_CTR_TEST)

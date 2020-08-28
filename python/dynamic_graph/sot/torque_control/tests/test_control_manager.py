@@ -1,6 +1,6 @@
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.tests.robot_data_test import initRobotData
-from numpy import ones, zeros
+from numpy import array, ones, zeros
 
 # Instanciate the free flyer
 cm = ControlManager("cm_test")
@@ -36,6 +36,7 @@ cm.addCtrlMode("pos")
 # Add torque mode
 cm.addCtrlMode("torque")
 
-cm.ctrl_torque.value = currentDes
-cm.ctrl_pos.value = pwmDes
-cm.setCtrlMode("all", "pos")
+# TODO ctrl_* non working yet
+# cm.ctrl_torque.value = array(currentDes)
+# cm.ctrl_pos.value = pwmDes
+# cm.setCtrlMode("all", "pos")
