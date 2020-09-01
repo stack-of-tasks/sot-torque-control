@@ -26,6 +26,8 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <pinocchio/fwd.hpp>
+
 #include <tsid/utils/stop-watch.hpp>
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
