@@ -21,6 +21,7 @@ cm.controlDT = 0.005
 
 # Initializing the input ports
 # Setting the robot configuration
+cm.add_signals()
 cm.i_max.value = max_current
 cm.u_max.value = max_tau
 cm.tau.value = tau
@@ -36,7 +37,7 @@ cm.addCtrlMode("pos")
 # Add torque mode
 cm.addCtrlMode("torque")
 
-# TODO ctrl_* non working yet
-# cm.ctrl_torque.value = array(currentDes)
-# cm.ctrl_pos.value = pwmDes
-# cm.setCtrlMode("all", "pos")
+cm.add_signals()
+cm.ctrl_torque.value = array(currentDes)
+cm.ctrl_pos.value = pwmDes
+cm.setCtrlMode("all", "pos")
