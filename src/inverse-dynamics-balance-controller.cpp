@@ -422,6 +422,35 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
                               docCommandVoid1("lowers the left hand.", "Transition time in seconds (double)")));
 }
 
+Vector InverseDynamicsBalanceController::actFrame(pinocchio::SE3 frame, Vector vec) {
+  Vector res;
+  pinocchio::SE3 vectorSE3, resSE3;
+  vectorSE3.translation(vec.head<3>());
+  if (vec.size() == 12){ // Feet Positions -> directly have Rotation Matrix
+    res.resize(12);
+    res.head<3>() = frame.rotation() * (vec.head<3>() - frame.translation());
+    MatrixRotation R;
+    R.row(0) = vec.segment(3, 3);
+    R.row(1) = vec.segment(6, 3);
+    R.row(2) = vec.segment(9, 3);
+    Vector3 euler = R.eulerAngles(2, 1, 0).reverse();
+    R = (Eigen::AngleAxisd(euler(2), Eigen::Vector3d::UnitZ()) *
+         Eigen::AngleAxisd(-euler(1), Eigen::Vector3d::UnitY()) *
+         Eigen::AngleAxisd(euler(0), Eigen::Vector3d::UnitX()))
+         .toRotationMatrix();
+    Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> M_ordered(R);
+    Eigen::Map<dg::Vector> vectorRotation(M_ordered.data(), M_ordered.size());
+    res.tail<9>() = vectorRotation;
+
+  } else if (vec.size() == 3){ // COM
+    res.resize(3);
+    res = frame.rotation() * (vec - frame.translation());
+  } else{
+    SEND_MSG("ERROR on actFrame() wrong size of vector : " + toString(vec.size()), MSG_TYPE_ERROR);
+  }
+  return res;
+}
+
 void InverseDynamicsBalanceController::updateComOffset() {
   const Vector3& com = m_robot->com(m_invDyn->data());
   m_com_offset = m_zmp - com;
@@ -680,10 +709,8 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
       mask_com_adm << 1, 1, 0;
       m_taskComAdm->setMask(mask_com_adm);
       m_invDyn->addMotionTask(*m_taskComAdm, m_w_com, 1);
-      m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
-    } else {
-      m_invDyn->addMotionTask(*m_taskCom, m_w_com, 0);
     }
+    m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
 
     // TASK ANGULAR MOMENTUM
     m_taskAM = new TaskAMEquality("task-am", *m_robot);
@@ -743,22 +770,43 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
 
     m_frame_id_rh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
     m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
+    
+    const VectorN6& q_robot = m_qSIN(0);
+    assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+    const VectorN6& v_robot = m_vSIN(0);
+    assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+
+    m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
+    m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
+    pinocchio::Data data = pinocchio::Data(m_robot->model());
+    pinocchio::centerOfMass(m_robot->model(), data, m_q_urdf, m_v_urdf);
+    Vector3 com_estim = data.com[0];
+
+    m_transformFrameCom = pinocchio::SE3::Identity();
+    const Vector3& com_file = m_com_ref_posSIN(0);
+    if (std::abs(com_file.sum() - com_estim.sum()) > 0.001){
+      m_transformFrameCom.translation() = com_file - com_estim;
+      SEND_MSG("m_transformFrameCom: " + toString(m_transformFrameCom), MSG_TYPE_INFO);   
+    }
+
+    m_transformFrameFeet = pinocchio::SE3::Identity();
+    const VectorN& foot_file = m_lf_ref_posSIN(0);
+    pinocchio::SE3 oMi;
+    m_robot->framePosition(data, m_frame_id_lf, oMi);
+    Eigen::Matrix<double, 12, 1> left_foot;
+    tsid::math::SE3ToVector(oMi, left_foot);
+    if (std::abs(foot_file.sum() - left_foot.sum()) > 0.001){
+      m_transformFrameFeet.translation() = foot_file.head<3>() - left_foot.head<3>() ;
+      SEND_MSG("m_transformFrameFeet: " + toString(m_transformFrameFeet), MSG_TYPE_INFO);   
+    }
 
     // COM OFFSET
     if (m_com_measuredSIN.isPlugged()){
-      const VectorN6& q_robot = m_qSIN(0);
-      assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-      const VectorN6& v_robot = m_vSIN(0);
-      assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
       const dg::Vector& com_measured = m_com_measuredSIN(0);
       assert(com_measured.size() == 3);
-
-      m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
-      m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
-
-      pinocchio::Data data = pinocchio::Data(m_robot->model());
-      pinocchio::centerOfMass(m_robot->model(), data, m_q_urdf, m_v_urdf);
-      m_com_offset = com_measured - data.com[0];
+      SEND_MSG("COM_measured: " + toString(com_measured), MSG_TYPE_INFO);   
+      m_com_offset = com_measured - com_estim;
+      SEND_MSG("Update COM: " + toString(m_com_offset), MSG_TYPE_INFO);      
     }
 
     m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST, "eiquadprog-fast");
@@ -928,20 +976,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
-
-    // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-    //   // Right foot estimation
-    //   Eigen::Matrix<double, 12, 1> rf_estim, rf_data;
-    //   pinocchio::SE3 rf_estim_se3, rf_data_se3;
-    //   m_robot->framePosition(m_estim_data, m_frame_id_rf, rf_estim_se3);
-    //   tsid::math::SE3ToVector(rf_estim_se3, rf_estim);
-    //   m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, rf_data_se3);
-    //   tsid::math::SE3ToVector(rf_data_se3, rf_data);
-    //   m_sampleRF.pos = x_rf_ref - rf_estim + rf_data;
-    // } else {
-    m_sampleRF.pos = x_rf_ref;
-    // }
-
+    m_sampleRF.pos = actFrame(m_transformFrameFeet, x_rf_ref);
     m_sampleRF.vel = dx_rf_ref;
     m_sampleRF.acc = ddx_rf_ref;
     m_taskRF->setReference(m_sampleRF);
@@ -954,20 +989,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
     const Vector6& kp_feet = m_kp_feetSIN(iter);
     const Vector6& kd_feet = m_kd_feetSIN(iter);
-
-    // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-    //   // Left foot estimation
-    //   Eigen::Matrix<double, 12, 1> lf_estim, lf_data;
-    //   pinocchio::SE3 lf_estim_se3, lf_data_se3;
-    //   m_robot->framePosition(m_estim_data, m_frame_id_lf, lf_estim_se3);
-    //   tsid::math::SE3ToVector(lf_estim_se3, lf_estim);
-    //   m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, lf_data_se3);
-    //   tsid::math::SE3ToVector(lf_data_se3, lf_data);
-    //   m_sampleLF.pos = x_lf_ref - lf_estim + lf_data;
-    // } else {
-    m_sampleLF.pos = x_lf_ref;
-    // }
-    
+    m_sampleLF.pos = actFrame(m_transformFrameFeet, x_lf_ref);
     m_sampleLF.vel = dx_lf_ref;
     m_sampleLF.acc = ddx_lf_ref;
     m_taskLF->setReference(m_sampleLF);
@@ -1007,11 +1029,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   getProfiler().start(PROFILE_PREPARE_INV_DYN);
   
   if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-    // COM estimation    
-    // const Vector3& com = m_robot->com(m_invDyn->data());
-    // const Vector3& dcom = m_robot->com_vel(m_invDyn->data());
-    // m_dcom_offset = dcom - data.vcom[0];
-    // m_sampleCom.pos = x_com_ref - m_estim_data.com[0] + com; //- m_com_offset
     const Vector3& x_com_adm_ref = m_com_adm_ref_posSIN(iter);
     const Vector3& dx_com_adm_ref = m_com_adm_ref_velSIN(iter);
     const Vector3& ddx_com_adm_ref = m_com_adm_ref_accSIN(iter);
@@ -1021,23 +1038,23 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_taskComAdm->setReference(m_sampleComAdm);
     m_taskComAdm->Kp(kp_com);
     m_taskComAdm->Kd(kd_com);
-    // if (m_w_com != w_com) {
-    //   //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
-    //   m_w_com = w_com;
-    //   m_invDyn->updateTaskWeight(m_taskComAdm->name(), w_com);
-    // }
+    if (m_w_com != w_com) {
+      //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+      m_w_com = w_com;
+      m_invDyn->updateTaskWeight(m_taskComAdm->name(), w_com);
+    }
   }
-  m_sampleCom.pos = x_com_ref - m_com_offset;
+  m_sampleCom.pos = actFrame(m_transformFrameCom, x_com_ref) - m_com_offset;
   m_sampleCom.vel = dx_com_ref;
   m_sampleCom.acc = ddx_com_ref;
   m_taskCom->setReference(m_sampleCom);
   m_taskCom->Kp(kp_com);
   m_taskCom->Kd(kd_com);
-  // if (m_w_com != w_com) {
-  //   //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
-  //   m_w_com = w_com;
-  //   m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
-  // }
+  if (m_w_com != w_com) {
+    //          SEND_MSG("Change w_com from "+toString(m_w_com)+" to "+toString(w_com), MSG_TYPE_INFO);
+    m_w_com = w_com;
+    m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
+  }
 
   m_sampleAM.vel = L_am_ref;
   m_sampleAM.acc = dL_am_ref;
@@ -1640,7 +1657,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos_quat, dynamicgraph::Vector) {
     return s;
   }
   // m_tau_desSOUT(iter);
-  const dg::Vector& x_lf_ref = m_lf_ref_posSIN(iter);
+  dg::Vector x_lf_ref = m_lf_ref_posSIN(iter);
+  x_lf_ref = actFrame(m_transformFrameFeet, x_lf_ref);
   pinocchio::SE3 oMi;
   oMi.translation(x_lf_ref.head<3>() );
   oMi.rotation( Eigen::Map<const Eigen::Matrix<double,3,3> >(&x_lf_ref(3), 3, 3) );
@@ -1703,7 +1721,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos_quat, dynamicgraph::Vector) {
     return s;
   }
   // m_tau_desSOUT(iter);
-  const dg::Vector& x_rf_ref = m_rf_ref_posSIN(iter);
+  dg::Vector x_rf_ref = m_rf_ref_posSIN(iter);
+  x_rf_ref = actFrame(m_transformFrameFeet, x_rf_ref);
   pinocchio::SE3 oMi;
   oMi.translation(x_rf_ref.head<3>() );
   oMi.rotation( Eigen::Map<const Eigen::Matrix<double,3,3> >(&x_rf_ref(3), 3, 3) );

@@ -74,6 +74,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   InverseDynamicsBalanceController(const std::string& name);
 
   void init(const double& dt, const std::string& robotRef);
+  dynamicgraph::Vector actFrame(pinocchio::SE3 frame, dynamicgraph::Vector vec);
   void updateComOffset();
   virtual void setControlOutputType(const std::string& type);
   void removeRightFootContact(const double& transitionTime);
@@ -301,6 +302,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   double m_w_hands;
   double m_w_base_orientation;
   double m_omega; /// sqrt(g/h)
+  pinocchio::SE3 m_transformFrameFeet;
+  pinocchio::SE3 m_transformFrameCom;
 
   tsid::math::Vector m_dv_sot;    /// desired accelerations (sot order)
   tsid::math::Vector m_dv_urdf;   /// desired accelerations (urdf order)
