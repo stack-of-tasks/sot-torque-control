@@ -91,6 +91,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_adm_ref_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_adm_ref_vel, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_adm_ref_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(am_ref_L, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(am_ref_dL, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(rf_ref_pos, dynamicgraph::Vector);
@@ -192,6 +193,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(com_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(dcm, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(am_L, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(am_dL, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(am_dL_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(base_orientation, dynamicgraph::Vector);
@@ -295,6 +298,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   double m_w_posture;
   double m_w_hands;
   double m_w_base_orientation;
+  double m_omega; /// sqrt(g/h)
 
   tsid::math::Vector m_dv_sot;    /// desired accelerations (sot order)
   tsid::math::Vector m_dv_urdf;   /// desired accelerations (urdf order)

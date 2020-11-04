@@ -93,6 +93,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_com_ref_accSIN \
   << m_com_adm_ref_posSIN \
   << m_com_adm_ref_velSIN \
+  << m_com_adm_ref_accSIN \
   << m_am_ref_LSIN \
   << m_am_ref_dLSIN \
   << m_rf_ref_posSIN \
@@ -187,6 +188,8 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_com_velSOUT \
   << m_com_accSOUT \
   << m_com_acc_desSOUT \
+  << m_dcmSOUT \
+  << m_am_LSOUT \
   << m_am_dLSOUT \
   << m_am_dL_desSOUT \
   << m_base_orientationSOUT \
@@ -229,6 +232,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(com_adm_ref_pos, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(com_adm_ref_vel, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_adm_ref_acc, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(am_ref_L, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(am_ref_dL, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(rf_ref_pos, dynamicgraph::Vector),
@@ -322,6 +326,8 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(com_vel, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_acc, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(com_acc_des, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(dcm, dg::Vector, m_tau_desSOUT << m_comSOUT << m_com_velSOUT),
+      CONSTRUCT_SIGNAL_OUT(am_L, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(am_dL, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(am_dL_des, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(base_orientation, dg::Vector, m_tau_desSOUT),
@@ -912,20 +918,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const double& w_forces = m_w_forcesSIN(iter);
   const double & w_base_orientation = m_w_base_orientationSIN(iter);
 
-  // if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
-    // BASE ESTIMATOR computation to have com and feet estimations 
-    // Used to regulate on estimation (desired value of tasks are the estimations)
-    // -> only in velocity because close the TSID loop on itself (v_des, q_des)
-    // In torque close loop on the (q,v) of the base estimator (with freeflyer) -> not needed
-    // Vector q_base_estimator, v_base_estimator;
-    // q_base_estimator.setZero(m_robot->nq());
-    // v_base_estimator.setZero(m_robot->nv());
-    // m_robot_util->config_sot_to_urdf(q_sot, q_base_estimator);
-    // m_robot_util->velocity_sot_to_urdf(q_base_estimator, v_sot, v_base_estimator);
-    // pinocchio::computeAllTerms(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
-    // pinocchio::centerOfMass(m_robot->model(), m_estim_data, q_base_estimator, v_base_estimator);
-  // }
-
   if (m_contactState == LEFT_SUPPORT || m_contactState == LEFT_SUPPORT_TRANSITION) {
     const Eigen::Matrix<double, 12, 1>& x_rf_ref = m_rf_ref_posSIN(iter);
     const Vector6& dx_rf_ref = m_rf_ref_velSIN(iter);
@@ -1018,8 +1010,10 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     // m_sampleCom.pos = x_com_ref - m_estim_data.com[0] + com; //- m_com_offset
     const Vector3& x_com_adm_ref = m_com_adm_ref_posSIN(iter);
     const Vector3& dx_com_adm_ref = m_com_adm_ref_velSIN(iter);
+    const Vector3& ddx_com_adm_ref = m_com_adm_ref_accSIN(iter);
     m_sampleComAdm.pos = x_com_adm_ref;
     m_sampleComAdm.vel = dx_com_adm_ref;
+    m_sampleCom.acc = ddx_com_adm_ref;
     m_taskComAdm->setReference(m_sampleComAdm);
     m_taskComAdm->Kp(kp_com);
     m_taskComAdm->Kd(kd_com);
@@ -1101,6 +1095,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_robot_util->config_sot_to_urdf(q_sot, m_q_urdf);
     m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_sot, m_v_urdf);
     m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+    const Vector3& com = m_robot->com(m_invDyn->data());
+    m_omega = std::sqrt(9.81 / com[2]);
     //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
     pinocchio::SE3 H_lf = m_robot->position(
         m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
@@ -1163,9 +1159,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   if (m_invDyn->getContactForces(m_contactRF->name(), sol, tmp)) m_f_RF = m_contactRF->getForceGeneratorMatrix() * tmp;
   if (m_invDyn->getContactForces(m_contactLF->name(), sol, tmp)) m_f_LF = m_contactLF->getForceGeneratorMatrix() * tmp;
   m_robot_util->joints_urdf_to_sot(m_invDyn->getActuatorForces(sol), m_tau_sot);
-
-  // m_tau_sot += kp_pos.cwiseProduct(q_ref - q_sot.tail(m_robot_util->m_nbJoints)) +
-  //              kd_pos.cwiseProduct(dq_ref - v_sot.tail(m_robot_util->m_nbJoints));
 
   getProfiler().stop(PROFILE_TAU_DES_COMPUTATION);
   m_t += m_dt;
@@ -1331,6 +1324,17 @@ DEFINE_SIGNAL_OUT_FUNCTION(am_dL, dynamicgraph::Vector) {
   if (s.size() != 3) s.resize(3);
   m_tau_desSOUT(iter);
   s = m_taskAM->getdMomentum(m_dv_urdf);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(am_L, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal am_L before initialization!");
+    return s;
+  }
+  if (s.size() != 3) s.resize(3);
+  m_tau_desSOUT(iter);
+  s = m_taskAM->momentum();
   return s;
 }
 
@@ -1512,7 +1516,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(zmp, dynamicgraph::Vector) {
     SEND_WARNING_STREAM_MSG(oss.str());
     return s;
   }
-  if (s.size() != 2) s.resize(2);
+  if (s.size() != 3) s.resize(3);
   const Vector6& f_LF = m_wrench_left_footSIN(iter);
   const Vector6& f_RF = m_wrench_right_footSIN(iter);
   m_zmp_left_footSOUT(iter);
@@ -1520,6 +1524,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(zmp, dynamicgraph::Vector) {
 
   if (f_LF(2) + f_RF(2) > 1.0) m_zmp = (f_RF(2) * m_zmp_RF + f_LF(2) * m_zmp_LF) / (f_LF(2) + f_RF(2));
   s = m_zmp.head<2>();
+  s(2) = 0.0;
   return s;
 }
 
@@ -1572,6 +1577,20 @@ DEFINE_SIGNAL_OUT_FUNCTION(com_vel, dynamicgraph::Vector) {
   if (s.size() != 3) s.resize(3);
   const Vector3& com_vel = m_robot->com_vel(m_invDyn->data());
   s = com_vel;
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(dcm, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal dcm before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  if (s.size() != 3) s.resize(3);
+  const Vector3& com = m_comSOUT(iter);
+  const Vector3& com_vel = m_com_velSOUT(iter);
+  s = com + com_vel / m_omega;
   return s;
 }
 
