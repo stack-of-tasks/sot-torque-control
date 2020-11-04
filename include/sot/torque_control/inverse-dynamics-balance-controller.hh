@@ -132,6 +132,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_tau, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kff_tau, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kff_dq, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_IN(w_com, double);
   DECLARE_SIGNAL_IN(w_am, double);

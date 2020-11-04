@@ -133,6 +133,8 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_kp_posSIN \
   << m_kd_posSIN \
   << m_kp_tauSIN \
+  << m_kff_tauSIN \
+  << m_kff_dqSIN \
   << m_w_comSIN \
   << m_w_amSIN \
   << m_w_feetSIN \
@@ -272,6 +274,8 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(kp_pos, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kd_pos, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kp_tau, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kff_tau, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kff_dq, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(w_com, double),
       CONSTRUCT_SIGNAL_IN(w_am, double),
       CONSTRUCT_SIGNAL_IN(w_feet, double),
@@ -1232,8 +1236,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_pd_des, dynamicgraph::Vector) {
   assert(kp_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& kd_pos = m_kd_posSIN(iter);
   assert(kd_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  const VectorN& kp_tau = m_kp_tauSIN(iter);
+  VectorN kp_tau = m_kp_tauSIN(iter);
   assert(kp_tau.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  const VectorN& kff_tau = m_kff_tauSIN(iter);
+  assert(kff_tau.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  const VectorN& kff_dq = m_kff_dqSIN(iter);
+  assert(kff_dq.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   const VectorN6& q_robot = m_qSIN(iter);
   assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
@@ -1243,12 +1251,14 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_pd_des, dynamicgraph::Vector) {
   assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   m_q_desSOUT(iter);
+  if (tau_measured.sum() < 100) {
+    kp_tau.setZero();
+  }
 
-  s = m_tau_sot + 
+  s = kff_tau.cwiseProduct(m_tau_sot) + kp_tau.cwiseProduct(tau_measured - m_tau_sot) +
+      kff_dq.cwiseProduct(m_v_sot.tail(m_robot_util->m_nbJoints)) +
       kp_pos.cwiseProduct(m_q_sot.tail(m_robot_util->m_nbJoints) - q_robot.tail(m_robot_util->m_nbJoints)) +
       kd_pos.cwiseProduct(m_v_sot.tail(m_robot_util->m_nbJoints) - v_robot.tail(m_robot_util->m_nbJoints));
-
-  s += kp_tau.cwiseProduct(tau_measured - s);
 
   return s;
 }
