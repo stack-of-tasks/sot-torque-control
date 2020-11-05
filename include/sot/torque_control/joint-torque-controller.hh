@@ -33,6 +33,7 @@
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+#include <sot/core/robot-utils.hh>
 
 /*Motor model*/
 #include <sot/torque_control/motor-model.hh>
