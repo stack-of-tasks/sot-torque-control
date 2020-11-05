@@ -26,7 +26,10 @@
 
 #include <sot/core/robot-utils.hh>
 #include <map>
-#include "boost/assign.hpp"
+
+#include <pinocchio/fwd.hpp>
+
+#include <boost/assign.hpp>
 
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>

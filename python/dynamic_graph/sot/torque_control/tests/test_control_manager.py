@@ -1,6 +1,6 @@
 from dynamic_graph.sot.torque_control.control_manager import ControlManager
 from dynamic_graph.sot.torque_control.tests.robot_data_test import initRobotData
-from numpy import ones, zeros
+from numpy import array, ones, zeros
 
 # Instanciate the free flyer
 cm = ControlManager("cm_test")
@@ -21,6 +21,7 @@ cm.controlDT = 0.005
 
 # Initializing the input ports
 # Setting the robot configuration
+cm.add_signals()
 cm.i_max.value = max_current
 cm.u_max.value = max_tau
 cm.tau.value = tau
@@ -36,6 +37,7 @@ cm.addCtrlMode("pos")
 # Add torque mode
 cm.addCtrlMode("torque")
 
-cm.ctrl_torque.value = currentDes
+cm.add_signals()
+cm.ctrl_torque.value = array(currentDes)
 cm.ctrl_pos.value = pwmDes
 cm.setCtrlMode("all", "pos")
