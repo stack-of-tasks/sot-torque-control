@@ -197,8 +197,10 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_base_orientationSOUT \
   << m_left_foot_posSOUT \
   << m_left_foot_pos_quatSOUT \
+  << m_left_foot_pos_ref_quatSOUT \
   << m_right_foot_posSOUT \
   << m_right_foot_pos_quatSOUT \
+  << m_right_foot_pos_ref_quatSOUT \
   << m_lf_estSOUT \
   << m_rf_estSOUT \
   << m_left_hand_posSOUT \
@@ -337,8 +339,10 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(base_orientation, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_foot_pos, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_foot_pos_quat, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(right_foot_pos_ref_quat, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(left_foot_pos, dg::Vector, m_tau_desSOUT),
-      CONSTRUCT_SIGNAL_OUT(left_foot_pos_quat, dg::Vector, m_tau_desSOUT),      
+      CONSTRUCT_SIGNAL_OUT(left_foot_pos_quat, dg::Vector, m_tau_desSOUT),   
+      CONSTRUCT_SIGNAL_OUT(left_foot_pos_ref_quat, dg::Vector, m_tau_desSOUT),      
       CONSTRUCT_SIGNAL_OUT(lf_est, dg::Vector, INPUT_SIGNALS << m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(rf_est, dg::Vector, INPUT_SIGNALS << m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(right_hand_pos, dg::Vector, m_tau_desSOUT),
@@ -434,7 +438,7 @@ Vector InverseDynamicsBalanceController::actFrame(pinocchio::SE3 frame, Vector v
     R.row(1) = vec.segment(6, 3);
     R.row(2) = vec.segment(9, 3);
     Vector3 euler = R.eulerAngles(2, 1, 0).reverse();
-    R = (Eigen::AngleAxisd(euler(2), Eigen::Vector3d::UnitZ()) *
+    R = (Eigen::AngleAxisd(-euler(2), Eigen::Vector3d::UnitZ()) *
          Eigen::AngleAxisd(-euler(1), Eigen::Vector3d::UnitY()) *
          Eigen::AngleAxisd(euler(0), Eigen::Vector3d::UnitX()))
          .toRotationMatrix();
@@ -478,7 +482,7 @@ void InverseDynamicsBalanceController::removeRightFootContact(const double& tran
                MSG_TYPE_ERROR);
     }
     const double& w_feet = m_w_feetSIN.accessCopy();
-    m_invDyn->addMotionTask(*m_taskRF, w_feet, 0);
+    m_invDyn->addMotionTask(*m_taskRF, w_feet, 1);
     if (transitionTime > m_dt) {
       m_contactState = LEFT_SUPPORT_TRANSITION;
       m_contactTransitionTime = m_t + transitionTime;
@@ -498,7 +502,7 @@ void InverseDynamicsBalanceController::removeLeftFootContact(const double& trans
                MSG_TYPE_ERROR);
     }
     const double& w_feet = m_w_feetSIN.accessCopy();
-    m_invDyn->addMotionTask(*m_taskLF, w_feet, 0);
+    m_invDyn->addMotionTask(*m_taskLF, w_feet, 1);
     if (transitionTime > m_dt) {
       m_contactState = RIGHT_SUPPORT_TRANSITION;
       m_contactTransitionTime = m_t + transitionTime;
@@ -745,6 +749,12 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_taskPosture->Kp(kp_posture);
     m_taskPosture->Kd(kd_posture);
     m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
+
+    // ACTUATION BOUNDS TASK
+    Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
+    m_taskActBounds = new TaskActuationBounds("task-actuation-bounds", *m_robot);
+    m_taskActBounds->setBounds(-tau_max, tau_max);
+    m_invDyn->addActuationTask(*m_taskActBounds, 1.0, 0);
 
     // HANDS TASKS (not added yet to the invDyn pb, only when the command addTaskXHand is called)
     m_taskRH = new TaskSE3Equality("task-rh", *m_robot, m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
@@ -1628,9 +1638,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(base_orientation, dynamicgraph::Vector) {
     SEND_WARNING_STREAM_MSG(oss.str());
     return s;
   }
-  /*
-   * Code
-   */
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 oMi;
+  int frame_id_waist = (int)m_robot->model().getFrameId("root_joint");
+  m_robot->framePosition(m_invDyn->data(), frame_id_waist, oMi);
+  s.resize(12);
+  tsid::math::SE3ToVector(oMi, s);
   return s;
 }
 
@@ -1650,6 +1663,21 @@ DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos, dynamicgraph::Vector) {
 }
 
 DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos_quat, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal left_foot_pos before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 oMi;
+  s.resize(7);
+  m_robot->framePosition(m_invDyn->data(), m_frame_id_lf, oMi);
+  tsid::math::SE3ToXYZQUAT(oMi, s);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(left_foot_pos_ref_quat, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
     std::ostringstream oss("Cannot compute signal left_foot_pos before initialization! iter:");
     oss << iter;
@@ -1714,6 +1742,21 @@ DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos, dynamicgraph::Vector) {
 }
 
 DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos_quat, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal rigt_foot_pos before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 oMi;
+  s.resize(7);
+  m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
+  tsid::math::SE3ToXYZQUAT(oMi, s);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos_ref_quat, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
     std::ostringstream oss("Cannot compute signal rigt_foot_pos before initialization! iter:");
     oss << iter;

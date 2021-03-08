@@ -42,6 +42,7 @@
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-angular-momentum-equality.hpp>
+#include <tsid/tasks/task-actuation-bounds.hpp>
 // #include "tsid/tasks/task-angular-momentum-integral-equality.hpp"
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
@@ -203,8 +204,10 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(base_orientation, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_pos_quat, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(right_foot_pos_ref_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos_quat, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(left_foot_pos_ref_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(lf_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(rf_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_hand_pos, dynamicgraph::Vector);
@@ -285,6 +288,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskSE3Equality* m_taskLH;
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
+  tsid::tasks::TaskActuationBounds* m_taskActBounds;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
   tsid::trajectories::TrajectorySample m_sampleComAdm;
