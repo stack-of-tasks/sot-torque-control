@@ -793,22 +793,22 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     Vector3 com_estim = data.com[0];
 
     m_transformFrameCom = pinocchio::SE3::Identity();
-    const Vector3& com_file = m_com_ref_posSIN(0);
-    if (std::abs(com_file.sum() - com_estim.sum()) > 0.001){
-      m_transformFrameCom.translation() = com_file - com_estim;
-      SEND_MSG("m_transformFrameCom: " + toString(m_transformFrameCom), MSG_TYPE_INFO);   
-    }
+    // const Vector3& com_file = m_com_ref_posSIN(0);
+    // if (std::abs(com_file.sum() - com_estim.sum()) > 0.001){
+    //   m_transformFrameCom.translation() = com_file - com_estim;
+    //   SEND_MSG("m_transformFrameCom: " + toString(m_transformFrameCom), MSG_TYPE_INFO);   
+    // }
 
     m_transformFrameFeet = pinocchio::SE3::Identity();
-    const VectorN& foot_file = m_lf_ref_posSIN(0);
-    pinocchio::SE3 oMi;
-    m_robot->framePosition(data, m_frame_id_lf, oMi);
-    Eigen::Matrix<double, 12, 1> left_foot;
-    tsid::math::SE3ToVector(oMi, left_foot);
-    if (std::abs(foot_file.sum() - left_foot.sum()) > 0.001){
-      m_transformFrameFeet.translation() = foot_file.head<3>() - left_foot.head<3>() ;
-      SEND_MSG("m_transformFrameFeet: " + toString(m_transformFrameFeet), MSG_TYPE_INFO);   
-    }
+    // const VectorN& foot_file = m_lf_ref_posSIN(0);
+    // pinocchio::SE3 oMi;
+    // m_robot->framePosition(data, m_frame_id_lf, oMi);
+    // Eigen::Matrix<double, 12, 1> left_foot;
+    // tsid::math::SE3ToVector(oMi, left_foot);
+    // if (std::abs(foot_file.sum() - left_foot.sum()) > 0.001){
+    //   m_transformFrameFeet.translation() = foot_file.head<3>() - left_foot.head<3>() ;
+    //   SEND_MSG("m_transformFrameFeet: " + toString(m_transformFrameFeet), MSG_TYPE_INFO);   
+    // }
 
     // COM OFFSET
     if (m_com_measuredSIN.isPlugged()){
@@ -1054,7 +1054,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
       m_invDyn->updateTaskWeight(m_taskComAdm->name(), w_com);
     }
   }
-  m_sampleCom.pos = actFrame(m_transformFrameCom, x_com_ref) - m_com_offset;
+  m_sampleCom.pos = x_com_ref - m_com_offset; //actFrame(m_transformFrameCom, x_com_ref) - m_com_offset; //
   m_sampleCom.vel = dx_com_ref;
   m_sampleCom.acc = ddx_com_ref;
   m_taskCom->setReference(m_sampleCom);
@@ -1077,9 +1077,16 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskAM->name(), w_am);
   }
 
-  m_sampleWaist.pos = x_waist_ref;
-  m_sampleWaist.vel = dx_waist_ref;
-  m_sampleWaist.acc = ddx_waist_ref;
+  const Eigen::Matrix<double, 12, 1>& x_lf_ref = m_lf_ref_posSIN(iter);
+  const Vector6& dx_lf_ref = m_lf_ref_velSIN(iter);
+  const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
+  const Eigen::Matrix<double, 12, 1>& x_rf_ref = m_rf_ref_posSIN(iter);
+  const Vector6& dx_rf_ref = m_rf_ref_velSIN(iter);
+  const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
+  Eigen::Matrix<double, 12, 1> sum_x = x_lf_ref + x_rf_ref;
+  m_sampleWaist.pos = 0.5 * actFrame(m_transformFrameFeet, sum_x); //x_waist_ref;
+  m_sampleWaist.vel = 0.5 * (dx_lf_ref + dx_rf_ref); //dx_waist_ref;
+  m_sampleWaist.acc = 0.5 * (ddx_lf_ref + ddx_rf_ref); //ddx_waist_ref;
   m_taskWaist->setReference(m_sampleWaist);
   m_taskWaist->Kp(kp_base_orientation);
   m_taskWaist->Kd(kd_base_orientation);
