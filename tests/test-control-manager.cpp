@@ -7,6 +7,8 @@
 #include <sstream>
 #include <iostream>
 
+#include <example-robot-data/path.hpp>
+
 #include <dynamic-graph/factory.h>
 
 // Needed for sendMsg.
@@ -35,7 +37,7 @@ BOOST_AUTO_TEST_CASE(testControlManager) {
   a_control_manager.setLoggerVerbosityLevel(dynamicgraph::VERBOSITY_ALL);
 
   std::string robotRef("simple_humanoid_description");
-  a_control_manager.init(0.001, URDF_FULL_PATH, robotRef);
+  a_control_manager.init(0.001, EXAMPLE_ROBOT_DATA_MODEL_DIR "/simple_humanoid_description/urdf/simple_humanoid.urdf", robotRef);
 
   dynamicgraph::Vector av;
   a_control_manager.m_uSOUT.needUpdate(6);
