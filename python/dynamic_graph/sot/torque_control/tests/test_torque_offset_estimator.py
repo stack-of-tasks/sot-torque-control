@@ -4,25 +4,39 @@
 @author: Rohan Budhiraja
 """
 
+from __future__ import print_function
+
+import numpy as np
+from numpy import eye
+
+import pinocchio as se3
+from pinocchio import Motion, rnea
+from pinocchio.robot_wrapper import RobotWrapper
+import example_robot_data
+
+from dynamic_graph import plug
+from dynamic_graph.sot.core.matrix_util import matrixToTuple
+from dynamic_graph.sot.core.meta_tasks_kine import MetaTaskKine6d, MetaTaskKineCom, gotoNd
+from dynamic_graph.sot.core.sot import SOT
+from dynamic_graph.sot.dynamic_pinocchio import fromSotToPinocchio
+from dynamic_graph.sot.dynamic_pinocchio.humanoid_robot import HumanoidRobot
+from dynamic_graph.sot.torque_control.torque_offset_estimator import TorqueOffsetEstimator as TOE
+
 # ______________________________________________________________________________
 # ******************************************************************************
 #
-#1)  The simplest robot task: Just go and reach a point
-#2)  While performing this task:
-# )               find the torque values and feed them to the sensor calibration entity.
-#3)  Confirm that the offsets being calculated are correct.
+# 1)  The simplest robot task: Just go and reach a point
+# 2)  While performing this task:
+#                  find the torque values and feed them to the sensor calibration entity.
+# 3)  Confirm that the offsets being calculated are correct.
 # ______________________________________________________________________________
 # ******************************************************************************
 
 # Requires sot-dynamic-pinocchio
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-#SET THE PATH TO THE URDF AND MESHES
-#Define robotName, urdfpath and initialConfig
 dt = 5e-3
-urdfPath = "@TALOS_DATA_DATAROOTDIR@/talos-data/robots/talos_reduced.urdf"
-urdfDir = ["@TALOS_DATA_DATAROOTDIR@"]
 robotName = 'TALOS'
 OperationalPointsMap = {
     'left-wrist': 'arm_left_7_joint',
@@ -62,7 +76,7 @@ initialConfig = (
     0.,
     0.1,
     0.0,  # Left Arm
-    #0., 0.,0.,0., 0.,0.,0.,                         # Left gripper
+    # 0., 0.,0.,0., 0.,0.,0.,                         # Left gripper
     -0.261799,
     -0.17453,
     0.,
@@ -71,34 +85,12 @@ initialConfig = (
     0.,
     0.1,
     0.0,  # Right Arm
-    #0., 0.,0.,0., 0.,0.,0.,                         # Right gripper
+    # 0., 0.,0.,0., 0.,0.,0.,                         # Right gripper
     0.,
     0.  # Head
 )
 
-pinocchioRobot = RobotWrapper(urdfPath, urdfDir, se3.JointModelFreeFlyer())
-import numpy as np
-#-----------------------------------------------------------------------------
-import pinocchio as se3
-from numpy import eye
-from pinocchio import Motion, rnea
-#---- DYN --------------------------------------------------------------------
-#-----------------------------------------------------------------------------
-from pinocchio.robot_wrapper import RobotWrapper
-
-# ------------------------------------------------------------------------------
-# ---- Kinematic Stack of Tasks (SoT)  -----------------------------------------
-# ------------------------------------------------------------------------------
-from dynamic_graph import plug
-from dynamic_graph.sot.core.matrix_util import matrixToTuple
-# ---- TASK GRIP
-from dynamic_graph.sot.core.meta_tasks_kine import MetaTaskKine6d, MetaTaskKineCom, gotoNd
-from dynamic_graph.sot.core.sot import SOT
-from dynamic_graph.sot.dynamic_pinocchio import fromSotToPinocchio
-from dynamic_graph.sot.dynamic_pinocchio.humanoid_robot import HumanoidRobot
-# Sensor Calibration Entity.
-from dynamic_graph.sot.torque_control.torque_offset_estimator import TorqueOffsetEstimator as TOE
-
+pinocchioRobot, _, urdfPath, _ = example_robot_data.load_full('talos', display=True)
 pinocchioRobot.initDisplay(loadModel=True)
 pinocchioRobot.display(fromSotToPinocchio(initialConfig))
 
@@ -129,20 +121,23 @@ taskCom.featureDes.errorIN.value = robot.dynamic.com.value
 taskCom.task.controlGain.value = 10
 
 # --- CONTACTS
-#define contactLF and contactRF
-for name, joint in [['LF', robot.OperationalPointsMap['left-ankle']],
-                    ['RF', robot.OperationalPointsMap['right-ankle']]]:
-    contact = MetaTaskKine6d('contact' + name, robot.dynamic, name, joint)
-    contact.feature.frame('desired')
-    contact.gain.setConstant(10)
-    contact.keep()
-    locals()['contact' + name] = contact
+# define contactLF and contactRF
+
+contactLF = MetaTaskKine6d('contactLF', robot.dynamic, 'LF', robot.OperationalPointsMap['left-ankle'])
+contactLF.feature.frame('desired')
+contactLF.gain.setConstant(10)
+contactLF.keep()
+
+contactRF = MetaTaskKine6d('contactRF', robot.dynamic, 'RF', robot.OperationalPointsMap['right-ankle'])
+contactRF.feature.frame('desired')
+contactRF.gain.setConstant(10)
+contactRF.keep()
 
 targetRH = (0.5, -0.2, 1.0)
 targetLH = (0.5, 0.2, 1.0)
 
-#addRobotViewer(robot, small=False)
-#robot.viewer.updateElementConfig('zmp',target+(0,0,0))
+# addRobotViewer(robot, small=False)
+# robot.viewer.updateElementConfig('zmp',target+(0,0,0))
 
 gotoNd(taskRH, targetRH, '111', (4.9, 0.9, 0.01, 0.9))
 gotoNd(taskLH, targetLH, '111', (4.9, 0.9, 0.01, 0.9))
@@ -164,15 +159,15 @@ toe.gyroscope.value = (0., 0., 0.)
 gravity = Motion.Zero()
 gravity.linear = np.asarray((0.0, 0.0, -9.81))
 
-#-------------------------------------------------------------------------------
-#----- MAIN LOOP ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+# ----- MAIN LOOP ---------------------------------------------------------------
+# -------------------------------------------------------------------------------
 robot.device.increment(dt)
 np.set_printoptions(suppress=True)
 
 
 def runner(n):
-    for i in xrange(n):
+    for i in range(n):
         q_pin = fromSotToPinocchio(robot.device.state.value)
         q_pin[0, :6] = 0.0
         q_pin[0, 6] = 1.0
@@ -192,7 +187,7 @@ toe.computeOffset(100, 1.0)
 runner(100)
 runner(1000)
 
-print "The desired offset is", tau_offset
-print "The obtained offset is", toe.getSensorOffsets()
-print "The test is passed: ", (np.absolute(np.absolute(np.asarray(toe.getSensorOffsets())).max() - ref_offset) <
-                               epsilon)
+print("The desired offset is", tau_offset)
+print("The obtained offset is", toe.getSensorOffsets())
+print("The test is passed: ",
+      (np.absolute(np.absolute(np.asarray(toe.getSensorOffsets())).max() - ref_offset) < epsilon))
