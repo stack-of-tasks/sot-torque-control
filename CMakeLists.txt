@@ -61,6 +61,12 @@ IF(BUILD_PYTHON_INTERFACE)
   STRING(REGEX REPLACE "-" "_" PYTHON_DIR ${CUSTOM_HEADER_DIR})
   ADD_PROJECT_DEPENDENCY(dynamic-graph-python 4.0.0 REQUIRED
     PKG_CONFIG_REQUIRES dynamic-graph-python)
+
+  IF(Boost_VERSION GREATER 107299)
+    # Silence a warning about a deprecated use of boost bind by boost python
+    # at least fo boost 1.73 to 1.75
+    ADD_DEFINITIONS(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+  ENDIF()
 ENDIF(BUILD_PYTHON_INTERFACE)
 
 # Main Library
