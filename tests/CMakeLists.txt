@@ -1,15 +1,12 @@
 # Make Boost.Test generates the main function in test cases.
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
-SET(urdfpath ${SIMPLE_HUMANOID_DESCRIPTION_PKGDATAROOTDIR}/simple_humanoid_description/urdf/simple_humanoid.urdf)
-
 # Add unit tests for validation
 MACRO(SOT_TOR_CTR_TEST NAME)
   ADD_UNIT_TEST(test-${NAME} test-${NAME}.cpp)
 
   TARGET_LINK_LIBRARIES(test-${NAME} PRIVATE ${PROJECT_NAME} Boost::unit_test_framework ${NAME}
-    dynamic-graph::dynamic-graph pinocchio::pinocchio)
-  TARGET_COMPILE_DEFINITIONS(test-${NAME} PUBLIC URDF_FULL_PATH="${urdfpath}")
+    dynamic-graph::dynamic-graph pinocchio::pinocchio example-robot-data::example-robot-data)
 ENDMACRO(SOT_TOR_CTR_TEST)
 
 SOT_TOR_CTR_TEST(control-manager)

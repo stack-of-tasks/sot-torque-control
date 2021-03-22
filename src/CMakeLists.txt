@@ -50,14 +50,3 @@ FOREACH(plugin ${plugins})
     endif()
   ENDIF(BUILD_PYTHON_INTERFACE)
 ENDFOREACH(plugin)
-
-IF(BUILD_PYTHON_INTERFACE)
-  #SET(NO_INSTALL_OF_INIT_PY 0)
-  #DYNAMIC_GRAPH_PYTHON_MODULE(${PYTHON_DIR} ${PROJECT_NAME} wrap ${NO_INSTALL_OF_INIT_PY})
-
-  # Install empty __init__.py files in intermediate directories.
-  INSTALL(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_graph/${PYTHON_DIR}/__init__.py
-    DESTINATION ${PYTHON_SITELIB}/dynamic_graph/${PYTHON_DIR}
-    )
-ENDIF(BUILD_PYTHON_INTERFACE)

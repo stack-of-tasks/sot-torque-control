@@ -1,11 +1,11 @@
 <package format="2">
   <name>sot-torque-control</name>
-  <version>1.6.0</version>
+  <version>1.6.1</version>
   <description>
     Collection of dynamic-graph entities aimed at implementing torque control
     on different robots.
   </description>
-  <maintainer email="ostasse@laas.fr">Olivier Stasse</maintainer>
+  <maintainer email="guilhem.saurel@laas.fr">Guilhem Saurel</maintainer>
 
   <license>BSD</license>
 

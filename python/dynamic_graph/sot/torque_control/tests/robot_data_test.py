@@ -1,9 +1,10 @@
 import numpy as np
 
+import example_robot_data
+
 
 class initRobotData:
     nbJoints = 29
-    testRobotPath = "/opt/openrobots/share/simple_humanoid_description/urdf/simple_humanoid.urdf"
     controlDT = 0.005
     maxCurrent = 5
     robotRef = "control-manager-robot"
@@ -86,6 +87,10 @@ class initRobotData:
     FootFrameNames = {"Right": "RLEG_ANKLE_R", "Left": "LLEG_ANKLE_R"}
 
     RightFootSensorXYZ = (0.0, 0.0, -0.085)
+
+    def __init__(self):
+        _, _, urdf, _ = example_robot_data.load_full('simple_humanoid')
+        self.testRobotPath = urdf
 
     def init_and_set_controller_manager(self, cm):
         # Init should be called before addCtrlMode

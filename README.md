@@ -14,9 +14,8 @@ This project depends on:
 * dynamic-graph-python >= 3.0.0
 * sot-core >= 3.0.0
 * pinocchio >= 1.2
-* [PinInvDyn](https://github.com/stack-of-tasks/invdyn)
 * [parametric-curves](https://github.com/stack-of-tasks/parametric-curves)
-* (for unit testing)[simple_humanoid_description](https://github.com/laas/simple_humanoid_description)
+* (for unit testing)[example-robot-data](https://github.com/gepetto/example-robot-data) >= 3.8.0
 
 All of these packages (except PinInvDyn) can be installed through [robotpkg](http://robotpkg.openrobots.org/).
 In particular, you can find them in [robotpkg-wip](http://robotpkg.openrobots.org/robotpkg-wip.html) (work in progress), a subset of robotpkg.
@@ -31,5 +30,3 @@ Pay attention not to install ROS using robotpkg though, because it would install
     cd _build-RELEASE
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=$DEVEL_DIR/openrobots
     make install
-
-In Ubuntu 14.04 you may need to add `-DCMAKE_CXX_FLAGS="-std=c++11"`.
