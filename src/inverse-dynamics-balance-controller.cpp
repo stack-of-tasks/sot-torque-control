@@ -6,7 +6,6 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include <sot/torque_control/inverse-dynamics-balance-controller.hh>
-#include <boost/test/unit_test.hpp>
 
 #include <pinocchio/algorithm/center-of-mass.hpp>
 #include <pinocchio/algorithm/compute-all-terms.hpp>

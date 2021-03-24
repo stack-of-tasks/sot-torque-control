@@ -15,7 +15,6 @@
  */
 
 #include <sot/torque_control/simple-inverse-dyn.hh>
-#include <boost/test/unit_test.hpp>
 
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
