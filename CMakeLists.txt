@@ -79,6 +79,7 @@ SET(${PROJECT_NAME}_HEADERS
   include/${CUSTOM_HEADER_DIR}/free-flyer-locator.hh
   include/${CUSTOM_HEADER_DIR}/inverse-dynamics-balance-controller.hh
   include/${CUSTOM_HEADER_DIR}/simple-inverse-dyn.hh
+  include/${CUSTOM_HEADER_DIR}/posture-task.hh
   include/${CUSTOM_HEADER_DIR}/position-controller.hh
   include/${CUSTOM_HEADER_DIR}/control-manager.hh
   include/${CUSTOM_HEADER_DIR}/current-controller.hh

@@ -11,6 +11,7 @@ SET(plugins
   imu_offset_compensation
   inverse-dynamics-balance-controller
   simple-inverse-dyn
+  posture-task
   joint-torque-controller
   joint-trajectory-generator
   numerical-difference
