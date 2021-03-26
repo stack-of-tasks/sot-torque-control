@@ -51,6 +51,7 @@
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
+#include <tsid/tasks/task-actuation-bounds.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
@@ -133,6 +134,7 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   /// TASKS
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
+  tsid::tasks::TaskActuationBounds* m_taskActBounds;
 
   /// Trajectories of the tasks
   tsid::trajectories::TrajectorySample m_samplePosture;

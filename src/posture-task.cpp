@@ -217,6 +217,12 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
     m_taskPosture->Kd(kd_posture);
     m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 0);
 
+    // ACTUATION BOUNDS TASK
+    Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
+    m_taskActBounds = new TaskActuationBounds("task-actuation-bounds", *m_robot);
+    m_taskActBounds->setBounds(-tau_max, tau_max);
+    m_invDyn->addActuationTask(*m_taskActBounds, 1.0, 0);
+
     // TRAJECTORY INIT
     m_samplePosture = TrajectorySample(m_robot->nv() - 6);
 
