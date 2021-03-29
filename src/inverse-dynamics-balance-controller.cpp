@@ -683,13 +683,13 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
                                 contactPoints, contactNormal, mu, fMin, fMaxRF);
     m_contactRF->Kp(kp_contact);
     m_contactRF->Kd(kd_contact);
-    m_invDyn->addRigidContact(*m_contactRF, w_forces);
+    m_invDyn->addRigidContact(*m_contactRF, w_forces, 10, 1);
 
     m_contactLF = new Contact6d("contact_lfoot", *m_robot, m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                 contactPoints, contactNormal, mu, fMin, fMaxLF);
     m_contactLF->Kp(kp_contact);
     m_contactLF->Kd(kd_contact);
-    m_invDyn->addRigidContact(*m_contactLF, w_forces);
+    m_invDyn->addRigidContact(*m_contactLF, w_forces, 10, 1);
 
    if (m_f_ref_left_footSIN.isPlugged() && m_f_ref_right_footSIN.isPlugged()) {
      m_contactLF->setRegularizationTaskWeightVector(Vector6::Ones());
