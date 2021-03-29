@@ -52,6 +52,7 @@
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
+#include <tsid/contacts/contact-6d.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
@@ -89,6 +90,16 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_IN(kp_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(w_posture, double);
+  
+  DECLARE_SIGNAL_IN(kp_constraints, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_constraints, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_forces, double);  
+  DECLARE_SIGNAL_IN(mu, double);
+  DECLARE_SIGNAL_IN(contact_points, dynamicgraph::Matrix);
+  DECLARE_SIGNAL_IN(contact_normal, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(f_min, double);
+  DECLARE_SIGNAL_IN(f_max_right_foot, double);
+  DECLARE_SIGNAL_IN(f_max_left_foot, double);
 
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
@@ -130,6 +141,8 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   /// Solver and problem formulation
   tsid::solvers::SolverHQPBase* m_hqpSolver;
   tsid::InverseDynamicsFormulationAccForce* m_invDyn;
+  tsid::contacts::Contact6d* m_contactRF;
+  tsid::contacts::Contact6d* m_contactLF;
 
   /// TASKS
   tsid::tasks::TaskJointPosture* m_taskPosture;

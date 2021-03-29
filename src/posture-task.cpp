@@ -79,6 +79,15 @@ using namespace dg::sot;
   << m_kp_postureSIN \
   << m_kd_postureSIN \
   << m_w_postureSIN \
+  << m_w_forcesSIN \
+  << m_kp_constraintsSIN \
+  << m_kd_constraintsSIN \
+  << m_muSIN \
+  << m_contact_pointsSIN \
+  << m_contact_normalSIN \
+  << m_f_minSIN \
+  << m_f_max_right_footSIN \
+  << m_f_max_left_footSIN \
   << m_qSIN \
   << m_vSIN \
   << m_com_measuredSIN \
@@ -112,6 +121,15 @@ PostureTask(const std::string& name)
   , CONSTRUCT_SIGNAL_IN(kp_posture,                  dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(kd_posture,                  dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(w_posture,                   double)
+  , CONSTRUCT_SIGNAL_IN(kp_constraints,              dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(kd_constraints,              dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(w_forces,                    double)
+  , CONSTRUCT_SIGNAL_IN(mu,                          double)
+  , CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
+  , CONSTRUCT_SIGNAL_IN(contact_normal,              dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(f_min,                       double)
+  , CONSTRUCT_SIGNAL_IN(f_max_right_foot,            double)
+  , CONSTRUCT_SIGNAL_IN(f_max_left_foot,             double)
   , CONSTRUCT_SIGNAL_IN(q,                           dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(v,                           dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(com_measured,                dynamicgraph::Vector)
@@ -183,6 +201,15 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
     SEND_MSG("You should have an entity controller manager initialized before", MSG_TYPE_ERROR);
     return;
   }
+  const Eigen::Matrix<double, 3, 4>& contactPoints = m_contact_pointsSIN(0);
+  const Eigen::Vector3d& contactNormal = m_contact_normalSIN(0);
+  const dg::sot::Vector6d& kp_contact = m_kp_constraintsSIN(0);
+  const dg::sot::Vector6d& kd_contact = m_kd_constraintsSIN(0);
+  const double& w_forces = m_w_forcesSIN(0);
+  const double& mu = m_muSIN(0);
+  const double& fMin = m_f_minSIN(0);
+  const double& fMaxRF = m_f_max_right_footSIN(0);
+  const double& fMaxLF = m_f_max_left_footSIN(0);
   const VectorN& kp_posture = m_kp_postureSIN(0);
   const VectorN& kd_posture = m_kd_postureSIN(0);
 
@@ -211,11 +238,24 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
 
     m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
+    // CONTACT 6D TASKS
+    m_contactRF = new Contact6d("contact_rfoot", *m_robot, m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
+                                contactPoints, contactNormal, mu, fMin, fMaxRF);
+    m_contactRF->Kp(kp_contact);
+    m_contactRF->Kd(kd_contact);
+    m_invDyn->addRigidContact(*m_contactRF, w_forces);
+
+    m_contactLF = new Contact6d("contact_lfoot", *m_robot, m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
+                                contactPoints, contactNormal, mu, fMin, fMaxLF);
+    m_contactLF->Kp(kp_contact);
+    m_contactLF->Kd(kd_contact);
+    m_invDyn->addRigidContact(*m_contactLF, w_forces);
+
     // POSTURE TASK
     m_taskPosture = new TaskJointPosture("task-posture", *m_robot);
     m_taskPosture->Kp(kp_posture);
     m_taskPosture->Kd(kd_posture);
-    m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 0);
+    m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
 
     // ACTUATION BOUNDS TASK
     Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
@@ -285,7 +325,7 @@ DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
         else
           blocked_joints(i) = 0.0;
       SEND_MSG("Blocked joints: " + toString(blocked_joints.transpose()), MSG_TYPE_INFO);
-      m_taskBlockedJoints->mask(blocked_joints);
+      m_taskBlockedJoints->setMask(blocked_joints);
       TrajectorySample ref_zero(static_cast<unsigned int>(m_robot_util->m_nbJoints));
       m_taskBlockedJoints->setReference(ref_zero);
       m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
@@ -349,6 +389,15 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
     
     m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+    pinocchio::SE3 H_lf = m_robot->position(
+        m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+    m_contactLF->setReference(H_lf);
+    SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_DEBUG);
+
+    pinocchio::SE3 H_rf = m_robot->position(
+        m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+    m_contactRF->setReference(H_rf);
+    SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_DEBUG);
 
   } else if (m_timeLast != static_cast<unsigned int>(iter - 1)) {
     SEND_MSG("Last time " + toString(m_timeLast) + " is not current time-1: " + toString(iter), MSG_TYPE_ERROR);
