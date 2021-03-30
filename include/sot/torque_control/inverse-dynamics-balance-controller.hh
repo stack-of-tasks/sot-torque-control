@@ -40,6 +40,7 @@
 #include <tsid/contacts/contact-6d.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
+#include <tsid/tasks/task-energy.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-angular-momentum-equality.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
@@ -86,6 +87,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   void removeTaskRightHand(const double& transitionTime);
   void addTaskLeftHand(/*const double& transitionTime*/);
   void removeTaskLeftHand(const double& transitionTime);
+  void addTaskEnergy(const double& transitionTime);
+  void removeTaskEnergy(const double& transitionTime);
 
   /* --- SIGNALS --- */
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
@@ -173,6 +176,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(ref_phase, int);
 
   DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
+  DECLARE_SIGNAL_IN(ref_pos_final, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_OUT(tau_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(M, dynamicgraph::Matrix);
@@ -222,6 +226,12 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(left_hand_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_acc_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_acc_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(energy, double);
+  DECLARE_SIGNAL_OUT(energy_derivative, double);
+  DECLARE_SIGNAL_OUT(energy_derivative_time_range, double);
+  DECLARE_SIGNAL_OUT(energy_bound, double);
+  DECLARE_SIGNAL_OUT(task_energy_const, double);
+  DECLARE_SIGNAL_OUT(task_energy_bound, double);
 
   /// This signal copies active_joints only if it changes from a all false or to an all false value
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
@@ -289,6 +299,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
+  tsid::tasks::TaskEnergy* m_taskEnergy;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
   tsid::trajectories::TrajectorySample m_sampleComAdm;
@@ -299,6 +310,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::trajectories::TrajectorySample m_sampleLH;
   tsid::trajectories::TrajectorySample m_sampleWaist;
   tsid::trajectories::TrajectorySample m_samplePosture;
+  tsid::trajectories::TrajectorySample m_sampleEnergy;
 
   double m_w_com;
   double m_w_am;
@@ -318,6 +330,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector m_tau_sot;   /// desired torques (sot order)
 
   tsid::math::Vector m_f;                  /// desired force coefficients (24d)
+  tsid::math::Vector m_JF;                 /// desired Jacobian_contacts * force coefficients (size m_v)
   tsid::math::Vector6 m_f_RF;              /// desired 6d wrench right foot
   tsid::math::Vector6 m_f_LF;              /// desired 6d wrench left foot
   tsid::math::Vector3 m_com_offset;        /// 3d CoM offset
@@ -330,6 +343,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector3 m_zmp_LF;            /// 3d zmp left foot
   tsid::math::Vector3 m_zmp_RF;            /// 3d zmp left foot
   tsid::math::Vector3 m_zmp;               /// 3d global zmp
+  double m_previous_energy;
+  tsid::math::Vector m_previous_vel;
+  tsid::math::Vector m_previous_q;
 
 
   typedef pinocchio::Data::Matrix6x Matrix6x;
