@@ -553,7 +553,7 @@ void InverseDynamicsBalanceController::addRightFootContact(const double& transit
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
     m_contactRF->setReference(ref);
     m_invDyn->removeTask(m_taskRF->name(), transitionTime);
-    bool res = m_invDyn->addRigidContact(*m_contactRF, w_forces);
+    bool res = m_invDyn->addRigidContact(*m_contactRF, w_forces, 10, 1);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
       SEND_MSG("Error while adding right foot contact." + tsid::solvers::HQPDataToString(hqpData, false),
@@ -573,7 +573,7 @@ void InverseDynamicsBalanceController::addLeftFootContact(const double& transiti
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
     m_contactLF->setReference(ref);
     m_invDyn->removeTask(m_taskLF->name(), transitionTime);
-    bool res = m_invDyn->addRigidContact(*m_contactLF, w_forces);
+    bool res = m_invDyn->addRigidContact(*m_contactLF, w_forces, 10, 1);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
       SEND_MSG("Error while adding left foot contact." + tsid::solvers::HQPDataToString(hqpData, false),
