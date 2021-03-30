@@ -52,6 +52,7 @@
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
+#include <tsid/tasks/task-actuation-bounds.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
@@ -169,6 +170,7 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   tsid::tasks::TaskSE3Equality* m_taskWaist;
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
+  tsid::tasks::TaskActuationBounds* m_taskActBounds;
 
   /// Trajectories of the tasks
   tsid::trajectories::TrajectorySample m_sampleCom;

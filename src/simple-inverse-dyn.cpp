@@ -301,11 +301,17 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
     m_contactLF->Kd(kd_contact);
     m_invDyn->addRigidContact(*m_contactLF, w_forces);
 
+    // ACTUATION BOUNDS TASK
+    Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
+    m_taskActBounds = new TaskActuationBounds("task-actuation-bounds", *m_robot);
+    m_taskActBounds->setBounds(-tau_max, tau_max);
+    m_invDyn->addActuationTask(*m_taskActBounds, 1.0, 0);
+
     // TASK COM
     m_taskCom = new TaskComEquality("task-com", *m_robot);
     m_taskCom->Kp(kp_com);
     m_taskCom->Kd(kd_com);
-    m_invDyn->addMotionTask(*m_taskCom, m_w_com, 0);
+    m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
 
     // WAIST Task
     m_taskWaist = new TaskSE3Equality("task-waist", *m_robot, "root_joint");
@@ -390,7 +396,7 @@ DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
         else
           blocked_joints(i) = 0.0;
       SEND_MSG("Blocked joints: " + toString(blocked_joints.transpose()), MSG_TYPE_INFO);
-      m_taskBlockedJoints->mask(blocked_joints);
+      m_taskBlockedJoints->setMask(blocked_joints);
       TrajectorySample ref_zero(static_cast<unsigned int>(m_robot_util->m_nbJoints));
       m_taskBlockedJoints->setReference(ref_zero);
       m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
