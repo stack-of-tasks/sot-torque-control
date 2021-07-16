@@ -44,7 +44,8 @@
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-angular-momentum-equality.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
-// #include "tsid/tasks/task-angular-momentum-integral-equality.hpp"
+#include <tsid/tasks/task-joint-bounds.hpp>
+#include <tsid/tasks/task-cop-equality.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
@@ -89,6 +90,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   void removeTaskLeftHand(const double& transitionTime);
   void addTaskEnergy(const double& transitionTime);
   void removeTaskEnergy(const double& transitionTime);
+  void setEnergyTank(const double& tankValue);
 
   /* --- SIGNALS --- */
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
@@ -228,10 +230,15 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(left_foot_acc_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(energy, double);
   DECLARE_SIGNAL_OUT(energy_derivative, double);
-  DECLARE_SIGNAL_OUT(energy_derivative_time_range, double);
+  DECLARE_SIGNAL_OUT(energy_tank, double);
   DECLARE_SIGNAL_OUT(energy_bound, double);
   DECLARE_SIGNAL_OUT(task_energy_const, double);
   DECLARE_SIGNAL_OUT(task_energy_bound, double);
+  DECLARE_SIGNAL_OUT(task_energy_alpha, double);
+  DECLARE_SIGNAL_OUT(task_energy_beta, double);
+  DECLARE_SIGNAL_OUT(task_energy_gamma, double);
+  DECLARE_SIGNAL_OUT(task_energy_S, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_A, double);
 
   /// This signal copies active_joints only if it changes from a all false or to an all false value
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
@@ -299,6 +306,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
+  tsid::tasks::TaskJointBounds* m_taskJointBounds;
+  tsid::tasks::TaskCopEquality* m_taskCoP;
   tsid::tasks::TaskEnergy* m_taskEnergy;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
