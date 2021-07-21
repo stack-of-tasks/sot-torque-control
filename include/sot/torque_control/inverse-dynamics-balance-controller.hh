@@ -38,12 +38,15 @@
 
 #include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/contacts/contact-6d.hpp>
+#include <tsid/contacts/contact-point.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-angular-momentum-equality.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
 // #include "tsid/tasks/task-angular-momentum-integral-equality.hpp"
+
+#include "tsid/tasks/task-contact-force-equality.hpp"
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
@@ -116,6 +119,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(base_orientation_ref_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_ref_right_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_ref_left_foot, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(f_ref_left_arm, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(f_ext_left_arm, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector);
@@ -236,6 +241,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   bool m_initSucceeded;  /// true if the entity has been successfully initialized
   bool m_enabled;        /// True if controler is enabled
   bool m_firstTime;      /// True at the first iteration of the controller
+  bool m_taskLHContactOn;
 
   enum ContactState {
     DOUBLE_SUPPORT = 0,
@@ -277,7 +283,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::contacts::Contact6d* m_contactRF;
   tsid::contacts::Contact6d* m_contactLF;
   tsid::contacts::Contact6d* m_contactRH;
-  tsid::contacts::Contact6d* m_contactLH;
+  // tsid::contacts::Contact6d* m_contactLH;
   tsid::tasks::TaskComEquality* m_taskCom;
   tsid::tasks::TaskComEquality* m_taskComAdm;
   tsid::tasks::TaskAMEquality* m_taskAM;
@@ -289,6 +295,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
+  tsid::contacts::ContactPoint* m_contactLH;
+  tsid::tasks::TaskContactForceEquality* m_taskForceLH;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
   tsid::trajectories::TrajectorySample m_sampleComAdm;
@@ -299,6 +307,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::trajectories::TrajectorySample m_sampleLH;
   tsid::trajectories::TrajectorySample m_sampleWaist;
   tsid::trajectories::TrajectorySample m_samplePosture;
+  tsid::trajectories::TrajectorySample m_sampleLHForceRef;
+  tsid::trajectories::TrajectorySample m_sampleLHForceExt;
 
   double m_w_com;
   double m_w_am;

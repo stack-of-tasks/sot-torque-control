@@ -115,6 +115,8 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_base_orientation_ref_accSIN \
   << m_f_ref_right_footSIN \
   << m_f_ref_left_footSIN \
+  << m_f_ref_left_armSIN \
+  << m_f_ext_left_armSIN \
   << m_kp_base_orientationSIN \
   << m_kd_base_orientationSIN \
   << m_kp_constraintsSIN \
@@ -258,6 +260,8 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(base_orientation_ref_acc, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(f_ref_right_foot, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(f_ref_left_foot, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(f_ref_left_arm, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(f_ext_left_arm, dynamicgraph::Vector), 
       CONSTRUCT_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kp_constraints, dynamicgraph::Vector),
@@ -361,6 +365,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       m_initSucceeded(false),
       m_enabled(false),
       m_firstTime(true),
+      m_taskLHContactOn(false),
       m_contactState(DOUBLE_SUPPORT),
       m_rightHandState(TASK_RIGHT_HAND_OFF),
       m_leftHandState(TASK_LEFT_HAND_OFF),
@@ -676,6 +681,12 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
 
     m_estim_data = pinocchio::Data(m_robot->model());
 
+    m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
+    m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+
+    m_frame_id_rh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
+    m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
+
     m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
     // CONTACT 6D TASKS
@@ -764,6 +775,16 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_taskLH->Kp(kp_hands);
     m_taskLH->Kd(kd_hands);
 
+    // HANDS CONTACTS (not yet added, only when force ext in hands sensors detected)
+    m_contactLH = new ContactPoint("contact-lh", *m_robot, m_robot_util->m_hand_util.m_Left_Hand_Frame_Name,
+                                   contactNormal, mu, fMin, fMaxRF);
+    m_contactLH->Kp(kp_contact);
+    m_contactLH->Kd(kd_contact);
+    //m_invDyn->addRigidContact(*m_contactLH, w_forces, 10, 1);
+    m_taskForceLH = new TaskContactForceEquality("task-force-lh", *m_robot, m_contactLH->name());
+    m_taskForceLH->Kp(kp_hands);
+    m_taskForceLH->Kd(kp_hands);
+
     // TRAJECTORIES INIT
     m_sampleCom = TrajectorySample(3);
     if (m_ctrlMode == CONTROL_OUTPUT_VELOCITY){
@@ -772,13 +793,9 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_sampleAM = TrajectorySample(3);
     m_sampleWaist = TrajectorySample(6);
     m_samplePosture = TrajectorySample(m_robot->nv() - 6);
-    m_sampleRH = TrajectorySample(3);
-
-    m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
-    m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
-
-    m_frame_id_rh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
-    m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
+    m_sampleLH = TrajectorySample(3);
+    m_sampleLHForceRef = TrajectorySample(6);
+    m_sampleLHForceExt = TrajectorySample(6);
     
     const VectorN6& q_robot = m_qSIN(0);
     assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
@@ -931,6 +948,29 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
         m_leftHandState = TASK_LEFT_HAND_ON;
   }*/
 
+  if (m_f_ext_left_armSIN.isPlugged()){
+    const Vector6& f_ext_left_hand = m_f_ext_left_armSIN(iter);    
+    if ((not m_taskLHContactOn) && (f_ext_left_hand.head(3).norm() > ZERO_FORCE_THRESHOLD)){
+      std::cout << "########### ADD TASK CONTACT LEFT HAND ################" << std::endl;
+      pinocchio::SE3 H_lh = m_robot->position(m_invDyn->data(), 
+                                              m_robot->model().getJointId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name));
+      m_contactLH->setReference(H_lh);
+      m_invDyn->addRigidContact(*m_contactLH, 1e-3, 10, 1);
+      m_invDyn->addForceTask(*m_taskForceLH, 100, 1);
+      m_taskLHContactOn = true;
+    } else if ((m_taskLHContactOn) && (f_ext_left_hand.head(3).norm() < ZERO_FORCE_THRESHOLD)){
+      std::cout << "########### REMOVE TASK CONTACT LEFT HAND ################" << std::endl;
+      bool res = m_invDyn->removeRigidContact(m_contactLH->name(), 0.0);
+      if (!res) {
+        const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+        SEND_MSG("Error while remove left hand contact." + tsid::solvers::HQPDataToString(hqpData, false),
+                  MSG_TYPE_ERROR);
+      }
+      m_invDyn->removeTask(m_taskForceLH->name(), 0.0);
+      m_taskLHContactOn = false;
+    }
+  } 
+
   getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
   m_w_feetSIN(iter);
   m_active_joints_checkedSINNER(iter);
@@ -1031,6 +1071,26 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_taskLH->setReference(m_sampleLH);
     m_taskLH->Kp(kp_hands);
     m_taskLH->Kd(kd_hands);
+  }
+
+  if (m_taskLHContactOn) {
+    const Vector6& f_ref_LH = m_f_ref_left_armSIN(iter);
+    const Vector6& f_ext_wLH = m_f_ext_left_armSIN(iter);
+    Vector6 f_ext_LH;
+    int sensorFrameId = (int)m_robot->model().getFrameId("wrist_left_ft_link");
+    pinocchio::SE3 sensorPlacement = (m_invDyn->data()).oMf[sensorFrameId];
+    f_ext_LH = sensorPlacement.actInv(pinocchio::Force(f_ext_wLH)).toVector();
+    const Vector6& kp_hands = m_kp_handsSIN(iter);
+    const Vector6& kd_hands = m_kd_handsSIN(iter);
+    const Vector6& ki = Vector::Ones(6);
+    m_sampleLHForceRef.pos = f_ref_LH;
+    m_sampleLHForceExt.pos = f_ext_LH;
+
+    m_taskForceLH->setReference(m_sampleLHForceRef);
+    m_taskForceLH->setExternalForce(m_sampleLHForceExt);
+    m_taskForceLH->Kp(kp_hands);
+    m_taskForceLH->Kd(kd_hands);
+    m_taskForceLH->Ki(ki);
   }
 
   getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
