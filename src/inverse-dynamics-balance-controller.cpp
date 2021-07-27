@@ -218,6 +218,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_energySOUT \
   << m_energy_derivativeSOUT \
   << m_energy_tankSOUT \
+  << m_denergy_tankSOUT \
   << m_energy_boundSOUT \
   << m_task_energy_constSOUT \
   << m_task_energy_boundSOUT \
@@ -225,6 +226,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_task_energy_betaSOUT \
   << m_task_energy_gammaSOUT \
   << m_task_energy_SSOUT \
+  << m_task_energy_dSSOUT \
   << m_task_energy_ASOUT
 
 /// Define EntityClassName here rather than in the header file
@@ -372,6 +374,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(energy, double, INPUT_SIGNALS << m_q_desSOUT),
       CONSTRUCT_SIGNAL_OUT(energy_derivative, double, m_energySOUT),
       CONSTRUCT_SIGNAL_OUT(energy_tank, double, INPUT_SIGNALS << m_q_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(denergy_tank, double, INPUT_SIGNALS << m_q_desSOUT),
       CONSTRUCT_SIGNAL_OUT(energy_bound, double, INPUT_SIGNALS),
       CONSTRUCT_SIGNAL_OUT(task_energy_const, double, m_tau_desSOUT), 
       CONSTRUCT_SIGNAL_OUT(task_energy_bound, double, m_tau_desSOUT),
@@ -379,6 +382,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(task_energy_beta, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_gamma, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_S, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(task_energy_dS, dg::Vector, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_A, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_INNER(active_joints_checked, dg::Vector, m_active_jointsSIN),
       m_t(0.0),
@@ -640,7 +644,7 @@ void InverseDynamicsBalanceController::removeTaskLeftHand(const double& transiti
 }
 
 void InverseDynamicsBalanceController::addTaskEnergy(const double& transitionTime) {
-  m_invDyn->addEnergyTask(*m_taskEnergy, 20, 1, transitionTime);
+  m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0, transitionTime);
 }
 
 void InverseDynamicsBalanceController::removeTaskEnergy(const double& transitionTime) {
@@ -862,7 +866,7 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     K_energy.head<6>() = 0.0 * Vector::Ones(6);
     K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
     m_taskEnergy->K(K_energy);
-    m_invDyn->addEnergyTask(*m_taskEnergy, 10, 1);
+    m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0);
 
     // TRAJECTORIES INIT
     m_sampleCom = TrajectorySample(3);
@@ -1128,11 +1132,10 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     const Vector6& ddx_rh_ref = m_rh_ref_accSIN(iter);
     const Vector6& kp_hands = m_kp_handsSIN(iter);
     const Vector6& kd_hands = m_kd_handsSIN(iter);
-    Vector6 const_vel = 0.01 * Vector::Ones(6);
+    // Vector6 const_vel = 0.01 * Vector::Ones(6);
     m_sampleRH.pos = x_rh_ref;
-    // m_sampleRH.vel = dx_rh_ref;
-    // m_sampleRH.acc = ddx_rh_ref;
     m_sampleRH.vel = dx_rh_ref;
+    m_sampleRH.acc = ddx_rh_ref;
     m_taskRH->setReference(m_sampleRH);
     m_taskRH->Kp(kp_hands);
     m_taskRH->Kd(kd_hands);
@@ -1244,14 +1247,14 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   // q_ref_final_urdf.setZero(39);
   // m_robot_util->config_sot_to_urdf(q_ref_final, q_ref_final_urdf);
 
-  m_sampleEnergy.pos = q_ref_final;
+  // m_sampleEnergy.pos = q_ref_final;
   // m_sampleEnergy.vel = m_v_sot;
-  m_sampleEnergy.acc = m_JF;
+  // m_sampleEnergy.acc = m_JF;
   // m_sampleEnergy.acc = Vector::Ones(38);
   // m_sampleEnergy.acc.head<6>() = 0.0 * Vector::Ones(6);
   // m_sampleEnergy.acc.tail(m_robot_util->m_nbJoints) = tau_measured - m_tau_sot;
   // m_robot_util->joints_sot_to_urdf(ddq_ref, m_sampleEnergy.acc);
-  m_taskEnergy->setReference(m_sampleEnergy);
+  // m_taskEnergy->setReference(m_sampleEnergy);
 
   /*m_sampleRH.pos = x_rh_ref;
   m_sampleRH.vel = dx_rh_ref;
@@ -2176,6 +2179,15 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_tank, double) {
   return s;
 }
 
+DEFINE_SIGNAL_OUT_FUNCTION(denergy_tank, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal denergy_tank before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_dE_tank();
+  return s;
+}
+
 DEFINE_SIGNAL_OUT_FUNCTION(energy_bound, double) {
   if (!m_initSucceeded) {
     SEND_WARNING_STREAM_MSG("Cannot compute signal energy_bound before initialization!");
@@ -2183,10 +2195,10 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_bound, double) {
   }
   const VectorN6& v_robot = m_vSIN(iter);
   assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  const VectorN& tau_measured = m_tau_measuredSIN(iter);
+  // const VectorN& tau_measured = m_tau_measuredSIN(iter);
   // assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   m_tau_desSOUT(iter);
-  s = - v_robot.tail(m_robot_util->m_nbJoints).transpose() * tau_measured;
+  s = - v_robot.tail(m_robot_util->m_nbJoints).transpose() * m_tau_sot;
   return s;
 }
 
@@ -2254,6 +2266,17 @@ DEFINE_SIGNAL_OUT_FUNCTION(task_energy_S, dynamicgraph::Vector) {
     return s;
   }
   s = m_taskEnergy->get_S();
+  // s = S.sum();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_dS, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_dS before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_dS();
+  // s = dS.sum();
   return s;
 }
 

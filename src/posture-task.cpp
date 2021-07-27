@@ -93,8 +93,25 @@ using namespace dg::sot;
   << m_com_measuredSIN \
   << m_active_jointsSIN
 
-#define OUTPUT_SIGNALS m_tau_desSOUT << m_dv_desSOUT << m_v_desSOUT << m_q_desSOUT << m_comSOUT \
-                       << m_right_foot_posSOUT << m_left_foot_posSOUT
+#define OUTPUT_SIGNALS m_tau_desSOUT \
+  << m_dv_desSOUT \
+  << m_v_desSOUT \
+  << m_q_desSOUT \
+  << m_comSOUT \
+  << m_energySOUT \
+  << m_energy_derivativeSOUT \
+  << m_energy_tankSOUT \
+  << m_denergy_tankSOUT \
+  << m_energy_boundSOUT \
+  << m_task_energy_boundSOUT \
+  << m_task_energy_alphaSOUT \
+  << m_task_energy_betaSOUT \
+  << m_task_energy_gammaSOUT \
+  << m_task_energy_SSOUT \
+  << m_task_energy_dSSOUT \
+  << m_task_energy_ASOUT \
+  << m_right_foot_posSOUT \
+  << m_left_foot_posSOUT
 
 
 /// Define EntityClassName here rather than in the header file
@@ -142,6 +159,18 @@ PostureTask(const std::string& name)
   , CONSTRUCT_SIGNAL_OUT(com,                        dg::Vector, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(right_foot_pos,             dg::Vector, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(left_foot_pos,              dg::Vector, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(energy, double, INPUT_SIGNALS << m_q_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(energy_derivative, double, m_energySOUT)
+  , CONSTRUCT_SIGNAL_OUT(energy_tank, double, INPUT_SIGNALS << m_q_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(denergy_tank, double, INPUT_SIGNALS << m_q_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(energy_bound, double, INPUT_SIGNALS)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_bound, double, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_alpha, double, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_beta, double, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_gamma, double, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_S, dg::Vector, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_dS, dg::Vector, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(task_energy_A, double, m_tau_desSOUT)
   , m_t(0.0)
   , m_initSucceeded(false)
   , m_enabled(false)
@@ -263,6 +292,19 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
     m_taskActBounds->setBounds(-tau_max, tau_max);
     m_invDyn->addActuationTask(*m_taskActBounds, 1.0, 0);
 
+    const VectorN6& q_robot = m_qSIN(0);
+    assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+    const VectorN6& v_robot = m_vSIN(0);
+    assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+
+    // ENERGY TASK
+    m_taskEnergy = new TaskEnergy("task-energy", *m_robot, q_robot, v_robot, dt, 0.003);
+    Vector K_energy(m_robot_util->m_nbJoints + 6);
+    K_energy.head<6>() = 0.0 * Vector::Ones(6);
+    K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
+    m_taskEnergy->K(K_energy);
+    m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0);
+
     // TRAJECTORY INIT
     m_samplePosture = TrajectorySample(m_robot->nv() - 6);
 
@@ -271,10 +313,6 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
 
     // COM OFFSET
     if (m_com_measuredSIN.isPlugged()){
-      const VectorN6& q_robot = m_qSIN(0);
-      assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-      const VectorN6& v_robot = m_vSIN(0);
-      assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
       const dg::Vector& com_measured = m_com_measuredSIN(0);
       assert(com_measured.size() == 3);
       SEND_MSG("COM_measured: " + toString(com_measured), MSG_TYPE_ERROR);
@@ -328,7 +366,7 @@ DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
       m_taskBlockedJoints->setMask(blocked_joints);
       TrajectorySample ref_zero(static_cast<unsigned int>(m_robot_util->m_nbJoints));
       m_taskBlockedJoints->setReference(ref_zero);
-      m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
+      //m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
     }
   } else if (!active_joints_sot.any()) {
     /* from some ON to all OFF */
@@ -521,6 +559,126 @@ DEFINE_SIGNAL_OUT_FUNCTION(right_foot_pos, dynamicgraph::Vector) {
   m_robot->framePosition(m_invDyn->data(), m_frame_id_rf, oMi);
   tsid::math::SE3ToXYZQUAT(oMi, s);
   // tsid::math::SE3ToVector(oMi, s);
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(energy, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal energy before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_H();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(energy_derivative, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal energy_derivative before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_dH();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(energy_tank, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal energy_tank before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_E_tank();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(denergy_tank, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal denergy_tank before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_dE_tank();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(energy_bound, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal energy_bound before initialization!");
+    return s;
+  }
+  const VectorN6& v_robot = m_vSIN(iter);
+  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  m_tau_desSOUT(iter);
+  s = - v_robot.tail(m_robot_util->m_nbJoints).transpose() * m_tau_sot;
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_bound, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_bound before initialization!");
+    return s;
+  }
+  m_q_desSOUT(iter);
+  const VectorN6& v_robot = m_vSIN(iter);
+  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  // double vJF = v_robot.transpose() * m_JF;
+  double lowB = m_taskEnergy->get_lowerBound() + v_robot.transpose() * m_robot->nonLinearEffects(m_invDyn->data());
+  s = lowB;
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_alpha, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_alpha before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_alpha();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_beta, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_beta before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_beta();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_gamma, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_gamma before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_gamma();
+  return s;
+}
+
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_S, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_S before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_S();
+  // s = S.sum();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_dS, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_dS before initialization!");
+    return s;
+  }
+  s = m_taskEnergy->get_dS();
+  // s = dS.sum();
+  return s;
+}
+
+DEFINE_SIGNAL_OUT_FUNCTION(task_energy_A, double) {
+  if (!m_initSucceeded) {
+    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_A before initialization!");
+    return s;
+  }
+  Vector A = m_taskEnergy->get_A_vector();
+  s = A.sum();
   return s;
 }
 

@@ -231,6 +231,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(energy, double);
   DECLARE_SIGNAL_OUT(energy_derivative, double);
   DECLARE_SIGNAL_OUT(energy_tank, double);
+  DECLARE_SIGNAL_OUT(denergy_tank, double);
   DECLARE_SIGNAL_OUT(energy_bound, double);
   DECLARE_SIGNAL_OUT(task_energy_const, double);
   DECLARE_SIGNAL_OUT(task_energy_bound, double);
@@ -238,6 +239,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(task_energy_beta, double);
   DECLARE_SIGNAL_OUT(task_energy_gamma, double);
   DECLARE_SIGNAL_OUT(task_energy_S, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_dS, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(task_energy_A, double);
 
   /// This signal copies active_joints only if it changes from a all false or to an all false value
