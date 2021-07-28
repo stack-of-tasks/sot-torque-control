@@ -428,6 +428,12 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
   addCommand("removeTaskLeftHand",
              makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeTaskLeftHand,
                               docCommandVoid1("lowers the left hand.", "Transition time in seconds (double)")));
+  addCommand("addTaskLeftHandContact",
+             makeCommandVoid1(*this, &InverseDynamicsBalanceController::addTaskLeftHandContact,
+                              docCommandVoid1("add left hand contact.", "Transition time in seconds (double)")));
+  addCommand("removeTaskLeftHandContact",
+             makeCommandVoid1(*this, &InverseDynamicsBalanceController::removeTaskLeftHandContact,
+                              docCommandVoid1("remove left hand contact.", "Transition time in seconds (double)")));
 }
 
 Vector InverseDynamicsBalanceController::actFrame(pinocchio::SE3 frame, Vector vec) {
@@ -604,6 +610,32 @@ void InverseDynamicsBalanceController::removeTaskLeftHand(const double& transiti
   }
 }
 
+void InverseDynamicsBalanceController::addTaskLeftHandContact(const double& transitionTime) {
+  if (m_f_ext_left_armSIN.isPlugged()){ 
+    std::cout << "########### ADD TASK CONTACT LEFT HAND ################" << std::endl;
+    pinocchio::SE3 H_lh = m_robot->position(m_invDyn->data(), 
+                                            m_robot->model().getJointId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name));
+    m_contactLH->setReference(H_lh);
+    m_invDyn->addRigidContact(*m_contactLH, 1e-3, 10, 1);
+    m_invDyn->addForceTask(*m_taskForceLH, 100, 1);
+    m_taskLHContactOn = true;
+  } else {
+    SEND_MSG("Error while adding left hand contact. No signal for external force", MSG_TYPE_ERROR);
+  }
+}
+
+void InverseDynamicsBalanceController::removeTaskLeftHandContact(const double& transitionTime) {
+  std::cout << "########### REMOVE TASK CONTACT LEFT HAND ################" << std::endl;
+  bool res = m_invDyn->removeRigidContact(m_contactLH->name(), transitionTime);
+  if (!res) {
+    const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+    SEND_MSG("Error while remove left hand contact." + tsid::solvers::HQPDataToString(hqpData, false),
+              MSG_TYPE_ERROR);
+  }
+  m_invDyn->removeTask(m_taskForceLH->name(), 0.0);
+  m_taskLHContactOn = false;
+}
+
 void InverseDynamicsBalanceController::init(const double& dt, const std::string& robotRef) {
   if (dt <= 0.0) return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
@@ -776,10 +808,10 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_taskLH->Kd(kd_hands);
 
     // HANDS CONTACTS (not yet added, only when force ext in hands sensors detected)
-    m_contactLH = new ContactPoint("contact-lh", *m_robot, m_robot_util->m_hand_util.m_Left_Hand_Frame_Name,
+    m_contactLH = new ContactPoint("contact-lh", *m_robot, "wrist_left_ft_link",
                                    contactNormal, mu, fMin, fMaxRF);
-    m_contactLH->Kp(kp_contact);
-    m_contactLH->Kd(kd_contact);
+    m_contactLH->Kp(kp_contact.head(3));
+    m_contactLH->Kd(kd_contact.head(3));
     //m_invDyn->addRigidContact(*m_contactLH, w_forces, 10, 1);
     m_taskForceLH = new TaskContactForceEquality("task-force-lh", *m_robot, m_contactLH->name());
     m_taskForceLH->Kp(kp_hands);
@@ -947,29 +979,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   {
         m_leftHandState = TASK_LEFT_HAND_ON;
   }*/
-
-  if (m_f_ext_left_armSIN.isPlugged()){
-    const Vector6& f_ext_left_hand = m_f_ext_left_armSIN(iter);    
-    if ((not m_taskLHContactOn) && (f_ext_left_hand.head(3).norm() > ZERO_FORCE_THRESHOLD)){
-      std::cout << "########### ADD TASK CONTACT LEFT HAND ################" << std::endl;
-      pinocchio::SE3 H_lh = m_robot->position(m_invDyn->data(), 
-                                              m_robot->model().getJointId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name));
-      m_contactLH->setReference(H_lh);
-      m_invDyn->addRigidContact(*m_contactLH, 1e-3, 10, 1);
-      m_invDyn->addForceTask(*m_taskForceLH, 100, 1);
-      m_taskLHContactOn = true;
-    } else if ((m_taskLHContactOn) && (f_ext_left_hand.head(3).norm() < ZERO_FORCE_THRESHOLD)){
-      std::cout << "########### REMOVE TASK CONTACT LEFT HAND ################" << std::endl;
-      bool res = m_invDyn->removeRigidContact(m_contactLH->name(), 0.0);
-      if (!res) {
-        const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
-        SEND_MSG("Error while remove left hand contact." + tsid::solvers::HQPDataToString(hqpData, false),
-                  MSG_TYPE_ERROR);
-      }
-      m_invDyn->removeTask(m_taskForceLH->name(), 0.0);
-      m_taskLHContactOn = false;
-    }
-  } 
 
   getProfiler().start(PROFILE_READ_INPUT_SIGNALS);
   m_w_feetSIN(iter);

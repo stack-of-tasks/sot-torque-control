@@ -89,6 +89,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   void removeTaskRightHand(const double& transitionTime);
   void addTaskLeftHand(/*const double& transitionTime*/);
   void removeTaskLeftHand(const double& transitionTime);
+  void addTaskLeftHandContact(const double& transitionTime);
+  void removeTaskLeftHandContact(const double& transitionTime);
 
   /* --- SIGNALS --- */
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
