@@ -88,6 +88,12 @@ using namespace dg::sot;
   << m_f_minSIN \
   << m_f_max_right_footSIN \
   << m_f_max_left_footSIN \
+  << m_base_orientation_ref_posSIN \
+  << m_base_orientation_ref_velSIN \
+  << m_base_orientation_ref_accSIN \
+  << m_kp_base_orientationSIN \
+  << m_kd_base_orientationSIN \
+  << m_w_base_orientationSIN \
   << m_qSIN \
   << m_vSIN \
   << m_com_measuredSIN \
@@ -147,6 +153,12 @@ PostureTask(const std::string& name)
   , CONSTRUCT_SIGNAL_IN(f_min,                       double)
   , CONSTRUCT_SIGNAL_IN(f_max_right_foot,            double)
   , CONSTRUCT_SIGNAL_IN(f_max_left_foot,             double)
+  , CONSTRUCT_SIGNAL_IN(base_orientation_ref_pos, dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(base_orientation_ref_vel, dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(base_orientation_ref_acc, dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector)
+  , CONSTRUCT_SIGNAL_IN(w_base_orientation, double)
   , CONSTRUCT_SIGNAL_IN(q,                           dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(v,                           dynamicgraph::Vector)
   , CONSTRUCT_SIGNAL_IN(com_measured,                dynamicgraph::Vector)
@@ -241,6 +253,9 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
   const double& fMaxLF = m_f_max_left_footSIN(0);
   const VectorN& kp_posture = m_kp_postureSIN(0);
   const VectorN& kd_posture = m_kd_postureSIN(0);
+  const dg::sot::Vector6d& kp_base_orientation = m_kp_base_orientationSIN(0);
+  const dg::sot::Vector6d& kd_base_orientation = m_kd_base_orientationSIN(0);
+  m_w_base_orientation = m_w_base_orientationSIN(0);
 
   assert(kp_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   assert(kd_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
@@ -285,6 +300,19 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
     m_taskPosture->Kp(kp_posture);
     m_taskPosture->Kd(kd_posture);
     m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
+
+    // TASK BASE ORIENTATION
+    m_taskWaist = new TaskSE3Equality("task-waist", *m_robot, "root_joint");
+    m_taskWaist->Kp(kp_base_orientation);
+    m_taskWaist->Kd(kd_base_orientation);
+    // Add a Mask to the task which will select the vector dimensions on which the task will act.
+    // In this case the waist configuration is a vector 6d (position and orientation -> SE3)
+    // Here we set a mask = [0 0 0 1 1 1] so the task on the waist will act on the orientation of the robot
+    Eigen::VectorXd mask_orientation(6);
+    mask_orientation << 0, 0, 0, 1, 1, 1;
+    m_taskWaist->setMask(mask_orientation);
+    // Add the task to the HQP with weight = 1.0, priority level = 1 (in the cost function) and a transition duration = 0.0
+    m_invDyn->addMotionTask(*m_taskWaist, m_w_base_orientation, 1);
 
     // ACTUATION BOUNDS TASK
     Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
@@ -407,6 +435,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   const double & w_posture = m_w_postureSIN(iter);
 
+  const VectorN& x_waist_ref = m_base_orientation_ref_posSIN(iter);
+  const Vector6& dx_waist_ref = m_base_orientation_ref_velSIN(iter);
+  const Vector6& ddx_waist_ref = m_base_orientation_ref_accSIN(iter);
+  const dg::sot::Vector6d& kp_base_orientation = m_kp_base_orientationSIN(iter);
+  const dg::sot::Vector6d& kd_base_orientation = m_kd_base_orientationSIN(iter);
+  const double & w_base_orientation = m_w_base_orientationSIN(iter);
 
   // Update tasks
   m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
@@ -420,6 +454,16 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
   }
 
+  m_sampleWaist.pos = x_waist_ref;
+  m_sampleWaist.vel = dx_waist_ref;
+  m_sampleWaist.acc = ddx_waist_ref;
+  m_taskWaist->setReference(m_sampleWaist);
+  m_taskWaist->Kp(kp_base_orientation);
+  m_taskWaist->Kd(kd_base_orientation);
+  if (m_w_base_orientation != w_base_orientation) {
+    m_w_base_orientation = w_base_orientation;
+    m_invDyn->updateTaskWeight(m_taskWaist->name(), w_base_orientation);
+  }
 
   if (m_firstTime) {
     m_firstTime = false;    

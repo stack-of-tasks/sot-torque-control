@@ -102,6 +102,13 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_IN(f_max_right_foot, double);
   DECLARE_SIGNAL_IN(f_max_left_foot, double);
 
+  DECLARE_SIGNAL_IN(base_orientation_ref_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(base_orientation_ref_vel, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(base_orientation_ref_acc, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_base_orientation, double);
+
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_measured, dynamicgraph::Vector);
@@ -162,13 +169,16 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
-  tsid::tasks::TaskEnergy* m_taskEnergy;
+  tsid::tasks::TaskEnergy* m_taskEnergy;  
+  tsid::tasks::TaskSE3Equality* m_taskWaist;
 
   /// Trajectories of the tasks
   tsid::trajectories::TrajectorySample m_samplePosture;
+  tsid::trajectories::TrajectorySample m_sampleWaist;
 
   /// Weights of the Tasks (which can be changed)
   double m_w_posture;
+  double m_w_base_orientation;
 
   /// Computed solutions (accelerations and torques) and their derivatives
   tsid::math::Vector m_dv_sot;   /// desired accelerations (sot order)
