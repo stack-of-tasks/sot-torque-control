@@ -229,6 +229,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(left_hand_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_acc_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_acc_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(LH_force_world, dynamicgraph::Vector);
 
   /// This signal copies active_joints only if it changes from a all false or to an all false value
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
