@@ -135,7 +135,7 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_OUT(task_energy_S, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(task_energy_dS, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(task_energy_A, double);
-  DECLARE_SIGNAL_OUT(base_orientation, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(base_orientation, double);
 
   /* --- COMMANDS --- */
 

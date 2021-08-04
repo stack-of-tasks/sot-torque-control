@@ -728,7 +728,7 @@ DEFINE_SIGNAL_OUT_FUNCTION(task_energy_A, double) {
   return s;
 }
 
-DEFINE_SIGNAL_OUT_FUNCTION(base_orientation, dynamicgraph::Vector) {
+DEFINE_SIGNAL_OUT_FUNCTION(base_orientation, double) {
   if (!m_initSucceeded) {
     std::ostringstream oss("Cannot compute signal base_orientation before initialization! iter:");
     oss << iter;
@@ -736,11 +736,13 @@ DEFINE_SIGNAL_OUT_FUNCTION(base_orientation, dynamicgraph::Vector) {
     return s;
   }
   m_tau_desSOUT(iter);
-  pinocchio::SE3 oMi;
-  int frame_id_waist = (int)m_robot->model().getFrameId("root_joint");
-  m_robot->framePosition(m_invDyn->data(), frame_id_waist, oMi);
-  s.resize(12);
-  tsid::math::SE3ToVector(oMi, s);
+  // pinocchio::SE3 oMi;
+  // int frame_id_waist = (int)m_robot->model().getFrameId("root_joint");
+  // m_robot->framePosition(m_invDyn->data(), frame_id_waist, oMi);
+  // s.resize(12);
+  // tsid::math::SE3ToVector(oMi, s);
+  Vector error = m_taskWaist->position_error();
+  s = error.norm();
   return s;
 }
 
