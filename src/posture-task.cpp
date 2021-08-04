@@ -117,7 +117,8 @@ using namespace dg::sot;
   << m_task_energy_dSSOUT \
   << m_task_energy_ASOUT \
   << m_right_foot_posSOUT \
-  << m_left_foot_posSOUT
+  << m_left_foot_posSOUT \
+  << m_base_orientationSOUT
 
 
 /// Define EntityClassName here rather than in the header file
@@ -183,6 +184,7 @@ PostureTask(const std::string& name)
   , CONSTRUCT_SIGNAL_OUT(task_energy_S, dg::Vector, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(task_energy_dS, dg::Vector, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(task_energy_A, double, m_tau_desSOUT)
+  , CONSTRUCT_SIGNAL_OUT(base_orientation, double, m_tau_desSOUT)
   , m_t(0.0)
   , m_initSucceeded(false)
   , m_enabled(false)
@@ -725,6 +727,23 @@ DEFINE_SIGNAL_OUT_FUNCTION(task_energy_A, double) {
   s = A.sum();
   return s;
 }
+
+DEFINE_SIGNAL_OUT_FUNCTION(base_orientation, dynamicgraph::Vector) {
+  if (!m_initSucceeded) {
+    std::ostringstream oss("Cannot compute signal base_orientation before initialization! iter:");
+    oss << iter;
+    SEND_WARNING_STREAM_MSG(oss.str());
+    return s;
+  }
+  m_tau_desSOUT(iter);
+  pinocchio::SE3 oMi;
+  int frame_id_waist = (int)m_robot->model().getFrameId("root_joint");
+  m_robot->framePosition(m_invDyn->data(), frame_id_waist, oMi);
+  s.resize(12);
+  tsid::math::SE3ToVector(oMi, s);
+  return s;
+}
+
 
 /* --- COMMANDS ---------------------------------------------------------- */
 
