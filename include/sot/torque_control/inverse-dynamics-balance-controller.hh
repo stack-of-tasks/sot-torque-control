@@ -186,7 +186,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(ref_phase, int);
 
   DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
-  DECLARE_SIGNAL_IN(ref_pos_final, dynamicgraph::Vector);
+  // DECLARE_SIGNAL_IN(ref_pos_final, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_OUT(tau_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(M, dynamicgraph::Matrix);

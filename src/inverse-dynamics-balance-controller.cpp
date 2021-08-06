@@ -168,7 +168,7 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_wrench_right_footSIN \
   << m_ref_phaseSIN \
   << m_active_jointsSIN \
-  << m_ref_pos_finalSIN
+  // << m_ref_pos_finalSIN
 
 #define OUTPUT_SIGNALS m_tau_desSOUT \
   << m_MSOUT \
@@ -328,7 +328,7 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(wrench_right_foot, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(ref_phase, int),
       CONSTRUCT_SIGNAL_IN(active_joints, dynamicgraph::Vector),      
-      CONSTRUCT_SIGNAL_IN(ref_pos_final, dynamicgraph::Vector),
+      // CONSTRUCT_SIGNAL_IN(ref_pos_final, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_OUT(tau_des, dynamicgraph::Vector, INPUT_SIGNALS),
       CONSTRUCT_SIGNAL_OUT(M, dg::Matrix, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(dv_des, dg::Vector, m_tau_desSOUT),
@@ -513,12 +513,13 @@ void InverseDynamicsBalanceController::updateComOffset() {
 }
 
 void InverseDynamicsBalanceController::setControlOutputType(const std::string& type) {
-  for (int i = 0; i < CONTROL_OUTPUT_SIZE; i++)
+  for (int i = 0; i < CONTROL_OUTPUT_SIZE; i++) {
     if (type == ControlOutput_s[i]) {
       m_ctrlMode = (ControlOutput)i;
       sotDEBUG(25) << "Control output type: " << ControlOutput_s[i] << endl;
       return;
     }
+  }
   sotDEBUG(25) << "Unrecognized control output type: " << type << endl;
 }
 
@@ -1137,8 +1138,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const Vector3& kd_com = m_kd_comSIN(iter);
   const Vector3& kp_am = m_kp_amSIN(iter);
   const Vector3& kd_am = m_kd_amSIN(iter);
-  const dg::sot::Vector6d& kp_base_orientation = m_kp_base_orientationSIN(0);
-  const dg::sot::Vector6d& kd_base_orientation = m_kd_base_orientationSIN(0);
+  const dg::sot::Vector6d& kp_base_orientation = m_kp_base_orientationSIN(iter);
+  const dg::sot::Vector6d& kd_base_orientation = m_kd_base_orientationSIN(iter);
 
   const VectorN& kp_posture = m_kp_postureSIN(iter);
   assert(kp_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
@@ -1324,8 +1325,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   const VectorN& tau_measured = m_tau_measuredSIN(iter);
   assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  const Vector& q_ref_final = m_ref_pos_finalSIN(iter);
-  assert(q_ref_final.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  // const Vector& q_ref_final = m_ref_pos_finalSIN(iter);
+  // assert(q_ref_final.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
   // Vector q_ref_final_urdf;
   // q_ref_final_urdf.setZero(39);
   // m_robot_util->config_sot_to_urdf(q_ref_final, q_ref_final_urdf);
