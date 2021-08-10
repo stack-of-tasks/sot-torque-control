@@ -614,16 +614,13 @@ void InverseDynamicsBalanceController::removeTaskLeftHand(const double& transiti
 
 void InverseDynamicsBalanceController::addTaskLeftHandContact(const double& transitionTime) {
   if (m_f_ext_left_armSIN.isPlugged()){ 
-    std::cout << "########### ADD TASK CONTACT LEFT HAND ################" << std::endl;
-    pinocchio::SE3 H_lh = m_robot->position(m_invDyn->data(), 
-                                            m_robot->model().getJointId("arm_left_7_joint"));
-    m_contactLH->setReference(H_lh);
+    int sensorFrameId = (int)m_robot->model().getFrameId("wrist_left_ft_link");
+    pinocchio::framesForwardKinematics(m_robot->model(), m_invDyn->data(), m_q_urdf);
+    pinocchio::SE3 sensorPlacement = (m_invDyn->data()).oMf[sensorFrameId];
+    m_contactLH->setReference(sensorPlacement);
     const double & w_hands = m_w_handsSIN.accessCopy();
-    std::cout << "########### setReference ok ################" << std::endl;
-    m_invDyn->addRigidContact(*m_contactLH, 1e-3, 10, 1);
-    std::cout << "########### Add rigid contact ok ################" << std::endl;
+    m_invDyn->addRigidContact(*m_contactLH, 1e-6, 10, 1);
     m_invDyn->addForceTask(*m_taskForceLH, w_hands, 1);
-    std::cout << "########### Add force contact ok ################" << std::endl;
     m_taskLHContactOn = true;
   } else {
     SEND_MSG("Error while adding left hand contact. No signal for external force", MSG_TYPE_ERROR);
@@ -631,7 +628,6 @@ void InverseDynamicsBalanceController::addTaskLeftHandContact(const double& tran
 }
 
 void InverseDynamicsBalanceController::removeTaskLeftHandContact(const double& transitionTime) {
-  std::cout << "########### REMOVE TASK CONTACT LEFT HAND ################" << std::endl;
   bool res = m_invDyn->removeRigidContact(m_contactLH->name(), transitionTime);
   if (!res) {
     const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -814,25 +810,26 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     // m_taskLH->Kd(kd_hands);
 
     // HANDS CONTACTS (not yet added, only when force ext in hands sensors detected)
-    // Eigen::Matrix<double, 3, 4> contactPointsHand;
-    // contactPointsHand << 0.01, 0.01, -0.01, -0.01;
-    // contactPointsHand << 0.01, 0.01, -0.01, -0.01;
-    // contactPointsHand << -0.1, -0.1, -0.1, -0.1;
-
-    // m_contactLH = new Contact6d("contact-lh", *m_robot, "arm_left_7_joint",
-    //                             contactPointsHand, contactNormalHand, mu, fMin, fMaxRF); //
-    // m_contactLH->Kp(kp_contact);
-    // m_contactLH->Kd(kd_contact);
     Eigen::Vector3d contactNormalHand = Vector::Zero(3);
-    contactNormalHand[0] = 1.0;
-    m_contactLH = new ContactPoint("contact-lh", *m_robot, "wrist_left_ft_link",
-                                   contactNormalHand, mu, fMin, fMaxRF); //
-    m_contactLH->Kp(kp_contact.head(3));
-    m_contactLH->Kd(kd_contact.head(3));
+    contactNormalHand[2] = 1.0;
+    Eigen::Matrix<double, 3, 4> contactPointsHand;
+    contactPointsHand.row(0) << 0.01, 0.01, -0.01, -0.01;
+    contactPointsHand.row(1) << 0.01, 0.01, -0.01, -0.01;
+    contactPointsHand.row(2) << -0.15, -0.15, -0.15, -0.15;
+
+    m_contactLH = new Contact6d("contact-lh", *m_robot, "wrist_left_ft_link",
+                                contactPointsHand, contactNormalHand, mu, fMin, fMaxRF); //
+    m_contactLH->Kp(kp_contact);
+    m_contactLH->Kd(kd_contact);
+    
+    // m_contactLH = new ContactPoint("contact-lh", *m_robot, "wrist_left_ft_link",
+    //                                contactNormalHand, mu, fMin, fMaxRF); //
+    // m_contactLH->Kp(kp_contact.head(3));
+    // m_contactLH->Kd(kd_contact.head(3));
     //m_invDyn->addRigidContact(*m_contactLH, w_forces, 10, 1);
     m_taskForceLH = new TaskContactForceEquality("task-force-lh", *m_robot, m_contactLH->name());
     m_taskForceLH->Kp(kp_hands);
-    m_taskForceLH->Kd(kp_hands);
+    m_taskForceLH->Kd(kd_hands);
     const Vector6& ki = Vector::Ones(6);
     m_taskForceLH->Ki(ki);
 
@@ -1102,19 +1099,21 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   }
 
   if (m_taskLHContactOn) {
-    const Vector6& f_ref_wLH = m_f_ref_left_armSIN(iter);
+    const Vector6& f_ref_LH = m_f_ref_left_armSIN(iter);
     const Vector6& f_ext_LH = m_f_ext_left_armSIN(iter);
-    Vector6 f_ref_LH;
-    int sensorFrameId = (int)m_robot->model().getFrameId("wrist_left_ft_link");
-    pinocchio::framesForwardKinematics(m_robot->model(), m_invDyn->data(), m_q_urdf);
-    pinocchio::SE3 sensorPlacement = (m_invDyn->data()).oMf[sensorFrameId];
-    f_ref_LH = sensorPlacement.actInv(pinocchio::Force(f_ref_wLH)).toVector();
+    Vector6 f_ref_tool_LH, f_ext_tool_LH;;
+    pinocchio::SE3 toolPlacement = pinocchio::SE3::Identity();
+    Vector translation = Vector::Zero(3);
+    translation[2] = -0.23;
+    toolPlacement.translation() = translation;
+    f_ref_tool_LH = f_ref_LH;
+    f_ext_tool_LH = toolPlacement.act(pinocchio::Force(f_ext_LH)).toVector();
     
     const Vector6& kp_hands = m_kp_handsSIN(iter);
     const Vector6& kd_hands = m_kd_handsSIN(iter);
     const Vector6& ki = Vector::Ones(6);
-    m_sampleLHForceRef.pos = f_ref_LH;
-    m_sampleLHForceExt.pos = f_ext_LH;
+    m_sampleLHForceRef.pos = f_ref_tool_LH;
+    m_sampleLHForceExt.pos = f_ext_tool_LH;
 
     m_taskForceLH->setReference(m_sampleLHForceRef);
     m_taskForceLH->setExternalForce(m_sampleLHForceExt);
@@ -2027,10 +2026,12 @@ DEFINE_SIGNAL_OUT_FUNCTION(LH_force_world, dynamicgraph::Vector) {
     return s;
   }
   const Vector6& f_ext_LH = m_f_ext_left_armSIN.accessCopy();
-  int sensorFrameId = (int)m_robot->model().getFrameId("wrist_left_ft_link");
-  pinocchio::framesForwardKinematics(m_robot->model(), m_invDyn->data(), m_q_urdf);
-  pinocchio::SE3 sensorPlacement = (m_invDyn->data()).oMf[sensorFrameId];
-  s = sensorPlacement.act(pinocchio::Force(f_ext_LH)).toVector();
+  pinocchio::SE3 toolPlacement = pinocchio::SE3::Identity();
+  Vector translation = Vector::Zero(3);
+  translation[2] = -0.23;
+  toolPlacement.translation() = translation;
+  s = toolPlacement.act(pinocchio::Force(f_ext_LH)).toVector();
+  // s = sensorPlacement.act(pinocchio::Force(f_ext_LH)).toVector();
   return s;
 }
 

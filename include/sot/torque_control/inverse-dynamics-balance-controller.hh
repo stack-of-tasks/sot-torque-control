@@ -286,7 +286,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::contacts::Contact6d* m_contactRF;
   tsid::contacts::Contact6d* m_contactLF;
   tsid::contacts::Contact6d* m_contactRH;
-  // tsid::contacts::Contact6d* m_contactLH;
+  tsid::contacts::Contact6d* m_contactLH;
   tsid::tasks::TaskComEquality* m_taskCom;
   tsid::tasks::TaskComEquality* m_taskComAdm;
   tsid::tasks::TaskAMEquality* m_taskAM;
@@ -298,7 +298,6 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
-  tsid::contacts::ContactPoint* m_contactLH;
   tsid::tasks::TaskContactForceEquality* m_taskForceLH;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
