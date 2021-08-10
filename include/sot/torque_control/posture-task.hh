@@ -53,6 +53,7 @@
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
 #include <tsid/contacts/contact-6d.hpp>
+#include <tsid/tasks/task-energy.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
@@ -122,6 +123,20 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
 
+  DECLARE_SIGNAL_OUT(energy, double);
+  DECLARE_SIGNAL_OUT(energy_derivative, double);
+  DECLARE_SIGNAL_OUT(energy_tank, double);
+  DECLARE_SIGNAL_OUT(denergy_tank, double);
+  DECLARE_SIGNAL_OUT(energy_bound, double);
+  DECLARE_SIGNAL_OUT(task_energy_bound, double);
+  DECLARE_SIGNAL_OUT(task_energy_alpha, double);
+  DECLARE_SIGNAL_OUT(task_energy_beta, double);
+  DECLARE_SIGNAL_OUT(task_energy_gamma, double);
+  DECLARE_SIGNAL_OUT(task_energy_S, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_dS, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_A, double);
+  DECLARE_SIGNAL_OUT(base_orientation, double);
+
   /* --- COMMANDS --- */
 
   void init(const double& dt, const std::string& robotRef);
@@ -155,6 +170,7 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
+  tsid::tasks::TaskEnergy* m_taskEnergy;  
   tsid::tasks::TaskSE3Equality* m_taskWaist;
 
   /// Trajectories of the tasks
