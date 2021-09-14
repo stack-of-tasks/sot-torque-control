@@ -109,7 +109,6 @@ using namespace dg::sot;
   << m_energy_tankSOUT \
   << m_denergy_tankSOUT \
   << m_energy_boundSOUT \
-  << m_task_energy_boundSOUT \
   << m_task_energy_alphaSOUT \
   << m_task_energy_betaSOUT \
   << m_task_energy_gammaSOUT \
@@ -177,7 +176,6 @@ PostureTask(const std::string& name)
   , CONSTRUCT_SIGNAL_OUT(energy_tank, double, INPUT_SIGNALS << m_q_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(denergy_tank, double, INPUT_SIGNALS << m_q_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(energy_bound, double, INPUT_SIGNALS)
-  , CONSTRUCT_SIGNAL_OUT(task_energy_bound, double, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(task_energy_alpha, double, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(task_energy_beta, double, m_tau_desSOUT)
   , CONSTRUCT_SIGNAL_OUT(task_energy_gamma, double, m_tau_desSOUT)
@@ -328,11 +326,7 @@ void PostureTask::init(const double& dt, const std::string& robotRef) {
     assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
 
     // ENERGY TASK
-    m_taskEnergy = new TaskEnergy("task-energy", *m_robot, q_robot, v_robot, dt, 0.003);
-    Vector K_energy(m_robot_util->m_nbJoints + 6);
-    K_energy.head<6>() = 0.0 * Vector::Ones(6);
-    K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
-    m_taskEnergy->K(K_energy);
+    m_taskEnergy = new TaskEnergy("task-energy", *m_robot, dt);
     m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0);
 
     // TRAJECTORY INIT
@@ -653,20 +647,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_bound, double) {
   assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
   m_tau_desSOUT(iter);
   s = - v_robot.tail(m_robot_util->m_nbJoints).transpose() * m_tau_sot;
-  return s;
-}
-
-DEFINE_SIGNAL_OUT_FUNCTION(task_energy_bound, double) {
-  if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_bound before initialization!");
-    return s;
-  }
-  m_q_desSOUT(iter);
-  const VectorN6& v_robot = m_vSIN(iter);
-  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // double vJF = v_robot.transpose() * m_JF;
-  double lowB = m_taskEnergy->get_lowerBound() + v_robot.transpose() * m_robot->nonLinearEffects(m_invDyn->data());
-  s = lowB;
   return s;
 }
 

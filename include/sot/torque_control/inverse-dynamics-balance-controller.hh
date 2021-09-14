@@ -128,7 +128,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(f_ref_right_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_ref_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_ref_left_arm, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(df_ref_left_arm, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_ext_left_arm, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(df_ext_left_arm, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector);
@@ -242,8 +244,6 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(energy_tank, double);
   DECLARE_SIGNAL_OUT(denergy_tank, double);
   DECLARE_SIGNAL_OUT(energy_bound, double);
-  DECLARE_SIGNAL_OUT(task_energy_const, double);
-  DECLARE_SIGNAL_OUT(task_energy_bound, double);
   DECLARE_SIGNAL_OUT(task_energy_alpha, double);
   DECLARE_SIGNAL_OUT(task_energy_beta, double);
   DECLARE_SIGNAL_OUT(task_energy_gamma, double);

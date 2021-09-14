@@ -128,7 +128,6 @@ class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_OUT(energy_tank, double);
   DECLARE_SIGNAL_OUT(denergy_tank, double);
   DECLARE_SIGNAL_OUT(energy_bound, double);
-  DECLARE_SIGNAL_OUT(task_energy_bound, double);
   DECLARE_SIGNAL_OUT(task_energy_alpha, double);
   DECLARE_SIGNAL_OUT(task_energy_beta, double);
   DECLARE_SIGNAL_OUT(task_energy_gamma, double);

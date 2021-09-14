@@ -116,7 +116,9 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_f_ref_right_footSIN \
   << m_f_ref_left_footSIN \
   << m_f_ref_left_armSIN \
+  << m_df_ref_left_armSIN \
   << m_f_ext_left_armSIN \
+  << m_df_ext_left_armSIN \
   << m_kp_base_orientationSIN \
   << m_kd_base_orientationSIN \
   << m_kp_constraintsSIN \
@@ -223,8 +225,6 @@ typedef SolverHQuadProgRT<48, 30, 17> SolverHQuadProgRT48x30x17;
   << m_energy_tankSOUT \
   << m_denergy_tankSOUT \
   << m_energy_boundSOUT \
-  << m_task_energy_constSOUT \
-  << m_task_energy_boundSOUT \
   << m_task_energy_alphaSOUT \
   << m_task_energy_betaSOUT \
   << m_task_energy_gammaSOUT \
@@ -276,7 +276,9 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_IN(f_ref_right_foot, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(f_ref_left_foot, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(f_ref_left_arm, dynamicgraph::Vector),
-      CONSTRUCT_SIGNAL_IN(f_ext_left_arm, dynamicgraph::Vector), 
+      CONSTRUCT_SIGNAL_IN(df_ref_left_arm, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(f_ext_left_arm, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(df_ext_left_arm, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kp_constraints, dynamicgraph::Vector),
@@ -382,8 +384,6 @@ InverseDynamicsBalanceController::InverseDynamicsBalanceController(const std::st
       CONSTRUCT_SIGNAL_OUT(energy_tank, double, INPUT_SIGNALS << m_q_desSOUT),
       CONSTRUCT_SIGNAL_OUT(denergy_tank, double, INPUT_SIGNALS << m_q_desSOUT),
       CONSTRUCT_SIGNAL_OUT(energy_bound, double, INPUT_SIGNALS),
-      CONSTRUCT_SIGNAL_OUT(task_energy_const, double, m_tau_desSOUT), 
-      CONSTRUCT_SIGNAL_OUT(task_energy_bound, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_alpha, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_beta, double, m_tau_desSOUT),
       CONSTRUCT_SIGNAL_OUT(task_energy_gamma, double, m_tau_desSOUT),
@@ -671,12 +671,12 @@ void InverseDynamicsBalanceController::setEnergyTank(const double& tankValue) {
 
 void InverseDynamicsBalanceController::addTaskLeftHandContact(const double& transitionTime) {
   if (m_f_ext_left_armSIN.isPlugged()){ 
-    int sensorFrameId = (int)m_robot->model().getFrameId("wrist_left_ft_link");
+    int sensorFrameId = (int)m_robot->model().getFrameId("arm_left_7_link");
     pinocchio::framesForwardKinematics(m_robot->model(), m_invDyn->data(), m_q_urdf);
     pinocchio::SE3 sensorPlacement = (m_invDyn->data()).oMf[sensorFrameId];
     m_contactLH->setReference(sensorPlacement);
     const double & w_hands = m_w_handsSIN.accessCopy();
-    m_invDyn->addRigidContact(*m_contactLH, 1e-6, 10, 1);
+    m_invDyn->addRigidContact(*m_contactLH, 1e-3, 10, 1);
     m_invDyn->addForceTask(*m_taskForceLH, w_hands, 1);
     m_taskLHContactOn = true;
   } else {
@@ -790,17 +790,13 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
                                 contactPoints, contactNormal, mu, fMin, fMaxRF);
     m_contactRF->Kp(kp_contact);
     m_contactRF->Kd(kd_contact);
-    Vector forceRef = Vector::Zero(6);
-    forceRef[2] = 450.0;
-    m_contactRF->setForceReference(forceRef);
-    m_invDyn->addRigidContact(*m_contactRF, w_forces, 1e3, 1);
+    m_invDyn->addRigidContact(*m_contactRF, w_forces, 100, 1);
 
     m_contactLF = new Contact6d("contact_lfoot", *m_robot, m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
                                 contactPoints, contactNormal, mu, fMin, fMaxLF);
     m_contactLF->Kp(kp_contact);
     m_contactLF->Kd(kd_contact);
-    m_contactLF->setForceReference(forceRef);
-    m_invDyn->addRigidContact(*m_contactLF, w_forces, 1e3, 1);
+    m_invDyn->addRigidContact(*m_contactLF, w_forces, 100, 1);
 
    if (m_f_ref_left_footSIN.isPlugged() && m_f_ref_right_footSIN.isPlugged()) {
      m_contactLF->setRegularizationTaskWeightVector(Vector6::Ones());
@@ -824,9 +820,6 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
       m_taskComAdm->setMask(mask_com_adm);
       m_invDyn->addMotionTask(*m_taskComAdm, m_w_com, 1);
     }
-    // Eigen::VectorXd mask_com(3);
-    // mask_com << 1, 1, 0;
-    // m_taskCom->setMask(mask_com);
     m_invDyn->addMotionTask(*m_taskCom, m_w_com, 1);
 
     // TASK ANGULAR MOMENTUM
@@ -861,18 +854,10 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_taskPosture = new TaskJointPosture("task-posture", *m_robot);
     m_taskPosture->Kp(kp_posture);
     m_taskPosture->Kd(kd_posture);
-    //Eigen::VectorXd mask_armR(m_robot->nv() - 6);
-    //mask_armR = Vector::Ones(m_robot->nv() - 6);
-    //mask_armR[25] = 0.0;
-    //mask_armR.segment<8>(22) = Vector::Zero(8);
-    
-    //m_taskPosture->setMask(mask_armR);
-
     m_invDyn->addMotionTask(*m_taskPosture, m_w_posture, 1);
 
     // ACTUATION BOUNDS TASK
-    Vector tau_max = 0.8 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
-    std::cout << "################# tau_max : " << tau_max << " ############"  << std::endl;
+    Vector tau_max = 0.9 * m_robot->model().effortLimit.tail(m_robot->nv() - 6);
     m_taskActBounds = new TaskActuationBounds("task-actuation-bounds", *m_robot);
     m_taskActBounds->setBounds(-tau_max, tau_max);
     m_invDyn->addActuationTask(*m_taskActBounds, 1.0, 0);
@@ -882,10 +867,6 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     Vector v_max = 0.8 * m_robot->model().velocityLimit.tail(m_robot->nv() - 6);
     m_taskJointBounds->setVelocityBounds(-v_max, v_max);
     //m_invDyn->addMotionTask(*m_taskJointBounds, 1.0, 0);
-
-    // TASK CoP
-    // m_taskCoP = new TaskCopEquality("task-cop", *m_robot);
-    // m_invDyn->addForceTask(*m_taskCoP, 0.0, 1, 0);
 
     // HANDS TASKS (not added yet to the invDyn pb, only when the command addTaskXHand is called)
     m_taskRH = new TaskSE3Equality("task-rh", *m_robot, "gripper_right_base_link"); //m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
@@ -908,20 +889,15 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     contactPointsHand.row(1) << 0.01, 0.01, -0.01, -0.01;
     contactPointsHand.row(2) << -0.15, -0.15, -0.15, -0.15;
 
-    m_contactLH = new Contact6d("contact-lh", *m_robot, "wrist_left_ft_link",
-                                contactPointsHand, contactNormalHand, mu, fMin, fMaxRF); //
+    m_contactLH = new Contact6d("contact-lh", *m_robot, "arm_left_7_link",
+                                contactPointsHand, contactNormalHand, 0.01, fMin, fMaxRF); //
     m_contactLH->Kp(kp_contact);
     m_contactLH->Kd(kd_contact);
     
-    // m_contactLH = new ContactPoint("contact-lh", *m_robot, "wrist_left_ft_link",
-    //                                contactNormalHand, mu, fMin, fMaxRF); //
-    // m_contactLH->Kp(kp_contact.head(3));
-    // m_contactLH->Kd(kd_contact.head(3));
-    //m_invDyn->addRigidContact(*m_contactLH, w_forces, 10, 1);
-    m_taskForceLH = new TaskContactForceEquality("task-force-lh", *m_robot, m_contactLH->name());
+    m_taskForceLH = new TaskContactForceEquality("task-force-lh", *m_robot, dt, m_contactLH->name());
     m_taskForceLH->Kp(kp_hands);
     m_taskForceLH->Kd(kd_hands);
-    const Vector6& ki = Vector::Ones(6);
+    const Vector6& ki = 5* Vector::Ones(6);
     m_taskForceLH->Ki(ki);
 
     const VectorN6& q_robot = m_qSIN(0);
@@ -930,13 +906,8 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
 
     // ENERGY TASK
-    m_taskEnergy = new TaskEnergy("task-energy", *m_robot, q_robot, v_robot, dt, 0.003);
-    Vector K_energy(m_robot_util->m_nbJoints + 6);
-    //K_energy = 20.0 * Vector::Ones(m_robot_util->m_nbJoints + 6);
-    K_energy.head<6>() = 0.0 * Vector::Ones(6);
-    K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
-    m_taskEnergy->K(K_energy);
-    m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0);
+    m_taskEnergy = new TaskEnergy("task-energy", *m_robot, dt);
+    // m_invDyn->addEnergyTask(*m_taskEnergy, 1, 0);
 
     // TRAJECTORIES INIT
     m_sampleCom = TrajectorySample(3);
@@ -955,7 +926,7 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     m_frame_id_rf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
     m_frame_id_lf = (int)m_robot->model().getFrameId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
 
-    m_frame_id_rh = (int)m_robot->model().getFrameId("gripper_right_base_link");//m_robot_util->m_hand_util.m_Right_Hand_Frame_Name);
+    m_frame_id_rh = (int)m_robot->model().getFrameId("gripper_right_base_link");
     m_frame_id_lh = (int)m_robot->model().getFrameId(m_robot_util->m_hand_util.m_Left_Hand_Frame_Name);
     
     m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
@@ -965,15 +936,11 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     Vector3 com_estim = data.com[0];
     m_omega = std::sqrt(9.81 / com_estim[2]);
 
-    // int waistFrameId = (int)m_robot->model().getFrameId("root_joint");
-    // pinocchio::SE3 se3Waist;
-    // m_robot->framePosition(data, waistFrameId, se3Waist);
-    // SEND_MSG("se3Waist: " + toString(se3Waist), MSG_TYPE_ERROR);
     m_transformFrameCom = pinocchio::SE3::Identity();
     const Vector3& com_file = m_com_ref_posSIN(0);
     if (std::abs(com_file.sum() - com_estim.sum()) > 0.001){
       m_transformFrameCom.translation() = com_file - com_estim;
-      SEND_MSG("m_transformFrameCom: " + toString(m_transformFrameCom), MSG_TYPE_ERROR);   
+      SEND_MSG("m_transformFrameCom: " + toString(m_transformFrameCom), MSG_TYPE_INFO);   
     }
 
     m_transformFrameFeet = pinocchio::SE3::Identity();
@@ -984,16 +951,16 @@ void InverseDynamicsBalanceController::init(const double& dt, const std::string&
     tsid::math::SE3ToVector(oMi, left_foot);
     if (std::abs(foot_file.sum() - left_foot.sum()) > 0.001){
       m_transformFrameFeet.translation() = foot_file.head<3>() - left_foot.head<3>() ;
-      SEND_MSG("m_transformFrameFeet: " + toString(m_transformFrameFeet), MSG_TYPE_ERROR);   
+      SEND_MSG("m_transformFrameFeet: " + toString(m_transformFrameFeet), MSG_TYPE_INFO);   
     }
 
     // COM OFFSET
     if (m_com_measuredSIN.isPlugged()){
       const dg::Vector& com_measured = m_com_measuredSIN(0);
       assert(com_measured.size() == 3);
-      SEND_MSG("COM_measured: " + toString(com_measured), MSG_TYPE_ERROR);   
+      SEND_MSG("COM_measured: " + toString(com_measured), MSG_TYPE_INFO);   
       m_com_offset = com_measured - com_estim;
-      SEND_MSG("Update COM: " + toString(m_com_offset), MSG_TYPE_ERROR);      
+      SEND_MSG("Update COM: " + toString(m_com_offset), MSG_TYPE_INFO);      
     }
 
     m_hqpSolver = SolverHQPFactory::createNewSolver(SOLVER_HQP_EIQUADPROG_FAST, "eiquadprog-fast");
@@ -1145,10 +1112,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   assert(kp_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& kd_posture = m_kd_postureSIN(iter);
   assert(kd_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  // const VectorN& kp_pos = m_kp_posSIN(iter);
-  // assert(kp_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  // const VectorN& kd_pos = m_kd_posSIN(iter);
-  // assert(kd_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   /*const double & w_hands = m_w_handsSIN(iter);*/
   const double& w_com = m_w_comSIN(iter);
@@ -1186,17 +1149,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_taskLF->Kd(kd_feet);
   }
 
-  // if (m_contactState != DOUBLE_SUPPORT) {
-  //   Vector3 zmpDes = (x_com_ref - m_com_offset) - ddx_com_ref/(m_omega*m_omega);
-  //   zmpDes[2] = 0.0;
-  //   m_taskCoP->setReference(zmpDes);
-  //   m_invDyn->updateTaskWeight(m_taskCoP->name(), 1e-2);
-  //   //m_invDyn->addForceTask(*m_taskCoP, 1e-3, 1, 0);
-  // } else {
-  //   m_invDyn->updateTaskWeight(m_taskCoP->name(), 0.0);
-  //   // m_invDyn->removeTask(m_taskCoP->name(), 0.0);
-  // }
-
   if (m_rightHandState == TASK_RIGHT_HAND_ON /*|| m_rightHandState == TASK_RIGHT_HAND_TRANSITION*/) {
     // std::cout << "m_rightHandState == TASK_RIGHT_HAND_ON" << std::endl;
     const Eigen::Matrix<double, 12, 1>& x_rh_ref = m_rh_ref_posSIN(iter);
@@ -1229,19 +1181,28 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   if (m_taskLHContactOn) {
     const Vector6& f_ref_LH = m_f_ref_left_armSIN(iter);
     const Vector6& f_ext_LH = m_f_ext_left_armSIN(iter);
-    Vector6 f_ref_tool_LH, f_ext_tool_LH;;
+    Vector6 f_ref_tool_LH, f_ext_tool_LH;
     pinocchio::SE3 toolPlacement = pinocchio::SE3::Identity();
     Vector translation = Vector::Zero(3);
-    translation[2] = -0.23;
+    translation[2] = -0.15;
     toolPlacement.translation() = translation;
     f_ref_tool_LH = f_ref_LH;
     f_ext_tool_LH = toolPlacement.act(pinocchio::Force(f_ext_LH)).toVector();
     
     const Vector6& kp_hands = m_kp_handsSIN(iter);
     const Vector6& kd_hands = m_kd_handsSIN(iter);
-    const Vector6& ki = Vector::Ones(6);
+    const Vector6& ki = 5* Vector::Ones(6);
     m_sampleLHForceRef.pos = f_ref_tool_LH;
     m_sampleLHForceExt.pos = f_ext_tool_LH;
+    
+    if (m_df_ext_left_armSIN.isPlugged()) {
+      const Vector6& df_ext_LH = m_df_ext_left_armSIN(iter);
+      const Vector6& df_ref_LH = m_df_ref_left_armSIN(iter);
+      Vector6 df_ext_tool_LH;
+      df_ext_tool_LH = toolPlacement.act(pinocchio::Force(df_ext_LH)).toVector();
+      m_sampleLHForceExt.vel = df_ext_tool_LH;
+      m_sampleLHForceRef.vel = df_ref_LH;
+    }
 
     m_taskForceLH->setReference(m_sampleLHForceRef);
     m_taskForceLH->setExternalForce(m_sampleLHForceExt);
@@ -1293,16 +1254,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskAM->name(), w_am);
   }
 
-  // const Eigen::Matrix<double, 12, 1>& x_lf_ref = m_lf_ref_posSIN(iter);
-  // const Vector6& dx_lf_ref = m_lf_ref_velSIN(iter);
-  // const Vector6& ddx_lf_ref = m_lf_ref_accSIN(iter);
-  // const Eigen::Matrix<double, 12, 1>& x_rf_ref = m_rf_ref_posSIN(iter);
-  // const Vector6& dx_rf_ref = m_rf_ref_velSIN(iter);
-  // const Vector6& ddx_rf_ref = m_rf_ref_accSIN(iter);
-  // Eigen::Matrix<double, 12, 1> sum_x = x_lf_ref + x_rf_ref;
-  m_sampleWaist.pos = x_waist_ref; //0.5 * actFrame(m_transformFrameFeet, sum_x); 
-  m_sampleWaist.vel = dx_waist_ref; //0.5 * (dx_lf_ref + dx_rf_ref); //
-  m_sampleWaist.acc = ddx_waist_ref; //0.5 * (ddx_lf_ref + ddx_rf_ref); //
+  m_sampleWaist.pos = x_waist_ref;
+  m_sampleWaist.vel = dx_waist_ref;
+  m_sampleWaist.acc = ddx_waist_ref;
   m_taskWaist->setReference(m_sampleWaist);
   m_taskWaist->Kp(kp_base_orientation);
   m_taskWaist->Kd(kd_base_orientation);
@@ -1311,9 +1265,15 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskWaist->name(), w_base_orientation);
   }
 
-  m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
-  m_robot_util->joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
-  m_robot_util->joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
+  VectorN q_ref_energy = q_ref;
+  VectorN dq_ref_energy = dq_ref;
+  VectorN ddq_ref_energy = ddq_ref;
+ // if ((m_taskEnergy->get_beta() < 1) && (m_taskEnergy->get_gamma() < 0.3)){
+ //   q_ref_energy = m_q_urdf.tail(m_robot_util->m_nbJoints);
+ // }
+  m_robot_util->joints_sot_to_urdf(q_ref_energy, m_samplePosture.pos);
+  m_robot_util->joints_sot_to_urdf(dq_ref_energy, m_samplePosture.vel);
+  m_robot_util->joints_sot_to_urdf(ddq_ref_energy, m_samplePosture.acc);
   m_taskPosture->setReference(m_samplePosture);
   m_taskPosture->Kp(kp_posture);
   m_taskPosture->Kd(kd_posture);
@@ -1325,27 +1285,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
   const VectorN& tau_measured = m_tau_measuredSIN(iter);
   assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  // const Vector& q_ref_final = m_ref_pos_finalSIN(iter);
-  // assert(q_ref_final.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // Vector q_ref_final_urdf;
-  // q_ref_final_urdf.setZero(39);
-  // m_robot_util->config_sot_to_urdf(q_ref_final, q_ref_final_urdf);
-
-  // m_sampleEnergy.pos = q_ref_final;
-  // m_sampleEnergy.vel = m_v_sot;
-  // m_sampleEnergy.acc = m_JF;
-  // m_sampleEnergy.acc = Vector::Ones(38);
-  // m_sampleEnergy.acc.head<6>() = 0.0 * Vector::Ones(6);
-  // m_sampleEnergy.acc.tail(m_robot_util->m_nbJoints) = tau_measured - m_tau_sot;
-  // m_robot_util->joints_sot_to_urdf(ddq_ref, m_sampleEnergy.acc);
-  // m_taskEnergy->setReference(m_sampleEnergy);
-
-  /*m_sampleRH.pos = x_rh_ref;
-  m_sampleRH.vel = dx_rh_ref;
-  m_sampleRH.acc = ddx_rh_ref;
-  m_taskRH->setReference(m_sampleRH);
-  m_taskRH->Kp(kp_hands);
-  m_taskRH->Kd(kd_hands);*/
 
   const double& fMin = m_f_minSIN(0);
   const double& fMaxRF = m_f_max_right_footSIN(iter);
@@ -2189,26 +2128,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy, double) {
     SEND_WARNING_STREAM_MSG("Cannot compute signal energy before initialization!");
     return s;
   }
-  //const VectorN6& q_robot = m_qSIN(iter);
-  //assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  //const VectorN6& v_robot = m_vSIN(iter);
-  //assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  //const VectorN& kp_posture = m_kp_postureSIN(iter);
-  // assert(K_energy.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  //const Vector& q_ref_final = m_ref_pos_finalSIN(iter);
-  //assert(q_ref_final.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // std::cout << "##################### INV DYN ENERGY ################################" << std::endl;
-  // std::cout << "q: "  << q_robot << std::endl;
-  // std::cout << "v: "  << v_robot << std::endl;
-  //Vector K_energy(m_robot_util->m_nbJoints + 6);
-  //K_energy = 20.0 * Vector::Ones(m_robot_util->m_nbJoints + 6);
-  //K_energy.head<6>() = 0.0 * Vector::Ones(6);
-  //K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
-  //m_q_desSOUT(iter);
-  //Vector error_pos = q_robot - q_ref_final;
-  // std::cout << "############## mass matrix: " << m_invDyn->data().M.bottomRows(m_robot_util->m_nbJoints)  << " ############" << std::endl;
-  //s = 0.5 * v_robot.transpose() * m_robot->mass(m_invDyn->data()) * v_robot;
-  //s += 0.5 * error_pos.transpose() * K_energy.cwiseProduct(error_pos);
   s = m_taskEnergy->get_H();
   return s;
 }
@@ -2218,18 +2137,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_derivative, double) {
     SEND_WARNING_STREAM_MSG("Cannot compute signal energy_derivative before initialization!");
     return s;
   }
-  // double energy = m_energySOUT(iter);
-  // std::cout << "############## previous_energy: " << previous_energy << " ############" << std::endl;
-  // std::cout << "############## energy: " << energy << " ############" << std::endl;
-  // s = (energy - m_previous_energy)/m_dt;
-  // m_q_desSOUT(iter);
-  // double E_c = m_taskEnergy->get_E_c();
-  // double E_p = m_taskEnergy->get_E_p();
-  // s = E_c + E_p;
-  // m_previous_energy = energy;
-  // Vector BK = m_taskEnergy->get_BK_vector();
-  // double BKv = BK.transpose() * m_previous_vel;
-  // s = BKv/m_dt;
   s = m_taskEnergy->get_dH();
   return s;
 }
@@ -2239,41 +2146,6 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_tank, double) {
     SEND_WARNING_STREAM_MSG("Cannot compute signal energy_tank before initialization!");
     return s;
   }
-  //double m_time_preview = 0.003;
-  //const VectorN6& q_robot = m_qSIN(iter);
-  //assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  //const VectorN6& v_robot = m_vSIN(iter);
-  //assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // //const VectorN6& previous_vel = m_vSIN(iter-1);
-  // //std::cout << "############## previous_vel: " << previous_vel << " ############" << std::endl;
-  // //assert(previous_vel.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));  
-  //const VectorN& kp_posture = m_kp_postureSIN(iter);
-  // //assert(K_energy.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  //const Vector& q_ref_final = m_ref_pos_finalSIN(iter);
-  //assert(q_ref_final.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));  
-
-  //Vector K_energy(m_robot_util->m_nbJoints + 6);
-  //K_energy = 20.0 * Vector::Ones(m_robot_util->m_nbJoints + 6);
-  // //K_energy.head<6>() = 0.0 * Vector::Ones(6);
-  // //K_energy.tail(m_robot_util->m_nbJoints) = kp_posture;
-  //m_q_desSOUT(iter);
-
-  //Vector error_pos = q_robot - q_ref_final;
-  //Vector error_pos_prev = q_ref_final - m_previous_q;
-  //double time_ratio = (m_time_preview * m_time_preview)/(2*m_dt);
-  //Vector v_des_t = error_pos_prev * time_ratio;
-  //Vector a_des_t = ((error_pos_prev/m_dt) - m_previous_vel) * time_ratio;
-
-  //m_previous_q = q_robot;
-  //m_previous_vel = v_robot;
-
-  // E_c
-  // s = v_robot.transpose() * m_robot->mass(m_invDyn->data()) * v_robot;
-  // dE_p
-  //s = (error_pos*m_time_preview + v_des_t).transpose() * K_energy.cwiseProduct(m_previous_vel/m_dt + m_dv_sot);
-  // s = v_robot.transpose() * K_energy.cwiseProduct(error_pos);
-  // dE_c
-  //s += ((1/m_dt) * (v_robot*m_time_preview) + a_des_t).transpose() * m_robot->mass(m_invDyn->data()) * m_dv_sot;
   s = m_taskEnergy->get_E_tank();
   return s;
 }
@@ -2294,40 +2166,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(energy_bound, double) {
   }
   const VectorN6& v_robot = m_vSIN(iter);
   assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // const VectorN& tau_measured = m_tau_measuredSIN(iter);
-  // assert(tau_measured.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   m_tau_desSOUT(iter);
   s = - v_robot.tail(m_robot_util->m_nbJoints).transpose() * m_tau_sot;
-  return s;
-}
-
-DEFINE_SIGNAL_OUT_FUNCTION(task_energy_const, double) {
-  if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_const before initialization!");
-    return s;
-  }
-  m_q_desSOUT(iter);
-  const VectorN6& v_robot = m_vSIN(iter);
-  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // Vector A = m_taskEnergy->get_A();
-  // Vector BK = m_taskEnergy->get_BK_vector();
-  double vJF = v_robot.transpose() * m_JF;
-  double AMdv = (- v_robot.transpose() * m_robot->mass(m_invDyn->data()))* m_dv_sot; //  + BK.transpose()
-  s = AMdv + vJF;
-  return s;
-}
-
-DEFINE_SIGNAL_OUT_FUNCTION(task_energy_bound, double) {
-  if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal task_energy_bound before initialization!");
-    return s;
-  }
-  m_q_desSOUT(iter);
-  const VectorN6& v_robot = m_vSIN(iter);
-  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
-  // double vJF = v_robot.transpose() * m_JF;
-  double lowB = m_taskEnergy->get_lowerBound() + v_robot.transpose() * m_robot->nonLinearEffects(m_invDyn->data());
-  s = lowB;
   return s;
 }
 
