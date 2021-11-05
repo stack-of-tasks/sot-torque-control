@@ -75,10 +75,6 @@ class DeviceTorqueCtrl : public dgsot::Device {
   virtual void integrate(const double& dt);
   void computeForwardDynamics();
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[DeviceTorqueCtrl] " + msg) << '\n';
-  }
-
   /// \brief Current integration step.
   double timestep_;
   bool m_initSucceeded;

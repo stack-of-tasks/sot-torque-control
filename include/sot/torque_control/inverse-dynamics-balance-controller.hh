@@ -30,6 +30,7 @@
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
+#include "pinocchio/algorithm/joint-configuration.hpp"
 
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/solvers/solver-HQP-base.hpp>
@@ -37,6 +38,8 @@
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
+#include <tsid/tasks/task-angular-momentum-equality.hpp>
+// #include "tsid/tasks/task-angular-momentum-integral-equality.hpp"
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
@@ -49,6 +52,10 @@
 namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
+
+enum ControlOutput { CONTROL_OUTPUT_VELOCITY = 0, CONTROL_OUTPUT_TORQUE = 1, CONTROL_OUTPUT_SIZE = 2 };
+
+const std::string ControlOutput_s[] = {"velocity", "torque"};
 
 /* --------------------------------------------------------------------- */
 /* --- CLASS ----------------------------------------------------------- */
@@ -66,6 +73,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
 
   void init(const double& dt, const std::string& robotRef);
   void updateComOffset();
+  virtual void setControlOutputType(const std::string& type);
   void removeRightFootContact(const double& transitionTime);
   void removeLeftFootContact(const double& transitionTime);
   void addRightFootContact(const double& transitionTime);
@@ -79,6 +87,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(am_ref_L, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(am_ref_dL, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(rf_ref_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(rf_ref_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(rf_ref_acc, dynamicgraph::Vector);
@@ -106,6 +116,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(kd_constraints, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_com, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_com, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_am, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_am, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_feet, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_feet, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_hands, dynamicgraph::Vector);
@@ -114,8 +126,10 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(kd_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_tau, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_IN(w_com, double);
+  DECLARE_SIGNAL_IN(w_am, double);
   DECLARE_SIGNAL_IN(w_feet, double);
   DECLARE_SIGNAL_IN(w_hands, double);
   DECLARE_SIGNAL_IN(w_posture, double);
@@ -140,18 +154,24 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(ddq_max, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(dt_joint_pos_limits, double);
 
-  DECLARE_SIGNAL_IN(tau_estimated, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(tau_measured, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(com_measured, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_base, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_right_foot, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(ref_phase, int);
 
   DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
 
   DECLARE_SIGNAL_OUT(tau_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(M, dynamicgraph::Matrix);
   DECLARE_SIGNAL_OUT(dv_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(v_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(q_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(tau_pd_des, dynamicgraph::Vector);
+
   DECLARE_SIGNAL_OUT(f_des_right_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(f_des_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(zmp_des_right_foot, dynamicgraph::Vector);
@@ -164,12 +184,19 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(zmp_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(zmp, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(com_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_vel, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com_acc_des, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(am_dL, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(am_dL_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(base_orientation, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(right_foot_pos_quat, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(left_foot_pos_quat, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(lf_est, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(rf_est, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_hand_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_vel, dynamicgraph::Vector);
@@ -189,10 +216,6 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  protected:
   double m_dt;  /// control loop time period
@@ -243,6 +266,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::contacts::Contact6d* m_contactRH;
   tsid::contacts::Contact6d* m_contactLH;
   tsid::tasks::TaskComEquality* m_taskCom;
+  tsid::tasks::TaskAMEquality* m_taskAM;
+  tsid::tasks::TaskSE3Equality* m_taskWaist;
   tsid::tasks::TaskSE3Equality* m_taskRF;
   tsid::tasks::TaskSE3Equality* m_taskLF;
   tsid::tasks::TaskSE3Equality* m_taskRH;
@@ -251,22 +276,33 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
 
   tsid::trajectories::TrajectorySample m_sampleCom;
+  tsid::trajectories::TrajectorySample m_sampleAM;
   tsid::trajectories::TrajectorySample m_sampleRF;
   tsid::trajectories::TrajectorySample m_sampleLF;
   tsid::trajectories::TrajectorySample m_sampleRH;
   tsid::trajectories::TrajectorySample m_sampleLH;
+  tsid::trajectories::TrajectorySample m_sampleWaist;
   tsid::trajectories::TrajectorySample m_samplePosture;
 
   double m_w_com;
+  double m_w_am;
   double m_w_posture;
   double m_w_hands;
+  double m_w_base_orientation;
 
-  tsid::math::Vector m_dv_sot;             /// desired accelerations (sot order)
-  tsid::math::Vector m_dv_urdf;            /// desired accelerations (urdf order)
+  tsid::math::Vector m_dv_sot;    /// desired accelerations (sot order)
+  tsid::math::Vector m_dv_urdf;   /// desired accelerations (urdf order)
+  tsid::math::Vector m_v_sot;     /// desired velocities (sot order)
+  tsid::math::Vector m_v_urdf;    /// desired and current velocities (urdf order) (close the TSID loop on it)
+  tsid::math::Vector m_q_sot;     /// desired positions (sot order)
+  tsid::math::Vector m_q_urdf;    /// desired and current positions (urdf order) (close the TSID loop on it)
+  tsid::math::Vector m_tau_sot;   /// desired torques (sot order)
+
   tsid::math::Vector m_f;                  /// desired force coefficients (24d)
   tsid::math::Vector6 m_f_RF;              /// desired 6d wrench right foot
   tsid::math::Vector6 m_f_LF;              /// desired 6d wrench left foot
   tsid::math::Vector3 m_com_offset;        /// 3d CoM offset
+  tsid::math::Vector3 m_dcom_offset;        /// 3d CoM offset
   tsid::math::Vector3 m_zmp_des_LF;        /// 3d desired zmp left foot
   tsid::math::Vector3 m_zmp_des_RF;        /// 3d desired zmp left foot
   tsid::math::Vector3 m_zmp_des_LF_local;  /// 3d desired zmp left foot expressed in local frame
@@ -275,11 +311,10 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector3 m_zmp_LF;            /// 3d zmp left foot
   tsid::math::Vector3 m_zmp_RF;            /// 3d zmp left foot
   tsid::math::Vector3 m_zmp;               /// 3d global zmp
-  tsid::math::Vector m_tau_sot;
-  tsid::math::Vector m_q_urdf;
-  tsid::math::Vector m_v_urdf;
+
 
   typedef pinocchio::Data::Matrix6x Matrix6x;
+  pinocchio::Data m_estim_data;
   Matrix6x m_J_RF;
   Matrix6x m_J_LF;
   Eigen::ColPivHouseholderQR<Matrix6x> m_J_RF_QR;
@@ -287,8 +322,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   tsid::math::Vector6 m_v_RF_int;
   tsid::math::Vector6 m_v_LF_int;
 
-  unsigned int m_timeLast;
-  RobotUtilShrPtr m_robot_util;
+  unsigned int m_timeLast;        /// Final time of the control loop
+  RobotUtilShrPtr m_robot_util;   /// Share pointer to the robot utils methods
+  ControlOutput m_ctrlMode;       /// ctrl mode desired for the output (velocity or torque)
 
 };  // class InverseDynamicsBalanceController
 }  // namespace torque_control

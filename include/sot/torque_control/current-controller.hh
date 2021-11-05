@@ -106,10 +106,6 @@ class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Ent
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[CurrentController-" + name + "] " + msg) << '\n';
-  }
-
  protected:
   RobotUtilShrPtr m_robot_util;
   bool m_initSucceeded;  /// true if the entity has been successfully initialized

@@ -75,10 +75,6 @@ class SOTPOSITIONCONTROLLER_EXPORT PositionController : public ::dynamicgraph::E
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[PositionController-" + name + "] " + msg) << '\n';
-  }
-
  protected:
   RobotUtilShrPtr m_robot_util;  /// Robot Util
   Eigen::VectorXd m_pwmDes;

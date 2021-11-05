@@ -51,6 +51,10 @@ Pay attention not to install ROS using robotpkg though, because it would install
 
 You can find the full installation procedure in the <a href="md_doc_installation.html">installation page</a>.
 
-Quick instructions on how to run a test can be found <a href="md_doc_running.html">here</a>.
+Instructions for running a simulation of Pyrene executing a CoM sinusoid in position or torque control can be found <a href="md_doc_running.html">here</a>.
 
 Instructions for running a simulation or an experiment using the DDP on the right elbow of Pyrene can be found <a href="md_doc_ddpRun.html">here</a>.
+
+Instructions for running a simulation of Pyrene executing a foot sinusoid in the air in torque control can be found <a href="md_doc_bellStepRun.html">here</a>.
+
+Instructions for running a simulation of Pyrene walking in torque control can be found <a href="md_doc_walkRun.html">here</a>.
