@@ -6,6 +6,7 @@
 #include <fstream>
 #include <map>
 
+#include "sot/torque_control/device-torque-ctrl.hh"
 #include <pinocchio/algorithm/joint-configuration.hpp>  // integrate
 #include <tsid/math/constraint-base.hpp>
 #include <tsid/math/utils.hpp>
@@ -13,8 +14,6 @@
 #include <dynamic-graph/factory.h>
 #include <dynamic-graph/all-commands.h>
 #include <sot/core/debug.hh>
-
-#include "sot/torque_control/device-torque-ctrl.hh"
 
 using namespace std;
 using namespace dynamicgraph;
@@ -187,13 +186,17 @@ void DeviceTorqueCtrl::setState(const dynamicgraph::Vector& q) {
   pinocchio::SE3 H_lf =
       m_robot->position(*m_data, m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
   tsid::trajectories::TrajectorySample s(12, 6);
-  tsid::math::SE3ToVector(H_lf, s.pos);
+  Vector vec_H_lf;
+  tsid::math::SE3ToVector(H_lf, vec_H_lf);
+  s.setValue(vec_H_lf);
   m_contactLF->setReference(s);
   SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_DEBUG);
 
   pinocchio::SE3 H_rf =
       m_robot->position(*m_data, m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
-  tsid::math::SE3ToVector(H_rf, s.pos);
+  Vector vec_H_rf;
+  tsid::math::SE3ToVector(H_rf, vec_H_rf);
+  s.setValue(vec_H_rf);
   m_contactRF->setReference(s);
   SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_DEBUG);
   setVelocity(m_v_sot);

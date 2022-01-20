@@ -23,7 +23,8 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
 #include <map>
 #include "boost/assign.hpp"
 //#include <boost/random/normal_distribution.hpp>
@@ -37,7 +38,6 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
@@ -159,10 +159,6 @@ class SOTBASEESTIMATOR_EXPORT BaseEstimator : public ::dynamicgraph::Entity {
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  protected:
   bool m_initSucceeded;   /// true if the entity has been successfully initialized

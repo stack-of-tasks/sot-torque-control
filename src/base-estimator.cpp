@@ -3,11 +3,11 @@
  *
  */
 
+#include <sot/torque_control/base-estimator.hh>
 #include "pinocchio/algorithm/frames.hpp"
 #include <dynamic-graph/factory.h>
 #include <sot/core/debug.hh>
 
-#include <sot/torque_control/base-estimator.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/core/stop-watch.hh>
 

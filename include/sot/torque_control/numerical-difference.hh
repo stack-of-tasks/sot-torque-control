@@ -94,11 +94,6 @@ class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference : public ::dynamicgraph:
    */
   void init(const double& timestep, const int& sigSize, const double& delay, const int& polyOrder);
 
- protected:
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
-
  public: /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 

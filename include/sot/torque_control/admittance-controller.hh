@@ -24,17 +24,17 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <map>
-#include "boost/assign.hpp"
-
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/tasks/task-se3-equality.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+#include <map>
+#include "boost/assign.hpp"
 
 namespace dynamicgraph {
 namespace sot {
@@ -89,10 +89,6 @@ class SOTADMITTANCECONTROLLER_EXPORT AdmittanceController : public ::dynamicgrap
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  protected:
   Eigen::VectorXd m_u;  /// control (i.e. motor currents)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, Andrea Del Prete, LAAS-CNRS
+ * Copyright 2021, Noëlie Ramuzat, LAAS-CNRS
  *
  * This file is part of sot-torque-control.
  * sot-torque-control is free software: you can redistribute it and/or
@@ -14,21 +14,21 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __sot_torque_control_simple_inverse_dyn_H__
-#define __sot_torque_control_simple_inverse_dyn_H__
+#ifndef __sot_torque_control_posture_task_H__
+#define __sot_torque_control_posture_task_H__
 
 /* --------------------------------------------------------------------- */
 /* --- API ------------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
 #if defined(WIN32)
-#if defined(simple_inverse_dyn_EXPORTS)
-#define SOTSIMPLEINVERSEDYN_EXPORT __declspec(dllexport)
+#if defined(posture_task_EXPORTS)
+#define SOTPOSTURETASK_EXPORT __declspec(dllexport)
 #else
-#define SOTSIMPLEINVERSEDYN_EXPORT __declspec(dllimport)
+#define SOTPOSTURETASK_EXPORT __declspec(dllimport)
 #endif
 #else
-#define SOTSIMPLEINVERSEDYN_EXPORT
+#define SOTPOSTURETASK_EXPORT
 #endif
 
 /* --------------------------------------------------------------------- */
@@ -48,12 +48,12 @@
 #include "boost/assign.hpp"
 
 #include <tsid/solvers/solver-HQP-base.hpp>
-#include <tsid/contacts/contact-6d.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
-#include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
-#include <tsid/tasks/task-actuation-bounds.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
+#include <tsid/tasks/task-actuation-bounds.hpp>
+#include <tsid/contacts/contact-6d.hpp>
+#include <tsid/tasks/task-energy.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
@@ -73,15 +73,15 @@ const std::string ControlOutput_s[] = {"velocity", "torque"};
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entity {
-  typedef SimpleInverseDyn EntityClassName;
+class SOTPOSTURETASK_EXPORT PostureTask : public ::dynamicgraph::Entity {
+  typedef PostureTask EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /* --- CONSTRUCTOR ---- */
-  SimpleInverseDyn(const std::string& name);
+  PostureTask(const std::string& name);
 
   /* --- SIGNALS --- */
 
@@ -91,35 +91,23 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   DECLARE_SIGNAL_IN(kp_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(w_posture, double);
-
-  DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kd_pos, dynamicgraph::Vector);
-
-  DECLARE_SIGNAL_IN(tau_measured, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kp_tau, dynamicgraph::Vector);
-
-  DECLARE_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kp_com, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kd_com, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(w_com, double);
-
-  DECLARE_SIGNAL_IN(kp_contact, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kd_contact, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(w_forces, double);
+  
+  DECLARE_SIGNAL_IN(kp_constraints, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_constraints, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_forces, double);  
   DECLARE_SIGNAL_IN(mu, double);
   DECLARE_SIGNAL_IN(contact_points, dynamicgraph::Matrix);
   DECLARE_SIGNAL_IN(contact_normal, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(f_min, double);
-  DECLARE_SIGNAL_IN(f_max, double);
+  DECLARE_SIGNAL_IN(f_max_right_foot, double);
+  DECLARE_SIGNAL_IN(f_max_left_foot, double);
 
-  DECLARE_SIGNAL_IN(waist_ref_pos, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(waist_ref_vel, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(waist_ref_acc, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kp_waist, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kd_waist, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(w_waist, double);
+  DECLARE_SIGNAL_IN(base_orientation_ref_pos, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(base_orientation_ref_vel, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(base_orientation_ref_acc, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kp_base_orientation, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_base_orientation, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(w_base_orientation, double);
 
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
@@ -131,10 +119,22 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   DECLARE_SIGNAL_OUT(dv_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(v_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(q_des, dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(u, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(com, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(right_foot_pos, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_pos, dynamicgraph::Vector);
+
+  DECLARE_SIGNAL_OUT(energy, double);
+  DECLARE_SIGNAL_OUT(energy_derivative, double);
+  DECLARE_SIGNAL_OUT(energy_tank, double);
+  DECLARE_SIGNAL_OUT(denergy_tank, double);
+  DECLARE_SIGNAL_OUT(energy_bound, double);
+  DECLARE_SIGNAL_OUT(task_energy_alpha, double);
+  DECLARE_SIGNAL_OUT(task_energy_beta, double);
+  DECLARE_SIGNAL_OUT(task_energy_gamma, double);
+  DECLARE_SIGNAL_OUT(task_energy_S, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_dS, dynamicgraph::Vector);
+  DECLARE_SIGNAL_OUT(task_energy_A, double);
+  DECLARE_SIGNAL_OUT(base_orientation, double);
 
   /* --- COMMANDS --- */
 
@@ -162,25 +162,23 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   /// Solver and problem formulation
   tsid::solvers::SolverHQPBase* m_hqpSolver;
   tsid::InverseDynamicsFormulationAccForce* m_invDyn;
-
-  /// TASKS
   tsid::contacts::Contact6d* m_contactRF;
   tsid::contacts::Contact6d* m_contactLF;
-  tsid::tasks::TaskComEquality* m_taskCom;
-  tsid::tasks::TaskSE3Equality* m_taskWaist;
+
+  /// TASKS
   tsid::tasks::TaskJointPosture* m_taskPosture;
   tsid::tasks::TaskJointPosture* m_taskBlockedJoints;
   tsid::tasks::TaskActuationBounds* m_taskActBounds;
+  tsid::tasks::TaskEnergy* m_taskEnergy;  
+  tsid::tasks::TaskSE3Equality* m_taskWaist;
 
   /// Trajectories of the tasks
-  tsid::trajectories::TrajectorySample m_sampleCom;
-  tsid::trajectories::TrajectorySample m_sampleWaist;
   tsid::trajectories::TrajectorySample m_samplePosture;
+  tsid::trajectories::TrajectorySample m_sampleWaist;
 
   /// Weights of the Tasks (which can be changed)
-  double m_w_com;
   double m_w_posture;
-  double m_w_waist;
+  double m_w_base_orientation;
 
   /// Computed solutions (accelerations and torques) and their derivatives
   tsid::math::Vector m_dv_sot;   /// desired accelerations (sot order)
@@ -197,9 +195,9 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   RobotUtilShrPtr m_robot_util;  /// Share pointer to the robot utils methods
   ControlOutput m_ctrlMode;      /// ctrl mode desired for the output (velocity or torque)
 
-};  // class SimpleInverseDyn
+};  // class PostureTask
 }  // namespace torque_control
 }  // namespace sot
 }  // namespace dynamicgraph
 
-#endif  // #ifndef __sot_torque_control_simple_inverse_dyn_H__
+#endif  // #ifndef __sot_torque_control_posture_task_H__

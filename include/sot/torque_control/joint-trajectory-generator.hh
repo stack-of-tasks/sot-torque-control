@@ -23,6 +23,7 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
+
 #include <map>
 
 #include <pinocchio/fwd.hpp>
@@ -32,6 +33,7 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/core/robot-utils.hh>
 
 #include <sot/torque_control/utils/vector-conversions.hh>
@@ -149,10 +151,6 @@ class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator : public ::dyn
 
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[JointTrajectoryGenerator-" + name + "] " + msg) << '\n';
-  }
 
  protected:
   enum JTG_Status { JTG_STOP, JTG_SINUSOID, JTG_MIN_JERK, JTG_LIN_CHIRP, JTG_TRIANGLE, JTG_CONST_ACC, JTG_TEXT_FILE };

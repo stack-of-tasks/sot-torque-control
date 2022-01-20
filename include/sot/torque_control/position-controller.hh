@@ -24,6 +24,7 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <sot/core/robot-utils.hh>
 #include <map>
 
 #include <pinocchio/fwd.hpp>
@@ -32,7 +33,6 @@
 
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 
 #include <sot/torque_control/utils/vector-conversions.hh>
 
@@ -74,10 +74,6 @@ class SOTPOSITIONCONTROLLER_EXPORT PositionController : public ::dynamicgraph::E
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[PositionController-" + name + "] " + msg) << '\n';
-  }
 
  protected:
   RobotUtilShrPtr m_robot_util;  /// Robot Util

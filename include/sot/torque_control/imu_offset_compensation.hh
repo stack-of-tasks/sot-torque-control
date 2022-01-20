@@ -70,9 +70,6 @@ class SOTIMUOFFSETCOMPENSATION_EXPORT ImuOffsetCompensation : public ::dynamicgr
 
   /* --- METHODS --- */
   void update_offset_impl(int iter);
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* file = "", int line = 0) {
-    logger_.stream(t) << ("[ImuOffsetCompensation-" + name + "] " + msg, t, file, line);
-  }
 
  protected:
   bool m_initSucceeded;        /// true if the entity has been successfully initialized

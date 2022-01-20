@@ -3,13 +3,12 @@
  *
  */
 
-#include <tsid/robots/robot-wrapper.hpp>
+#include <sot/torque_control/control-manager.hh>
 #include <tsid/utils/stop-watch.hpp>
 #include <tsid/utils/statistics.hpp>
 
 #include <dynamic-graph/factory.h>
 #include <sot/core/debug.hh>
-#include <sot/torque_control/control-manager.hh>
 #include <sot/torque_control/commands-helper.hh>
 
 using namespace tsid;

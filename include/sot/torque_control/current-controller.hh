@@ -27,14 +27,15 @@
 #include <map>
 #include "boost/assign.hpp"
 
-#include <pinocchio/multibody/model.hpp>
-#include <pinocchio/parsers/urdf.hpp>
-
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
 #include <tsid/robots/robot-wrapper.hpp>
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+
+#include <pinocchio/multibody/model.hpp>
+#include <pinocchio/parsers/urdf.hpp>
 
 namespace dynamicgraph {
 namespace sot {
@@ -105,10 +106,6 @@ class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Ent
 
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[CurrentController-" + name + "] " + msg) << '\n';
-  }
 
  protected:
   RobotUtilShrPtr m_robot_util;

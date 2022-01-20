@@ -25,7 +25,8 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-
+#include <pinocchio/spatial/fwd.hpp>
+#include <sot/core/robot-utils.hh>
 #include <boost/circular_buffer.hpp>
 #include <Eigen/StdVector>
 
@@ -38,7 +39,6 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/core/stop-watch.hh>
 
 /*Motor model*/
@@ -89,10 +89,6 @@ class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator : public ::dynamicgraph
   // stdAlignedVector tauSignals;
 
   // stdAlignedVector stdVecJointTorqueOffsets;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  private:
   enum { PRECOMPUTATION, INPROGRESS, COMPUTED } sensor_offset_status;

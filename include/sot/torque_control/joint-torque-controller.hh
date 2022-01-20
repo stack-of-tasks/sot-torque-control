@@ -32,8 +32,8 @@
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+#include <sot/core/robot-utils.hh>
 
 /*Motor model*/
 #include <sot/torque_control/motor-model.hh>
@@ -114,10 +114,6 @@ class SOTJOINTTORQUECONTROLLER_EXPORT JointTorqueController : public ::dynamicgr
   Eigen::VectorXd m_dqErrIntegral;  /// integral of the velocity error
 
   RobotUtilShrPtr m_robot_util;
-
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
-  }
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
