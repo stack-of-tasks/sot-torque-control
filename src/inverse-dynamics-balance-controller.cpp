@@ -532,7 +532,7 @@ void InverseDynamicsBalanceController::setControlOutputType(const std::string& t
 
 void InverseDynamicsBalanceController::removeRightFootContact(const double& transitionTime) {
   if (m_contactState == DOUBLE_SUPPORT) {
-    SEND_MSG("Remove right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Remove right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     bool res = m_invDyn->removeRigidContact(m_contactRF->name(), transitionTime);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -552,7 +552,7 @@ void InverseDynamicsBalanceController::removeRightFootContact(const double& tran
 
 void InverseDynamicsBalanceController::removeLeftFootContact(const double& transitionTime) {
   if (m_contactState == DOUBLE_SUPPORT) {
-    SEND_MSG("Remove left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Remove left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     bool res = m_invDyn->removeRigidContact(m_contactLF->name(), transitionTime);
     if (!res) {
       const HQPData& hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
@@ -604,7 +604,7 @@ void InverseDynamicsBalanceController::addTaskLeftHand(/*const double& transitio
 
 void InverseDynamicsBalanceController::addRightFootContact(const double& transitionTime) {
   if (m_contactState == LEFT_SUPPORT) {
-    SEND_MSG("Add right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Add right foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     const double& w_forces = m_w_forcesSIN.accessCopy();
     pinocchio::SE3 ref;
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
@@ -622,7 +622,7 @@ void InverseDynamicsBalanceController::addRightFootContact(const double& transit
 
 void InverseDynamicsBalanceController::addLeftFootContact(const double& transitionTime) {
   if (m_contactState == RIGHT_SUPPORT) {
-    SEND_MSG("Add left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_ERROR);
+    SEND_MSG("Add left foot contact in " + toString(transitionTime) + " s", MSG_TYPE_INFO);
     const double& w_forces = m_w_forcesSIN.accessCopy();
     pinocchio::SE3 ref;
     ref = m_robot->position(m_invDyn->data(), m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
