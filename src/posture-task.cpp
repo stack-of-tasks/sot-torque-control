@@ -439,9 +439,16 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const double & w_base_orientation = m_w_base_orientationSIN(iter);
 
   // Update tasks
-  m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
-  m_robot_util->joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
-  m_robot_util->joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
+  Vector q_urdf, dq_urdf, ddq_urdf;
+  q_urdf.setZero(m_robot_util->m_nbJoints);
+  dq_urdf.setZero(m_robot_util->m_nbJoints);
+  ddq_urdf.setZero(m_robot_util->m_nbJoints);
+  m_robot_util->joints_sot_to_urdf(q_ref, q_urdf);
+  m_robot_util->joints_sot_to_urdf(dq_ref, dq_urdf);
+  m_robot_util->joints_sot_to_urdf(ddq_ref, ddq_urdf);
+  m_samplePosture.setValue(q_urdf);
+  m_samplePosture.setDerivative(dq_urdf);
+  m_samplePosture.setSecondDerivative(ddq_urdf);
   m_taskPosture->setReference(m_samplePosture);
   m_taskPosture->Kp(kp_posture);
   m_taskPosture->Kd(kd_posture);
@@ -450,9 +457,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
   }
 
-  m_sampleWaist.pos = x_waist_ref;
-  m_sampleWaist.vel = dx_waist_ref;
-  m_sampleWaist.acc = ddx_waist_ref;
+  m_sampleWaist.setValue(x_waist_ref);
+  m_sampleWaist.setDerivative(dx_waist_ref);
+  m_sampleWaist.setSecondDerivative(ddx_waist_ref);
   m_taskWaist->setReference(m_sampleWaist);
   m_taskWaist->Kp(kp_base_orientation);
   m_taskWaist->Kd(kd_base_orientation);

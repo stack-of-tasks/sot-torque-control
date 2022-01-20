@@ -466,9 +466,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   getProfiler().start(PROFILE_PREPARE_INV_DYN);
 
   // Update tasks
-  m_sampleCom.pos = x_com_ref - m_com_offset;
-  m_sampleCom.vel = dx_com_ref;
-  m_sampleCom.acc = ddx_com_ref;
+  m_sampleCom.setValue(x_com_ref - m_com_offset);
+  m_sampleCom.setDerivative(dx_com_ref);
+  m_sampleCom.setSecondDerivative(ddx_com_ref);
   m_taskCom->setReference(m_sampleCom);
   m_taskCom->Kp(kp_com);
   m_taskCom->Kd(kd_com);
@@ -477,9 +477,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskCom->name(), w_com);
   }
 
-  m_sampleWaist.pos = x_waist_ref;
-  m_sampleWaist.vel = dx_waist_ref;
-  m_sampleWaist.acc = ddx_waist_ref;
+  m_sampleWaist.setValue(x_waist_ref);
+  m_sampleWaist.setDerivative(dx_waist_ref);
+  m_sampleWaist.setSecondDerivative(ddx_waist_ref);
   m_taskWaist->setReference(m_sampleWaist);
   m_taskWaist->Kp(kp_waist);
   m_taskWaist->Kd(kd_waist);
@@ -488,9 +488,16 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskWaist->name(), w_waist);
   }
 
-  m_robot_util->joints_sot_to_urdf(q_ref, m_samplePosture.pos);
-  m_robot_util->joints_sot_to_urdf(dq_ref, m_samplePosture.vel);
-  m_robot_util->joints_sot_to_urdf(ddq_ref, m_samplePosture.acc);
+  Vector q_urdf, dq_urdf, ddq_urdf;
+  q_urdf.setZero(m_robot_util->m_nbJoints);
+  dq_urdf.setZero(m_robot_util->m_nbJoints);
+  ddq_urdf.setZero(m_robot_util->m_nbJoints);
+  m_robot_util->joints_sot_to_urdf(q_ref, q_urdf);
+  m_robot_util->joints_sot_to_urdf(dq_ref, dq_urdf);
+  m_robot_util->joints_sot_to_urdf(ddq_ref, ddq_urdf);
+  m_samplePosture.setValue(q_urdf);
+  m_samplePosture.setDerivative(dq_urdf);
+  m_samplePosture.setSecondDerivative(ddq_urdf);
   m_taskPosture->setReference(m_samplePosture);
   m_taskPosture->Kp(kp_posture);
   m_taskPosture->Kd(kd_posture);

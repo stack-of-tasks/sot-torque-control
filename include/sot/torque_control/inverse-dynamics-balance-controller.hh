@@ -92,7 +92,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   void removeTaskRightHand(const double& transitionTime);
   void addTaskLeftHand(/*const double& transitionTime*/);
   void removeTaskLeftHand(const double& transitionTime);
-  void addTaskLeftHandContact(const double& transitionTime);
+  void addTaskLeftHandContact(/*const double& transitionTime*/);
   void removeTaskLeftHandContact(const double& transitionTime);
   void addTaskEnergy(const double& transitionTime);
   void removeTaskEnergy(const double& transitionTime);
@@ -143,7 +143,10 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(kp_feet, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_feet, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_hands, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(kd_hands, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_hands, dynamicgraph::Vector);  
+  DECLARE_SIGNAL_IN(kp_hands_force, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(kd_hands_force, dynamicgraph::Vector);
+  DECLARE_SIGNAL_IN(ki_hands_force, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kd_posture, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(kp_pos, dynamicgraph::Vector);
@@ -384,6 +387,7 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   unsigned int m_timeLast;        /// Final time of the control loop
   RobotUtilShrPtr m_robot_util;   /// Share pointer to the robot utils methods
   ControlOutput m_ctrlMode;       /// ctrl mode desired for the output (velocity or torque)
+  bool m_energyTask_enabled;      /// Boolean to add/remove energyTask
 
 };  // class InverseDynamicsBalanceController
 }  // namespace torque_control
