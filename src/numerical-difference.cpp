@@ -3,13 +3,13 @@
  *
  */
 
-#include <Eigen/Dense>
-
 #include <dynamic-graph/factory.h>
+
+#include <Eigen/Dense>
 #include <sot/core/debug.hh>
-#include <sot/torque_control/numerical-difference.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/motor-model.hh>
+#include <sot/torque_control/numerical-difference.hh>
 
 namespace dynamicgraph {
 namespace sot {
@@ -44,22 +44,35 @@ NumericalDifference::NumericalDifference(const std::string& name)
   Entity::signalRegistration(ALL_INPUT_SIGNALS << ALL_OUTPUT_SIGNALS);
 
   /* Commands. */
-  addCommand("getTimestep", makeDirectGetter(*this, &m_dt, docDirectGetter("Control timestep [s ]", "double")));
-  addCommand("getDelay",
-             makeDirectGetter(*this, &m_delay, docDirectGetter("Delay in the estimation of signal x", "double")));
-  addCommand("getSize", makeDirectGetter(*this, &x_size, docDirectGetter("Size of the x signal", "int")));
-  addCommand("init", makeCommandVoid4(*this, &NumericalDifference::init,
-                                      docCommandVoid4("Initialize the estimator.", "Control timestep [s].",
-                                                      "Size of the input signal x", "Estimation delay for signal x",
-                                                      "Polynomial order")));
+  addCommand(
+      "getTimestep",
+      makeDirectGetter(*this, &m_dt,
+                       docDirectGetter("Control timestep [s ]", "double")));
+  addCommand(
+      "getDelay",
+      makeDirectGetter(
+          *this, &m_delay,
+          docDirectGetter("Delay in the estimation of signal x", "double")));
+  addCommand("getSize",
+             makeDirectGetter(*this, &x_size,
+                              docDirectGetter("Size of the x signal", "int")));
+  addCommand("init",
+             makeCommandVoid4(*this, &NumericalDifference::init,
+                              docCommandVoid4("Initialize the estimator.",
+                                              "Control timestep [s].",
+                                              "Size of the input signal x",
+                                              "Estimation delay for signal x",
+                                              "Polynomial order")));
 }
 
 /* --- COMMANDS ---------------------------------------------------------- */
 /* --- COMMANDS ---------------------------------------------------------- */
 /* --- COMMANDS ---------------------------------------------------------- */
-void NumericalDifference::init(const double& timestep, const int& xSize, const double& delay, const int& polyOrder) {
+void NumericalDifference::init(const double& timestep, const int& xSize,
+                               const double& delay, const int& polyOrder) {
   assert(timestep > 0.0 && "Timestep should be > 0");
-  assert(delay >= 1.5 * timestep && "Estimation delay should be >= 1.5*timestep");
+  assert(delay >= 1.5 * timestep &&
+         "Estimation delay should be >= 1.5*timestep");
   m_dt = timestep;
   m_delay = delay;
   x_size = xSize;
@@ -71,7 +84,8 @@ void NumericalDifference::init(const double& timestep, const int& xSize, const d
   else if (polyOrder == 2)
     m_filter = new QuadEstimator(winSizeEnc, x_size, m_dt);
   else
-    SEND_MSG("Only polynomial orders 1 and 2 allowed. Reinitialize the filter", MSG_TYPE_INFO);
+    SEND_MSG("Only polynomial orders 1 and 2 allowed. Reinitialize the filter",
+             MSG_TYPE_INFO);
   m_ddx_filter_std.resize(x_size);
   m_dx_filter_std.resize(x_size);
   m_x_filter_std.resize(x_size);
@@ -104,10 +118,11 @@ DEFINE_SIGNAL_INNER_FUNCTION(x_dx_ddx, dynamicgraph::Vector) {
   return s;
 }
 
-/// ************************************************************************* ///
-/// The following signals depend only on other inner signals, so they
-/// just need to copy the interested part of the inner signal they depend on.
-/// ************************************************************************* ///
+/// *************************************************************************
+/// /// The following signals depend only on other inner signals, so they just
+/// need to copy the interested part of the inner signal they depend on.
+/// *************************************************************************
+/// ///
 
 DEFINE_SIGNAL_OUT_FUNCTION(x_filtered, dynamicgraph::Vector) {
   sotDEBUG(15) << "Compute x_filtered output signal " << iter << std::endl;

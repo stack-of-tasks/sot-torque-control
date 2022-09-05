@@ -24,17 +24,17 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <map>
-#include "boost/assign.hpp"
+#include <dynamic-graph/signal-helper.h>
 
+#include <map>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-
-#include <tsid/robots/robot-wrapper.hpp>
-#include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+#include <tsid/robots/robot-wrapper.hpp>
+
+#include "boost/assign.hpp"
 
 namespace dynamicgraph {
 namespace sot {
@@ -72,24 +72,40 @@ class SOTCONTROLMANAGER_EXPORT ControlManager : public ::dynamicgraph::Entity {
   /// Initialize
   /// @param dt: control interval
   /// @param urdfFile: path to the URDF model of the robot
-  void init(const double& dt, const std::string& urdfFile, const std::string& robotRef);
+  void init(const double& dt, const std::string& urdfFile,
+            const std::string& robotRef);
 
   /* --- SIGNALS --- */
-  std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector, int>*> m_ctrlInputsSIN;
+  std::vector<dynamicgraph::SignalPtr<dynamicgraph::Vector, int>*>
+      m_ctrlInputsSIN;
   std::vector<dynamicgraph::SignalPtr<bool, int>*>
-      m_emergencyStopSIN;  /// emergency stop inputs. If one is true, control is set to zero forever
-  std::vector<dynamicgraph::Signal<dynamicgraph::Vector, int>*> m_jointsCtrlModesSOUT;
+      m_emergencyStopSIN;  /// emergency stop inputs. If one is true, control is
+                           /// set to zero forever
+  std::vector<dynamicgraph::Signal<dynamicgraph::Vector, int>*>
+      m_jointsCtrlModesSOUT;
 
   DECLARE_SIGNAL_IN(i_measured, dynamicgraph::Vector);  /// motor currents
-  DECLARE_SIGNAL_IN(tau, dynamicgraph::Vector);  /// estimated joint torques (using dynamic robot model + F/T sensors)
-  DECLARE_SIGNAL_IN(tau_predicted, dynamicgraph::Vector);  /// predicted joint torques (using motor model)
-  DECLARE_SIGNAL_IN(i_max, dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
-  DECLARE_SIGNAL_IN(u_max,
-                    dynamicgraph::Vector);  /// max desired current allowed before stopping the controller (in Ampers)
-  DECLARE_SIGNAL_IN(tau_max, dynamicgraph::Vector);  /// max torque allowed before stopping the controller
+  DECLARE_SIGNAL_IN(
+      tau, dynamicgraph::Vector);  /// estimated joint torques (using dynamic
+                                   /// robot model + F/T sensors)
+  DECLARE_SIGNAL_IN(
+      tau_predicted,
+      dynamicgraph::Vector);  /// predicted joint torques (using motor model)
+  DECLARE_SIGNAL_IN(
+      i_max, dynamicgraph::Vector);  /// max current allowed before stopping the
+                                     /// controller (in Ampers)
+  DECLARE_SIGNAL_IN(
+      u_max,
+      dynamicgraph::Vector);  /// max desired current allowed before stopping
+                              /// the controller (in Ampers)
+  DECLARE_SIGNAL_IN(tau_max,
+                    dynamicgraph::Vector);  /// max torque allowed before
+                                            /// stopping the controller
 
   DECLARE_SIGNAL_OUT(u, dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(u_safe, dynamicgraph::Vector);  /// same as u when everything is fine, 0 otherwise
+  DECLARE_SIGNAL_OUT(
+      u_safe,
+      dynamicgraph::Vector);  /// same as u when everything is fine, 0 otherwise
 
   /* --- COMMANDS --- */
 
@@ -104,11 +120,15 @@ class SOTCONTROLMANAGER_EXPORT ControlManager : public ::dynamicgraph::Entity {
 
   /// Commands related to joint name and joint id
   void setNameToId(const std::string& jointName, const double& jointId);
-  void setJointLimitsFromId(const double& jointId, const double& lq, const double& uq);
+  void setJointLimitsFromId(const double& jointId, const double& lq,
+                            const double& uq);
 
   /// Command related to ForceUtil
-  void setForceLimitsFromId(const double& jointId, const dynamicgraph::Vector& lq, const dynamicgraph::Vector& uq);
-  void setForceNameToForceId(const std::string& forceName, const double& forceId);
+  void setForceLimitsFromId(const double& jointId,
+                            const dynamicgraph::Vector& lq,
+                            const dynamicgraph::Vector& uq);
+  void setForceNameToForceId(const std::string& forceName,
+                             const double& forceId);
 
   /// Commands related to FootUtil
   void setRightFootSoleXYZ(const dynamicgraph::Vector&);
@@ -130,25 +150,33 @@ class SOTCONTROLMANAGER_EXPORT ControlManager : public ::dynamicgraph::Entity {
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[ControlManager-" + name + "] " + msg) << '\n';
   }
 
  protected:
   RobotUtilShrPtr m_robot_util;
   tsid::robots::RobotWrapper* m_robot;
-  bool m_initSucceeded;             /// true if the entity has been successfully initialized
-  double m_dt;                      /// control loop time period
-  bool m_emergency_stop_triggered;  /// true if an emergency condition as been triggered either by an other entity, or
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
+  double m_dt;          /// control loop time period
+  bool m_emergency_stop_triggered;  /// true if an emergency condition as been
+                                    /// triggered either by an other entity, or
                                     /// by control limit violation
-  bool m_is_first_iter;             /// true at the first iteration, false otherwise
+  bool m_is_first_iter;  /// true at the first iteration, false otherwise
   int m_iter;
-  double m_sleep_time;  /// time to sleep at every iteration (to slow down simulation)
+  double m_sleep_time;  /// time to sleep at every iteration (to slow down
+                        /// simulation)
 
-  std::vector<std::string> m_ctrlModes;             /// existing control modes
-  std::vector<CtrlMode> m_jointCtrlModes_current;   /// control mode of the joints
-  std::vector<CtrlMode> m_jointCtrlModes_previous;  /// previous control mode of the joints
-  std::vector<int> m_jointCtrlModesCountDown;       /// counters used for the transition between two ctrl modes
+  std::vector<std::string> m_ctrlModes;  /// existing control modes
+  std::vector<CtrlMode>
+      m_jointCtrlModes_current;  /// control mode of the joints
+  std::vector<CtrlMode>
+      m_jointCtrlModes_previous;  /// previous control mode of the joints
+  std::vector<int>
+      m_jointCtrlModesCountDown;  /// counters used for the transition between
+                                  /// two ctrl modes
 
   bool convertStringToCtrlMode(const std::string& name, CtrlMode& cm);
   bool convertJointNameToJointId(const std::string& name, unsigned int& id);

@@ -19,11 +19,11 @@ from compute_estimates_from_sensors import compute_estimates_from_sensors
 
 def main():
     EST_DELAY = 0.1
-    ''' delay introduced by the estimation in seconds '''
+    """ delay introduced by the estimation in seconds """
     NJ = 30
-    ''' number of joints '''
+    """ number of joints """
     DT = 0.001
-    ''' sampling period '''
+    """ sampling period """
     PLOT_DATA = True
     FORCE_ESTIMATE_RECOMPUTATION = True
     NEGLECT_GYROSCOPE = True
@@ -31,44 +31,44 @@ def main():
     SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO = False
     USE_FT_SENSORS = True
 
-    data_folder = '../../../../results/20160923_165916_Joint2_id_Kt/'
+    data_folder = "../../../../results/20160923_165916_Joint2_id_Kt/"
     JOINT_ID = np.array([2])
     # IDs of joints to save
 
-    if (len(sys.argv) >= 3):
-        data_folder = '../../../../../results/' + sys.argv[1]
+    if len(sys.argv) >= 3:
+        data_folder = "../../../../../results/" + sys.argv[1]
         JOINT_ID = np.array([int(sys.argv[2])])
         print('Going to decompress data in folder "' + data_folder + '"')
         print("Joint ID = " + str(JOINT_ID[0]))
     else:
         print("Need arguments : data_folder JOINT_ID")
         return -1
-    if data_folder[-1] != '/':
-        data_folder += '/'
+    if data_folder[-1] != "/":
+        data_folder += "/"
     FILE_READ_SUCCEEDED = False
-    DATA_FILE_NAME = 'data'
+    DATA_FILE_NAME = "data"
     N_DELAY = int(EST_DELAY / DT)
 
-    file_name_ctrl = 'dg_HRP2LAAS-control.dat'
-    file_name_enc = 'dg_HRP2LAAS-robotState.dat'
-    file_name_acc = 'dg_HRP2LAAS-accelerometer.dat'
-    file_name_gyro = 'dg_HRP2LAAS-gyrometer.dat'
-    file_name_forceLA = 'dg_HRP2LAAS-forceLARM.dat'
-    file_name_forceRA = 'dg_HRP2LAAS-forceRARM.dat'
-    file_name_forceLL = 'dg_HRP2LAAS-forceLLEG.dat'
-    file_name_forceRL = 'dg_HRP2LAAS-forceRLEG.dat'
-    file_name_current = 'dg_HRP2LAAS-currents.dat'
-    ''' Load data from file '''
+    file_name_ctrl = "dg_HRP2LAAS-control.dat"
+    file_name_enc = "dg_HRP2LAAS-robotState.dat"
+    file_name_acc = "dg_HRP2LAAS-accelerometer.dat"
+    file_name_gyro = "dg_HRP2LAAS-gyrometer.dat"
+    file_name_forceLA = "dg_HRP2LAAS-forceLARM.dat"
+    file_name_forceRA = "dg_HRP2LAAS-forceRARM.dat"
+    file_name_forceLL = "dg_HRP2LAAS-forceLLEG.dat"
+    file_name_forceRL = "dg_HRP2LAAS-forceRLEG.dat"
+    file_name_current = "dg_HRP2LAAS-currents.dat"
+    """ Load data from file """
     try:
-        data = np.load(data_folder + DATA_FILE_NAME + '.npz')
-        time = data['time']
-        enc = data['enc']
-        acc = data['acc']
-        gyro = data['gyro']
-        forceLA = data['forceLA']
-        forceRA = data['forceRA']
-        forceLL = data['forceLL']
-        forceRL = data['forceRL']
+        data = np.load(data_folder + DATA_FILE_NAME + ".npz")
+        time = data["time"]
+        enc = data["enc"]
+        acc = data["acc"]
+        gyro = data["gyro"]
+        forceLA = data["forceLA"]
+        forceRA = data["forceRA"]
+        forceLL = data["forceLL"]
+        forceRL = data["forceRL"]
 
         N = acc.shape[0]
         ctrl = np.empty((N, len(JOINT_ID)))
@@ -83,18 +83,18 @@ def main():
         FILE_READ_SUCCEEDED = True
 
         for i in range(len(JOINT_ID)):
-            data = np.load(data_folder + DATA_FILE_NAME + '_j' + str(JOINT_ID[i]) + '.npz')
-            ctrl[:, i] = data['ctrl']
+            data = np.load(data_folder + DATA_FILE_NAME + "_j" + str(JOINT_ID[i]) + ".npz")
+            ctrl[:, i] = data["ctrl"]
             #        ptorques[:,i] = data['ptorque'];
             #        p_gains[:,i] = data['p_gain'];
-            current[:, i] = data['current']
+            current[:, i] = data["current"]
             if not FORCE_ESTIMATE_RECOMPUTATION:
-                dq[:, i] = data['dq']
-                ddq[:, i] = data['ddq']
-                tau[:, i] = data['tau']
+                dq[:, i] = data["dq"]
+                ddq[:, i] = data["ddq"]
+                tau[:, i] = data["tau"]
 
     except (IOError, KeyError):
-        print('Gonna read text files...')
+        print("Gonna read text files...")
 
         ctrl = np.loadtxt(data_folder + file_name_ctrl)
         enc = np.loadtxt(data_folder + file_name_enc)
@@ -122,7 +122,7 @@ def main():
         ctrl = ctrl[:, JOINT_ID].reshape(N, len(JOINT_ID))
         # FIX FOR BAD CURRENT ASSIGNMENT
 
-        print('JOINT_ID :')
+        print("JOINT_ID :")
         print(JOINT_ID)
         #        if (JOINT_ID == 4):
         #           current = current[:,5].reshape(N,1);
@@ -145,39 +145,51 @@ def main():
         #    p_gains = p_gains[:N,1:];
         # save sensor data
 
-        np.savez(data_folder + DATA_FILE_NAME + '.npz',
-                 time=time,
-                 enc=enc.reshape(N, NJ),
-                 acc=acc.reshape(N, 3),
-                 gyro=gyro.reshape(N, 3),
-                 forceLA=forceLA.reshape(N, 6),
-                 forceRA=forceRA.reshape(N, 6),
-                 forceLL=forceLL.reshape(N, 6),
-                 forceRL=forceRL.reshape(N, 6))
+        np.savez(
+            data_folder + DATA_FILE_NAME + ".npz",
+            time=time,
+            enc=enc.reshape(N, NJ),
+            acc=acc.reshape(N, 3),
+            gyro=gyro.reshape(N, 3),
+            forceLA=forceLA.reshape(N, 6),
+            forceRA=forceRA.reshape(N, 6),
+            forceLL=forceLL.reshape(N, 6),
+            forceRL=forceRL.reshape(N, 6),
+        )
 
     N = len(enc[:, 0])
     if FORCE_ESTIMATE_RECOMPUTATION or not FILE_READ_SUCCEEDED:
-        print('Gonna estimate dq, ddq, tau')
-        dt = 'f4'
-        a = np.zeros(N,
-                     dtype=[('enc', dt, NJ), ('forceLA', dt, 6), ('forceRA', dt, 6), ('forceLL', dt, 6),
-                            ('forceRL', dt, 6), ('acc', dt, 3), ('gyro', dt, 3), ('time', dt, 1)])
-        a['enc'] = enc
-        a['forceLA'] = forceLA
-        a['forceRA'] = forceRA
-        a['forceLL'] = forceLL
-        a['forceRL'] = forceRL
+        print("Gonna estimate dq, ddq, tau")
+        dt = "f4"
+        a = np.zeros(
+            N,
+            dtype=[
+                ("enc", dt, NJ),
+                ("forceLA", dt, 6),
+                ("forceRA", dt, 6),
+                ("forceLL", dt, 6),
+                ("forceRL", dt, 6),
+                ("acc", dt, 3),
+                ("gyro", dt, 3),
+                ("time", dt, 1),
+            ],
+        )
+        a["enc"] = enc
+        a["forceLA"] = forceLA
+        a["forceRA"] = forceRA
+        a["forceLL"] = forceLL
+        a["forceRL"] = forceRL
 
-        if (SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO):
-            a['forceRL'][:, 2] = 0.0
-        if (NEGLECT_ACCELEROMETER):
-            a['acc'] = np.array([0, 0, 9.81])
+        if SET_NORMAL_FORCE_RIGHT_FOOT_TO_ZERO:
+            a["forceRL"][:, 2] = 0.0
+        if NEGLECT_ACCELEROMETER:
+            a["acc"] = np.array([0, 0, 9.81])
             # np.mean(acc,0);
         else:
-            a['acc'] = acc
+            a["acc"] = acc
         if not NEGLECT_GYROSCOPE:
-            a['gyro'] = gyro
-        a['time'] = np.squeeze(time * DT)
+            a["gyro"] = gyro
+        a["time"] = np.squeeze(time * DT)
         (tau, dq, ddq) = compute_estimates_from_sensors(a, EST_DELAY, USE_FT_SENSORS=USE_FT_SENSORS)
         # ftSensorOffsets=24*(0.,),
 
@@ -195,60 +207,74 @@ def main():
         tau = tau[:, JOINT_ID].reshape(N, len(JOINT_ID))
 
         for i in range(len(JOINT_ID)):
-            np.savez(data_folder + DATA_FILE_NAME + '_j' + str(JOINT_ID[i]) + '.npz',
-                     ctrl=ctrl[:, i],
-                     enc=enc[:, JOINT_ID[i]],
-                     tau=tau[:, i],
-                     dq=dq[:, i],
-                     ddq=ddq[:, i],
-                     current=current[:, i])
+            np.savez(
+                data_folder + DATA_FILE_NAME + "_j" + str(JOINT_ID[i]) + ".npz",
+                ctrl=ctrl[:, i],
+                enc=enc[:, JOINT_ID[i]],
+                tau=tau[:, i],
+                dq=dq[:, i],
+                ddq=ddq[:, i],
+                current=current[:, i],
+            )
             # , ptorque=ptorques[:,i], p_gain=p_gains[:,i]);
 
     # embed()
-    if (PLOT_DATA):
-        ''' Plot data '''
+    if PLOT_DATA:
+        """Plot data"""
         if not NEGLECT_ACCELEROMETER:
             plt.figure()
             plt.plot(acc)
-            plt.title('Acc')
+            plt.title("Acc")
         if not NEGLECT_GYROSCOPE:
             plt.figure()
             plt.plot(gyro)
-            plt.title('Gyro')
-        # ~ plt.figure(); plt.plot(forceLA); plt.title('Force Left Arm');
+            plt.title("Gyro")
 
+            # plt.figure()
+            # plt.plot(forceLA)
+            # plt.title('Force Left Arm')
 
-#        plt.figure(); plt.plot(forceRA); plt.title('Force Right Arm'); plt.legend(['fx','fy','fz','mx','my','mz']);
-#        plt.plot(enc[:,JOINT_ID[i]], '--');
-# ~ plt.figure(); plt.plot(forceLL); plt.title('Force Left Leg');
-# ~ plt.figure(); plt.plot(forceRL); plt.title('Force Right Leg');
+            # plt.figure()
+            # plt.plot(forceRA)
+            # plt.title('Force Right Arm')
+            # plt.legend(['fx','fy','fz','mx','my','mz'])
+
+            # plt.plot(enc[:,JOINT_ID[i]], '--')
+
+            # plt.figure()
+            # plt.plot(forceLL)
+            # plt.title('Force Left Leg')
+
+            # plt.figure()
+            # plt.plot(forceRL)
+            # plt.title('Force Right Leg')
 
         for i in range(len(JOINT_ID)):
             plt.figure()
             plt.plot(dq[:, i])
-            plt.title('Joint velocity ' + str(JOINT_ID[i]))
+            plt.title("Joint velocity " + str(JOINT_ID[i]))
             plt.figure()
             plt.plot(ddq[:, i])
-            plt.title('Joint acceleration ' + str(JOINT_ID[i]))
+            plt.title("Joint acceleration " + str(JOINT_ID[i]))
             plt.figure()
             plt.plot(tau[:, i])
-            plt.title('Joint torque ' + str(JOINT_ID[i]))
+            plt.title("Joint torque " + str(JOINT_ID[i]))
             plt.figure()
-            plt.plot(current[:, i], ctrl[:, i], 'b. ')
-            plt.title('Current VS ctrl ' + str(JOINT_ID[i]))
+            plt.plot(current[:, i], ctrl[:, i], "b. ")
+            plt.title("Current VS ctrl " + str(JOINT_ID[i]))
             plt.figure()
-            plt.plot(tau[:, i], current[:, i], '.')
-            plt.title('Torque VS current ' + str(JOINT_ID[i]))
+            plt.plot(tau[:, i], current[:, i], ".")
+            plt.title("Torque VS current " + str(JOINT_ID[i]))
             plt.figure()
-            plt.plot(dq[:, i], current[:, i], '.')
-            plt.title('Velocity VS current ' + str(JOINT_ID[i]))
+            plt.plot(dq[:, i], current[:, i], ".")
+            plt.title("Velocity VS current " + str(JOINT_ID[i]))
             plt.figure()
-            plt.plot(ddq[:, i], current[:, i], '.')
-            plt.title('Acceleration VS current ' + str(JOINT_ID[i]))
+            plt.plot(ddq[:, i], current[:, i], ".")
+            plt.title("Acceleration VS current " + str(JOINT_ID[i]))
             plt.show()
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

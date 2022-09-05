@@ -9,9 +9,28 @@ import scipy
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
 import scipy.linalg as linalg
+
 # from scipy.lib.six import xrange
-from numpy import (array, asarray, atleast_1d, atleast_2d, diag, dot, eye, linspace, nan_to_num, ones, poly, product,
-                   r_, real, squeeze, transpose, zeros, zeros_like)
+from numpy import (
+    array,
+    asarray,
+    atleast_1d,
+    atleast_2d,
+    diag,
+    dot,
+    eye,
+    linspace,
+    nan_to_num,
+    ones,
+    poly,
+    product,
+    r_,
+    real,
+    squeeze,
+    transpose,
+    zeros,
+    zeros_like,
+)
 from scipy.signal.filter_design import freqs, normalize, tf2zpk, zpk2tf
 
 #
@@ -24,8 +43,20 @@ from scipy.signal.filter_design import freqs, normalize, tf2zpk, zpk2tf
 #
 
 __all__ = [
-    'tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
-    'step2', 'bode', 'freqresp'
+    "tf2ss",
+    "ss2tf",
+    "abcd_normalize",
+    "zpk2ss",
+    "ss2zpk",
+    "lti",
+    "lsim",
+    "lsim2",
+    "impulse",
+    "impulse2",
+    "step",
+    "step2",
+    "bode",
+    "freqresp",
 ]
 
 
@@ -62,11 +93,10 @@ def tf2ss(num, den):
         msg = "Improper transfer function. `num` is longer than `den`."
         raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
-        return array([], float), array([], float), array([], float), \
-               array([], float)
+        return array([], float), array([], float), array([], float), array([], float)
 
     # pad numerator to have same number of columns has denominator
-    num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]
+    num = r_["-1", zeros((num.shape[0], K - M), num.dtype), num]
 
     if num.shape[-1] > 0:
         D = num[:, 0]
@@ -99,7 +129,7 @@ def _shape_or_none(M):
     if M is not None:
         return M.shape
     else:
-        return (None, ) * 2
+        return (None,) * 2
 
 
 def _choice_not_none(*args):
@@ -194,8 +224,8 @@ def ss2tf(A, B, C, D, input=0):
         raise ValueError("System does not have the input specified.")
 
     # make MOSI from possibly MOMI system.
-    B = B[:, input:input + 1]
-    D = D[:, input:input + 1]
+    B = B[:, input : input + 1]
+    D = D[:, input : input + 1]
 
     try:
         den = poly(A)
@@ -283,6 +313,7 @@ class lti(object):
     ``s.num`` and ``s.den``.
 
     """
+
     def __init__(self, *args, **kwords):
         """
         Initialize the LTI system using either:
@@ -325,7 +356,7 @@ class lti(object):
         Canonical representation using state-space to preserve numerical
         precision and any MIMO information
         """
-        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
+        return "{0}(\n{1},\n{2},\n{3},\n{4}\n)".format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
@@ -566,12 +597,14 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
             raise ValueError("U must have the same number of rows " "as elements in T.")
 
         if sU[1] != sys.inputs:
-            raise ValueError("The number of inputs in U (%d) is not "
-                             "compatible with the number of system "
-                             "inputs (%d)" % (sU[1], sys.inputs))
+            raise ValueError(
+                "The number of inputs in U (%d) is not "
+                "compatible with the number of system "
+                "inputs (%d)" % (sU[1], sys.inputs)
+            )
         # Create a callable that uses linear interpolation to
         # calculate the input at any time.
-        ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
+        ufunc = interpolate.interp1d(T, U, kind="linear", axis=0, bounds_error=False)
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
@@ -585,7 +618,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
             """The vector field of the linear system."""
             return dot(sys.A, x)
 
-        xout = integrate.odeint(fprime, X0, T, args=(sys, ), **kwargs)
+        xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
         yout = dot(sys.C, transpose(xout))
 
     return T, squeeze(transpose(yout)), xout
@@ -695,7 +728,7 @@ def lsim(system, U, T, X0=None, interp=1):
         if interp:
             xout[k] = xout[k] + dot((U[k] - U[k - 1]), F2T)
 
-    yout = (squeeze(dot(U, transpose(sys.D))) + squeeze(dot(xout, transpose(sys.C))))
+    yout = squeeze(dot(U, transpose(sys.D))) + squeeze(dot(xout, transpose(sys.C)))
     return T, squeeze(yout), squeeze(xout)
 
 

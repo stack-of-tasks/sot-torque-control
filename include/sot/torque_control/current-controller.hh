@@ -24,17 +24,17 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <map>
-#include "boost/assign.hpp"
+#include <dynamic-graph/signal-helper.h>
 
+#include <map>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-
-#include <tsid/robots/robot-wrapper.hpp>
-#include <dynamic-graph/signal-helper.h>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
+#include <tsid/robots/robot-wrapper.hpp>
+
+#include "boost/assign.hpp"
 
 namespace dynamicgraph {
 namespace sot {
@@ -44,7 +44,8 @@ namespace torque_control {
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Entity {
+class SOTCURRENTCONTROLLER_EXPORT CurrentController
+    : public ::dynamicgraph::Entity {
   typedef CurrentController EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -54,50 +55,88 @@ class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Ent
 
   /// Initialize
   /// @param dt: control interval
-  /// @param currentOffsetIters: number of iterations while control is disabled to calibrate current sensors.
-  /// The recommended way is to use the signal max_current.
-  void init(const double& dt, const std::string& robotRef, const unsigned int& currentOffsetIters);
+  /// @param currentOffsetIters: number of iterations while control is disabled
+  /// to calibrate current sensors. The recommended way is to use the signal
+  /// max_current.
+  void init(const double& dt, const std::string& robotRef,
+            const unsigned int& currentOffsetIters);
 
   /* --- SIGNALS --- */
-  DECLARE_SIGNAL_IN(i_des, dynamicgraph::Vector);         /// desired motor currents
-  DECLARE_SIGNAL_IN(i_measured, dynamicgraph::Vector);    /// motor currents
-  DECLARE_SIGNAL_IN(i_sens_gains, dynamicgraph::Vector);  /// gains of current sensors
-  DECLARE_SIGNAL_IN(kp_current, dynamicgraph::Vector);    /// proportional current feedback gain
-  DECLARE_SIGNAL_IN(ki_current, dynamicgraph::Vector);    /// proportional current feedback gain
-
-  DECLARE_SIGNAL_IN(i_max, dynamicgraph::Vector);  /// max current allowed before stopping the controller (in Ampers)
-  DECLARE_SIGNAL_IN(u_max,
-                    dynamicgraph::Vector);  /// max desired current allowed before stopping the controller (in Ampers)
-  DECLARE_SIGNAL_IN(u_saturation, dynamicgraph::Vector);  /// values at which to saturate the control (in bits)
-
-  DECLARE_SIGNAL_IN(in_out_gain, dynamicgraph::Vector);  /// gain from input to output control values
+  DECLARE_SIGNAL_IN(i_des, dynamicgraph::Vector);  /// desired motor currents
+  DECLARE_SIGNAL_IN(i_measured, dynamicgraph::Vector);  /// motor currents
+  DECLARE_SIGNAL_IN(i_sens_gains,
+                    dynamicgraph::Vector);  /// gains of current sensors
   DECLARE_SIGNAL_IN(
-      dq, dynamicgraph::Vector);  /// Joint velocities; used to compensate for BEMF effect on low level current loop
-  DECLARE_SIGNAL_IN(bemf_factor, dynamicgraph::Vector);  /// Link between velocity and current; to compensate for BEMF
-                                                         /// effect on low level current loop (in A/rad.s-1)
-  DECLARE_SIGNAL_IN(percentage_bemf_compensation,
-                    dynamicgraph::Vector);  /// percentage in [0;1] of the motor back-EMF that we should compensate 0
-                                            /// is none, 1 is all of it
-  DECLARE_SIGNAL_IN(dead_zone_offsets, dynamicgraph::Vector);  /// current control dead zone offsets
-  DECLARE_SIGNAL_IN(percentage_dead_zone_compensation,
-                    dynamicgraph::Vector);  /// percentage in [0;1] of the motor driver dead zone that we should
-                                            /// compensate 0 is none, 1 is all of it
+      kp_current, dynamicgraph::Vector);  /// proportional current feedback gain
+  DECLARE_SIGNAL_IN(
+      ki_current, dynamicgraph::Vector);  /// proportional current feedback gain
+
+  DECLARE_SIGNAL_IN(
+      i_max, dynamicgraph::Vector);  /// max current allowed before stopping the
+                                     /// controller (in Ampers)
+  DECLARE_SIGNAL_IN(
+      u_max,
+      dynamicgraph::Vector);  /// max desired current allowed before stopping
+                              /// the controller (in Ampers)
+  DECLARE_SIGNAL_IN(u_saturation,
+                    dynamicgraph::Vector);  /// values at which to saturate the
+                                            /// control (in bits)
+
+  DECLARE_SIGNAL_IN(
+      in_out_gain,
+      dynamicgraph::Vector);  /// gain from input to output control values
+  DECLARE_SIGNAL_IN(
+      dq, dynamicgraph::Vector);  /// Joint velocities; used to compensate for
+                                  /// BEMF effect on low level current loop
+  DECLARE_SIGNAL_IN(
+      bemf_factor,
+      dynamicgraph::Vector);  /// Link between velocity and current; to
+                              /// compensate for BEMF effect on low level
+                              /// current loop (in A/rad.s-1)
+  DECLARE_SIGNAL_IN(
+      percentage_bemf_compensation,
+      dynamicgraph::Vector);  /// percentage in [0;1] of the motor back-EMF that
+                              /// we should compensate 0 is none, 1 is all of it
+  DECLARE_SIGNAL_IN(
+      dead_zone_offsets,
+      dynamicgraph::Vector);  /// current control dead zone offsets
+  DECLARE_SIGNAL_IN(
+      percentage_dead_zone_compensation,
+      dynamicgraph::Vector);  /// percentage in [0;1] of the motor driver dead
+                              /// zone that we should compensate 0 is none, 1 is
+                              /// all of it
   DECLARE_SIGNAL_IN(
       i_max_dead_zone_compensation,
-      dynamicgraph::Vector);  /// value of current tracking error at which deadzone is completely compensated
+      dynamicgraph::Vector);  /// value of current tracking error at which
+                              /// deadzone is completely compensated
   DECLARE_SIGNAL_IN(i_sensor_offsets_low_level,
-                    dynamicgraph::Vector);  /// offset of the current sensors seen by the low level
-  DECLARE_SIGNAL_IN(i_sensor_offsets_real_in, dynamicgraph::Vector);  /// real offset of the current sensors
+                    dynamicgraph::Vector);  /// offset of the current sensors
+                                            /// seen by the low level
+  DECLARE_SIGNAL_IN(
+      i_sensor_offsets_real_in,
+      dynamicgraph::Vector);  /// real offset of the current sensors
 
   DECLARE_SIGNAL_OUT(u, dynamicgraph::Vector);
-  DECLARE_SIGNAL_OUT(u_safe, dynamicgraph::Vector);       /// same as u when everything is fine, 0 otherwise
-  DECLARE_SIGNAL_OUT(i_real, dynamicgraph::Vector);       /// current measurements after gain and offset compensation
-  DECLARE_SIGNAL_OUT(i_low_level, dynamicgraph::Vector);  /// current measurements as seen by low-level ctrl
-  DECLARE_SIGNAL_OUT(i_sensor_offsets_real_out, dynamicgraph::Vector);  /// real offset of the current sensors
+  DECLARE_SIGNAL_OUT(
+      u_safe,
+      dynamicgraph::Vector);  /// same as u when everything is fine, 0 otherwise
+  DECLARE_SIGNAL_OUT(i_real,
+                     dynamicgraph::Vector);  /// current measurements after gain
+                                             /// and offset compensation
+  DECLARE_SIGNAL_OUT(
+      i_low_level,
+      dynamicgraph::Vector);  /// current measurements as seen by low-level ctrl
+  DECLARE_SIGNAL_OUT(
+      i_sensor_offsets_real_out,
+      dynamicgraph::Vector);  /// real offset of the current sensors
   DECLARE_SIGNAL_OUT(dead_zone_compensation,
-                     dynamicgraph::Vector);            /// dead-zone compensation current applied by the controller
-  DECLARE_SIGNAL_OUT(i_errors, dynamicgraph::Vector);  /// current tracking error
-  DECLARE_SIGNAL_OUT(i_errors_ll_wo_bemf, dynamicgraph::Vector);  /// current tracking error without BEMF effect
+                     dynamicgraph::Vector);  /// dead-zone compensation current
+                                             /// applied by the controller
+  DECLARE_SIGNAL_OUT(i_errors,
+                     dynamicgraph::Vector);  /// current tracking error
+  DECLARE_SIGNAL_OUT(
+      i_errors_ll_wo_bemf,
+      dynamicgraph::Vector);  /// current tracking error without BEMF effect
 
   /* --- COMMANDS --- */
 
@@ -106,18 +145,21 @@ class SOTCURRENTCONTROLLER_EXPORT CurrentController : public ::dynamicgraph::Ent
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[CurrentController-" + name + "] " + msg) << '\n';
   }
 
  protected:
   RobotUtilShrPtr m_robot_util;
-  bool m_initSucceeded;  /// true if the entity has been successfully initialized
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
   bool m_emergency_stop_triggered;
   double m_dt;           /// control loop time period
   bool m_is_first_iter;  /// true at the first iteration, false otherwise
   int m_iter;
-  double m_sleep_time;  /// time to sleep at every iteration (to slow down simulation)
+  double m_sleep_time;  /// time to sleep at every iteration (to slow down
+                        /// simulation)
 
   unsigned int m_currentOffsetIters;
   dynamicgraph::Vector m_i_offsets_real;

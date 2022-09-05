@@ -4,12 +4,12 @@
  */
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <Eigen/Dense>
 #include <dynamic-graph/factory.h>
+
+#include <Eigen/Dense>
 #include <sot/core/debug.hh>
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/ddp-actuator-solver.hh>
-
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl
@@ -26,12 +26,13 @@
     DebugFile.open(DBGFILE, std::ofstream::out); \
     DebugFile.close();                           \
   }
-#define ODEBUG5FULL(x)                                                                          \
-  {                                                                                             \
-    std::ofstream DebugFile;                                                                    \
-    DebugFile.open(DBGFILE, std::ofstream::app);                                                \
-    DebugFile << __FILE__ << ":" << __FUNCTION__ << "(#" << __LINE__ << "):" << x << std::endl; \
-    DebugFile.close();                                                                          \
+#define ODEBUG5FULL(x)                                               \
+  {                                                                  \
+    std::ofstream DebugFile;                                         \
+    DebugFile.open(DBGFILE, std::ofstream::app);                     \
+    DebugFile << __FILE__ << ":" << __FUNCTION__ << "(#" << __LINE__ \
+              << "):" << x << std::endl;                             \
+    DebugFile.close();                                               \
   }
 #define ODEBUG5(x)                               \
   {                                              \
@@ -82,10 +83,13 @@ DdpActuatorSolver::DdpActuatorSolver(const std::string &name)
   m_zeroState.setZero();
 
   /* Commands. */
-  addCommand("init", makeCommandVoid4(*this, &DdpActuatorSolver::param_init,
-                                      docCommandVoid4("Initialize the DDP solver.", "Control timestep [s].",
-                                                      "Size of the preview window (in nb of samples)",
-                                                      "Max. nb. of iterations", "Stopping criteria")));
+  addCommand(
+      "init",
+      makeCommandVoid4(
+          *this, &DdpActuatorSolver::param_init,
+          docCommandVoid4("Initialize the DDP solver.", "Control timestep [s].",
+                          "Size of the preview window (in nb of samples)",
+                          "Max. nb. of iterations", "Stopping criteria")));
 }
 
 /* --- COMMANDS ---------------------------------------------------------- */
@@ -138,25 +142,28 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector) {
 
   // s = uList[0];
   s.resize(32);
-  s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, uList[0], 0.0, 0.0, 0.0,
-      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+  s << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, uList[0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0;
   // s.setZero(32);
   ODEBUG5(s);
   return s;
 }
 
-void DdpActuatorSolver::param_init(const double &timestep, const int &T, const int &nbItMax,
+void DdpActuatorSolver::param_init(const double &timestep, const int &T,
+                                   const int &nbItMax,
                                    const double &stopCriteria) {
   m_T = T;
   m_dt = timestep;
   m_iterMax = nbItMax;
   m_stopCrit = stopCriteria;
-  m_solver.FirstInitSolver(m_zeroState, m_zeroState, m_T, m_dt, m_iterMax, m_stopCrit);
+  m_solver.FirstInitSolver(m_zeroState, m_zeroState, m_T, m_dt, m_iterMax,
+                           m_stopCrit);
 }
 
 void DdpActuatorSolver::display(std::ostream &os) const {
-  os << " T: " << m_T << " timestep: " << m_dt << " nbItMax: " << m_iterMax << " stopCriteria: " << m_stopCrit
-     << std::endl;
+  os << " T: " << m_T << " timestep: " << m_dt << " nbItMax: " << m_iterMax
+     << " stopCriteria: " << m_stopCrit << std::endl;
 }
 }  // namespace torque_control
 }  // namespace sot

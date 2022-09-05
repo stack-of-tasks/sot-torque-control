@@ -14,20 +14,17 @@
  * with sot-torque-control.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/test/unit_test.hpp>
-
-#include <tsid/utils/stop-watch.hpp>
-#include <tsid/utils/statistics.hpp>
-#include <tsid/solvers/solver-HQP-factory.hxx>
-#include <tsid/solvers/utils.hpp>
-#include <tsid/math/utils.hpp>
-
 #include <dynamic-graph/factory.h>
 
+#include <boost/test/unit_test.hpp>
 #include <sot/core/debug.hh>
-
 #include <sot/torque_control/commands-helper.hh>
 #include <sot/torque_control/simple-inverse-dyn.hh>
+#include <tsid/math/utils.hpp>
+#include <tsid/solvers/solver-HQP-factory.hxx>
+#include <tsid/solvers/utils.hpp>
+#include <tsid/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
 
 #if DEBUG
 #define ODEBUG(x) std::cout << x << std::endl
@@ -38,19 +35,27 @@
 
 #define DBGFILE "/tmp/debug-sot-torque-control.dat"
 
-#define RESETDEBUG5() { std::ofstream DebugFile;  \
-    DebugFile.open(DBGFILE,std::ofstream::out);   \
-    DebugFile.close();}
-#define ODEBUG5FULL(x) { std::ofstream DebugFile; \
-    DebugFile.open(DBGFILE,std::ofstream::app);   \
-    DebugFile << __FILE__ << ":"      \
-              << __FUNCTION__ << "(#"     \
-              << __LINE__ << "):" << x << std::endl;  \
-    DebugFile.close();}
-#define ODEBUG5(x) { std::ofstream DebugFile; \
-    DebugFile.open(DBGFILE,std::ofstream::app); \
-    DebugFile << x << std::endl;    \
-    DebugFile.close();}
+#define RESETDEBUG5()                            \
+  {                                              \
+    std::ofstream DebugFile;                     \
+    DebugFile.open(DBGFILE, std::ofstream::out); \
+    DebugFile.close();                           \
+  }
+#define ODEBUG5FULL(x)                                               \
+  {                                                                  \
+    std::ofstream DebugFile;                                         \
+    DebugFile.open(DBGFILE, std::ofstream::app);                     \
+    DebugFile << __FILE__ << ":" << __FUNCTION__ << "(#" << __LINE__ \
+              << "):" << x << std::endl;                             \
+    DebugFile.close();                                               \
+  }
+#define ODEBUG5(x)                               \
+  {                                              \
+    std::ofstream DebugFile;                     \
+    DebugFile.open(DBGFILE, std::ofstream::app); \
+    DebugFile << x << std::endl;                 \
+    DebugFile.close();                           \
+  }
 
 #define RESETDEBUG4()
 #define ODEBUG4FULL(x)
@@ -73,48 +78,29 @@ using namespace dg::sot;
 
 #define REQUIRE_FINITE(A) assert(is_finite(A))
 
-//Size to be aligned                "-------------------------------------------------------"
+// Size to be aligned "-------------------------------------------------------"
 #define PROFILE_TAU_DES_COMPUTATION "SimpleInverseDyn: desired tau"
-#define PROFILE_HQP_SOLUTION        "SimpleInverseDyn: HQP"
-#define PROFILE_PREPARE_INV_DYN     "SimpleInverseDyn: prepare inv-dyn"
-#define PROFILE_READ_INPUT_SIGNALS  "SimpleInverseDyn: read input signals"
+#define PROFILE_HQP_SOLUTION "SimpleInverseDyn: HQP"
+#define PROFILE_PREPARE_INV_DYN "SimpleInverseDyn: prepare inv-dyn"
+#define PROFILE_READ_INPUT_SIGNALS "SimpleInverseDyn: read input signals"
 
 #define ZERO_FORCE_THRESHOLD 1e-3
 
-#define INPUT_SIGNALS  m_posture_ref_posSIN \
-  << m_posture_ref_velSIN \
-  << m_posture_ref_accSIN \
-  << m_kp_postureSIN \
-  << m_kd_postureSIN \
-  << m_w_postureSIN \
-  << m_kp_posSIN \
-  << m_kd_posSIN \
-  << m_com_ref_posSIN \
-  << m_com_ref_velSIN \
-  << m_com_ref_accSIN \
-  << m_kp_comSIN \
-  << m_kd_comSIN \
-  << m_w_comSIN \
-  << m_kp_contactSIN \
-  << m_kd_contactSIN \
-  << m_w_forcesSIN \
-  << m_muSIN \
-  << m_contact_pointsSIN \
-  << m_contact_normalSIN \
-  << m_f_minSIN \
-  << m_f_maxSIN \
-  << m_waist_ref_posSIN \
-  << m_waist_ref_velSIN \
-  << m_waist_ref_accSIN \
-  << m_kp_waistSIN \
-  << m_kd_waistSIN \
-  << m_w_waistSIN \
-  << m_qSIN \
-  << m_vSIN \
-  << m_active_jointsSIN
+#define INPUT_SIGNALS                                                          \
+  m_posture_ref_posSIN << m_posture_ref_velSIN << m_posture_ref_accSIN         \
+                       << m_kp_postureSIN << m_kd_postureSIN << m_w_postureSIN \
+                       << m_kp_posSIN << m_kd_posSIN << m_com_ref_posSIN       \
+                       << m_com_ref_velSIN << m_com_ref_accSIN << m_kp_comSIN  \
+                       << m_kd_comSIN << m_w_comSIN << m_kp_contactSIN         \
+                       << m_kd_contactSIN << m_w_forcesSIN << m_muSIN          \
+                       << m_contact_pointsSIN << m_contact_normalSIN           \
+                       << m_f_minSIN << m_f_maxSIN << m_waist_ref_posSIN       \
+                       << m_waist_ref_velSIN << m_waist_ref_accSIN             \
+                       << m_kp_waistSIN << m_kd_waistSIN << m_w_waistSIN       \
+                       << m_qSIN << m_vSIN << m_active_jointsSIN
 
-#define OUTPUT_SIGNALS m_tau_desSOUT << m_dv_desSOUT << m_v_desSOUT << m_q_desSOUT << m_uSOUT
-
+#define OUTPUT_SIGNALS \
+  m_tau_desSOUT << m_dv_desSOUT << m_v_desSOUT << m_q_desSOUT << m_uSOUT
 
 /// Define EntityClassName here rather than in the header file
 /// so that it can be used by the macros DEFINE_SIGNAL_**_FUNCTION.
@@ -124,62 +110,64 @@ typedef Eigen::Matrix<double, 2, 1> Vector2;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorN;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> VectorN6;
 /* --- DG FACTORY ---------------------------------------------------- */
-DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(SimpleInverseDyn,
-                                   "SimpleInverseDyn");
+DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(SimpleInverseDyn, "SimpleInverseDyn");
 
 /* ------------------------------------------------------------------- */
 /* --- CONSTRUCTION -------------------------------------------------- */
 /* ------------------------------------------------------------------- */
-SimpleInverseDyn::
-SimpleInverseDyn(const std::string& name)
-  : Entity(name)
+SimpleInverseDyn::SimpleInverseDyn(const std::string& name)
+    : Entity(name)
 
-  , CONSTRUCT_SIGNAL_IN(posture_ref_pos,             dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(posture_ref_vel,             dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(posture_ref_acc,             dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kp_posture,                  dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kd_posture,                  dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(w_posture,                   double)
-  , CONSTRUCT_SIGNAL_IN(kp_pos,                      dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kd_pos,                      dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(com_ref_pos,                 dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(com_ref_vel,                 dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(com_ref_acc,                 dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kp_com,                      dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kd_com,                      dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(w_com,                       double)
-  , CONSTRUCT_SIGNAL_IN(kp_contact,                  dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kd_contact,                  dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(w_forces,                    double)
-  , CONSTRUCT_SIGNAL_IN(mu,                          double)
-  , CONSTRUCT_SIGNAL_IN(contact_points,              dynamicgraph::Matrix)
-  , CONSTRUCT_SIGNAL_IN(contact_normal,              dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(f_min,                       double)
-  , CONSTRUCT_SIGNAL_IN(f_max,                       double)
-  , CONSTRUCT_SIGNAL_IN(waist_ref_pos,               dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(waist_ref_vel,               dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(waist_ref_acc,               dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kp_waist,                    dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(kd_waist,                    dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(w_waist,                     double)
-  , CONSTRUCT_SIGNAL_IN(q,                           dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(v,                           dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_IN(active_joints,               dynamicgraph::Vector)
-  , CONSTRUCT_SIGNAL_INNER(active_joints_checked,    dg::Vector, m_active_jointsSIN)
-  , CONSTRUCT_SIGNAL_OUT(tau_des,                    dynamicgraph::Vector, INPUT_SIGNALS)
-  , CONSTRUCT_SIGNAL_OUT(dv_des,                     dg::Vector, m_tau_desSOUT)
-  , CONSTRUCT_SIGNAL_OUT(v_des,                      dg::Vector, m_dv_desSOUT)
-  , CONSTRUCT_SIGNAL_OUT(q_des,                      dg::Vector, m_v_desSOUT)
-  , CONSTRUCT_SIGNAL_OUT(u,                          dg::Vector, INPUT_SIGNALS << m_tau_desSOUT << m_v_desSOUT << m_q_desSOUT)
-  , m_t(0.0)
-  , m_initSucceeded(false)
-  , m_enabled(false)
-  , m_firstTime(true)
-  , m_timeLast(0)
-  , m_robot_util(RefVoidRobotUtil()) 
-  , m_ctrlMode(CONTROL_OUTPUT_VELOCITY){
+      ,
+      CONSTRUCT_SIGNAL_IN(posture_ref_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(posture_ref_vel, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(posture_ref_acc, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kp_posture, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kd_posture, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(w_posture, double),
+      CONSTRUCT_SIGNAL_IN(kp_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kd_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_ref_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_ref_vel, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(com_ref_acc, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kp_com, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kd_com, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(w_com, double),
+      CONSTRUCT_SIGNAL_IN(kp_contact, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kd_contact, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(w_forces, double),
+      CONSTRUCT_SIGNAL_IN(mu, double),
+      CONSTRUCT_SIGNAL_IN(contact_points, dynamicgraph::Matrix),
+      CONSTRUCT_SIGNAL_IN(contact_normal, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(f_min, double),
+      CONSTRUCT_SIGNAL_IN(f_max, double),
+      CONSTRUCT_SIGNAL_IN(waist_ref_pos, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(waist_ref_vel, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(waist_ref_acc, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kp_waist, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(kd_waist, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(w_waist, double),
+      CONSTRUCT_SIGNAL_IN(q, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(v, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_IN(active_joints, dynamicgraph::Vector),
+      CONSTRUCT_SIGNAL_INNER(active_joints_checked, dg::Vector,
+                             m_active_jointsSIN),
+      CONSTRUCT_SIGNAL_OUT(tau_des, dynamicgraph::Vector, INPUT_SIGNALS),
+      CONSTRUCT_SIGNAL_OUT(dv_des, dg::Vector, m_tau_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(v_des, dg::Vector, m_dv_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(q_des, dg::Vector, m_v_desSOUT),
+      CONSTRUCT_SIGNAL_OUT(
+          u, dg::Vector,
+          INPUT_SIGNALS << m_tau_desSOUT << m_v_desSOUT << m_q_desSOUT),
+      m_t(0.0),
+      m_initSucceeded(false),
+      m_enabled(false),
+      m_firstTime(true),
+      m_timeLast(0),
+      m_robot_util(RefVoidRobotUtil()),
+      m_ctrlMode(CONTROL_OUTPUT_VELOCITY) {
   RESETDEBUG5();
-  Entity::signalRegistration( INPUT_SIGNALS << OUTPUT_SIGNALS );
+  Entity::signalRegistration(INPUT_SIGNALS << OUTPUT_SIGNALS);
 
   m_com_offset.setZero();
 
@@ -191,18 +179,21 @@ SimpleInverseDyn(const std::string& name)
                                               "Robot reference (string)")));
   /* SET of control output type. */
   addCommand("setControlOutputType",
-             makeCommandVoid1(*this, &SimpleInverseDyn::setControlOutputType,
-                              docCommandVoid1("Set the type of control output.",
-                                              "Control type: velocity or torque (string)")));
+             makeCommandVoid1(
+                 *this, &SimpleInverseDyn::setControlOutputType,
+                 docCommandVoid1("Set the type of control output.",
+                                 "Control type: velocity or torque (string)")));
 
-  addCommand("updateComOffset",
-             makeCommandVoid0(*this, &SimpleInverseDyn::updateComOffset,
-                              docCommandVoid0("Update the offset on the CoM based on the CoP measurement.")));
-
+  addCommand(
+      "updateComOffset",
+      makeCommandVoid0(
+          *this, &SimpleInverseDyn::updateComOffset,
+          docCommandVoid0(
+              "Update the offset on the CoM based on the CoP measurement.")));
 }
 
 void SimpleInverseDyn::updateComOffset() {
-  const Vector3 & com = m_robot->com(m_invDyn->data());
+  const Vector3& com = m_robot->com(m_invDyn->data());
   m_com_offset = com;
   SEND_MSG("CoM offset updated: " + toString(m_com_offset), MSG_TYPE_INFO);
 }
@@ -226,7 +217,8 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
   if (isNameInRobotUtil(localName))
     m_robot_util = getRobotUtil(localName);
   else {
-    SEND_MSG("You should have an entity controller manager initialized before", MSG_TYPE_ERROR);
+    SEND_MSG("You should have an entity controller manager initialized before",
+             MSG_TYPE_ERROR);
     return;
   }
 
@@ -241,22 +233,24 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
   const dg::sot::Vector6d& kp_waist = m_kp_waistSIN(0);
   const dg::sot::Vector6d& kd_waist = m_kd_waistSIN(0);
 
-  assert(kp_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  assert(kd_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kp_posture.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kd_posture.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   m_w_com = m_w_comSIN(0);
   m_w_posture = m_w_postureSIN(0);
   m_w_waist = m_w_waistSIN(0);
-  const double & w_forces = m_w_forcesSIN(0);
-  const double & mu = m_muSIN(0);
-  const double & fMin = m_f_minSIN(0);
-  const double & fMax = m_f_maxSIN(0);
+  const double& w_forces = m_w_forcesSIN(0);
+  const double& mu = m_muSIN(0);
+  const double& fMin = m_f_minSIN(0);
+  const double& fMax = m_f_maxSIN(0);
 
   try {
     vector<string> package_dirs;
-    m_robot = new robots::RobotWrapper(m_robot_util->m_urdf_filename,
-                                       package_dirs,
-                                       pinocchio::JointModelFreeFlyer());
+    m_robot =
+        new robots::RobotWrapper(m_robot_util->m_urdf_filename, package_dirs,
+                                 pinocchio::JointModelFreeFlyer());
 
     assert(m_robot->nv() >= 6);
     m_robot_util->m_nbJoints = m_robot->nv() - 6;
@@ -273,18 +267,18 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
     m_invDyn = new InverseDynamicsFormulationAccForce("invdyn", *m_robot);
 
     // CONTACT 6D TASKS
-    m_contactRF = new Contact6d("contact_rfoot", *m_robot,
-                                m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
-                                contactPoints, contactNormal,
-                                mu, fMin, fMax);
+    m_contactRF =
+        new Contact6d("contact_rfoot", *m_robot,
+                      m_robot_util->m_foot_util.m_Right_Foot_Frame_Name,
+                      contactPoints, contactNormal, mu, fMin, fMax);
     m_contactRF->Kp(kp_contact);
     m_contactRF->Kd(kd_contact);
     m_invDyn->addRigidContact(*m_contactRF, w_forces);
 
-    m_contactLF = new Contact6d("contact_lfoot", *m_robot,
-                                m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
-                                contactPoints, contactNormal,
-                                mu, fMin, fMax);
+    m_contactLF =
+        new Contact6d("contact_lfoot", *m_robot,
+                      m_robot_util->m_foot_util.m_Left_Foot_Frame_Name,
+                      contactPoints, contactNormal, mu, fMin, fMax);
     m_contactLF->Kp(kp_contact);
     m_contactLF->Kd(kd_contact);
     m_invDyn->addRigidContact(*m_contactLF, w_forces);
@@ -299,13 +293,15 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
     m_taskWaist = new TaskSE3Equality("task-waist", *m_robot, "root_joint");
     m_taskWaist->Kp(kp_waist);
     m_taskWaist->Kd(kd_waist);
-    // Add a Mask to the task which will select the vector dimensions on which the task will act.
-    // In this case the waist configuration is a vector 6d (position and orientation -> SE3)
-    // Here we set a mask = [0 0 0 1 1 1] so the task on the waist will act on the orientation of the robot
+    // Add a Mask to the task which will select the vector dimensions on which
+    // the task will act. In this case the waist configuration is a vector 6d
+    // (position and orientation -> SE3) Here we set a mask = [0 0 0 1 1 1] so
+    // the task on the waist will act on the orientation of the robot
     Eigen::VectorXd mask_orientation(6);
     mask_orientation << 0, 0, 0, 1, 1, 1;
     m_taskWaist->setMask(mask_orientation);
-    // Add the task to the HQP with weight = 1.0, priority level = 1 (in the cost function) and a transition duration = 0.0
+    // Add the task to the HQP with weight = 1.0, priority level = 1 (in the
+    // cost function) and a transition duration = 0.0
     m_invDyn->addMotionTask(*m_taskWaist, m_w_waist, 1);
 
     // POSTURE TASK
@@ -325,7 +321,9 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
 
   } catch (const std::exception& e) {
     std::cout << e.what();
-    return SEND_MSG("Init failed: Could load URDF :" + m_robot_util->m_urdf_filename, MSG_TYPE_ERROR);
+    return SEND_MSG(
+        "Init failed: Could load URDF :" + m_robot_util->m_urdf_filename,
+        MSG_TYPE_ERROR);
   }
   m_dt = dt;
   m_initSucceeded = true;
@@ -334,7 +332,8 @@ void SimpleInverseDyn::init(const double& dt, const std::string& robotRef) {
 /* ------------------------------------------------------------------- */
 /* --- SIGNALS ------------------------------------------------------- */
 /* ------------------------------------------------------------------- */
-/** Copy active_joints only if a valid transition occurs. (From all OFF) or (To all OFF)**/
+/** Copy active_joints only if a valid transition occurs. (From all OFF) or (To
+ * all OFF)**/
 DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
   if (s.size() != static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
     s.resize(m_robot_util->m_nbJoints);
@@ -343,37 +342,40 @@ DEFINE_SIGNAL_INNER_FUNCTION(active_joints_checked, dynamicgraph::Vector) {
   if (m_enabled == false) {
     if (active_joints_sot.any()) {
       /* from all OFF to some ON */
-      m_enabled = true ;
+      m_enabled = true;
       s = active_joints_sot;
       Eigen::VectorXd active_joints_urdf(m_robot_util->m_nbJoints);
       m_robot_util->joints_sot_to_urdf(active_joints_sot, active_joints_urdf);
 
-      m_taskBlockedJoints = new TaskJointPosture("task-posture-blocked", *m_robot);
+      m_taskBlockedJoints =
+          new TaskJointPosture("task-posture-blocked", *m_robot);
       Eigen::VectorXd blocked_joints(m_robot_util->m_nbJoints);
       for (unsigned int i = 0; i < m_robot_util->m_nbJoints; i++)
         if (active_joints_urdf(i) == 0.0)
           blocked_joints(i) = 1.0;
         else
           blocked_joints(i) = 0.0;
-      SEND_MSG("Blocked joints: " + toString(blocked_joints.transpose()), MSG_TYPE_INFO);
+      SEND_MSG("Blocked joints: " + toString(blocked_joints.transpose()),
+               MSG_TYPE_INFO);
       m_taskBlockedJoints->mask(blocked_joints);
-      TrajectorySample ref_zero(static_cast<unsigned int>(m_robot_util->m_nbJoints));
+      TrajectorySample ref_zero(
+          static_cast<unsigned int>(m_robot_util->m_nbJoints));
       m_taskBlockedJoints->setReference(ref_zero);
       m_invDyn->addMotionTask(*m_taskBlockedJoints, 1.0, 0);
     }
   } else if (!active_joints_sot.any()) {
     /* from some ON to all OFF */
-    m_enabled = false ;
+    m_enabled = false;
   }
   if (m_enabled == false)
-    for (unsigned int i = 0; i < m_robot_util->m_nbJoints; i++)
-      s(i) = false;
+    for (unsigned int i = 0; i < m_robot_util->m_nbJoints; i++) s(i) = false;
   return s;
 }
 
 DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal tau_des before initialization!");
+    SEND_WARNING_STREAM_MSG(
+        "Cannot compute signal tau_des before initialization!");
     return s;
   }
   if (s.size() != static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
@@ -386,22 +388,27 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   m_active_joints_checkedSINNER(iter);
 
   const VectorN6& q_robot = m_qSIN(iter);
-  assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  assert(q_robot.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
   const VectorN6& v_robot = m_vSIN(iter);
-  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  assert(v_robot.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
 
-  const Vector3& x_com_ref =   m_com_ref_posSIN(iter);
-  const Vector3& dx_com_ref =  m_com_ref_velSIN(iter);
+  const Vector3& x_com_ref = m_com_ref_posSIN(iter);
+  const Vector3& dx_com_ref = m_com_ref_velSIN(iter);
   const Vector3& ddx_com_ref = m_com_ref_accSIN(iter);
-  const VectorN& x_waist_ref =   m_waist_ref_posSIN(iter);
-  const Vector6& dx_waist_ref =  m_waist_ref_velSIN(iter);
+  const VectorN& x_waist_ref = m_waist_ref_posSIN(iter);
+  const Vector6& dx_waist_ref = m_waist_ref_velSIN(iter);
   const Vector6& ddx_waist_ref = m_waist_ref_accSIN(iter);
-  const VectorN& q_ref =   m_posture_ref_posSIN(iter);
-  assert(q_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
-  const VectorN& dq_ref =  m_posture_ref_velSIN(iter);
-  assert(dq_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  const VectorN& q_ref = m_posture_ref_posSIN(iter);
+  assert(q_ref.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  const VectorN& dq_ref = m_posture_ref_velSIN(iter);
+  assert(dq_ref.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& ddq_ref = m_posture_ref_accSIN(iter);
-  assert(ddq_ref.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(ddq_ref.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   const Vector6& kp_contact = m_kp_contactSIN(iter);
   const Vector6& kd_contact = m_kd_contactSIN(iter);
@@ -411,15 +418,17 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
   const Vector6& kd_waist = m_kd_waistSIN(iter);
 
   const VectorN& kp_posture = m_kp_postureSIN(iter);
-  assert(kp_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kp_posture.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& kd_posture = m_kd_postureSIN(iter);
-  assert(kd_posture.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kd_posture.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   /*const double & w_hands = m_w_handsSIN(iter);*/
-  const double & w_com = m_w_comSIN(iter);
-  const double & w_posture = m_w_postureSIN(iter);
-  const double & w_forces = m_w_forcesSIN(iter);
-  const double & w_waist = m_w_waistSIN(iter);
+  const double& w_com = m_w_comSIN(iter);
+  const double& w_posture = m_w_postureSIN(iter);
+  const double& w_forces = m_w_forcesSIN(iter);
+  const double& w_waist = m_w_waistSIN(iter);
 
   getProfiler().stop(PROFILE_READ_INPUT_SIGNALS);
 
@@ -458,8 +467,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_invDyn->updateTaskWeight(m_taskPosture->name(), w_posture);
   }
 
-  const double & fMin = m_f_minSIN(0);
-  const double & fMax = m_f_maxSIN(iter);
+  const double& fMin = m_f_minSIN(0);
+  const double& fMax = m_f_maxSIN(iter);
   m_contactLF->setMinNormalForce(fMin);
   m_contactRF->setMinNormalForce(fMin);
   m_contactLF->setMaxNormalForce(fMax);
@@ -475,45 +484,56 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     m_firstTime = false;
     m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
     m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
-    
+
     m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
     //          m_robot->computeAllTerms(m_invDyn->data(), q, v);
-    pinocchio::SE3 H_lf = m_robot->position(m_invDyn->data(),
-                                            m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+    pinocchio::SE3 H_lf = m_robot->position(
+        m_invDyn->data(),
+        m_robot->model().getJointId(
+            m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
     m_contactLF->setReference(H_lf);
-    SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_DEBUG);
+    SEND_MSG("Setting left foot reference to " + toString(H_lf),
+             MSG_TYPE_DEBUG);
 
-    pinocchio::SE3 H_rf = m_robot->position(m_invDyn->data(),
-                                            m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+    pinocchio::SE3 H_rf = m_robot->position(
+        m_invDyn->data(),
+        m_robot->model().getJointId(
+            m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
     m_contactRF->setReference(H_rf);
-    SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_DEBUG);
+    SEND_MSG("Setting right foot reference to " + toString(H_rf),
+             MSG_TYPE_DEBUG);
   } else if (m_timeLast != static_cast<unsigned int>(iter - 1)) {
-    SEND_MSG("Last time " + toString(m_timeLast) + " is not current time-1: " + toString(iter), MSG_TYPE_ERROR);
+    SEND_MSG("Last time " + toString(m_timeLast) +
+                 " is not current time-1: " + toString(iter),
+             MSG_TYPE_ERROR);
     if (m_timeLast == static_cast<unsigned int>(iter)) {
       s = m_tau_sot;
       return s;
     }
   }
   // else if (m_ctrlMode == CONTROL_OUTPUT_TORQUE){
-  //   // In velocity close the TSID loop on itself (v_des, q_des), in torque on the (q,v) of the robot.
-  //   m_robot_util->config_sot_to_urdf(q_robot, m_q_urdf);
-  //   m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot, m_v_urdf);
+  //   // In velocity close the TSID loop on itself (v_des, q_des), in torque on
+  //   the (q,v) of the robot. m_robot_util->config_sot_to_urdf(q_robot,
+  //   m_q_urdf); m_robot_util->velocity_sot_to_urdf(m_q_urdf, v_robot,
+  //   m_v_urdf);
   // }
   m_timeLast = static_cast<unsigned int>(iter);
 
-  const HQPData & hqpData = m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
+  const HQPData& hqpData =
+      m_invDyn->computeProblemData(m_t, m_q_urdf, m_v_urdf);
 
   getProfiler().stop(PROFILE_PREPARE_INV_DYN);
 
   getProfiler().start(PROFILE_HQP_SOLUTION);
-  SolverHQPBase * solver = m_hqpSolver;
+  SolverHQPBase* solver = m_hqpSolver;
   getStatistics().store("solver dynamic size", 1.0);
 
-  const HQPOutput & sol = solver->solve(hqpData);
+  const HQPOutput& sol = solver->solve(hqpData);
   getProfiler().stop(PROFILE_HQP_SOLUTION);
 
   if (sol.status != HQP_STATUS_OPTIMAL) {
-    SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: " + toString(sol.status));
+    SEND_ERROR_STREAM_MSG("HQP solver failed to find a solution: " +
+                          toString(sol.status));
     SEND_DEBUG_STREAM_MSG(tsid::solvers::HQPDataToString(hqpData, false));
     SEND_DEBUG_STREAM_MSG("q=" + toString(q_robot.transpose(), 1, 5));
     SEND_DEBUG_STREAM_MSG("v=" + toString(v_robot.transpose(), 1, 5));
@@ -521,7 +541,8 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
     return s;
   }
 
-  getStatistics().store("active inequalities", static_cast<double>(sol.activeSet.size()));
+  getStatistics().store("active inequalities",
+                        static_cast<double>(sol.activeSet.size()));
   getStatistics().store("solver iterations", sol.iterations);
 
   m_dv_urdf = m_invDyn->getAccelerations(sol);
@@ -538,11 +559,11 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau_des, dynamicgraph::Vector) {
 
 DEFINE_SIGNAL_OUT_FUNCTION(dv_des, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal dv_des before initialization!");
+    SEND_WARNING_STREAM_MSG(
+        "Cannot compute signal dv_des before initialization!");
     return s;
   }
-  if (s.size() != m_robot->nv())
-    s.resize(m_robot->nv());
+  if (s.size() != m_robot->nv()) s.resize(m_robot->nv());
   m_tau_desSOUT(iter);
   s = m_dv_sot;
   return s;
@@ -550,11 +571,11 @@ DEFINE_SIGNAL_OUT_FUNCTION(dv_des, dynamicgraph::Vector) {
 
 DEFINE_SIGNAL_OUT_FUNCTION(v_des, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal v_des before initialization!");
+    SEND_WARNING_STREAM_MSG(
+        "Cannot compute signal v_des before initialization!");
     return s;
   }
-  if (s.size() != m_robot->nv())
-    s.resize(m_robot->nv());
+  if (s.size() != m_robot->nv()) s.resize(m_robot->nv());
   m_dv_desSOUT(iter);
   tsid::math::Vector v_mean;
   v_mean = m_v_urdf + 0.5 * m_dt * m_dv_urdf;
@@ -567,11 +588,11 @@ DEFINE_SIGNAL_OUT_FUNCTION(v_des, dynamicgraph::Vector) {
 
 DEFINE_SIGNAL_OUT_FUNCTION(q_des, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal q_des before initialization!");
+    SEND_WARNING_STREAM_MSG(
+        "Cannot compute signal q_des before initialization!");
     return s;
   }
-  if (s.size() != m_robot->nv())
-    s.resize(m_robot->nv());
+  if (s.size() != m_robot->nv()) s.resize(m_robot->nv());
   m_v_desSOUT(iter);
   m_robot_util->config_urdf_to_sot(m_q_urdf, m_q_sot);
   s = m_q_sot;
@@ -587,19 +608,26 @@ DEFINE_SIGNAL_OUT_FUNCTION(u, dynamicgraph::Vector) {
     s.resize(m_robot_util->m_nbJoints);
 
   const VectorN& kp_pos = m_kp_posSIN(iter);
-  assert(kp_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kp_pos.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
   const VectorN& kd_pos = m_kd_posSIN(iter);
-  assert(kd_pos.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
+  assert(kd_pos.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints));
 
   const VectorN6& q_robot = m_qSIN(iter);
-  assert(q_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  assert(q_robot.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
   const VectorN6& v_robot = m_vSIN(iter);
-  assert(v_robot.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
+  assert(v_robot.size() ==
+         static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6));
 
   m_q_desSOUT(iter);
 
-  s = m_tau_sot + kp_pos.cwiseProduct(m_q_sot.tail(m_robot_util->m_nbJoints) - q_robot.tail(m_robot_util->m_nbJoints)) +
-      kd_pos.cwiseProduct(m_v_sot.tail(m_robot_util->m_nbJoints) - v_robot.tail(m_robot_util->m_nbJoints));
+  s = m_tau_sot +
+      kp_pos.cwiseProduct(m_q_sot.tail(m_robot_util->m_nbJoints) -
+                          q_robot.tail(m_robot_util->m_nbJoints)) +
+      kd_pos.cwiseProduct(m_v_sot.tail(m_robot_util->m_nbJoints) -
+                          v_robot.tail(m_robot_util->m_nbJoints));
 
   return s;
 }
@@ -615,9 +643,11 @@ void SimpleInverseDyn::display(std::ostream& os) const {
   try {
     getProfiler().report_all(3, os);
     getStatistics().report_all(1, os);
-    os << "QP size: nVar " << m_invDyn->nVar() << " nEq " << m_invDyn->nEq() << " nIn " << m_invDyn->nIn() << "\n";
-  } catch (ExceptionSignal e) {}
+    os << "QP size: nVar " << m_invDyn->nVar() << " nEq " << m_invDyn->nEq()
+       << " nIn " << m_invDyn->nIn() << "\n";
+  } catch (ExceptionSignal e) {
+  }
 }
-} // namespace torquecontrol
-} // namespace sot
-} // namespace dynamicgraph
+}  // namespace torque_control
+}  // namespace sot
+}  // namespace dynamicgraph

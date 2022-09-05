@@ -16,7 +16,8 @@
  * @param [out] pseudo_inv is the pseudo-inverse of the input matrix.
  * @param [in] pinvtoler is the tolerance in the SVD decomposition
  */
-void pinv(const Eigen::MatrixXd& matrix_in, Eigen::MatrixXd& pseudo_inv, const double& pinvtoler = 1.0e-6);
+void pinv(const Eigen::MatrixXd& matrix_in, Eigen::MatrixXd& pseudo_inv,
+          const double& pinvtoler = 1.0e-6);
 
 /**
  * Object to fit a polynomial of a given order. It provides a generic fitting
@@ -34,7 +35,8 @@ class PolyEstimator {
    * @param N is the window length.
    * @param dt is the control (sampling) time
    */
-  PolyEstimator(const unsigned int& order, const unsigned int& N, const double& dt);
+  PolyEstimator(const unsigned int& order, const unsigned int& N,
+                const double& dt);
 
   /**
    * Estimate the generic polynomial given a new element. The order of the
@@ -45,7 +47,8 @@ class PolyEstimator {
    * @param [in] data_element is the new data vector.
    * @param [in] time is the time stamp corresponding to the new data.
    */
-  void estimate(std::vector<double>& estimee, const std::vector<double>& data_element, const double& time);
+  void estimate(std::vector<double>& estimee,
+                const std::vector<double>& data_element, const double& time);
 
   /**
    * Estimate the polynomial given a new element assuming a constant time
@@ -55,7 +58,8 @@ class PolyEstimator {
    * @param [out] estimee is the calculated estimation.
    * @param [in] data_element is the new data vector.
    */
-  virtual void estimate(std::vector<double>& estimee, const std::vector<double>& data_element) = 0;
+  virtual void estimate(std::vector<double>& estimee,
+                        const std::vector<double>& data_element) = 0;
 
   /**
    * Estimate the polynomial given a new element using a recursive
@@ -65,15 +69,18 @@ class PolyEstimator {
    * @param [in] data_element is the new data.
    * @param [in] time is the time stamp corresponding to the new data.
    */
-  virtual void estimateRecursive(std::vector<double>& estimee, const std::vector<double>& data_element,
+  virtual void estimateRecursive(std::vector<double>& estimee,
+                                 const std::vector<double>& data_element,
                                  const double& time) = 0;
 
   /**
    * Get the time derivative of the estimated polynomial.
    * @param [out] estimeeDerivative is the calculated time derivative.
-   * @param [in] order The order of the derivative (e.g. 1 means the first derivative).
+   * @param [in] order The order of the derivative (e.g. 1 means the first
+   * derivative).
    */
-  virtual void getEstimateDerivative(std::vector<double>& estimeeDerivative, const unsigned int order) = 0;
+  virtual void getEstimateDerivative(std::vector<double>& estimeeDerivative,
+                                     const unsigned int order) = 0;
 
   /**
    * Set the size of the filter window.

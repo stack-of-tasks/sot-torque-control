@@ -26,6 +26,7 @@ def get_sim_conf():
     import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains_sim as pos_ctrl_gains
     import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
     import dynamic_graph.sot.torque_control.hrp2.admittance_ctrl_conf as admittance_ctrl_conf
+
     conf = Bunch()
     conf.adm_ctrl = admittance_ctrl_conf
     conf.balance_ctrl = balance_ctrl_conf
@@ -45,9 +46,9 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     robot = main_v3(robot, startSoT=False, go_half_sitting=False, conf=conf)
 
     # force current measurements to zero
-    robot.ctrl_manager.i_measured.value = NJ * (0.0, )
-    robot.current_ctrl.i_measured.value = NJ * (0.0, )
-    robot.filters.current_filter.x.value = NJ * (0.0, )
+    robot.ctrl_manager.i_measured.value = NJ * (0.0,)
+    robot.current_ctrl.i_measured.value = NJ * (0.0,)
+    robot.filters.current_filter.x.value = NJ * (0.0,)
 
     # BYPASS TORQUE CONTROLLER
     plug(robot.inv_dyn.tau_des, robot.ctrl_manager.ctrl_torque)
@@ -60,11 +61,11 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     plug(robot.q.sout, robot.traj_gen.base6d_encoders)
     plug(robot.q.sout, robot.estimator_ft.base6d_encoders)
 
-    robot.ros = RosPublish('rosPublish')
-    robot.device.after.addDownsampledSignal('rosPublish.trigger', 1)
+    robot.ros = RosPublish("rosPublish")
+    robot.device.after.addDownsampledSignal("rosPublish.trigger", 1)
 
     # BYPASS JOINT VELOCITY ESTIMATOR
-    if (use_real_vel):
+    if use_real_vel:
         robot.dq = Selec_of_vector("dq")
         plug(robot.device.robotVelocity, robot.dq.sin)
         robot.dq.selec(6, NJ + 6)
@@ -76,14 +77,14 @@ def test_balance_ctrl_openhrp(robot, use_real_vel=True, use_real_base_state=Fals
     robot.v = Selec_of_vector("v")
     plug(robot.device.robotVelocity, robot.v.sin)
     robot.v.selec(0, NJ + 6)
-    if (use_real_base_state):
+    if use_real_base_state:
         plug(robot.q.sout, robot.inv_dyn.q)
         plug(robot.v.sout, robot.inv_dyn.v)
 
-    if (startSoT):
+    if startSoT:
         start_sot()
         # RESET FORCE/TORQUE SENSOR OFFSET
         sleep(10 * robot.timeStep)
-        robot.estimator_ft.setFTsensorOffsets(24 * (0.0, ))
+        robot.estimator_ft.setFTsensorOffsets(24 * (0.0,))
 
     return robot

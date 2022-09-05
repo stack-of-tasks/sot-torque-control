@@ -3,8 +3,8 @@
  *
  */
 
-#include <cmath>
 #include <cassert>
+#include <cmath>
 #include <sot/torque_control/motor-model.hh>
 /// i = Kt*tau + Kv*dq + Ka*ddq + sign(dq)Kf
 /// tau = i/Kt - (Kv/Kt)*dq - (Ka/Kt)*ddq - sign(dq)(Kf/Kt)
@@ -13,8 +13,10 @@ namespace sot {
 namespace torque_control {
 MotorModel::MotorModel() {}
 
-double MotorModel::getCurrent(double torque, double dq, double ddq, double Kt_p, double Kt_n, double Kf_p, double Kf_n,
-                              double Kv_p, double Kv_n, double Ka_p, double Ka_n, unsigned int poly) {
+double MotorModel::getCurrent(double torque, double dq, double ddq, double Kt_p,
+                              double Kt_n, double Kf_p, double Kf_n,
+                              double Kv_p, double Kv_n, double Ka_p,
+                              double Ka_n, unsigned int poly) {
   assert(Kt_p > 0.0 && "Kt_p should be > 0");
   assert(Kt_n > 0.0 && "Kt_n should be > 0");
   assert(Kf_p >= 0.0 && "Kf_p should be >= 0");
@@ -38,8 +40,10 @@ double MotorModel::getCurrent(double torque, double dq, double ddq, double Kt_p,
   return current;
 }
 
-double MotorModel::getTorque(double current, double dq, double ddq, double Kt_p, double Kt_n, double Kf_p, double Kf_n,
-                             double Kv_p, double Kv_n, double Ka_p, double Ka_n, unsigned int poly) {
+double MotorModel::getTorque(double current, double dq, double ddq, double Kt_p,
+                             double Kt_n, double Kf_p, double Kf_n, double Kv_p,
+                             double Kv_n, double Ka_p, double Ka_n,
+                             unsigned int poly) {
   assert(Kt_p > 0.0 && "Kt_p should be > 0");
   assert(Kt_n > 0.0 && "Kt_n should be > 0");
   assert(Kf_p >= 0.0 && "Kf_p should be >= 0");
@@ -58,12 +62,14 @@ double MotorModel::getTorque(double current, double dq, double ddq, double Kt_p,
   double Ka = 0.5 * (Ka_p * (1 + signDq) + Ka_n * (1 - signDq));
   double Kf = 0.5 * (Kf_p * (1 + signDq) + Kf_n * (1 - signDq));
 
-  torque = (current / Kt) - (Kv / Kt) * dq - (Ka / Kt) * ddq - signDq * (Kf / Kt);
+  torque =
+      (current / Kt) - (Kv / Kt) * dq - (Ka / Kt) * ddq - signDq * (Kf / Kt);
 
   return torque;
 }
 
-double MotorModel::smoothSign(double value, double threshold, unsigned int poly) {
+double MotorModel::smoothSign(double value, double threshold,
+                              unsigned int poly) {
   if (value > threshold)
     return 1.0;
   else if (value < -threshold)

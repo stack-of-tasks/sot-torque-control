@@ -9,12 +9,12 @@
 #ifndef STC_COMMAND_HH
 #define STC_COMMAND_HH
 
-#include <fstream>
-#include <boost/assign/list_of.hpp>
-
-#include <dynamic-graph/command.h>
-#include <dynamic-graph/command-setter.h>
 #include <dynamic-graph/command-getter.h>
+#include <dynamic-graph/command-setter.h>
+#include <dynamic-graph/command.h>
+
+#include <boost/assign/list_of.hpp>
+#include <fstream>
 #include <sot/torque_control/joint-trajectory-generator.hh>
 
 namespace dynamicgraph {
@@ -33,10 +33,12 @@ class IsTrajectoryEnded : public Command {
   /// Create command and store it in Entity
   /// \param entity instance of Entity owning this command
   /// \param docstring documentation of the command
-  IsTrajectoryEnded(JointTrajectoryGenerator& entity, const std::string& docstring)
+  IsTrajectoryEnded(JointTrajectoryGenerator& entity,
+                    const std::string& docstring)
       : Command(entity, std::vector<Value::Type>(), docstring) {}
   virtual Value doExecute() {
-    JointTrajectoryGenerator& jtg = static_cast<JointTrajectoryGenerator&>(owner());
+    JointTrajectoryGenerator& jtg =
+        static_cast<JointTrajectoryGenerator&>(owner());
     bool output = jtg.isTrajectoryEnded();
     return Value(output);
   }

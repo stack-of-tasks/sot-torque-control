@@ -26,32 +26,32 @@ def estimateVelocity(time, x, ws=61, doPlot=False):
     dx = np.zeros(x.shape)
 
     for i in range(ws2):
-        x_w = x[:i + ws2, :]
-        t_w = time[:i + ws2]
+        x_w = x[: i + ws2, :]
+        t_w = time[: i + ws2]
         v = estimate(t_w, x_w)
         dx[i, :] = v[0, :]
 
     for i in range(ws2, n - ws2):
-        x_w = x[i - ws2:i + ws2, :]
-        t_w = time[i - ws2:i + ws2]
+        x_w = x[i - ws2 : i + ws2, :]
+        t_w = time[i - ws2 : i + ws2]
         v = estimate(t_w, x_w)
         dx[i, :] = v[0, :]
 
     for i in range(n - ws2, n):
-        x_w = x[i - ws2:, :]
-        t_w = time[i - ws2:]
+        x_w = x[i - ws2 :, :]
+        t_w = time[i - ws2 :]
         v = estimate(t_w, x_w)
         dx[i, :] = v[0, :]
 
-    if (doPlot):
+    if doPlot:
         for j in range(x.shape[1]):
             fig = plt.figure()
             ax = fig.add_subplot(211)
             ax.plot(x[:, j])
-            ax.set_title('pos')
+            ax.set_title("pos")
             ax = fig.add_subplot(212)
             ax.plot(dx[:, j])
-            ax.set_title('vel')
+            ax.set_title("vel")
         plt.show()
 
     return dx

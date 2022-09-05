@@ -5,10 +5,10 @@
 */
 
 #include <iostream>
-
 #include <sot/torque_control/utils/lin-estimator.hh>
 
-LinEstimator::LinEstimator(const unsigned int& N, const unsigned int& dim, const double& dt)
+LinEstimator::LinEstimator(const unsigned int& N, const unsigned int& dim,
+                           const double& dt)
     : PolyEstimator(1, N, dt), dim_(dim), sum_ti_(0.0), sum_ti2_(0.0) {
   /* Number of coefficients for a quadratic estimator: 2 */
   coeff_.resize(2);
@@ -54,7 +54,9 @@ LinEstimator::LinEstimator(const unsigned int& N, const unsigned int& dim, const
 
 double LinEstimator::getEsteeme() { return coeff_(1); }
 
-void LinEstimator::estimateRecursive(std::vector<double>& esteem, const std::vector<double>& el, const double& time) {
+void LinEstimator::estimateRecursive(std::vector<double>& esteem,
+                                     const std::vector<double>& el,
+                                     const double& time) {
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;
@@ -144,7 +146,8 @@ void LinEstimator::fit() {
   return;
 }
 
-void LinEstimator::estimate(std::vector<double>& esteem, const std::vector<double>& el) {
+void LinEstimator::estimate(std::vector<double>& esteem,
+                            const std::vector<double>& el) {
   if (dt_zero_) {
     std::cerr << "Error: dt cannot be zero" << std::endl;
     // Return a zero vector
@@ -189,10 +192,12 @@ void LinEstimator::estimate(std::vector<double>& esteem, const std::vector<doubl
   }
 }
 
-void LinEstimator::getEstimateDerivative(std::vector<double>& estimateDerivative, const unsigned int order) {
+void LinEstimator::getEstimateDerivative(
+    std::vector<double>& estimateDerivative, const unsigned int order) {
   switch (order) {
     case 0:
-      for (int i = 0; i < dim_; ++i) estimateDerivative[i] = c1_[i] * tmed_ + c0_[i];
+      for (int i = 0; i < dim_; ++i)
+        estimateDerivative[i] = c1_[i] * tmed_ + c0_[i];
       return;
 
     case 1:

@@ -6,20 +6,25 @@
 
 #include <sot/torque_control/utils/poly-estimator.hh>
 
-void pinv(const Eigen::MatrixXd& matrix_in, Eigen::MatrixXd& pseudo_inv, const double& pinvtoler) {
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix_in, Eigen::ComputeThinU | Eigen::ComputeThinV);
+void pinv(const Eigen::MatrixXd& matrix_in, Eigen::MatrixXd& pseudo_inv,
+          const double& pinvtoler) {
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(
+      matrix_in, Eigen::ComputeThinU | Eigen::ComputeThinV);
   Eigen::VectorXd singular_values;
   Eigen::VectorXd singular_values_inv;
   singular_values = svd.singularValues();
   singular_values_inv.setZero(singular_values.size());
 
   for (int w = 0; w < singular_values.size(); ++w)
-    if (singular_values(w) > pinvtoler) singular_values_inv(w) = 1 / singular_values(w);
-  pseudo_inv = svd.matrixV() * singular_values_inv.asDiagonal() * svd.matrixU().transpose();
+    if (singular_values(w) > pinvtoler)
+      singular_values_inv(w) = 1 / singular_values(w);
+  pseudo_inv = svd.matrixV() * singular_values_inv.asDiagonal() *
+               svd.matrixU().transpose();
   return;
 }
 
-PolyEstimator::PolyEstimator(const unsigned int& order, const unsigned int& N, const double& dt)
+PolyEstimator::PolyEstimator(const unsigned int& order, const unsigned int& N,
+                             const double& dt)
     : order_(order), N_(N), dt_(dt), dt_zero_(true), first_run_(true), pt_(0) {
   t_.resize(N_);
   x_.resize(N_);
@@ -33,7 +38,9 @@ PolyEstimator::PolyEstimator(const unsigned int& order, const unsigned int& N, c
   R_.resize(N_, order_ + 1);
 }
 
-void PolyEstimator::estimate(std::vector<double>& esteem, const std::vector<double>& el, const double& time) {
+void PolyEstimator::estimate(std::vector<double>& esteem,
+                             const std::vector<double>& el,
+                             const double& time) {
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;

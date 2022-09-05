@@ -25,25 +25,25 @@
 /* --------------------------------------------------------------------- */
 
 #include <map>
+
 #include "boost/assign.hpp"
 
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-
-#include <tsid/robots/robot-wrapper.hpp>
-#include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/contacts/contact-6d.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
+#include <tsid/robots/robot-wrapper.hpp>
+#include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
@@ -54,7 +54,8 @@ namespace torque_control {
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceController : public ::dynamicgraph::Entity {
+class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT
+    InverseDynamicsBalanceController : public ::dynamicgraph::Entity {
   typedef InverseDynamicsBalanceController EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -147,7 +148,9 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_IN(wrench_left_foot, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(wrench_right_foot, dynamicgraph::Vector);
 
-  DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
+  DECLARE_SIGNAL_IN(
+      active_joints,
+      dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
 
   DECLARE_SIGNAL_OUT(tau_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(M, dynamicgraph::Matrix);
@@ -183,23 +186,26 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   DECLARE_SIGNAL_OUT(right_foot_acc_des, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(left_foot_acc_des, dynamicgraph::Vector);
 
-  /// This signal copies active_joints only if it changes from a all false or to an all false value
+  /// This signal copies active_joints only if it changes from a all false or to
+  /// an all false value
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
 
   /* --- COMMANDS --- */
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
   }
 
  protected:
   double m_dt;  /// control loop time period
   double m_t;
-  bool m_initSucceeded;  /// true if the entity has been successfully initialized
-  bool m_enabled;        /// True if controler is enabled
-  bool m_firstTime;      /// True at the first iteration of the controller
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
+  bool m_enabled;       /// True if controler is enabled
+  bool m_firstTime;     /// True at the first iteration of the controller
 
   enum ContactState {
     DOUBLE_SUPPORT = 0,
@@ -209,7 +215,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
     RIGHT_SUPPORT_TRANSITION = 4
   };
   ContactState m_contactState;
-  double m_contactTransitionTime;  /// end time of the current contact transition (if any)
+  double m_contactTransitionTime;  /// end time of the current contact
+                                   /// transition (if any)
 
   enum RightHandState {
     TASK_RIGHT_HAND_ON = 0,
@@ -224,7 +231,8 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
     TASK_LEFT_HAND_OFF = 1
   };
   LeftHandState m_leftHandState;
-  /*double            m_handsTransitionTime;*/  /// end time of the current transition (if any)
+  /*double            m_handsTransitionTime;*/  /// end time of the current
+                                                /// transition (if any)
 
   int m_frame_id_rf;  /// frame id of right foot
   int m_frame_id_lf;  /// frame id of left foot
@@ -261,20 +269,22 @@ class SOTINVERSEDYNAMICSBALANCECONTROLLER_EXPORT InverseDynamicsBalanceControlle
   double m_w_posture;
   double m_w_hands;
 
-  tsid::math::Vector m_dv_sot;             /// desired accelerations (sot order)
-  tsid::math::Vector m_dv_urdf;            /// desired accelerations (urdf order)
-  tsid::math::Vector m_f;                  /// desired force coefficients (24d)
-  tsid::math::Vector6 m_f_RF;              /// desired 6d wrench right foot
-  tsid::math::Vector6 m_f_LF;              /// desired 6d wrench left foot
-  tsid::math::Vector3 m_com_offset;        /// 3d CoM offset
-  tsid::math::Vector3 m_zmp_des_LF;        /// 3d desired zmp left foot
-  tsid::math::Vector3 m_zmp_des_RF;        /// 3d desired zmp left foot
-  tsid::math::Vector3 m_zmp_des_LF_local;  /// 3d desired zmp left foot expressed in local frame
-  tsid::math::Vector3 m_zmp_des_RF_local;  /// 3d desired zmp left foot expressed in local frame
-  tsid::math::Vector3 m_zmp_des;           /// 3d desired global zmp
-  tsid::math::Vector3 m_zmp_LF;            /// 3d zmp left foot
-  tsid::math::Vector3 m_zmp_RF;            /// 3d zmp left foot
-  tsid::math::Vector3 m_zmp;               /// 3d global zmp
+  tsid::math::Vector m_dv_sot;       /// desired accelerations (sot order)
+  tsid::math::Vector m_dv_urdf;      /// desired accelerations (urdf order)
+  tsid::math::Vector m_f;            /// desired force coefficients (24d)
+  tsid::math::Vector6 m_f_RF;        /// desired 6d wrench right foot
+  tsid::math::Vector6 m_f_LF;        /// desired 6d wrench left foot
+  tsid::math::Vector3 m_com_offset;  /// 3d CoM offset
+  tsid::math::Vector3 m_zmp_des_LF;  /// 3d desired zmp left foot
+  tsid::math::Vector3 m_zmp_des_RF;  /// 3d desired zmp left foot
+  tsid::math::Vector3
+      m_zmp_des_LF_local;  /// 3d desired zmp left foot expressed in local frame
+  tsid::math::Vector3
+      m_zmp_des_RF_local;  /// 3d desired zmp left foot expressed in local frame
+  tsid::math::Vector3 m_zmp_des;  /// 3d desired global zmp
+  tsid::math::Vector3 m_zmp_LF;   /// 3d zmp left foot
+  tsid::math::Vector3 m_zmp_RF;   /// 3d zmp left foot
+  tsid::math::Vector3 m_zmp;      /// 3d global zmp
   tsid::math::Vector m_tau_sot;
   tsid::math::Vector m_q_urdf;
   tsid::math::Vector m_v_urdf;

@@ -14,6 +14,7 @@ B = np.array([[0, 0, 0, 1]]).T
 
 try:
     from scipy.signal import place_poles
+
     # compute gains by pole placement
     full_state_feedback = place_poles(A, B, poles)
     K = full_state_feedback.gain_matrix
@@ -35,10 +36,13 @@ print("kp=", kp)
 print("kd=", kd)
 print("ka=", ka)
 print("kj=", kj)
-if (kj * ka <= kd):
+if kj * ka <= kd:
     print("WARNING: System is unstable because kj*ka<=kd")
-if (kj * ka * kd <= kd * kd + kj * kj * kp):
-    print("WARNING: System is unstable because kj*ka*kd <= kd*kd + kj*kj*kp", kj * ka * kd - (kd * kd + kj * kj * kp))
+if kj * ka * kd <= kd * kd + kj * kj * kp:
+    print(
+        "WARNING: System is unstable because kj*ka*kd <= kd*kd + kj*kj*kp",
+        kj * ka * kd - (kd * kd + kj * kj * kp),
+    )
 
 G = A - np.dot(B, K)
 ev = eigvals(G)
@@ -53,5 +57,5 @@ for n in range(1, N):
     x[:, n] = np.dot(e_Adt, x[:, n - 1])
 
 plt.plot(x[0, :])
-plt.title('Position')
+plt.title("Position")
 plt.show()

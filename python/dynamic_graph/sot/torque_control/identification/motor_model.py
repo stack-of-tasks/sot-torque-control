@@ -7,9 +7,9 @@ from IPython import embed  # noqa
 
 
 def smoothSign(value, threshold):
-    if (value > threshold):
+    if value > threshold:
         return 1.0
-    elif (value < -threshold):
+    elif value < -threshold:
         return -1.0
     return pow(value / threshold, 3)
 

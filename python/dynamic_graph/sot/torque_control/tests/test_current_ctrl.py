@@ -8,35 +8,35 @@ EPS = 1e-6
 
 
 def saturate(x, x_max):
-    if (x > x_max):
+    if x > x_max:
         return x_max
-    if (x < -x_max):
+    if x < -x_max:
         return -x_max
     return x
 
 
-''' Integrate x' + ax = b until either:
+""" Integrate x' + ax = b until either:
      - you reach the specified time t
      - you reach the specified lower/upper bound
-'''
+"""
 
 
 def integrate_1_order_lde(x_0, a, b, t, x_lb=None, x_ub=None):
-    if (x_lb is not None and x_0 < x_lb):
+    if x_lb is not None and x_0 < x_lb:
         print("ERROR: x_0=%.3f < x_lb=%.3f" % (x_0, x_lb))
         return (0, x_lb)
-    if (x_ub is not None and x_0 > x_ub):
+    if x_ub is not None and x_0 > x_ub:
         print("ERROR: x_0=%.3f > x_ub=%.3f" % (x_0, x_ub))
         return (0, x_lb)
     c = b / a
     e = exp(-a * t)
     x_t = c * (1 - e) + x_0 * e
     # if a<0 => x tends towards c
-    if (x_lb is not None and x_t < x_lb):
+    if x_lb is not None and x_t < x_lb:
         t = -log((x_lb - c) / (x_0 - c)) / a
         # t = -log((a*x_lb - b)/(a*x_0-b)) / a;
         return (t, x_lb)
-    if (x_ub is not None and x_t > x_ub):
+    if x_ub is not None and x_t > x_ub:
         t = -log((x_ub - b / a) / (x_0 - b / a)) / a
         return (t, x_ub)
     return (t, x_t)
@@ -77,9 +77,9 @@ class Hrp2CurrentControl:
         self.verbose = False
 
     def get_deadzone_state(self, e):
-        if (e > self.i_dz):
+        if e > self.i_dz:
             return 1
-        elif (e < -self.i_dz):
+        elif e < -self.i_dz:
             return -1
         return 0
 
@@ -90,12 +90,12 @@ class Hrp2CurrentControl:
         for n in range(max_iter):
             i_0 = motor.i
             dz_state = self.get_deadzone_state(u - i_0)
-            if (dz_state == 1):  # V = self.K*(e-i_dz);
+            if dz_state == 1:  # V = self.K*(e-i_dz);
                 A = self.K
                 d = self.K * (u - self.i_dz)
                 ub = u - self.i_dz + EPS
                 lb = None
-            elif (dz_state == -1):  # V = self.K*(e+i_dz);
+            elif dz_state == -1:  # V = self.K*(e+i_dz);
                 A = self.K
                 d = self.K * (u + self.i_dz)
                 lb = u + self.i_dz - EPS
@@ -115,19 +115,34 @@ class Hrp2CurrentControl:
             ddq = (motor.Kt * motor.i - motor.b * motor.dq) / motor.J
             motor.dq += ddq * dt
 
-            if (dt == time_left):
+            if dt == time_left:
                 return
 
             # print("Time %.3f, iter %d, integration stopped after t=%.3f ms"%(self.t, n, 1e3*dt);)
             new_dz_state = self.get_deadzone_state(u - motor.i)
             time_left -= dt
-            if (new_dz_state == dz_state):
-                print("Time %.3f: ERROR deadzone state did not change from %d, i(0)=%.3f, i(t)=%.3f, " +
-                      "e(0)=%.3f, e(t)=%.3f" % (self.t, dz_state, i_0, motor.i, u - i_0, u - motor.i))
+            if new_dz_state == dz_state:
+                print(
+                    (
+                        "Time %.3f: ERROR deadzone state did not change from %d, i(0)=%.3f, i(t)=%.3f, "
+                        "e(0)=%.3f, e(t)=%.3f"
+                    )
+                    % (self.t, dz_state, i_0, motor.i, u - i_0, u - motor.i)
+                )
                 return
-            if (self.verbose):
-                print("Time %.3f: deadzone state changed from %d to %d, i(0)=%.3f, i(t)=%.3f, e(0)=%.3f, e(t)=%.3f" %
-                      (self.t, dz_state, new_dz_state, i_0, motor.i, u - i_0, u - motor.i))
+            if self.verbose:
+                print(
+                    "Time %.3f: deadzone state changed from %d to %d, i(0)=%.3f, i(t)=%.3f, e(0)=%.3f, e(t)=%.3f"
+                    % (
+                        self.t,
+                        dz_state,
+                        new_dz_state,
+                        i_0,
+                        motor.i,
+                        u - i_0,
+                        u - motor.i,
+                    )
+                )
 
         print("Time %.3f: ERROR max number of iterations reached: %d" % (self.t, max_iter))
 
@@ -192,25 +207,26 @@ for n in range(N):
     u[n] = i_des[n] + err_int
     e = u[n] - i_mes[n]
 
-    if (e > i_trans):
+    if e > i_trans:
         u[n] += dz_comp_perc * i_dz
         new_dz_comp_state = 1
-    elif (e < -i_trans):
+    elif e < -i_trans:
         u[n] -= dz_comp_perc * i_dz
         new_dz_comp_state = -1
-    elif (u[n] > 0):
+    elif u[n] > 0:
         u[n] += dz_comp_perc * i_dz + e - i_trans
         new_dz_comp_state = 0
     else:
         u[n] -= dz_comp_perc * i_dz - (e + i_trans)
         new_dz_comp_state = 0
-# elif(i_trans!=0.0):
-# u[n] += e*dz_comp_perc*i_dz/i_trans;
-# new_dz_comp_state = 0;
+    # elif(i_trans!=0.0):
+    # u[n] += e*dz_comp_perc*i_dz/i_trans;
+    # new_dz_comp_state = 0;
 
-    if (dz_comp_state != new_dz_comp_state):
-        print("Time %.3f: dead-zone compensation state changed from %d to %d" %
-              (t + 2, dz_comp_state, new_dz_comp_state))
+    if dz_comp_state != new_dz_comp_state:
+        print(
+            "Time %.3f: dead-zone compensation state changed from %d to %d" % (t + 2, dz_comp_state, new_dz_comp_state)
+        )
         dz_comp_state = new_dz_comp_state
 
     # simulate one time step
@@ -218,10 +234,10 @@ for n in range(N):
 
 time = np.arange(0, N * dt, dt)
 plt.figure()
-plt.plot(time, i_des, '-', label='i des')
-plt.plot(time, u, '-', label='u')
-plt.plot(time, i, '-', label='i')
-plt.plot(time, i_mes, '-', label='i measured', alpha=0.3)
+plt.plot(time, i_des, "-", label="i des")
+plt.plot(time, u, "-", label="u")
+plt.plot(time, i, "-", label="i")
+plt.plot(time, i_mes, "-", label="i measured", alpha=0.3)
 # plt.plot(time, dq, label='dq');
 # plt.plot(time, i_des-i, label='error');
 plt.grid()

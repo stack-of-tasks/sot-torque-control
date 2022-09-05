@@ -6,24 +6,23 @@
 #ifndef _DeviceTorqueCtrl_H_
 #define _DeviceTorqueCtrl_H_
 
-#include <Eigen/Cholesky>
+#include <dynamic-graph/entity.h>
+#include <dynamic-graph/linear-algebra.h>
+#include <dynamic-graph/signal-ptr.h>
+#include <dynamic-graph/signal.h>
 
+#include <Eigen/Cholesky>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
-
+#include <sot/core/abstract-sot-external-interface.hh>
+#include <sot/core/device.hh>
 #include <tsid/robots/robot-wrapper.hpp>
 #include <tsid/tasks/task-se3-equality.hpp>
 
-#include <dynamic-graph/entity.h>
-#include <dynamic-graph/signal.h>
-#include <dynamic-graph/signal-ptr.h>
-#include <dynamic-graph/linear-algebra.h>
-#include <sot/core/device.hh>
-#include <sot/core/abstract-sot-external-interface.hh>
-
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/robot-utils.hh>
 
 namespace dgsot = dynamicgraph::sot;
@@ -49,9 +48,9 @@ namespace torque_control {
  * TODO: The original Device class should be a clean abstraction for
  * the concept of device, but currently it is not. It defines a lot
  * of input/output signals that are specific of HRP-2 (e.g. zmpSIN,
- * attitudeSIN, forcesSOUT) and some design choices (e.g. secondOrderIntegration).
- * It would be nice to clean the original Device from all this stuff
- * and move it in the specific subclasses.
+ * attitudeSIN, forcesSOUT) and some design choices (e.g.
+ * secondOrderIntegration). It would be nice to clean the original Device from
+ * all this stuff and move it in the specific subclasses.
  */
 class DeviceTorqueCtrl : public dgsot::Device {
  public:
@@ -75,7 +74,8 @@ class DeviceTorqueCtrl : public dgsot::Device {
   virtual void integrate(const double& dt);
   void computeForwardDynamics();
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[DeviceTorqueCtrl] " + msg) << '\n';
   }
 
@@ -136,7 +136,8 @@ class DeviceTorqueCtrl : public dgsot::Device {
   Eigen::VectorXd m_k;
   Eigen::MatrixXd m_Jc;  /// constraint Jacobian
 
-  double m_numericalDamping;          /// numerical damping to regularize constraint resolution
+  double m_numericalDamping;  /// numerical damping to regularize constraint
+                              /// resolution
   Eigen::JacobiSVD<Matrix> m_Jc_svd;  /// svd of the constraint matrix
   Vector m_dJcv;
   Matrix m_Z;                      /// base of constraint null space
@@ -147,7 +148,7 @@ class DeviceTorqueCtrl : public dgsot::Device {
   Vector m_tau_np6;
   int m_nj;  /// number of joints
 
-  typedef boost::mt11213b ENG;                      // uniform random number generator
+  typedef boost::mt11213b ENG;  // uniform random number generator
   typedef boost::normal_distribution<double> DIST;  // Normal Distribution
   typedef boost::variate_generator<ENG, DIST> GEN;  // Variate generator
   ENG randomNumberGenerator_;

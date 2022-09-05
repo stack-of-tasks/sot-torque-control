@@ -3,18 +3,17 @@
  *
  */
 
+#include "sot/torque_control/device-torque-ctrl.hh"
+
+#include <dynamic-graph/all-commands.h>
+#include <dynamic-graph/factory.h>
+
 #include <fstream>
 #include <map>
-
 #include <pinocchio/algorithm/joint-configuration.hpp>  // integrate
+#include <sot/core/debug.hh>
 #include <tsid/math/constraint-base.hpp>
 #include <tsid/math/utils.hpp>
-
-#include <dynamic-graph/factory.h>
-#include <dynamic-graph/all-commands.h>
-#include <sot/core/debug.hh>
-
-#include "sot/torque_control/device-torque-ctrl.hh"
 
 using namespace std;
 using namespace dynamicgraph;
@@ -34,14 +33,22 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName)
     : dgsot::Device(RobotName),
       timestep_(TIMESTEP_DEFAULT),
       m_initSucceeded(false),
-      accelerometerSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::accelerometer"),
-      gyrometerSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::gyrometer"),
-      robotStateSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::robotState"),
-      jointsVelocitiesSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::jointsVelocities"),
-      jointsAccelerationsSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::jointsAccelerations"),
-      currentSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::currents"),
-      p_gainsSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::p_gains"),
-      d_gainsSOUT_("DeviceTorqueCtrl(" + RobotName + ")::output(vector)::d_gains"),
+      accelerometerSOUT_("DeviceTorqueCtrl(" + RobotName +
+                         ")::output(vector)::accelerometer"),
+      gyrometerSOUT_("DeviceTorqueCtrl(" + RobotName +
+                     ")::output(vector)::gyrometer"),
+      robotStateSOUT_("DeviceTorqueCtrl(" + RobotName +
+                      ")::output(vector)::robotState"),
+      jointsVelocitiesSOUT_("DeviceTorqueCtrl(" + RobotName +
+                            ")::output(vector)::jointsVelocities"),
+      jointsAccelerationsSOUT_("DeviceTorqueCtrl(" + RobotName +
+                               ")::output(vector)::jointsAccelerations"),
+      currentSOUT_("DeviceTorqueCtrl(" + RobotName +
+                   ")::output(vector)::currents"),
+      p_gainsSOUT_("DeviceTorqueCtrl(" + RobotName +
+                   ")::output(vector)::p_gains"),
+      d_gainsSOUT_("DeviceTorqueCtrl(" + RobotName +
+                   ")::output(vector)::d_gains"),
       CONSTRUCT_SIGNAL_IN(kp_constraints, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(kd_constraints, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(rotor_inertias, dynamicgraph::Vector),
@@ -51,19 +58,28 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName)
       m_isTorqueControlled(true),
       m_numericalDamping(1e-8),
       normalDistribution_(0.0, FORCE_SENSOR_NOISE_STD_DEV),
-      normalRandomNumberGenerator_(randomNumberGenerator_, normalDistribution_) {
-  forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRLEG");
-  forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLLEG");
-  forcesSIN_[2] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRARM");
-  forcesSIN_[3] = new SignalPtr<dynamicgraph::Vector, int>(NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLARM");
-  signalRegistration(accelerometerSOUT_ << gyrometerSOUT_ << robotStateSOUT_ << jointsVelocitiesSOUT_
-                                        << jointsAccelerationsSOUT_ << *(forcesSIN_[0]) << *(forcesSIN_[1])
-                                        << *(forcesSIN_[2]) << *(forcesSIN_[3]) << currentSOUT_ << p_gainsSOUT_
-                                        << d_gainsSOUT_ << m_kp_constraintsSIN << m_kd_constraintsSIN
-                                        << m_rotor_inertiasSIN << m_gear_ratiosSIN);
+      normalRandomNumberGenerator_(randomNumberGenerator_,
+                                   normalDistribution_) {
+  forcesSIN_[0] = new SignalPtr<dynamicgraph::Vector, int>(
+      NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRLEG");
+  forcesSIN_[1] = new SignalPtr<dynamicgraph::Vector, int>(
+      NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLLEG");
+  forcesSIN_[2] = new SignalPtr<dynamicgraph::Vector, int>(
+      NULL, "DeviceTorqueCtrl::input(vector6)::inputForceRARM");
+  forcesSIN_[3] = new SignalPtr<dynamicgraph::Vector, int>(
+      NULL, "DeviceTorqueCtrl::input(vector6)::inputForceLARM");
+  signalRegistration(accelerometerSOUT_
+                     << gyrometerSOUT_ << robotStateSOUT_
+                     << jointsVelocitiesSOUT_ << jointsAccelerationsSOUT_
+                     << *(forcesSIN_[0]) << *(forcesSIN_[1]) << *(forcesSIN_[2])
+                     << *(forcesSIN_[3]) << currentSOUT_ << p_gainsSOUT_
+                     << d_gainsSOUT_ << m_kp_constraintsSIN
+                     << m_kd_constraintsSIN << m_rotor_inertiasSIN
+                     << m_gear_ratiosSIN);
 
   // set controlInputType to acceleration so that at the end of the increment
-  // method the velocity is copied in the velocity output signal (and not the control)
+  // method the velocity is copied in the velocity output signal (and not the
+  // control)
   controlInputType_ = CONTROL_INPUT_TWO_INTEGRATION;
 
   // initialize gyrometer and accelerometer
@@ -78,7 +94,8 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName)
     withForceSignals[i] = true;
     wrenches_[i].resize(6);
     wrenches_[i].setZero();
-    if (i == FORCE_SIGNAL_RLEG || i == FORCE_SIGNAL_LLEG) wrenches_[i](2) = 350.0;
+    if (i == FORCE_SIGNAL_RLEG || i == FORCE_SIGNAL_LLEG)
+      wrenches_[i](2) = 350.0;
     forcesSOUT[i]->setConstant(wrenches_[i]);
   }
 
@@ -91,23 +108,28 @@ DeviceTorqueCtrl::DeviceTorqueCtrl(std::string RobotName)
   docstring =
       "\n    Integrate dynamics for time step provided as input\n"
       "\n      take one floating point number as input\n\n";
-  addCommand("increment", makeCommandVoid1((Device&)*this, &Device::increment, docstring));
-  addCommand("init", makeCommandVoid2(*this, &DeviceTorqueCtrl::init,
-                                      docCommandVoid2("Initialize the entity.", "Time period in seconds (double)",
-                                                      "Robot reference (string)")));
+  addCommand("increment",
+             makeCommandVoid1((Device&)*this, &Device::increment, docstring));
+  addCommand("init",
+             makeCommandVoid2(*this, &DeviceTorqueCtrl::init,
+                              docCommandVoid2("Initialize the entity.",
+                                              "Time period in seconds (double)",
+                                              "Robot reference (string)")));
 }
 
 DeviceTorqueCtrl::~DeviceTorqueCtrl() {}
 
 void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef) {
-  if (dt <= 0.0) return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
+  if (dt <= 0.0)
+    return SEND_MSG("Init failed: Timestep must be positive", MSG_TYPE_ERROR);
 
   /* Retrieve m_robot_util  informations */
   std::string localName(robotRef);
   if (isNameInRobotUtil(localName))
     m_robot_util = getRobotUtil(localName);
   else {
-    SEND_MSG("You should first initialize the entity control-manager", MSG_TYPE_ERROR);
+    SEND_MSG("You should first initialize the entity control-manager",
+             MSG_TYPE_ERROR);
     return;
   }
 
@@ -121,7 +143,8 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef) {
 
   try {
     vector<string> package_dirs;
-    m_robot = new robots::RobotWrapper(urdfFile, package_dirs, pinocchio::JointModelFreeFlyer());
+    m_robot = new robots::RobotWrapper(urdfFile, package_dirs,
+                                       pinocchio::JointModelFreeFlyer());
     m_data = new pinocchio::Data(m_robot->model());
     m_robot->rotor_inertias(rotor_inertias);
     m_robot->gear_ratios(gear_ratios);
@@ -142,16 +165,21 @@ void DeviceTorqueCtrl::init(const double& dt, const std::string& robotRef) {
     m_Jc.setZero(m_nk, m_robot->nv());
     m_dJcv.setZero(m_nk);
 
-    m_contactRF = new TaskSE3Equality("contact_rfoot", *m_robot, m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
+    m_contactRF =
+        new TaskSE3Equality("contact_rfoot", *m_robot,
+                            m_robot_util->m_foot_util.m_Right_Foot_Frame_Name);
     m_contactRF->Kp(kp_contact);
     m_contactRF->Kd(kd_contact);
 
-    m_contactLF = new TaskSE3Equality("contact_lfoot", *m_robot, m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
+    m_contactLF =
+        new TaskSE3Equality("contact_lfoot", *m_robot,
+                            m_robot_util->m_foot_util.m_Left_Foot_Frame_Name);
     m_contactLF->Kp(kp_contact);
     m_contactLF->Kd(kd_contact);
   } catch (const std::exception& e) {
     std::cout << e.what();
-    return SEND_MSG("Init failed: Could load URDF :" + urdfFile, MSG_TYPE_ERROR);
+    return SEND_MSG("Init failed: Could load URDF :" + urdfFile,
+                    MSG_TYPE_ERROR);
   }
   timestep_ = dt;
   setStateSize(m_nj + 6);
@@ -184,15 +212,17 @@ void DeviceTorqueCtrl::setState(const dynamicgraph::Vector& q) {
   m_robot_util->config_sot_to_urdf(m_q_sot, m_q);
 
   m_robot->computeAllTerms(*m_data, m_q, m_v);
-  pinocchio::SE3 H_lf =
-      m_robot->position(*m_data, m_robot->model().getJointId(m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
+  pinocchio::SE3 H_lf = m_robot->position(
+      *m_data, m_robot->model().getJointId(
+                   m_robot_util->m_foot_util.m_Left_Foot_Frame_Name));
   tsid::trajectories::TrajectorySample s(12, 6);
   tsid::math::SE3ToVector(H_lf, s.pos);
   m_contactLF->setReference(s);
   SEND_MSG("Setting left foot reference to " + toString(H_lf), MSG_TYPE_DEBUG);
 
-  pinocchio::SE3 H_rf =
-      m_robot->position(*m_data, m_robot->model().getJointId(m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
+  pinocchio::SE3 H_rf = m_robot->position(
+      *m_data, m_robot->model().getJointId(
+                   m_robot_util->m_foot_util.m_Right_Foot_Frame_Name));
   tsid::math::SE3ToVector(H_rf, s.pos);
   m_contactRF->setReference(s);
   SEND_MSG("Setting right foot reference to " + toString(H_rf), MSG_TYPE_DEBUG);
@@ -241,13 +271,15 @@ void DeviceTorqueCtrl::computeForwardDynamics() {
 
   // compute constraint solution: ddqBar = - Jc^+ * dJc * dq
   m_Jc_svd.compute(m_Jc, Eigen::ComputeThinU | Eigen::ComputeFullV);
-  tsid::math::solveWithDampingFromSvd(m_Jc_svd, m_dJcv, m_dvBar, m_numericalDamping);
+  tsid::math::solveWithDampingFromSvd(m_Jc_svd, m_dJcv, m_dvBar,
+                                      m_numericalDamping);
 
   // compute base of null space of constraint Jacobian
   Eigen::VectorXd::Index r = (m_Jc_svd.singularValues().array() > 1e-8).count();
   m_Z = m_Jc_svd.matrixV().rightCols(m_nj + 6 - r);
 
-  // compute constrained accelerations ddq_c = (Z^T*M*Z)^{-1}*Z^T*(S^T*tau - h - M*ddqBar)
+  // compute constrained accelerations ddq_c = (Z^T*M*Z)^{-1}*Z^T*(S^T*tau - h -
+  // M*ddqBar)
   const Matrix& M = m_robot->mass(*m_data);
   const Vector& h = m_robot->nonLinearEffects(*m_data);
   m_ZMZ = m_Z.transpose() * M * m_Z;
@@ -259,7 +291,9 @@ void DeviceTorqueCtrl::computeForwardDynamics() {
   tsid::math::svdSolveWithDamping(m_ZMZ, rhs, m_dv_c, m_numericalDamping);
 
   if ((m_ZMZ * m_dv_c - rhs).norm() > 1e-10)
-    SEND_MSG("ZMZ*dv - ZT*(tau-h-Mdv_bar) = " + toString((m_ZMZ * m_dv_c - rhs).norm()), MSG_TYPE_DEBUG);
+    SEND_MSG("ZMZ*dv - ZT*(tau-h-Mdv_bar) = " +
+                 toString((m_ZMZ * m_dv_c - rhs).norm()),
+             MSG_TYPE_DEBUG);
 
   // compute joint accelerations
   m_dv = m_dvBar + m_Z * m_dv_c;
@@ -282,9 +316,11 @@ void DeviceTorqueCtrl::computeForwardDynamics() {
   //  SEND_MSG("dv = "+toString(m_dv.norm()), MSG_TYPE_DEBUG);
   //  SEND_MSG("f = "+toString(m_f), MSG_TYPE_DEBUG);
   if ((JcT * m_f - b).norm() > 1e-10)
-    SEND_MSG("M*dv +h - JT*f - tau = " + toString((JcT * m_f - b).norm()), MSG_TYPE_DEBUG);
+    SEND_MSG("M*dv +h - JT*f - tau = " + toString((JcT * m_f - b).norm()),
+             MSG_TYPE_DEBUG);
   if ((m_Jc * m_dv - m_dJcv).norm() > 1e-10)
-    SEND_MSG("Jc*dv - dJc*v = " + toString((m_Jc * m_dv - m_dJcv).norm()), MSG_TYPE_DEBUG);
+    SEND_MSG("Jc*dv - dJc*v = " + toString((m_Jc * m_dv - m_dJcv).norm()),
+             MSG_TYPE_DEBUG);
 }
 
 void DeviceTorqueCtrl::integrate(const double& dt) {
@@ -317,7 +353,8 @@ void DeviceTorqueCtrl::integrate(const double& dt) {
   base6d_encoders_ = state_;
   jointsVelocities_ = velocity_.tail(m_nj);
 
-  // set the value for the encoders, joints velocities and accelerations output signal
+  // set the value for the encoders, joints velocities and accelerations output
+  // signal
   robotStateSOUT_.setConstant(base6d_encoders_);
   jointsVelocitiesSOUT_.setConstant(jointsVelocities_);
   jointsAccelerationsSOUT_.setConstant(jointsAccelerations_);
@@ -325,10 +362,12 @@ void DeviceTorqueCtrl::integrate(const double& dt) {
   int time = robotStateSOUT_.getTime() + 1;
   for (int i = 0; i < 4; i++) {
     // read input force (if any)
-    if (forcesSIN_[i]->isPlugged() && forcesSIN_[i]->operator()(time).size() == 6)
+    if (forcesSIN_[i]->isPlugged() &&
+        forcesSIN_[i]->operator()(time).size() == 6)
       wrenches_[i] = forcesSIN_[i]->accessCopy();
     // add random noise
-    for (int j = 0; j < 6; j++) temp6_(j) = wrenches_[i](j) + normalRandomNumberGenerator_();
+    for (int j = 0; j < 6; j++)
+      temp6_(j) = wrenches_[i](j) + normalRandomNumberGenerator_();
     // set output force
     forcesSOUT[i]->setConstant(temp6_);
   }

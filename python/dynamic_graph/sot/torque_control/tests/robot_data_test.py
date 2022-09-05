@@ -8,41 +8,70 @@ class initRobotData:
     controlDT = 0.005
     maxCurrent = 5
     robotRef = "control-manager-robot"
-    urdftosot = (12, 13, 14, 15, 23, 24, 25, 26, 27, 28, 16, 17, 18, 19, 20, 21, 22, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4,
-                 5)
+    urdftosot = (
+        12,
+        13,
+        14,
+        15,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+    )
 
     ctrlManagerCurrentToControlGain = 1.0
 
     mapJointNameToID = {
-        'rhy': 0,
-        'rhr': 1,
-        'rhp': 2,
-        'rk': 3,
-        'rap': 4,
-        'rar': 5,
-        'lhy': 6,
-        'lhr': 7,
-        'lhp': 8,
-        'lk': 9,
-        'lap': 10,
-        'lar': 11,
-        'ty': 12,
-        'tp': 13,
-        'hp': 14,
-        'rsp': 15,
-        'rsr': 16,
-        'rsy': 17,
-        're': 18,
-        'rwy': 19,
-        'rwp': 20,
-        'rh': 21,
-        'lsp': 22,
-        'lsr': 23,
-        'lsy': 24,
-        'le': 25,
-        'lwy': 26,
-        'lwp': 27,
-        'lh': 28
+        "rhy": 0,
+        "rhr": 1,
+        "rhp": 2,
+        "rk": 3,
+        "rap": 4,
+        "rar": 5,
+        "lhy": 6,
+        "lhr": 7,
+        "lhp": 8,
+        "lk": 9,
+        "lap": 10,
+        "lar": 11,
+        "ty": 12,
+        "tp": 13,
+        "hp": 14,
+        "rsp": 15,
+        "rsr": 16,
+        "rsy": 17,
+        "re": 18,
+        "rwy": 19,
+        "rwp": 20,
+        "rh": 21,
+        "lsp": 22,
+        "lsr": 23,
+        "lsy": 24,
+        "le": 25,
+        "lwy": 26,
+        "lwp": 27,
+        "lh": 28,
     }
 
     mapJointLimits = {
@@ -79,7 +108,12 @@ class initRobotData:
 
     fMax = np.array([100.0, 100.0, 300.0, 80.0, 80.0, 30.0])
     fMin = -fMax
-    mapForceIdToForceLimits = {0: [fMin, fMax], 1: [fMin, fMax], 2: [fMin, fMax], 3: [fMin, fMax]}
+    mapForceIdToForceLimits = {
+        0: [fMin, fMax],
+        1: [fMin, fMax],
+        2: [fMin, fMax],
+        3: [fMin, fMax],
+    }
 
     mapNameToForceId = {"rf": 0, "lf": 1, "rh": 2, "lh": 3}
 
@@ -89,7 +123,7 @@ class initRobotData:
     RightFootSensorXYZ = (0.0, 0.0, -0.085)
 
     def __init__(self):
-        _, _, urdf, _ = example_robot_data.load_full('simple_humanoid')
+        _, _, urdf, _ = example_robot_data.load_full("simple_humanoid")
         self.testRobotPath = urdf
 
     def init_and_set_controller_manager(self, cm):
@@ -107,8 +141,11 @@ class initRobotData:
 
         # Set the force limits for each id
         for key in self.mapForceIdToForceLimits:
-            cm.setForceLimitsFromId(key, np.array(self.mapForceIdToForceLimits[key][0]),
-                                    np.array(self.mapForceIdToForceLimits[key][1]))
+            cm.setForceLimitsFromId(
+                key,
+                np.array(self.mapForceIdToForceLimits[key][0]),
+                np.array(self.mapForceIdToForceLimits[key][1]),
+            )
 
         # Set the force sensor id for each sensor name
         for key in self.mapNameToForceId:

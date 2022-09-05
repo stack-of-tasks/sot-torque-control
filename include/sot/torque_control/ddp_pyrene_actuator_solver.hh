@@ -28,23 +28,23 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <vector>
-#include <tsid/utils/stop-watch.hpp>
 #include <dynamic-graph/signal-helper.h>
-#include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
-#include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
-
-#include <ddp-actuator-solver/pyrene_actuator/pyreneCostFunction.hh>
 #include <ddp-actuator-solver/pyrene_actuator/pyreneActuator.hh>
+#include <ddp-actuator-solver/pyrene_actuator/pyreneCostFunction.hh>
+#include <sot/core/causal-filter.hh>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <tsid/utils/stop-watch.hpp>
+#include <vector>
 
 namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
 
-class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver : public ::dynamicgraph::Entity {
+class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver
+    : public ::dynamicgraph::Entity {
   DYNAMIC_GRAPH_ENTITY_DECL();
 
  public:
@@ -82,7 +82,8 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver : public ::dynam
    * @param nbItMax Maximum number of iterations.
    * @param stopCriteria The value of the stopping criteria.
    */
-  void param_init(const double& timestep, const int& T, const int& nbItMax, const double& stopCriteria);
+  void param_init(const double& timestep, const int& T, const int& nbItMax,
+                  const double& stopCriteria);
 
   // /* --- SETTER LIM --- */
   void setTorqueLimit(const double& tau);
@@ -90,7 +91,8 @@ class SOTDDPPYRENEACTUATORSOLVER_EXPORT DdpPyreneActuatorSolver : public ::dynam
   void setJointVelLimit(const double& upperLim, const double& lowerLim);
 
   // /* --- SETTER LOAD --- */
-  void setLoadParam(const double& mass, const double& coordX, const double& coordY);
+  void setLoadParam(const double& mass, const double& coordX,
+                    const double& coordY);
   void setLoadMass(const double& mass);
   void removeLoad();
 

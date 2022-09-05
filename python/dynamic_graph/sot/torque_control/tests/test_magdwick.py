@@ -8,7 +8,7 @@ Created on Tue Oct  3 14:01:08 2017
 from dynamic_graph.sot.torque_control.madgwickahrs import MadgwickAHRS
 
 dt = 0.001
-imu_filter = MadgwickAHRS('imu_filter')
+imu_filter = MadgwickAHRS("imu_filter")
 imu_filter.init(dt)
 imu_filter.setBeta(0.0)
 

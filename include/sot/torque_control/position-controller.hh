@@ -24,16 +24,13 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <map>
-
-#include <pinocchio/fwd.hpp>
+#include <dynamic-graph/signal-helper.h>
 
 #include <boost/assign.hpp>
-
-#include <dynamic-graph/signal-helper.h>
+#include <map>
+#include <pinocchio/fwd.hpp>
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
@@ -44,7 +41,8 @@ namespace torque_control {
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTPOSITIONCONTROLLER_EXPORT PositionController : public ::dynamicgraph::Entity {
+class SOTPOSITIONCONTROLLER_EXPORT PositionController
+    : public ::dynamicgraph::Entity {
   typedef PositionController EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -67,7 +65,8 @@ class SOTPOSITIONCONTROLLER_EXPORT PositionController : public ::dynamicgraph::E
   DECLARE_SIGNAL_IN(Kd, dynamicgraph::Vector);  /// joint derivative gains
   DECLARE_SIGNAL_IN(Ki, dynamicgraph::Vector);  /// joint integral gains
 
-  DECLARE_SIGNAL_OUT(pwmDes, dynamicgraph::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
+  DECLARE_SIGNAL_OUT(pwmDes,
+                     dynamicgraph::Vector);  /// Kp*e_q + Kd*de_q + Ki*int(e_q)
   // DEBUG SIGNALS
   DECLARE_SIGNAL_OUT(qError, dynamicgraph::Vector);  /// qRef-q
 
@@ -75,15 +74,17 @@ class SOTPOSITIONCONTROLLER_EXPORT PositionController : public ::dynamicgraph::E
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[PositionController-" + name + "] " + msg) << '\n';
   }
 
  protected:
   RobotUtilShrPtr m_robot_util;  /// Robot Util
   Eigen::VectorXd m_pwmDes;
-  bool m_initSucceeded;  /// true if the entity has been successfully initialized
-  double m_dt;           /// control loop time period
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
+  double m_dt;          /// control loop time period
 
   /// Integral of the joint tracking errors
   Eigen::VectorXd m_e_integral;

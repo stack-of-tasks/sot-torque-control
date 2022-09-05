@@ -25,7 +25,7 @@ DATA_FILE_NAMES = {
     "forceRARM": "dg_HRP2LAAS-forceRARM.dat",
     "robotState": "dg_HRP2LAAS-robotState.dat",
     #                   "control":       "dg_HRP2LAAS-control.dat",
-    "mocap-chest": "dg_rosExportMocap-chest.dat"
+    "mocap-chest": "dg_rosExportMocap-chest.dat",
 }
 N = 38000
 RESET_TIME = 10000
@@ -47,7 +47,7 @@ for signalName in DATA_FILE_NAMES:
 
 # FILL NUMPY ARRAYS WITH VALUES OF OUTPUT SIGNALS OF PLAYER
 for t in range(N):
-    if (t == RESET_TIME):
+    if t == RESET_TIME:
         player.rewind()
     player.trigger.recompute(t)
     # alternatively you can also use player.playNext();
@@ -57,9 +57,9 @@ for t in range(N):
 # PLOT SOME DATA
 for signalName in data:
     size = data[signalName].shape[1]
-    if (size <= 3):
+    if size <= 3:
         f, ax = plt.subplots(size, 1)
-    elif (size <= 6):
+    elif size <= 6:
         f, ax = plt.subplots(size / 2, 2)
         ax = ax.reshape(size)
     else:

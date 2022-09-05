@@ -13,33 +13,46 @@ from scipy.cluster.vq import kmeans
 from identification_utils import solve1stOrderLeastSquare
 
 
-def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_THRESHOLD, ZERO_ACC_THRESHOLD, Nvel,
-                       SHOW_THRESHOLD_EFFECT):
+def identify_motor_vel(
+    dt,
+    dq,
+    ddq,
+    ctrl,
+    current,
+    tau,
+    Ktp,
+    Ktn,
+    Ks,
+    ZERO_VEL_THRESHOLD,
+    ZERO_ACC_THRESHOLD,
+    Nvel,
+    SHOW_THRESHOLD_EFFECT,
+):
     # Mask valid data***************************************************
     # remove high acceleration
     maskConstVel = np.logical_and((abs(ddq) < ZERO_ACC_THRESHOLD), (abs(dq) > ZERO_VEL_THRESHOLD))
     # erode to get only steady phases where velocity is constant
     maskConstVel = ndimage.morphology.binary_erosion(maskConstVel, None, 100)
-    maskPosVel = (dq > ZERO_VEL_THRESHOLD)
-    maskNegVel = (dq < -ZERO_VEL_THRESHOLD)
+    maskPosVel = dq > ZERO_VEL_THRESHOLD
+    maskNegVel = dq < -ZERO_VEL_THRESHOLD
     maskConstPosVel = np.logical_and(maskConstVel, maskPosVel)
     maskConstNegVel = np.logical_and(maskConstVel, maskNegVel)
 
     if SHOW_THRESHOLD_EFFECT:
         plt.figure()
         time = np.arange(0, dt * ddq.shape[0], dt)
-        plt.plot(time, ddq, label='ddq')
-        plt.ylabel('ddq')
-        plt.plot(time[maskConstVel], ddq[maskConstVel], 'rx ', label='ddq const vel')
+        plt.plot(time, ddq, label="ddq")
+        plt.ylabel("ddq")
+        plt.plot(time[maskConstVel], ddq[maskConstVel], "rx ", label="ddq const vel")
         plt.legend()
 
         plt.figure()
         plt.plot(dq)
-        plt.ylabel('dq')
+        plt.ylabel("dq")
         dq_const = dq.copy()
         dq_const[np.logical_not(maskConstVel)] = np.nan
         plt.plot(dq_const)
-        plt.ylabel('dq_const')
+        plt.ylabel("dq_const")
         plt.show()
 
     # Identification of BEMF effect ************************************
@@ -48,7 +61,7 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
     plt.plot(times, dq, lw=1)
     vels = kmeans(dq[maskConstVel], Nvel)
     # print('Velocity founds are:', vels)
-    couleurs = ['g', 'r', 'c', 'm', 'y', 'k'] * 10  # why not?
+    couleurs = ["g", "r", "c", "m", "y", "k"] * 10  # why not?
     masksVels = []
     av_dq = []  # List of point kept for identification of BEMF effect
     av_delta_i = []
@@ -59,18 +72,26 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
         currentMask = np.logical_and(currentMask, maskConstVel)
         masksVels.append(currentMask)
         plt.subplot(221)
-        plt.plot(times[currentMask], dq[currentMask], 'o' + couleurs[it])
+        plt.plot(times[currentMask], dq[currentMask], "o" + couleurs[it])
         plt.subplot(222)
-        plt.xlabel('control')
-        plt.ylabel('current')
-        plt.plot(ctrl[currentMask] / IN_OUT_GAIN, Ks * current[currentMask], 'x' + couleurs[it])
+        plt.xlabel("control")
+        plt.ylabel("current")
+        plt.plot(
+            ctrl[currentMask] / IN_OUT_GAIN,
+            Ks * current[currentMask],
+            "x" + couleurs[it],
+        )
         plt.subplot(223)
-        plt.xlabel('control - current')
-        plt.ylabel('velocity')
-        plt.plot(ctrl[currentMask] / IN_OUT_GAIN - Ks * current[currentMask], dq[currentMask], 'x' + couleurs[it])
+        plt.xlabel("control - current")
+        plt.ylabel("velocity")
+        plt.plot(
+            ctrl[currentMask] / IN_OUT_GAIN - Ks * current[currentMask],
+            dq[currentMask],
+            "x" + couleurs[it],
+        )
         av_dq.append(np.mean(dq[currentMask]))
         av_delta_i.append(np.mean(ctrl[currentMask] / IN_OUT_GAIN - Ks * current[currentMask]))
-    plt.plot(av_delta_i, av_dq, 'o')
+    plt.plot(av_delta_i, av_dq, "o")
 
     av_dq = np.array(av_dq)
     av_delta_i = np.array(av_delta_i)
@@ -87,9 +108,9 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
     K_bemf = 1.0 / a
 
     x = av_delta_i
-    plt.plot([-b / a, b / a], [0., 0.], 'g:', lw=3)
-    plt.plot([min(x), -b / a], [a * min(x) + b, 0.], 'g:', lw=3)
-    plt.plot([b / a, max(x)], [0., a * max(x) - b], 'g:', lw=3)
+    plt.plot([-b / a, b / a], [0.0, 0.0], "g:", lw=3)
+    plt.plot([min(x), -b / a], [a * min(x) + b, 0.0], "g:", lw=3)
+    plt.plot([b / a, max(x)], [0.0, a * max(x) - b], "g:", lw=3)
     plt.show()
     # y        = a. x +  b
     # i-Kt.tau = Kv.dq + Kf
@@ -108,17 +129,17 @@ def identify_motor_vel(dt, dq, ddq, ctrl, current, tau, Ktp, Ktn, Ks, ZERO_VEL_T
 
     # Plot *************************************************************
     plt.figure()
-    plt.axhline(0, color='black', lw=1)
-    plt.axvline(0, color='black', lw=1)
-    plt.plot(x, y, '.', lw=3, markersize=1, c='0.5')
-    plt.plot(x[maskConstPosVel], y[maskConstPosVel], 'rx', lw=3, markersize=1)
-    plt.plot(x[maskConstNegVel], y[maskConstNegVel], 'bx', lw=3, markersize=1)
+    plt.axhline(0, color="black", lw=1)
+    plt.axvline(0, color="black", lw=1)
+    plt.plot(x, y, ".", lw=3, markersize=1, c="0.5")
+    plt.plot(x[maskConstPosVel], y[maskConstPosVel], "rx", lw=3, markersize=1)
+    plt.plot(x[maskConstNegVel], y[maskConstNegVel], "bx", lw=3, markersize=1)
     # plot identified lin model
-    plt.plot([0.0, max(dq)], [Kfp, Kvp * max(dq) + Kfp], 'g-')
-    plt.plot([0.0, min(dq)], [-Kfn, Kvn * min(dq) - Kfn], 'g-')
-    plt.ylabel(r'$i(t)-{K_t}{\tau(t)}$')
-    plt.xlabel(r'$\dot{q}(t)$')
-    plt.title('Fixed Kt identification')
+    plt.plot([0.0, max(dq)], [Kfp, Kvp * max(dq) + Kfp], "g-")
+    plt.plot([0.0, min(dq)], [-Kfn, Kvn * min(dq) - Kfn], "g-")
+    plt.ylabel(r"$i(t)-{K_t}{\tau(t)}$")
+    plt.xlabel(r"$\dot{q}(t)$")
+    plt.title("Fixed Kt identification")
 
     # Identification with variable Kt ***************************************************
     #    y = Ks*current

@@ -26,17 +26,18 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <boost/circular_buffer.hpp>
 #include <Eigen/StdVector>
+#include <boost/circular_buffer.hpp>
 
 /*Motor model*/
+#include <pinocchio/algorithm/kinematics.hpp>
+#include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
-#include <pinocchio/algorithm/kinematics.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
 #include <sot/core/stop-watch.hh>
@@ -48,18 +49,22 @@ namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
 
-class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator : public ::dynamicgraph::Entity {
+class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator
+    : public ::dynamicgraph::Entity {
   DYNAMIC_GRAPH_ENTITY_DECL();
 
  public: /* --- SIGNALS --- */
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef int dummy;
-  typedef std::vector<Eigen::VectorXd, Eigen::aligned_allocator<Eigen::VectorXd> > stdAlignedVector;
+  typedef std::vector<Eigen::VectorXd,
+                      Eigen::aligned_allocator<Eigen::VectorXd> >
+      stdAlignedVector;
 
   /** --- CONSTRUCTOR ---- */
   TorqueOffsetEstimator(const std::string& name);
-  void init(const std::string& urdfFile, const Eigen::Matrix4d& _m_torso_X_imu, const double& gyro_epsilon,
-            const std::string& ffJointName, const std::string& torsoJointName);
+  void init(const std::string& urdfFile, const Eigen::Matrix4d& _m_torso_X_imu,
+            const double& gyro_epsilon, const std::string& ffJointName,
+            const std::string& torsoJointName);
   void computeOffset(const int& nIterations, const double& epsilon);
 
   virtual void display(std::ostream& os) const;
@@ -79,7 +84,8 @@ class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator : public ::dynamicgraph
   double epsilon;
   double gyro_epsilon;
 
-  pinocchio::JointIndex ffIndex, torsoIndex;  // Index of the free-flyer and torso frames
+  pinocchio::JointIndex ffIndex,
+      torsoIndex;  // Index of the free-flyer and torso frames
   Eigen::VectorXd jointTorqueOffsets;
   pinocchio::SE3 m_torso_X_imu;  // Definition of the imu in the chest frame.
 
@@ -90,7 +96,8 @@ class TORQUEOFFSETESTIMATOR_EXPORT TorqueOffsetEstimator : public ::dynamicgraph
 
   // stdAlignedVector stdVecJointTorqueOffsets;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
   }
 

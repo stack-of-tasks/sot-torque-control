@@ -41,12 +41,12 @@ def array_polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False, eps=1e-1
         assert y_a.size == y_a.shape[1]
         p_a, residual, _, _, _ = np.polyfit(x, np.asarray(y_a).squeeze(), deg, rcond, full, w, cov)
         p[i, :] = p_a[::-1]
-        assert (residual <= eps)
+        assert residual <= eps
     return p
 
 
 def dd_polyfit(x, y, dy, ddy, deg_y, eps=1e-20):
-    assert (y.shape[1] == dy.shape[1] == ddy.shape[1])
+    assert y.shape[1] == dy.shape[1] == ddy.shape[1]
     p = np.zeros((y.shape[0], deg_y + 1))
     for i in range(y.shape[0]):
         p_a = dd_polyfit_1d(x, y[i], dy[i], ddy[i], deg_y, eps)
@@ -63,16 +63,16 @@ def dd_polyfit_1d(x, y, dy, ddy, deg_y, eps=1e-20):
         A[i, :] = np.array([t**n for n in range(deg_y + 1)])
 
     for i, t in enumerate(x):
-        A[i + len(x), 1:] = np.array([n * t**(n - 1) for n in range(1, deg_y + 1)])
+        A[i + len(x), 1:] = np.array([n * t ** (n - 1) for n in range(1, deg_y + 1)])
         A[i + len(x), 0] = 0.0
 
     for i, t in enumerate(x):
-        A[i + 2 * len(x), 2:] = np.array([n * (n - 1) * t**(n - 2) for n in range(2, deg_y + 1)])
+        A[i + 2 * len(x), 2:] = np.array([n * (n - 1) * t ** (n - 2) for n in range(2, deg_y + 1)])
         A[i + 2 * len(x), 0:2] = 0.0
 
     B = np.concatenate((y, dy, ddy), axis=1).transpose()
     x, residual, _, _ = lstsq(A, B)
-    assert (residual <= eps)
+    assert residual <= eps
     return x
 
 
@@ -170,14 +170,14 @@ def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT, totalTrajTime=TOTA
 
     A = np.zeros((7, 7))
     A[0, :] = np.array([s0**n for n in range(7)])
-    A[1, :] = np.array([(0.5 * (s0 + s1))**n for n in range(7)])
+    A[1, :] = np.array([(0.5 * (s0 + s1)) ** n for n in range(7)])
     A[2, :] = np.array([s1**n for n in range(7)])
-    A[3, 1:] = np.array([n * (s0**(n - 1)) for n in range(1, 7)])
-    A[4, 1:] = np.array([n * (s1**(n - 1)) for n in range(1, 7)])
-    A[5, 2:] = np.array([n * (n - 1) * (s0**(n - 2)) for n in range(2, 7)])
-    A[6, 2:] = np.array([n * (n - 1) * (s1**(n - 2)) for n in range(2, 7)])
+    A[3, 1:] = np.array([n * (s0 ** (n - 1)) for n in range(1, 7)])
+    A[4, 1:] = np.array([n * (s1 ** (n - 1)) for n in range(1, 7)])
+    A[5, 2:] = np.array([n * (n - 1) * (s0 ** (n - 2)) for n in range(2, 7)])
+    A[6, 2:] = np.array([n * (n - 1) * (s1 ** (n - 2)) for n in range(2, 7)])
 
-    B = np.matrix([[initPos[2], z_amp + initPos[2], initPos[2], 0., 0., 0., 0.]]).transpose()
+    B = np.matrix([[initPos[2], z_amp + initPos[2], initPos[2], 0.0, 0.0, 0.0, 0.0]]).transpose()
 
     poly_coeff_begin = np.zeros((3, 7))
     poly_coeff_s = np.zeros((3, 7))
@@ -190,7 +190,7 @@ def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT, totalTrajTime=TOTA
     for arr in [poly_coeff_begin, poly_coeff_end]:
         arr[2][0] = initPos[2]
 
-    time_vector = np.array([0., s0, s1, totalTrajTime])
+    time_vector = np.array([0.0, s0, s1, totalTrajTime])
     poly_coeff_s[2, :] = np.array(solve(A, B)).squeeze()
 
     return ([poly_coeff_begin, poly_coeff_s, poly_coeff_end], time_vector)
@@ -213,7 +213,7 @@ if WRITE_OUTPUT:
 if VERIFY:
     for spl in cs.ms_interval_data:
         for j, t in enumerate(spl.time_trajectory):
-            assert (np.isclose(spl.state_trajectory[j][0:3], com_spline(t)).all())
+            assert np.isclose(spl.state_trajectory[j][0:3], com_spline(t)).all()
             if not np.isclose(spl.control_trajectory[j][0:6], rf_force(t)).all():
                 print(t, spl.control_trajectory[j][0:6], rf_force(t))
                 input("Error in xml vs spline rf force")
@@ -227,6 +227,7 @@ if VERIFY:
 
 if PLOT:
     import matplotlib.pyplot as plt
+
     N = 1000
     lf_spline_data = np.array([lf_spline((t / (1.0 * N)) * lf_spline.max())[2] for t in range(N)]).squeeze()
     time_data = np.array([(t / (1.0 * N)) * lf_spline.max() for t in range(N)]).squeeze()

@@ -27,11 +27,12 @@
 /* --------------------------------------------------------------------- */
 
 /* HELPER */
-#include <boost/circular_buffer.hpp>
 #include <dynamic-graph/signal-helper.h>
+
+#include <boost/circular_buffer.hpp>
 #include <sot/core/matrix-geometry.hh>
-#include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/core/stop-watch.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 /* Polynomial estimators */
 #include <sot/torque_control/utils/lin-estimator.hh>
@@ -42,9 +43,11 @@ namespace sot {
 namespace torque_control {
 
 /**
- * This Entity takes as inputs a signal and estimates its first two time derivatives.
+ * This Entity takes as inputs a signal and estimates its first two time
+ * derivatives.
  */
-class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference : public ::dynamicgraph::Entity {
+class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference
+    : public ::dynamicgraph::Entity {
   DYNAMIC_GRAPH_ENTITY_DECL();
 
  public: /* --- SIGNALS --- */
@@ -53,14 +56,16 @@ class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference : public ::dynamicgraph:
   DECLARE_SIGNAL_OUT(dx, dynamicgraph::Vector);
   DECLARE_SIGNAL_OUT(ddx, dynamicgraph::Vector);
 
-  /// The following inner signals are used because this entity has some output signals
-  /// whose related quantities are computed at the same time by the same algorithm
-  /// To avoid the risk of recomputing the same things twice, we create an inner signal that groups together
-  /// all the quantities that are computed together. Then the single output signals will depend
-  /// on this inner signal, which is the one triggering the computations.
-  /// Inner signals are not exposed, so that nobody can access them.
+  /// The following inner signals are used because this entity has some output
+  /// signals whose related quantities are computed at the same time by the same
+  /// algorithm To avoid the risk of recomputing the same things twice, we
+  /// create an inner signal that groups together all the quantities that are
+  /// computed together. Then the single output signals will depend on this
+  /// inner signal, which is the one triggering the computations. Inner signals
+  /// are not exposed, so that nobody can access them.
 
-  /// This signal contains the estimated positions, velocities and accelerations.
+  /// This signal contains the estimated positions, velocities and
+  /// accelerations.
   DECLARE_SIGNAL_INNER(x_dx_ddx, dynamicgraph::Vector);
 
  protected:
@@ -84,7 +89,8 @@ class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference : public ::dynamicgraph:
   NumericalDifference(const std::string& name);
 
   /** Initialize the NumericalDifference.
-   * @param timestep Period (in seconds) after which the sensors' data are updated.
+   * @param timestep Period (in seconds) after which the sensors' data are
+   * updated.
    * @param sigSize  Size of the input signal.
    * @param delay    Delay (in seconds) introduced by the estimation.
    *                 This should be a multiple of timestep.
@@ -92,10 +98,12 @@ class SOTNUMERICALDIFFERENCE_EXPORT NumericalDifference : public ::dynamicgraph:
    * @note The estimationDelay is half of the length of the window used for the
    * polynomial fitting. The larger the delay, the smoother the estimations.
    */
-  void init(const double& timestep, const int& sigSize, const double& delay, const int& polyOrder);
+  void init(const double& timestep, const int& sigSize, const double& delay,
+            const int& polyOrder);
 
  protected:
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
   }
 

@@ -24,18 +24,16 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <vector>
-#include <map>
-
-#include <pinocchio/fwd.hpp>
-
 #include <boost/assign.hpp>
+#include <map>
+#include <pinocchio/fwd.hpp>
+#include <vector>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
@@ -71,7 +69,8 @@ class SOTTRACEPLAYER_EXPORT TracePlayer : public ::dynamicgraph::Entity {
   DECLARE_SIGNAL_OUT(trigger, int);
 
   /* --- COMMANDS --- */
-  void addOutputSignal(const std::string& fileName, const std::string& signalName);
+  void addOutputSignal(const std::string& fileName,
+                       const std::string& signalName);
   void playNext();
   void rewind();
   void clear();
@@ -79,7 +78,8 @@ class SOTTRACEPLAYER_EXPORT TracePlayer : public ::dynamicgraph::Entity {
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
   }
 

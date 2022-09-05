@@ -4,10 +4,11 @@
  */
 
 #include <dynamic-graph/factory.h>
+
 #include <sot/core/debug.hh>
-#include <sot/torque_control/position-controller.hh>
-#include <sot/torque_control/commands-helper.hh>
 #include <sot/core/stop-watch.hh>
+#include <sot/torque_control/commands-helper.hh>
+#include <sot/torque_control/position-controller.hh>
 
 namespace dynamicgraph {
 namespace sot {
@@ -16,8 +17,9 @@ namespace dynamicgraph = ::dynamicgraph;
 using namespace dynamicgraph;
 using namespace dynamicgraph::command;
 using namespace std;
-// Size to be aligned                "-------------------------------------------------------"
-#define PROFILE_PWM_DES_COMPUTATION "PositionController: desired pwm computation            "
+// Size to be aligned "-------------------------------------------------------"
+#define PROFILE_PWM_DES_COMPUTATION \
+  "PositionController: desired pwm computation            "
 
 #define GAIN_SIGNALS m_KpSIN << m_KdSIN << m_KiSIN
 #define REF_JOINT_SIGNALS m_qRefSIN << m_dqRefSIN
@@ -49,37 +51,49 @@ PositionController::PositionController(const std::string& name)
       CONSTRUCT_SIGNAL_IN(Kd, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(Ki, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_OUT(pwmDes, dynamicgraph::Vector, INPUT_SIGNALS),
-      CONSTRUCT_SIGNAL_OUT(qError, dynamicgraph::Vector, m_base6d_encodersSIN << m_qRefSIN),
+      CONSTRUCT_SIGNAL_OUT(qError, dynamicgraph::Vector,
+                           m_base6d_encodersSIN << m_qRefSIN),
       m_robot_util(RefVoidRobotUtil()),
       m_initSucceeded(false) {
   Entity::signalRegistration(INPUT_SIGNALS << OUTPUT_SIGNALS);
 
   /* Commands. */
-  addCommand("init", makeCommandVoid2(*this, &PositionController::init,
-                                      docCommandVoid2("Initialize the entity.", "Time period in seconds (double)",
-                                                      "Reference to the robot (string)")));
+  addCommand("init", makeCommandVoid2(
+                         *this, &PositionController::init,
+                         docCommandVoid2("Initialize the entity.",
+                                         "Time period in seconds (double)",
+                                         "Reference to the robot (string)")));
   addCommand("resetIntegral",
-             makeCommandVoid0(*this, &PositionController::resetIntegral, docCommandVoid0("Reset the integral.")));
+             makeCommandVoid0(*this, &PositionController::resetIntegral,
+                              docCommandVoid0("Reset the integral.")));
 }
 
 void PositionController::init(const double& dt, const std::string& robotRef) {
   if (dt <= 0.0) return SEND_MSG("Timestep must be positive", MSG_TYPE_ERROR);
   if (!m_base6d_encodersSIN.isPlugged())
-    return SEND_MSG("Init failed: signal base6d_encoders is not plugged", MSG_TYPE_ERROR);
+    return SEND_MSG("Init failed: signal base6d_encoders is not plugged",
+                    MSG_TYPE_ERROR);
   if (!m_jointsVelocitiesSIN.isPlugged())
-    return SEND_MSG("Init failed: signal jointsVelocities is not plugged", MSG_TYPE_ERROR);
-  if (!m_qRefSIN.isPlugged()) return SEND_MSG("Init failed: signal qRef is not plugged", MSG_TYPE_ERROR);
-  if (!m_dqRefSIN.isPlugged()) return SEND_MSG("Init failed: signal dqRef is not plugged", MSG_TYPE_ERROR);
-  if (!m_KpSIN.isPlugged()) return SEND_MSG("Init failed: signal Kp is not plugged", MSG_TYPE_ERROR);
-  if (!m_KdSIN.isPlugged()) return SEND_MSG("Init failed: signal Kd is not plugged", MSG_TYPE_ERROR);
-  if (!m_KiSIN.isPlugged()) return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
+    return SEND_MSG("Init failed: signal jointsVelocities is not plugged",
+                    MSG_TYPE_ERROR);
+  if (!m_qRefSIN.isPlugged())
+    return SEND_MSG("Init failed: signal qRef is not plugged", MSG_TYPE_ERROR);
+  if (!m_dqRefSIN.isPlugged())
+    return SEND_MSG("Init failed: signal dqRef is not plugged", MSG_TYPE_ERROR);
+  if (!m_KpSIN.isPlugged())
+    return SEND_MSG("Init failed: signal Kp is not plugged", MSG_TYPE_ERROR);
+  if (!m_KdSIN.isPlugged())
+    return SEND_MSG("Init failed: signal Kd is not plugged", MSG_TYPE_ERROR);
+  if (!m_KiSIN.isPlugged())
+    return SEND_MSG("Init failed: signal Ki is not plugged", MSG_TYPE_ERROR);
 
   /* Retrieve m_robot_util  informations */
   std::string localName(robotRef);
   if (isNameInRobotUtil(localName))
     m_robot_util = getRobotUtil(localName);
   else {
-    SEND_MSG("You should have an entity controller manager initialized before", MSG_TYPE_ERROR);
+    SEND_MSG("You should have an entity controller manager initialized before",
+             MSG_TYPE_ERROR);
     return;
   }
 
@@ -94,7 +108,9 @@ void PositionController::init(const double& dt, const std::string& robotRef) {
   m_initSucceeded = true;
 }
 
-void PositionController::resetIntegral() { m_e_integral.setZero(m_robot_util->m_nbJoints); }
+void PositionController::resetIntegral() {
+  m_e_integral.setZero(m_robot_util->m_nbJoints);
+}
 
 /* ------------------------------------------------------------------- */
 /* --- SIGNALS ------------------------------------------------------- */
@@ -102,7 +118,8 @@ void PositionController::resetIntegral() { m_e_integral.setZero(m_robot_util->m_
 
 DEFINE_SIGNAL_OUT_FUNCTION(pwmDes, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_WARNING_STREAM_MSG("Cannot compute signal pwmDes before initialization!");
+    SEND_WARNING_STREAM_MSG(
+        "Cannot compute signal pwmDes before initialization!");
     return s;
   }
 
@@ -115,22 +132,31 @@ DEFINE_SIGNAL_OUT_FUNCTION(pwmDes, dynamicgraph::Vector) {
     const VectorN& qRef = m_qRefSIN(iter);            // n
     const VectorN& dqRef = m_dqRefSIN(iter);          // n
 
-    assert(q.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6) &&
+    assert(q.size() == static_cast<Eigen::VectorXd::Index>(
+                           m_robot_util->m_nbJoints + 6) &&
            "Unexpected size of signal base6d_encoder");
-    assert(dq.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+    assert(dq.size() ==
+               static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
            "Unexpected size of signal dq");
-    assert(qRef.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+    assert(qRef.size() ==
+               static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
            "Unexpected size of signal qRef");
-    assert(dqRef.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+    assert(dqRef.size() ==
+               static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
            "Unexpected size of signal dqRef");
-    assert(Kp.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+    assert(Kp.size() ==
+               static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
            "Unexpected size of signal Kd");
-    assert(Kd.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+    assert(Kd.size() ==
+               static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
            "Unexpected size of signal Kd");
 
-    m_pwmDes = Kp.cwiseProduct(qRef - q.tail(m_robot_util->m_nbJoints)) + Kd.cwiseProduct(dqRef - dq);
+    m_pwmDes = Kp.cwiseProduct(qRef - q.tail(m_robot_util->m_nbJoints)) +
+               Kd.cwiseProduct(dqRef - dq);
 
-    if (s.size() != static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)) s.resize(m_robot_util->m_nbJoints);
+    if (s.size() !=
+        static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
+      s.resize(m_robot_util->m_nbJoints);
     s = m_pwmDes;
   }
   getProfiler().stop(PROFILE_PWM_DES_COMPUTATION);
@@ -140,18 +166,22 @@ DEFINE_SIGNAL_OUT_FUNCTION(pwmDes, dynamicgraph::Vector) {
 
 DEFINE_SIGNAL_OUT_FUNCTION(qError, dynamicgraph::Vector) {
   if (!m_initSucceeded) {
-    SEND_MSG("Cannot compute signal qError before initialization!", MSG_TYPE_WARNING_STREAM);
+    SEND_MSG("Cannot compute signal qError before initialization!",
+             MSG_TYPE_WARNING_STREAM);
     return s;
   }
 
   const VectorN6& q = m_base6d_encodersSIN(iter);  // n+6
   const VectorN& qRef = m_qRefSIN(iter);           // n
-  assert(q.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints + 6) &&
+  assert(q.size() == static_cast<Eigen::VectorXd::Index>(
+                         m_robot_util->m_nbJoints + 6) &&
          "Unexpected size of signal base6d_encoder");
-  assert(qRef.size() == static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
+  assert(qRef.size() ==
+             static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints) &&
          "Unexpected size of signal qRef");
 
-  if (s.size() != static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints)) s.resize(m_robot_util->m_nbJoints);
+  if (s.size() != static_cast<Eigen::VectorXd::Index>(m_robot_util->m_nbJoints))
+    s.resize(m_robot_util->m_nbJoints);
   s = qRef - q.tail(m_robot_util->m_nbJoints);
 
   return s;

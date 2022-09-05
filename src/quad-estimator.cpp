@@ -5,11 +5,16 @@
 */
 
 #include <iostream>
-
 #include <sot/torque_control/utils/quad-estimator.hh>
 
-QuadEstimator::QuadEstimator(const unsigned int& N, const unsigned int& dim, const double& dt)
-    : PolyEstimator(2, N, dt), dim_(dim), sum_ti_(0.0), sum_ti2_(0.0), sum_ti3_(0.0), sum_ti4_(0.0) {
+QuadEstimator::QuadEstimator(const unsigned int& N, const unsigned int& dim,
+                             const double& dt)
+    : PolyEstimator(2, N, dt),
+      dim_(dim),
+      sum_ti_(0.0),
+      sum_ti2_(0.0),
+      sum_ti3_(0.0),
+      sum_ti4_(0.0) {
   /* Number of coefficients for a quadratic estimator: 3 */
   coeff_.resize(3);
 
@@ -61,7 +66,9 @@ QuadEstimator::QuadEstimator(const unsigned int& N, const unsigned int& dim, con
 
 double QuadEstimator::getEsteeme() { return coeff_(2); }
 
-void QuadEstimator::estimateRecursive(std::vector<double>& esteem, const std::vector<double>& el, const double& time) {
+void QuadEstimator::estimateRecursive(std::vector<double>& esteem,
+                                      const std::vector<double>& el,
+                                      const double& time) {
   /* Feed Data */
   elem_list_.at(pt_) = el;
   time_list_.at(pt_) = time;
@@ -109,9 +116,10 @@ void QuadEstimator::estimateRecursive(std::vector<double>& esteem, const std::ve
   sum_ti3_ += t * t * t;
   sum_ti4_ += t * t * t * t;
 
-  double den = 0.25 * N_ * sum_ti3_ * sum_ti3_ - 0.5 * sum_ti3_ * sum_ti2_ * sum_ti_ +
-               0.25 * sum_ti2_ * sum_ti2_ * sum_ti2_ + 0.25 * sum_ti4_ * sum_ti_ * sum_ti_ -
-               0.25 * N_ * sum_ti4_ * sum_ti2_;
+  double den =
+      0.25 * N_ * sum_ti3_ * sum_ti3_ - 0.5 * sum_ti3_ * sum_ti2_ * sum_ti_ +
+      0.25 * sum_ti2_ * sum_ti2_ * sum_ti2_ +
+      0.25 * sum_ti4_ * sum_ti_ * sum_ti_ - 0.25 * N_ * sum_ti4_ * sum_ti2_;
   double den2 = 1.0 / (2.0 * den);
   // double den4 = 1.0/(4.0*den);
 
@@ -126,9 +134,9 @@ void QuadEstimator::estimateRecursive(std::vector<double>& esteem, const std::ve
     sum_tixi_[i] += t * x;
     sum_ti2xi_[i] += t * t * x;
 
-    a = den2 *
-        (sum_ti2xi_[i] * (sum_ti_ * sum_ti_ - N_ * sum_ti2_) + sum_tixi_[i] * (N_ * sum_ti3_ - sum_ti2_ * sum_ti_) +
-         sum_xi_[i] * (sum_ti2_ * sum_ti2_ - sum_ti3_ * sum_ti_));
+    a = den2 * (sum_ti2xi_[i] * (sum_ti_ * sum_ti_ - N_ * sum_ti2_) +
+                sum_tixi_[i] * (N_ * sum_ti3_ - sum_ti2_ * sum_ti_) +
+                sum_xi_[i] * (sum_ti2_ * sum_ti2_ - sum_ti3_ * sum_ti_));
     // b = den4*( sum_ti2xi_[i]*(N_*sum_ti3_-sum_ti2_*sum_ti_) +
     //            sum_tixi_[i]*(sum_ti2_*sum_ti2_-N_*sum_ti4_) +
     //            sum_xi_[i]*(sum_ti4_*sum_ti_-sum_ti3_*sum_ti2_) );
@@ -170,13 +178,17 @@ void QuadEstimator::fit() {
     sum_ti2xi += t_[i] * t_[i] * x_[i];
   }
 
-  double den = 0.25 * N_ * sum_ti3 * sum_ti3 - 0.5 * sum_ti3 * sum_ti2 * sum_ti + 0.25 * sum_ti2 * sum_ti2 * sum_ti2 +
+  double den = 0.25 * N_ * sum_ti3 * sum_ti3 -
+               0.5 * sum_ti3 * sum_ti2 * sum_ti +
+               0.25 * sum_ti2 * sum_ti2 * sum_ti2 +
                0.25 * sum_ti4 * sum_ti * sum_ti - 0.25 * N_ * sum_ti4 * sum_ti2;
   double den4 = 1.0 / (4.0 * den);
 
-  coeff_(2) = den4 * (sum_ti2xi * (sum_ti * sum_ti - N_ * sum_ti2) + sum_tixi * (N_ * sum_ti3 - sum_ti2 * sum_ti) +
+  coeff_(2) = den4 * (sum_ti2xi * (sum_ti * sum_ti - N_ * sum_ti2) +
+                      sum_tixi * (N_ * sum_ti3 - sum_ti2 * sum_ti) +
                       sum_xi * (sum_ti2 * sum_ti2 - sum_ti3 * sum_ti));
-  coeff_(1) = den4 * (sum_ti2xi * (N_ * sum_ti3 - sum_ti2 * sum_ti) + sum_tixi * (sum_ti2 * sum_ti2 - N_ * sum_ti4) +
+  coeff_(1) = den4 * (sum_ti2xi * (N_ * sum_ti3 - sum_ti2 * sum_ti) +
+                      sum_tixi * (sum_ti2 * sum_ti2 - N_ * sum_ti4) +
                       sum_xi * (sum_ti4 * sum_ti - sum_ti3 * sum_ti2));
   // This has not been computed (because not needed for accel or velocity)
   coeff_(0) = 0;
@@ -184,7 +196,8 @@ void QuadEstimator::fit() {
   return;
 }
 
-void QuadEstimator::estimate(std::vector<double>& esteem, const std::vector<double>& el) {
+void QuadEstimator::estimate(std::vector<double>& esteem,
+                             const std::vector<double>& el) {
   if (dt_zero_) {
     std::cerr << "Error: dt cannot be zero" << std::endl;
     // Return a zero vector
@@ -232,14 +245,18 @@ void QuadEstimator::estimate(std::vector<double>& esteem, const std::vector<doub
   }
 }
 
-void QuadEstimator::getEstimateDerivative(std::vector<double>& estimateDerivative, const unsigned int order) {
+void QuadEstimator::getEstimateDerivative(
+    std::vector<double>& estimateDerivative, const unsigned int order) {
   switch (order) {
     case 0:
-      for (int i = 0; i < dim_; ++i) estimateDerivative[i] = 0.5 * c2_[i] * tmed_ * tmed_ + c1_[i] * tmed_ + c0_[i];
+      for (int i = 0; i < dim_; ++i)
+        estimateDerivative[i] =
+            0.5 * c2_[i] * tmed_ * tmed_ + c1_[i] * tmed_ + c0_[i];
       return;
 
     case 1:
-      for (int i = 0; i < dim_; ++i) estimateDerivative[i] = c2_[i] * tmed_ + c1_[i];
+      for (int i = 0; i < dim_; ++i)
+        estimateDerivative[i] = c2_[i] * tmed_ + c1_[i];
       return;
 
     case 2:

@@ -24,13 +24,14 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-#include <iostream>
-
-#include <map>
-#include <fstream>  /// to read text file
-#include "boost/assign.hpp"
 #include <dynamic-graph/signal-helper.h>
+
+#include <fstream>  /// to read text file
+#include <iostream>
+#include <map>
 #include <sot/torque_control/utils/vector-conversions.hh>
+
+#include "boost/assign.hpp"
 
 namespace dynamicgraph {
 namespace sot {
@@ -59,15 +60,18 @@ Eigen::MatrixXd readMatrixFromFile(const char* filename) {
     if (cols == 0)
       cols = temp_cols;
     else if (temp_cols != cols && !infile.eof()) {
-      std::cout << "Error while reading matrix from file, line " << rows << " has " << temp_cols
-                << " columnds, while preceding lines had " << cols << " columnds\n";
+      std::cout << "Error while reading matrix from file, line " << rows
+                << " has " << temp_cols
+                << " columnds, while preceding lines had " << cols
+                << " columnds\n";
       std::cout << line << "\n";
       break;
     }
 
     rows++;
     if ((rows + 1) * cols >= MAXBUFSIZE) {
-      std::cout << "Max buffer size exceeded (" << rows << " rows, " << cols << " cols)\n";
+      std::cout << "Max buffer size exceeded (" << rows << " rows, " << cols
+                << " cols)\n";
       break;
     }
   }
@@ -104,21 +108,25 @@ class AbstractTrajectoryGenerator {
     m_x_final.setZero(size);
   }
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* file = "", int line = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* file = "", int line = 0) {
     sendMsg("[AbstrTrajGen] " + msg, t, file, line);
   }
 
  public:
-  AbstractTrajectoryGenerator(double dt, double traj_time, Eigen::VectorXd::Index size) {
+  AbstractTrajectoryGenerator(double dt, double traj_time,
+                              Eigen::VectorXd::Index size) {
     m_t = 0.0;
     m_dt = dt;
     m_traj_time = traj_time;
     resizeAllData(size);
   }
 
-  AbstractTrajectoryGenerator(double dt, double traj_time, const Eigen::VectorXd& x_init,
+  AbstractTrajectoryGenerator(double dt, double traj_time,
+                              const Eigen::VectorXd& x_init,
                               const Eigen::VectorXd& x_final) {
-    assert(x_init.size() == x_final.size() && "Initial and final state must have the same size");
+    assert(x_init.size() == x_final.size() &&
+           "Initial and final state must have the same size");
     m_dt = dt;
     m_traj_time = traj_time;
     resizeAllData(x_init.size());
@@ -178,7 +186,8 @@ class AbstractTrajectoryGenerator {
  * */
 class NoTrajectoryGenerator : public AbstractTrajectoryGenerator {
  public:
-  NoTrajectoryGenerator(int size) : AbstractTrajectoryGenerator(0.001, 1.0, size) {}
+  NoTrajectoryGenerator(int size)
+      : AbstractTrajectoryGenerator(0.001, 1.0, size) {}
 
   virtual const Eigen::VectorXd& compute_next_point() {
     m_t += m_dt;
@@ -188,7 +197,8 @@ class NoTrajectoryGenerator : public AbstractTrajectoryGenerator {
   virtual bool isTrajectoryEnded() { return false; }
 };
 
-/** Trajectory generator that reads the trajectory and its derivatives from a text file.
+/** Trajectory generator that reads the trajectory and its derivatives from a
+ * text file.
  * */
 class TextFileTrajectoryGenerator : public AbstractTrajectoryGenerator {
  protected:
@@ -197,13 +207,16 @@ class TextFileTrajectoryGenerator : public AbstractTrajectoryGenerator {
   Eigen::MatrixXd m_accTraj;
 
  public:
-  TextFileTrajectoryGenerator(double dt, Eigen::VectorXd::Index size) : AbstractTrajectoryGenerator(dt, 1.0, size) {}
+  TextFileTrajectoryGenerator(double dt, Eigen::VectorXd::Index size)
+      : AbstractTrajectoryGenerator(dt, 1.0, size) {}
 
   virtual bool loadTextFile(const std::string& fileName) {
     Eigen::MatrixXd data = readMatrixFromFile(fileName.c_str());
-    //          std::cout<<"Read matrix with "<<data.rows()<<" rows and "<<data.cols()<<" cols from text file\n";
+    //          std::cout<<"Read matrix with "<<data.rows()<<" rows and
+    //          "<<data.cols()<<" cols from text file\n";
     if (data.cols() != 3 * m_size) {
-      std::cout << "Unexpected number of columns (expected " << 3 * m_size << ", found " << data.cols() << ")\n";
+      std::cout << "Unexpected number of columns (expected " << 3 * m_size
+                << ", found " << data.cols() << ")\n";
       return false;
     }
 
@@ -246,7 +259,8 @@ class MinimumJerkTrajectoryGenerator : public AbstractTrajectoryGenerator {
       double td5 = td4 * td;
       double p = 10 * td3 - 15 * td4 + 6 * td5;
       double dp = (30 * td2 - 60 * td3 + 30 * td4) / m_traj_time;
-      double ddp = (60 * td - 180 * td2 + 120 * td3) / (m_traj_time * m_traj_time);
+      double ddp =
+          (60 * td - 180 * td2 + 120 * td3) / (m_traj_time * m_traj_time);
       m_x = m_x_init + (m_x_final - m_x_init) * p;
       m_dx = (m_x_final - m_x_init) * dp;
       m_ddx = (m_x_final - m_x_init) * ddp;
@@ -331,16 +345,20 @@ class TriangleTrajectoryGenerator : public AbstractTrajectoryGenerator {
 
 /** Endless piece-wise constant acceleration trajectory generator.
  */
-class ConstantAccelerationTrajectoryGenerator : public AbstractTrajectoryGenerator {
+class ConstantAccelerationTrajectoryGenerator
+    : public AbstractTrajectoryGenerator {
  protected:
   bool m_is_accelerating;  // if true then apply ddx0, otherwise apply -ddx0
-  int m_counter;           // counter to decide when to switch from ddx0 to -ddx0
-  int m_counter_max;       // value of the counter at which to switch from ddx0 to -ddx0
-  Eigen::VectorXd m_ddx0;  // acceleration to go halfway from x_init to x_final in half traj_time
+  int m_counter;      // counter to decide when to switch from ddx0 to -ddx0
+  int m_counter_max;  // value of the counter at which to switch from ddx0 to
+                      // -ddx0
+  Eigen::VectorXd m_ddx0;  // acceleration to go halfway from x_init to x_final
+                           // in half traj_time
 
  public:
   ConstantAccelerationTrajectoryGenerator(double dt, double traj_time, int size)
-      : AbstractTrajectoryGenerator(dt, traj_time, size), m_is_accelerating(true) {}
+      : AbstractTrajectoryGenerator(dt, traj_time, size),
+        m_is_accelerating(true) {}
 
   virtual bool set_trajectory_time(double traj_time) {
     bool res = AbstractTrajectoryGenerator::set_trajectory_time(traj_time);
@@ -384,8 +402,9 @@ class LinearChirpTrajectoryGenerator : public AbstractTrajectoryGenerator {
   Eigen::VectorXd m_f1;  /// final frequency
 
   /// Variables for temporary results
-  Eigen::VectorXd m_k;      /// frequency first derivative
-  Eigen::VectorXd m_f;      /// current frequency (i.e. time derivative of the phase over 2*pi)
+  Eigen::VectorXd m_k;  /// frequency first derivative
+  Eigen::VectorXd
+      m_f;  /// current frequency (i.e. time derivative of the phase over 2*pi)
   Eigen::VectorXd m_phi;    /// current phase
   Eigen::VectorXd m_phi_0;  /// phase shift for second half of trajectory
   Eigen::VectorXd m_p;
@@ -441,13 +460,15 @@ class LinearChirpTrajectoryGenerator : public AbstractTrajectoryGenerator {
       m_phi = 2 * M_PI * m_t * (m_f0 + 0.5 * m_k * m_t);
     } else {
       m_f = m_f1 + m_k * (0.5 * m_traj_time - m_t);
-      m_phi = m_phi_0 + 2 * M_PI * m_t * (m_f1 + 0.5 * m_k * (m_traj_time - m_t));
+      m_phi =
+          m_phi_0 + 2 * M_PI * m_t * (m_f1 + 0.5 * m_k * (m_traj_time - m_t));
     }
     m_p = 0.5 * (1.0 - m_phi.array().cos());
     m_dp = M_PI * m_f.array() * m_phi.array().sin();
     m_ddp = 2.0 * M_PI * M_PI * m_f.array() * m_f.array() * m_phi.array().cos();
 
-    m_x = m_x_init.array() + (m_x_final.array() - m_x_init.array()) * m_p.array();
+    m_x =
+        m_x_init.array() + (m_x_final.array() - m_x_init.array()) * m_p.array();
     m_dx = (m_x_final - m_x_init).array() * m_dp.array();
     m_ddx = (m_x_final - m_x_init).array() * m_ddp.array();
 

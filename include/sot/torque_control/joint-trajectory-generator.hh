@@ -23,19 +23,17 @@
 /* --------------------------------------------------------------------- */
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
-#include <map>
-
-#include <pinocchio/fwd.hpp>
-
 #include <boost/assign.hpp>
+#include <map>
+#include <pinocchio/fwd.hpp>
 
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-
-#include <sot/torque_control/utils/vector-conversions.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
+#include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
 namespace sot {
@@ -45,7 +43,8 @@ namespace torque_control {
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator : public ::dynamicgraph::Entity {
+class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator
+    : public ::dynamicgraph::Entity {
   typedef JointTrajectoryGenerator EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -87,52 +86,64 @@ class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator : public ::dyn
    * @param qFinal The desired final position of the joint [rad].
    * @param time The time to go from the current position to qFinal [sec].
    */
-  void moveJoint(const std::string& jointName, const double& qFinal, const double& time);
-  void moveForce(const std::string& forceName, const int& axis, const double& fFinal, const double& time);
+  void moveJoint(const std::string& jointName, const double& qFinal,
+                 const double& time);
+  void moveForce(const std::string& forceName, const int& axis,
+                 const double& fFinal, const double& time);
 
   /** Start an infinite sinusoidal trajectory.
    * @param jointName The short name of the joint.
-   * @param qFinal The position of the joint corresponding to the max amplitude of the sinusoid [rad].
+   * @param qFinal The position of the joint corresponding to the max amplitude
+   * of the sinusoid [rad].
    * @param time The time to go from the current position to qFinal [sec].
    */
-  void startSinusoid(const std::string& jointName, const double& qFinal, const double& time);
+  void startSinusoid(const std::string& jointName, const double& qFinal,
+                     const double& time);
 
   /** Start an infinite triangle trajectory.
    * @param jointName The short name of the joint.
-   * @param qFinal The position of the joint corresponding to the max amplitude of the trajectory [rad].
+   * @param qFinal The position of the joint corresponding to the max amplitude
+   * of the trajectory [rad].
    * @param time The time to go from the current position to qFinal [sec].
    */
-  void startTriangle(const std::string& jointName, const double& qFinal, const double& time, const double& Tacc);
+  void startTriangle(const std::string& jointName, const double& qFinal,
+                     const double& time, const double& Tacc);
 
   /** Start an infinite trajectory with piece-wise constant acceleration.
    * @param jointName The short name of the joint.
-   * @param qFinal The position of the joint corresponding to the max amplitude of the trajectory [rad].
+   * @param qFinal The position of the joint corresponding to the max amplitude
+   * of the trajectory [rad].
    * @param time The time to go from the current position to qFinal [sec].
    * @param Tacc The time during witch acceleration is keept constant [sec].
    */
-  void startConstAcc(const std::string& jointName, const double& qFinal, const double& time);
+  void startConstAcc(const std::string& jointName, const double& qFinal,
+                     const double& time);
 
   /** Start an infinite sinusoidal trajectory for the specified force signal.
    * @param forceName The short name of the force signal (rh, lh, rf, lf).
-   * @param fFinal The 6d force corresponding to the max amplitude of the sinusoid [N/Nm].
+   * @param fFinal The 6d force corresponding to the max amplitude of the
+   * sinusoid [N/Nm].
    * @param time The time to go from 0 to fFinal [sec].
    */
-  //        void startForceSinusoid(const std::string& forceName, const dynamicgraph::Vector& fFinal, const double&
-  //        time);
-  void startForceSinusoid(const std::string& forceName, const int& axis, const double& fFinal, const double& time);
+  //        void startForceSinusoid(const std::string& forceName, const
+  //        dynamicgraph::Vector& fFinal, const double& time);
+  void startForceSinusoid(const std::string& forceName, const int& axis,
+                          const double& fFinal, const double& time);
 
-  /** Start a linear-chirp trajectory, that is a sinusoidal trajectory with frequency
-   * being a linear function of time.
+  /** Start a linear-chirp trajectory, that is a sinusoidal trajectory with
+   * frequency being a linear function of time.
    * @param jointName The short name of the joint.
-   * @param qFinal The position of the joint corresponding to the max amplitude of the sinusoid [rad].
+   * @param qFinal The position of the joint corresponding to the max amplitude
+   * of the sinusoid [rad].
    * @param f0 The initial (min) frequency of the sinusoid [Hz]
    * @param f1 The final (max) frequency of the sinusoid [Hz]
    * @param time The time to get from f0 to f1 [sec]
    */
-  void startLinearChirp(const std::string& jointName, const double& qFinal, const double& f0, const double& f1,
-                        const double& time);
+  void startLinearChirp(const std::string& jointName, const double& qFinal,
+                        const double& f0, const double& f1, const double& time);
 
-  void startForceLinearChirp(const std::string& forceName, const int& axis, const double& fFinal, const double& f0,
+  void startForceLinearChirp(const std::string& forceName, const int& axis,
+                             const double& fFinal, const double& f0,
                              const double& f1, const double& time);
 
   /** Stop the motion of the specified joint. If jointName is "all"
@@ -150,16 +161,27 @@ class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator : public ::dyn
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
-    logger_.stream(t) << ("[JointTrajectoryGenerator-" + name + "] " + msg) << '\n';
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
+    logger_.stream(t) << ("[JointTrajectoryGenerator-" + name + "] " + msg)
+                      << '\n';
   }
 
  protected:
-  enum JTG_Status { JTG_STOP, JTG_SINUSOID, JTG_MIN_JERK, JTG_LIN_CHIRP, JTG_TRIANGLE, JTG_CONST_ACC, JTG_TEXT_FILE };
+  enum JTG_Status {
+    JTG_STOP,
+    JTG_SINUSOID,
+    JTG_MIN_JERK,
+    JTG_LIN_CHIRP,
+    JTG_TRIANGLE,
+    JTG_CONST_ACC,
+    JTG_TEXT_FILE
+  };
 
-  bool m_initSucceeded;  /// true if the entity has been successfully initialized
-  bool m_firstIter;      /// true if it is the first iteration, false otherwise
-  double m_dt;           /// control loop time period
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
+  bool m_firstIter;     /// true if it is the first iteration, false otherwise
+  double m_dt;          /// control loop time period
 
   RobotUtilShrPtr m_robot_util;
 
@@ -182,7 +204,8 @@ class SOTJOINTTRAJECTORYGENERATOR_EXPORT JointTrajectoryGenerator : public ::dyn
   std::vector<MinimumJerkTrajectoryGenerator*> m_minJerkTrajGen_force;
   std::vector<LinearChirpTrajectoryGenerator*> m_linChirpTrajGen_force;
 
-  bool generateReferenceForceSignal(const std::string& forceName, int fid, dynamicgraph::Vector& s, int iter);
+  bool generateReferenceForceSignal(const std::string& forceName, int fid,
+                                    dynamicgraph::Vector& s, int iter);
 
   bool convertJointNameToJointId(const std::string& name, unsigned int& id);
   bool convertForceNameToForceId(const std::string& name, unsigned int& id);

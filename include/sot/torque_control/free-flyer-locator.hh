@@ -24,18 +24,20 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 #include <map>
+
 #include "boost/assign.hpp"
 
 /* Pinocchio */
+#include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-#include <pinocchio/algorithm/kinematics.hpp>
 //~ #include <pinocchio/algorithm/rnea.hpp>
 //~ #include "pinocchio/algorithm/crba.hpp"
 
 #include <dynamic-graph/linear-algebra.h>
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
 #include <sot/torque_control/utils/vector-conversions.hh>
@@ -48,7 +50,8 @@ namespace torque_control {
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTFREEFLYERLOCATOR_EXPORT FreeFlyerLocator : public ::dynamicgraph::Entity {
+class SOTFREEFLYERLOCATOR_EXPORT FreeFlyerLocator
+    : public ::dynamicgraph::Entity {
   typedef FreeFlyerLocator EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -78,12 +81,14 @@ class SOTFREEFLYERLOCATOR_EXPORT FreeFlyerLocator : public ::dynamicgraph::Entit
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[FreeFlyerLocator-" + name + "] " + msg) << '\n';
   }
 
  protected:
-  bool m_initSucceeded;       /// true if the entity has been successfully initialized
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
   pinocchio::Model* m_model;  /// Pinocchio robot model
   pinocchio::Data* m_data;    /// Pinocchio robot data
   pinocchio::SE3 m_Mff;       /// SE3 Transform from center of feet to base
@@ -91,9 +96,11 @@ class SOTFREEFLYERLOCATOR_EXPORT FreeFlyerLocator : public ::dynamicgraph::Entit
   pinocchio::SE3 m_w_M_rf;
   long unsigned int m_right_foot_id;
   long unsigned int m_left_foot_id;
-  Eigen::VectorXd m_q_pin;  /// robot configuration according to pinocchio convention
+  Eigen::VectorXd
+      m_q_pin;  /// robot configuration according to pinocchio convention
   Eigen::VectorXd m_q_sot;  /// robot configuration according to SoT convention
-  Eigen::VectorXd m_v_pin;  /// robot velocities according to pinocchio convention
+  Eigen::VectorXd
+      m_v_pin;  /// robot velocities according to pinocchio convention
   Eigen::VectorXd m_v_sot;  /// robot velocities according to SoT convention
 
   RobotUtilShrPtr m_robot_util;

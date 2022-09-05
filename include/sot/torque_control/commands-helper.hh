@@ -9,10 +9,10 @@
 #include <boost/function.hpp>
 
 /* --- COMMON INCLUDE -------------------------------------------------- */
-#include <dynamic-graph/command.h>
-#include <dynamic-graph/command-direct-setter.h>
-#include <dynamic-graph/command-direct-getter.h>
 #include <dynamic-graph/command-bind.h>
+#include <dynamic-graph/command-direct-getter.h>
+#include <dynamic-graph/command-direct-setter.h>
+#include <dynamic-graph/command.h>
 
 /* --- HELPER ---------------------------------------------------------- */
 namespace dynamicgraph {

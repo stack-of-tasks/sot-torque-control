@@ -10,20 +10,21 @@ import numpy as np
 import pinocchio as se3
 from pinocchio import Quaternion
 from pinocchio.rpy import matrixToRpy
+
 # from pinocchio.utils import *
 from scipy import signal
 
 
 def rotationVector_to_Quaternion(rotVec):
     angle = np.linalg.norm(rotVec)
-    if (angle > 1e-6):
+    if angle > 1e-6:
         ax, ay, az = rotVec / angle
         qx = ax * np.sin(angle / 2)
         qy = ay * np.sin(angle / 2)
         qz = az * np.sin(angle / 2)
         qw = np.cos(angle / 2)
         return np.array([qx, qy, qz, qw])
-    return np.array([0., 0., 0., 1.])
+    return np.array([0.0, 0.0, 0.0, 1.0])
 
 
 def config_sot_to_urdf(q_sot):
@@ -47,8 +48,10 @@ def config_sot_to_urdf(q_sot):
 
 
 def joints_sot_to_urdf(q):
-    # GEPETTO VIEWER Free flyer 0-6, CHEST HEAD 7-10, LARM 11-17, RARM 18-24, LLEG 25-30, RLEG 31-36
-    # ROBOT VIEWER # Free flyer0-5, RLEG 6-11, LLEG 12-17, CHEST HEAD 18-21, RARM 22-28, LARM 29-35
+    # GEPETTO VIEWER Free flyer 0-6, CHEST HEAD 7-10, LARM 11-17, RARM 18-24,
+    # LLEG 25-30, RLEG 31-36
+    # ROBOT VIEWER # Free flyer0-5, RLEG 6-11, LLEG 12-17, CHEST HEAD 18-21,
+    # RARM 22-28, LARM 29-35
     qUrdf = np.zeros(30)
     qUrdf[:4] = q[12:16]
     # chest-head
@@ -101,16 +104,16 @@ def xyzrpyToSE3(xyzrpy):
 
 
 def se3Interp(s1, s2, alpha):
-    t = (s1.translation * alpha + s2.translation * (1 - alpha))
+    t = s1.translation * alpha + s2.translation * (1 - alpha)
     r = se3.exp3(se3.log3(s1.rotation) * alpha + se3.log3(s2.rotation) * (1 - alpha))
     return se3.SE3(r, t)
 
 
 def rpyDerivativeToAngVel(rpy, drpy):
-    '''
+    """
     file:///home/tflayols/devel/simple-base-estimator/StateEstimation-Humanoids17/
     python/11_Differential%20Kinematics.pdf
-    '''
+    """
     p = rpy[1]
     y = rpy[2]
 
@@ -131,7 +134,7 @@ def filter_mocap_hann(mocapHomo16, ws=20):
     # filter
     win = signal.hann(ws)
     for i in range(6):
-        tmp = signal.convolve(xyzrpy_tmp[:, i], win, mode='same') / sum(win)
+        tmp = signal.convolve(xyzrpy_tmp[:, i], win, mode="same") / sum(win)
         xyzrpy_tmp[ws:-ws, i] = tmp[ws:-ws]  # remove side effect
 
     # convert back

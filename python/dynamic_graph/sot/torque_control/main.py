@@ -9,14 +9,39 @@ from time import sleep
 from dynamic_graph import plug
 from dynamic_graph.ros import RosPublish
 from dynamic_graph.sot.torque_control.create_entities_utils import (
-    connect_ctrl_manager, connect_synchronous_trajectories, create_admittance_ctrl, create_balance_controller,
-    create_base_estimator, create_com_traj_gen, create_ctrl_manager, create_current_controller, create_encoders,
-    create_estimators, create_flex_estimator, create_floatingBase, create_force_traj_gen, create_free_flyer_locator,
-    create_imu_filter, create_imu_offset_compensation, create_position_controller, create_ros_topics,
-    create_torque_controller, create_trajectory_generator, create_trajectory_switch)
-from dynamic_graph.sot.torque_control.se3_trajectory_generator import SE3TrajectoryGenerator
-from dynamic_graph.sot.torque_control.utils.filter_utils import create_chebi2_lp_filter_Wn_03_N_4
-from dynamic_graph.sot.torque_control.utils.sot_utils import Bunch, go_to_position, start_sot
+    connect_ctrl_manager,
+    connect_synchronous_trajectories,
+    create_admittance_ctrl,
+    create_balance_controller,
+    create_base_estimator,
+    create_com_traj_gen,
+    create_ctrl_manager,
+    create_current_controller,
+    create_encoders,
+    create_estimators,
+    create_flex_estimator,
+    create_floatingBase,
+    create_force_traj_gen,
+    create_free_flyer_locator,
+    create_imu_filter,
+    create_imu_offset_compensation,
+    create_position_controller,
+    create_ros_topics,
+    create_torque_controller,
+    create_trajectory_generator,
+    create_trajectory_switch,
+)
+from dynamic_graph.sot.torque_control.se3_trajectory_generator import (
+    SE3TrajectoryGenerator,
+)
+from dynamic_graph.sot.torque_control.utils.filter_utils import (
+    create_chebi2_lp_filter_Wn_03_N_4,
+)
+from dynamic_graph.sot.torque_control.utils.sot_utils import (
+    Bunch,
+    go_to_position,
+    start_sot,
+)
 
 
 def get_default_conf():
@@ -29,6 +54,7 @@ def get_default_conf():
     import dynamic_graph.sot.torque_control.hrp2.joint_torque_controller_conf as joint_torque_controller_conf
     import dynamic_graph.sot.torque_control.hrp2.joint_pos_ctrl_gains as pos_ctrl_gains
     import dynamic_graph.sot.torque_control.hrp2.motors_parameters as motor_params
+
     conf = Bunch()
     conf.balance_ctrl = balance_ctrl_conf
     conf.adm_ctrl = admittance_ctrl_conf
@@ -42,58 +68,59 @@ def get_default_conf():
     return conf
 
 
-''' Main function to call before starting the graph. '''
+""" Main function to call before starting the graph. """
 
 
 def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
-    if (conf is None):
+    if conf is None:
         conf = get_default_conf()
     dt = robot.timeStep
 
     # TMP: overwrite halfSitting configuration to use SoT joint order
     robot.halfSitting = (
         # Free flyer
-        0.,
-        0.,
+        0.0,
+        0.0,
         0.648702,
-        0.,
-        0.,
-        0.,
+        0.0,
+        0.0,
+        0.0,
         # Legs
-        0.,
-        0.,
+        0.0,
+        0.0,
         -0.453786,
         0.872665,
         -0.418879,
-        0.,
-        0.,
-        0.,
+        0.0,
+        0.0,
+        0.0,
         -0.453786,
         0.872665,
         -0.418879,
-        0.,
+        0.0,
         # Chest and head
-        0.,
-        0.,
-        0.,
-        0.,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
         # Arms
         0.261799,
         -0.17453,
-        0.,
+        0.0,
         -0.523599,
-        0.,
-        0.,
+        0.0,
+        0.0,
         0.1,
         0.261799,
         0.17453,
-        0.,
+        0.0,
         -0.523599,
-        0.,
-        0.,
-        0.1)
+        0.0,
+        0.0,
+        0.1,
+    )
 
-    robot.device.setControlInputType('noInteg')
+    robot.device.setControlInputType("noInteg")
     robot.ctrl_manager = create_ctrl_manager(conf.control_manager, conf.motor_params, dt)
 
     robot.traj_gen = create_trajectory_generator(robot.device, dt)
@@ -115,7 +142,14 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
 
     connect_synchronous_trajectories(
         robot.traj_sync,
-        [robot.com_traj_gen, robot.rf_force_traj_gen, robot.lf_force_traj_gen, robot.rf_traj_gen, robot.lf_traj_gen])
+        [
+            robot.com_traj_gen,
+            robot.rf_force_traj_gen,
+            robot.lf_force_traj_gen,
+            robot.rf_traj_gen,
+            robot.lf_traj_gen,
+        ],
+    )
     # robot.rf_traj_gen, robot.lf_traj_gen])
 
     robot.pos_ctrl = create_position_controller(robot, conf.pos_ctrl_gains, dt)
@@ -126,15 +160,15 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     connect_ctrl_manager(robot)
 
     # create low-pass filter for computing joint velocities
-    robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4('encoder_filter', dt, conf.motor_params.NJ)
+    robot.encoder_filter = create_chebi2_lp_filter_Wn_03_N_4("encoder_filter", dt, conf.motor_params.NJ)
     plug(robot.encoders.sout, robot.encoder_filter.x)
     plug(robot.encoder_filter.dx, robot.current_ctrl.dq)
     plug(robot.encoder_filter.dx, robot.torque_ctrl.jointsVelocities)
     # plug(robot.encoder_filter.x_filtered, robot.base_estimator.joint_positions);
     # plug(robot.encoder_filter.dx,         robot.base_estimator.joint_velocities);
 
-    robot.ros = RosPublish('rosPublish')
-    robot.device.after.addDownsampledSignal('rosPublish.trigger', 1)
+    robot.ros = RosPublish("rosPublish")
+    robot.device.after.addDownsampledSignal("rosPublish.trigger", 1)
 
     robot.estimator_ft.dgyro.value = (0.0, 0.0, 0.0)
     robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0)
@@ -144,7 +178,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
         sleep(1.0)
         start_sot()
 
-        if (go_half_sitting):
+        if go_half_sitting:
             print("Gonna go to half sitting in 1 sec")
             sleep(1.0)
             go_to_position(robot.traj_gen, robot.halfSitting[6:], 10.0)
@@ -152,7 +186,7 @@ def main_v3(robot, startSoT=True, go_half_sitting=True, conf=None):
     return robot
 
 
-''' Main function to call after having started the graph. '''
+""" Main function to call after having started the graph. """
 
 
 def main_post_start(robot):
@@ -160,16 +194,18 @@ def main_post_start(robot):
     return ros
 
 
-''' Main function to call before starting the graph. '''
+""" Main function to call before starting the graph. """
 
 
-def main_v2(robot,
-            delay=0.01,
-            startSoT=True,
-            go_half_sitting=True,
-            urdfFileName='/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf'):
+def main_v2(
+    robot,
+    delay=0.01,
+    startSoT=True,
+    go_half_sitting=True,
+    urdfFileName="/opt/openrobots/share/hrp2_14_description/urdf/hrp2_14.urdf",
+):
     dt = robot.timeStep
-    robot.device.setControlInputType('position')
+    robot.device.setControlInputType("position")
 
     robot.traj_gen = create_trajectory_generator(robot.device, dt)
     robot.com_traj_gen = create_com_traj_gen(dt)
@@ -191,12 +227,12 @@ def main_v2(robot,
 
     robot.estimator_ft.gyro.value = (0.0, 0.0, 0.0)
     #    estimator.accelerometer.value = (0.0, 0.0, 9.81);
-    if (startSoT):
+    if startSoT:
         print("Gonna start SoT")
         sleep(1.0)
         start_sot()
 
-        if (go_half_sitting):
+        if go_half_sitting:
             print("Gonna go to half sitting")
             sleep(1.0)
             go_to_position(robot.traj_gen, robot.halfSitting[6:], 10.0)

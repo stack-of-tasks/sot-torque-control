@@ -10,8 +10,10 @@
 #include <fstream>
 #include <sstream>
 
-#define EIGEN_CONST_VECTOR_FROM_STD_VECTOR(name, signal) Eigen::const_SigVectorXd name(signal.data(), signal.size())
-#define EIGEN_VECTOR_FROM_STD_VECTOR(name, signal) Eigen::SigVectorXd name(signal.data(), signal.size())
+#define EIGEN_CONST_VECTOR_FROM_STD_VECTOR(name, signal) \
+  Eigen::const_SigVectorXd name(signal.data(), signal.size())
+#define EIGEN_VECTOR_FROM_STD_VECTOR(name, signal) \
+  Eigen::SigVectorXd name(signal.data(), signal.size())
 
 /********************* VECTOR COPY ******************************/
 // c arrays define only the [] operator

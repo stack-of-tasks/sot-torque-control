@@ -20,32 +20,32 @@ def identify_motor_low_level(dq, ctrl, current):
 
     plt.figure()
     plt.subplot(411)
-    plt.plot(times, current, '.')
-    plt.plot(times[mask], current[mask], '.')
-    plt.title('current')
+    plt.plot(times, current, ".")
+    plt.plot(times[mask], current[mask], ".")
+    plt.title("current")
 
     plt.subplot(412)
-    plt.plot(times, dq, '.')
-    plt.plot(times[mask], dq[mask], '.')
-    plt.title('dq')
+    plt.plot(times, dq, ".")
+    plt.plot(times[mask], dq[mask], ".")
+    plt.title("dq")
 
     plt.subplot(413)
-    plt.plot(times, ctrl, '.')
-    plt.plot(times[mask], ctrl[mask], '.')
+    plt.plot(times, ctrl, ".")
+    plt.plot(times[mask], ctrl[mask], ".")
     plt.title(ctrl)
-    plt.title('ctrl')
+    plt.title("ctrl")
 
     plt.subplot(414)
-    plt.plot(times, K3 * ctrl / IN_OUT_GAIN - current, '.')
-    plt.plot(times[mask], K3 * ctrl[mask] / IN_OUT_GAIN - current[mask], '.')
+    plt.plot(times, K3 * ctrl / IN_OUT_GAIN - current, ".")
+    plt.plot(times[mask], K3 * ctrl[mask] / IN_OUT_GAIN - current[mask], ".")
     plt.title(ctrl)
-    plt.title('ctrl-current ')
+    plt.title("ctrl-current ")
 
     plt.show()
 
     # embed()
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.gca(projection="3d")
     NDZ = 100
     NK3 = 100
     lDZs = np.linspace(0.3, 0.5, NDZ)
@@ -62,8 +62,9 @@ def identify_motor_low_level(dq, ctrl, current):
             mask = abs(K3 * ctrl / IN_OUT_GAIN - current) < DZ
             #            not_mask = np.logical_not(mask)
             # plt.plot(current[mask],dq[mask],'.')
-            cost[i, j] = -np.corrcoef(current[mask],
-                                      dq[mask])[0, 1]  # * np.sum(not_mask) / (np.sum(mask) + np.sum(not_mask))
+            cost[i, j] = -np.corrcoef(current[mask], dq[mask])[
+                0, 1
+            ]  # * np.sum(not_mask) / (np.sum(mask) + np.sum(not_mask))
             # embed()
             # cost[i, j] += np.corrcoef(ctrl[not_mask],
             # dq[not_mask])[0, 1] * np.sum(mask) / (np.sum(mask) + np.sum(not_mask))
@@ -77,7 +78,7 @@ def identify_motor_low_level(dq, ctrl, current):
     # Customize the z axis.
     ax.set_zlim(np.min(cost), 1.01)
     ax.zaxis.set_major_locator(LinearLocator(2))
-    ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax.zaxis.set_major_formatter(FormatStrFormatter("%.02f"))
 
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
@@ -87,21 +88,21 @@ def identify_motor_low_level(dq, ctrl, current):
     DZ = 0.4
     K3 = 1.0
     mask = abs(K3 * ctrl / IN_OUT_GAIN - current) < DZ
-    plt.xlabel('current')
-    plt.ylabel('dq')
-    plt.plot(current[mask], dq[mask], '.')
+    plt.xlabel("current")
+    plt.ylabel("dq")
+    plt.plot(current[mask], dq[mask], ".")
     plt.show()
 
     # plot the optimum
     iDZ, iK3 = np.unravel_index(np.argmax(cost), cost.shape)
     DZ = lDZs[iDZ]
     K3 = lK3s[iK3]
-    print('DZ = ' + str(DZ))
-    print('K3 = ' + str(K3))
+    print("DZ = " + str(DZ))
+    print("K3 = " + str(K3))
     mask = abs(K3 * ctrl / IN_OUT_GAIN - current) < DZ
-    plt.xlabel('current')
-    plt.ylabel('dq')
-    plt.plot(current[mask], dq[mask], '.')
+    plt.xlabel("current")
+    plt.ylabel("dq")
+    plt.plot(current[mask], dq[mask], ".")
     print(-np.corrcoef(current[mask], dq[mask])[0, 1])
     print(cost[iDZ, iK3])
 

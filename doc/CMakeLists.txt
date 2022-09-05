@@ -1,15 +1,12 @@
 #
-#  Copyright 2010 CNRS
-#  Author: Florent Lamiraux
+# Copyright 2010 CNRS Author: Florent Lamiraux
 #
 
 # get the python script install path
 
-IF(BUILD_PYTHON_INTERFACE)
-  SPHINX_SETUP()
-  SPHINX_FINALIZE()
-  INSTALL(FILES
-    pictures/feature.png
-    pictures/task.png
-    DESTINATION ${_PKG_CONFIG_DOXYGENDOCDIR}/pictures)
-ENDIF(BUILD_PYTHON_INTERFACE)
+if(BUILD_PYTHON_INTERFACE)
+  sphinx_setup()
+  sphinx_finalize()
+  install(FILES pictures/feature.png pictures/task.png
+          DESTINATION ${_PKG_CONFIG_DOXYGENDOCDIR}/pictures)
+endif(BUILD_PYTHON_INTERFACE)

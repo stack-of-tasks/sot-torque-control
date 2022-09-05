@@ -22,7 +22,7 @@ class Robot:
 
     def simulate(self, f1, T, dt=0.0001):
         N = int(T / dt)
-        assert (N > 0)
+        assert N > 0
         f1_noise = normal(0, self.f1_stdev)
         f1_sum = 0
         f2_sum = 0
@@ -55,16 +55,16 @@ class Robot:
 # f2 = -K2*q2 - B2*dq2
 # f1 = f1d - B1*(dq1-dq2)
 
-m1 = 60.  # first mass
-m2 = 1.  # second mass
-B1 = .5 * m1  # motor viscous friction
+m1 = 60.0  # first mass
+m2 = 1.0  # second mass
+B1 = 0.5 * m1  # motor viscous friction
 C1 = 0.5 * B1
 # motor Coulomb friction
 hl = 0.09  # half distance between feet
 K2 = 10 * 2 * 2e5 * hl * hl  # spring stiffness
 B2 = 0.01 * 2 * sqrt(K2)  # damping
 g = -9.81  # gravity
-f1_stdev = 0.
+f1_stdev = 0.0
 # motor standard deviation
 
 f = 0.5
@@ -97,7 +97,7 @@ T = 15
 N = int(T / dt)
 PLOT_SPRING_DAMPER_RESPONSE = 0
 
-if (PLOT_SPRING_DAMPER_RESPONSE):
+if PLOT_SPRING_DAMPER_RESPONSE:
     # plot oscillations of spring damper system: (m1+m2)*ddx = -K*x - D*dx
     x = np.zeros(N)
     dx = np.zeros(N)
@@ -107,7 +107,7 @@ if (PLOT_SPRING_DAMPER_RESPONSE):
         x[n + 1] = x[n] + dt * dx[n] + 0.5 * dt * dt * ddx
         dx[n + 1] = dx[n] + dt * ddx
     plt.figure()
-    plt.plot(x, label='x')
+    plt.plot(x, label="x")
     # plt.plot(dx, label='dx');
     plt.legend()
     plt.show()
@@ -170,15 +170,15 @@ print("Vel tracking error:  ", np.mean(np.abs(dx1_ref - dx1)))
 print("Force tracking error:", np.mean(np.abs(f1_ref - f1)))
 
 plt.figure()
-plt.plot(x1, label='x1')
-plt.plot(x1_ref, '-', label='x1 ref', alpha=0.6)
-plt.plot(x2, label='x2')
+plt.plot(x1, label="x1")
+plt.plot(x1_ref, "-", label="x1 ref", alpha=0.6)
+plt.plot(x2, label="x2")
 plt.legend()
 
 plt.figure()
-plt.plot(dx1, label='dx1')
-plt.plot(dx1_ref, '--', label='dx1 des')
-plt.plot(dx2, label='dx2', alpha=0.5)
+plt.plot(dx1, label="dx1")
+plt.plot(dx1_ref, "--", label="dx1 des")
+plt.plot(dx2, label="dx2", alpha=0.5)
 plt.legend()
 #
 # plt.figure()
@@ -188,9 +188,9 @@ plt.legend()
 # plt.legend()
 
 plt.figure()
-plt.plot(f1_ref, '--', label='f1 ref')
-plt.plot(f1_est, label='f1 est')
-plt.plot(f1, label='f1', alpha=0.5)
+plt.plot(f1_ref, "--", label="f1 ref")
+plt.plot(f1_est, label="f1 est")
+plt.plot(f1, label="f1", alpha=0.5)
 # plt.plot(f2, label='f2');
 plt.legend()
 plt.show()

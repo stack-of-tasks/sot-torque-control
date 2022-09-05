@@ -14,7 +14,7 @@ from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
 def randTuple(size):
     v = ()
     for i in range(0, size - 1):
-        v = v + (random.random(), )
+        v = v + (random.random(),)
     return v
 
 
@@ -26,13 +26,13 @@ def test_ros(robot):
     # number of joints
 
     app = Application(robot)
-    dq_des = nj * (0.0, )
+    dq_des = nj * (0.0,)
     app.robot.device.control.value = dq_des
 
-    if (createRosTopics == 1):
-        ros = RosImport('rosImport')
-        ros.add('vector', 'robotStateRos', 'robotState')
+    if createRosTopics == 1:
+        ros = RosImport("rosImport")
+        ros.add("vector", "robotStateRos", "robotState")
         plug(robot.device.robotState, ros.robotStateRos)
-        robot.device.after.addSignal('rosImport.trigger')
+        robot.device.after.addSignal("rosImport.trigger")
 
     return ros

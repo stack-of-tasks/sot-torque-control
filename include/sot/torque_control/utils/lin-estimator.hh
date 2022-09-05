@@ -21,13 +21,18 @@ class LinEstimator : public PolyEstimator {
    * @param dim is the dimension of the input elements (number of dofs).
    * @param dt is the control (sampling) time.
    */
-  LinEstimator(const unsigned int& N, const unsigned int& dim, const double& dt = 0.0);
+  LinEstimator(const unsigned int& N, const unsigned int& dim,
+               const double& dt = 0.0);
 
-  virtual void estimate(std::vector<double>& estimee, const std::vector<double>& el);
+  virtual void estimate(std::vector<double>& estimee,
+                        const std::vector<double>& el);
 
-  virtual void estimateRecursive(std::vector<double>& estimee, const std::vector<double>& el, const double& time);
+  virtual void estimateRecursive(std::vector<double>& estimee,
+                                 const std::vector<double>& el,
+                                 const double& time);
 
-  void getEstimateDerivative(std::vector<double>& estimeeDerivative, const unsigned int order);
+  void getEstimateDerivative(std::vector<double>& estimeeDerivative,
+                             const unsigned int order);
 
  private:
   virtual void fit();

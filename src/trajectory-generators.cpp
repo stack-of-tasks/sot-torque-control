@@ -4,6 +4,7 @@
  */
 
 #include <dynamic-graph/factory.h>
+
 #include <sot/core/debug.hh>
 #include <sot/torque_control/utils/trajectory-generators.hh>
 

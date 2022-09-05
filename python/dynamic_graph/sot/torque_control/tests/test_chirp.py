@@ -28,7 +28,7 @@ f = np.zeros(N)
 phi = np.zeros(N)
 k = 2 * (f1 - f0) / tt
 for i in range(N):
-    if (t < 0.5 * tt):
+    if t < 0.5 * tt:
         f[i] = f0 + k * t
         phi[i] = 2 * np.pi * t * (f0 + 0.5 * k * t)
     else:

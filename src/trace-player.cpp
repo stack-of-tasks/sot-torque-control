@@ -3,12 +3,13 @@
  *
  */
 
-#include <tsid/utils/stop-watch.hpp>
-#include <tsid/utils/statistics.hpp>
 #include <dynamic-graph/factory.h>
+
 #include <sot/core/debug.hh>
-#include <sot/torque_control/trace-player.hh>
 #include <sot/torque_control/commands-helper.hh>
+#include <sot/torque_control/trace-player.hh>
+#include <tsid/utils/statistics.hpp>
+#include <tsid/utils/stop-watch.hpp>
 
 namespace dynamicgraph {
 namespace sot {
@@ -29,22 +30,31 @@ DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(TracePlayer, "TracePlayer");
 /* ------------------------------------------------------------------- */
 /* --- CONSTRUCTION -------------------------------------------------- */
 /* ------------------------------------------------------------------- */
-TracePlayer::TracePlayer(const std::string& name) : Entity(name), CONSTRUCT_SIGNAL_OUT(trigger, int, sotNOSIGNAL) {
+TracePlayer::TracePlayer(const std::string& name)
+    : Entity(name), CONSTRUCT_SIGNAL_OUT(trigger, int, sotNOSIGNAL) {
   Entity::signalRegistration(m_triggerSOUT);
 
   /* Commands. */
   addCommand("addOutputSignal",
              makeCommandVoid2(
                  *this, &TracePlayer::addOutputSignal,
-                 docCommandVoid2("Add a new output signal", "Name of the text file where to read the data (string)",
-                                 "Name of the output signal (string)")));
+                 docCommandVoid2(
+                     "Add a new output signal",
+                     "Name of the text file where to read the data (string)",
+                     "Name of the output signal (string)")));
 
-  addCommand("playNext",
-             makeCommandVoid0(*this, &TracePlayer::playNext, docCommandVoid0("Update all the output signals.")));
+  addCommand(
+      "playNext",
+      makeCommandVoid0(*this, &TracePlayer::playNext,
+                       docCommandVoid0("Update all the output signals.")));
 
-  addCommand("rewind", makeCommandVoid0(*this, &TracePlayer::rewind, docCommandVoid0("Rewind all the data.")));
+  addCommand("rewind",
+             makeCommandVoid0(*this, &TracePlayer::rewind,
+                              docCommandVoid0("Rewind all the data.")));
 
-  addCommand("clear", makeCommandVoid0(*this, &TracePlayer::clear, docCommandVoid0("Clear all the output signals.")));
+  addCommand("clear", makeCommandVoid0(
+                          *this, &TracePlayer::clear,
+                          docCommandVoid0("Clear all the output signals.")));
 }
 
 /* ------------------------------------------------------------------- */
@@ -59,14 +69,18 @@ DEFINE_SIGNAL_OUT_FUNCTION(trigger, int) {
 
 /* --- COMMANDS ---------------------------------------------------------- */
 
-void TracePlayer::addOutputSignal(const string& fileName, const string& signalName) {
+void TracePlayer::addOutputSignal(const string& fileName,
+                                  const string& signalName) {
   // check there is no other signal with the same name
   if (m_outputSignals.find(signalName) != m_outputSignals.end())
-    return SEND_MSG("It already exists a signal with name " + signalName, MSG_TYPE_ERROR);
+    return SEND_MSG("It already exists a signal with name " + signalName,
+                    MSG_TYPE_ERROR);
 
   // read the text file
   std::ifstream datafile(fileName.c_str());
-  if (datafile.fail()) return SEND_MSG("Error trying to read the file " + fileName, MSG_TYPE_ERROR);
+  if (datafile.fail())
+    return SEND_MSG("Error trying to read the file " + fileName,
+                    MSG_TYPE_ERROR);
 
   const unsigned int SIZE = 1024;
   char buffer[SIZE];
@@ -79,7 +93,9 @@ void TracePlayer::addOutputSignal(const string& fileName, const string& signalNa
     datafile.getline(buffer, SIZE);
     const std::size_t gcount = datafile.gcount();
     if (gcount >= SIZE)
-      return SEND_MSG("Read error: line " + toString(nbLines) + " too long in file " + fileNameShort, MSG_TYPE_ERROR);
+      return SEND_MSG("Read error: line " + toString(nbLines) +
+                          " too long in file " + fileNameShort,
+                      MSG_TYPE_ERROR);
 
     std::istringstream iss(buffer);
     newline.clear();
@@ -95,23 +111,27 @@ void TracePlayer::addOutputSignal(const string& fileName, const string& signalNa
       if (firstIter)
         size = newline.size();
       else if (size != newline.size()) {
-        SEND_MSG("In file " + fileNameShort + " nb of elements in each line changed from " + toString(size) + " to " +
-                     toString(newline.size()) + " at line " + toString(nbLines),
+        SEND_MSG("In file " + fileNameShort +
+                     " nb of elements in each line changed from " +
+                     toString(size) + " to " + toString(newline.size()) +
+                     " at line " + toString(nbLines),
                  MSG_TYPE_WARNING);
         size = newline.size();
       }
-      m_data[signalName].push_back(Eigen::Map<Vector>(&newline[0], newline.size()));
+      m_data[signalName].push_back(
+          Eigen::Map<Vector>(&newline[0], newline.size()));
       nbLines++;
     }
   }
-  SEND_MSG(
-      "Finished reading " + toString(nbLines) + " lines of " + toString(size) + " elements from file " + fileNameShort,
-      MSG_TYPE_INFO);
+  SEND_MSG("Finished reading " + toString(nbLines) + " lines of " +
+               toString(size) + " elements from file " + fileNameShort,
+           MSG_TYPE_INFO);
   m_dataPointers[signalName] = m_data[signalName].begin();
 
   // create a new output signal
   m_outputSignals[signalName] =
-      new OutputSignalType(getClassName() + "(" + getName() + ")::output(dynamicgraph::Vector)::" + signalName);
+      new OutputSignalType(getClassName() + "(" + getName() +
+                           ")::output(dynamicgraph::Vector)::" + signalName);
 
   // register the new signal
   m_triggerSOUT.addDependency(*m_outputSignals[signalName]);
@@ -120,7 +140,8 @@ void TracePlayer::addOutputSignal(const string& fileName, const string& signalNa
 
 void TracePlayer::playNext() {
   typedef std::map<std::string, OutputSignalType*>::iterator it_type;
-  for (it_type it = m_outputSignals.begin(); it != m_outputSignals.end(); it++) {
+  for (it_type it = m_outputSignals.begin(); it != m_outputSignals.end();
+       it++) {
     const string& signalName = it->first;
     OutputSignalType* signal = it->second;
     DataPointerType& dataPointer = m_dataPointers[signalName];
@@ -129,7 +150,8 @@ void TracePlayer::playNext() {
     if (dataPointer != dataSet.end()) ++dataPointer;
 
     if (dataPointer == dataSet.end())
-      SEND_WARNING_STREAM_MSG("Reached end of dataset for signal " + signalName);
+      SEND_WARNING_STREAM_MSG("Reached end of dataset for signal " +
+                              signalName);
     else
       signal->setConstant(*dataPointer);
   }
@@ -151,7 +173,8 @@ void TracePlayer::clear() {
   m_outputSignals.clear();
 }
 
-/* --- PROTECTED MEMBER METHODS ---------------------------------------------------------- */
+/* --- PROTECTED MEMBER METHODS
+ * ---------------------------------------------------------- */
 
 /* ------------------------------------------------------------------- */
 /* --- ENTITY -------------------------------------------------------- */

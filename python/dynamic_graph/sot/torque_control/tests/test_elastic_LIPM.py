@@ -6,7 +6,24 @@ from numpy.random import normal
 
 
 class Robot:
-    def __init__(self, omega, m1, mL, mR, C, K, B, g, f_stdev, x1_0, dx1_0, xL_0, dxL_0, xR_0, dxR_0):
+    def __init__(
+        self,
+        omega,
+        m1,
+        mL,
+        mR,
+        C,
+        K,
+        B,
+        g,
+        f_stdev,
+        x1_0,
+        dx1_0,
+        xL_0,
+        dxL_0,
+        xR_0,
+        dxR_0,
+    ):
         self.omega = omega
         self.m1 = m1
         self.mL = mL
@@ -26,7 +43,7 @@ class Robot:
 
     def simulate(self, f1, f2, T, dt=0.0001):
         N = int(T / dt)
-        assert (N > 0)
+        assert N > 0
         f1_noise = normal(0, self.f_stdev)
         f2_noise = normal(0, self.f_stdev)
         f1_sum = 0
@@ -67,22 +84,22 @@ class Robot:
 # f1 = f1d - B1*(dq1-dq2)
 
 omega = 3
-m1 = 60.  # body mass
-mL = 1.  # left foot mass
-mR = 1.  # right foot mass
+m1 = 60.0  # body mass
+mL = 1.0  # left foot mass
+mR = 1.0  # right foot mass
 M = m1 + mL + mR
 # total mass
 xL = -0.1
 # left foot position
 xR = 0.1
 # right foot position
-B = .5 * m1  # motor viscous friction
+B = 0.5 * m1  # motor viscous friction
 C = 0.5 * B
 # motor Coulomb friction
 K = 2e5  # spring stiffness
 B = 0.01 * 2 * sqrt(K)  # damping
 g = -9.81  # gravity
-f1_stdev = 0.
+f1_stdev = 0.0
 # motor standard deviation
 
 f = 0.5
@@ -169,9 +186,9 @@ for n in range(N):
 
     # compute reference CoP
     CoP_ref[n] = x1[n] - ddx1_des / omega
-    if (CoP_ref[n] > xR):
+    if CoP_ref[n] > xR:
         CoP_ref[n] = xR
-    if (CoP_ref[n] < xL):
+    if CoP_ref[n] < xL:
         CoP_ref[n] = xL
     # compute reference contact forces
     fL_ref[n] = M * g * (CoP_ref[n] - xL) / (xR - xL)
@@ -197,14 +214,14 @@ print("Vel tracking error:  ", np.mean(np.abs(dx1_ref - dx1)))
 # print("Force tracking error:", np.mean(np.abs(f1_ref-f1)))
 
 plt.figure()
-plt.plot(x1, label='x1')
-plt.plot(x1_ref, '-', label='x1 ref', alpha=0.6)
+plt.plot(x1, label="x1")
+plt.plot(x1_ref, "-", label="x1 ref", alpha=0.6)
 # plt.plot(x2, label='x2');
 plt.legend()
 
 plt.figure()
-plt.plot(dx1, label='dx1')
-plt.plot(dx1_ref, '--', label='dx1 des')
+plt.plot(dx1, label="dx1")
+plt.plot(dx1_ref, "--", label="dx1 des")
 # plt.plot(dx2, label='dx2', alpha=0.5);
 plt.legend()
 #

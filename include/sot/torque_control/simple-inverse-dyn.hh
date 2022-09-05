@@ -36,33 +36,38 @@
 /* --------------------------------------------------------------------- */
 
 #include <map>
+
 #include "boost/assign.hpp"
 
 /* Pinocchio */
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-#include "pinocchio/algorithm/joint-configuration.hpp"
-
-#include <tsid/robots/robot-wrapper.hpp>
-#include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/contacts/contact-6d.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
+#include <tsid/robots/robot-wrapper.hpp>
+#include <tsid/solvers/solver-HQP-base.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
+#include "pinocchio/algorithm/joint-configuration.hpp"
+
 /* HELPER */
 #include <dynamic-graph/signal-helper.h>
+
 #include <sot/core/matrix-geometry.hh>
 #include <sot/core/robot-utils.hh>
-
 #include <sot/torque_control/utils/vector-conversions.hh>
 
 namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
 
-enum ControlOutput { CONTROL_OUTPUT_VELOCITY = 0, CONTROL_OUTPUT_TORQUE = 1, CONTROL_OUTPUT_SIZE = 2 };
+enum ControlOutput {
+  CONTROL_OUTPUT_VELOCITY = 0,
+  CONTROL_OUTPUT_TORQUE = 1,
+  CONTROL_OUTPUT_SIZE = 2
+};
 
 const std::string ControlOutput_s[] = {"velocity", "torque"};
 
@@ -70,7 +75,8 @@ const std::string ControlOutput_s[] = {"velocity", "torque"};
 /* --- CLASS ----------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entity {
+class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn
+    : public ::dynamicgraph::Entity {
   typedef SimpleInverseDyn EntityClassName;
   DYNAMIC_GRAPH_ENTITY_DECL();
 
@@ -117,7 +123,9 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
 
   DECLARE_SIGNAL_IN(q, dynamicgraph::Vector);
   DECLARE_SIGNAL_IN(v, dynamicgraph::Vector);
-  DECLARE_SIGNAL_IN(active_joints, dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
+  DECLARE_SIGNAL_IN(
+      active_joints,
+      dynamicgraph::Vector);  /// mask with 1 for controlled joints, 0 otherwise
   DECLARE_SIGNAL_INNER(active_joints_checked, dynamicgraph::Vector);
 
   DECLARE_SIGNAL_OUT(tau_des, dynamicgraph::Vector);
@@ -135,16 +143,18 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   /* --- ENTITY INHERITANCE --- */
   virtual void display(std::ostream& os) const;
 
-  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO, const char* = "", int = 0) {
+  void sendMsg(const std::string& msg, MsgType t = MSG_TYPE_INFO,
+               const char* = "", int = 0) {
     logger_.stream(t) << ("[" + name + "] " + msg) << '\n';
   }
 
  protected:
-  double m_dt;           /// control loop time period
-  double m_t;            /// current time
-  bool m_initSucceeded;  /// true if the entity has been successfully initialized
-  bool m_enabled;        /// True if controler is enabled
-  bool m_firstTime;      /// True at the first iteration of the controller
+  double m_dt;  /// control loop time period
+  double m_t;   /// current time
+  bool
+      m_initSucceeded;  /// true if the entity has been successfully initialized
+  bool m_enabled;       /// True if controler is enabled
+  bool m_firstTime;     /// True at the first iteration of the controller
 
   /// TSID
   /// Robot
@@ -176,16 +186,19 @@ class SOTSIMPLEINVERSEDYN_EXPORT SimpleInverseDyn : public ::dynamicgraph::Entit
   tsid::math::Vector m_dv_sot;   /// desired accelerations (sot order)
   tsid::math::Vector m_dv_urdf;  /// desired accelerations (urdf order)
   tsid::math::Vector m_v_sot;    /// desired velocities (sot order)
-  tsid::math::Vector m_v_urdf;   /// desired and current velocities (urdf order) (close the TSID loop on it)
+  tsid::math::Vector m_v_urdf;   /// desired and current velocities (urdf order)
+                                 /// (close the TSID loop on it)
   tsid::math::Vector m_q_sot;    /// desired positions (sot order)
-  tsid::math::Vector m_q_urdf;   /// desired and current positions (urdf order) (close the TSID loop on it)
+  tsid::math::Vector m_q_urdf;   /// desired and current positions (urdf order)
+                                 /// (close the TSID loop on it)
   tsid::math::Vector m_tau_sot;  /// desired torques (sot order)
 
   tsid::math::Vector3 m_com_offset;  /// 3d CoM offset
 
   unsigned int m_timeLast;       /// Final time of the control loop
   RobotUtilShrPtr m_robot_util;  /// Share pointer to the robot utils methods
-  ControlOutput m_ctrlMode;      /// ctrl mode desired for the output (velocity or torque)
+  ControlOutput
+      m_ctrlMode;  /// ctrl mode desired for the output (velocity or torque)
 
 };  // class SimpleInverseDyn
 }  // namespace torque_control

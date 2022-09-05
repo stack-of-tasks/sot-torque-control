@@ -12,12 +12,12 @@ If you are on the real robot just ignore this step.
 
 ## Start the SoT in torque mode
 
-To start the SoT in simulation in torque mode: 
+To start the SoT in simulation in torque mode:
 ```
 roslaunch roscontrol_sot_talos sot_talos_controller_gazebo_effort.launch
 ```
 
-To start the SoT on the real robot in torque mode: 
+To start the SoT on the real robot in torque mode:
 ```
 roslaunch roscontrol_sot_talos sot_talos_controller_effort.launch
 ```
@@ -44,7 +44,7 @@ python test_ddp_sinu_effort.py robot
 ```
 
 This will launch the test making the robot executing a sinusoid with its right arm (on the elbow joint) using the DDP solver.
-This one computes a trajectory avoiding the limits in position, velocity and torque of the robot. 
+This one computes a trajectory avoiding the limits in position, velocity and torque of the robot.
 
 The script also saves the dynamic graph in /tmp/sot_ddp_talos_effort.pdf.
 

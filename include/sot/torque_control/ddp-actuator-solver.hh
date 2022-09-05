@@ -15,28 +15,29 @@
 #define SOTDDPACTUATORSOLVER_EXPORT
 #endif
 
-#include <tsid/utils/stop-watch.hpp>
 #include <dynamic-graph/signal-helper.h>
-#include <sot/core/matrix-geometry.hh>
-#include <sot/core/robot-utils.hh>
-#include <sot/core/causal-filter.hh>
 
 #include <ddp-actuator-solver/ddpsolver.hh>
-
-#include <ddp-actuator-solver/temperature_control/dctemp.hh>
 #include <ddp-actuator-solver/temperature_control/costtemp.hh>
+#include <ddp-actuator-solver/temperature_control/dctemp.hh>
+#include <sot/core/causal-filter.hh>
+#include <sot/core/matrix-geometry.hh>
+#include <sot/core/robot-utils.hh>
+#include <tsid/utils/stop-watch.hpp>
 
 namespace dynamicgraph {
 namespace sot {
 namespace torque_control {
 
-#define ALL_INPUT_SIGNALS                                                                                 \
-  m_pos_desSIN << m_pos_motor_measureSIN << m_pos_joint_measureSIN << m_dx_measureSIN << m_tau_measureSIN \
-               << m_temp_measureSIN << m_tau_desSIN
+#define ALL_INPUT_SIGNALS                                                  \
+  m_pos_desSIN << m_pos_motor_measureSIN << m_pos_joint_measureSIN         \
+               << m_dx_measureSIN << m_tau_measureSIN << m_temp_measureSIN \
+               << m_tau_desSIN
 
 #define ALL_OUTPUT_SIGNALS m_tauSOUT
 
-class SOTDDPACTUATORSOLVER_EXPORT DdpActuatorSolver : public ::dynamicgraph::Entity {
+class SOTDDPACTUATORSOLVER_EXPORT DdpActuatorSolver
+    : public ::dynamicgraph::Entity {
   DYNAMIC_GRAPH_ENTITY_DECL();
 
  public: /* --- SIGNALS --- */
@@ -75,7 +76,8 @@ class SOTDDPACTUATORSOLVER_EXPORT DdpActuatorSolver : public ::dynamicgraph::Ent
    * @param nbItMax Maximum number of iterations.
    * @param stopCriteria The value of the stopping criteria.
    */
-  void param_init(const double &timestep, const int &T, const int &nbItMax, const double &stopCriteria);
+  void param_init(const double &timestep, const int &T, const int &nbItMax,
+                  const double &stopCriteria);
 };
 }  // namespace torque_control
 }  // namespace sot
