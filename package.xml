@@ -1,6 +1,6 @@
 <package format="2">
   <name>sot-torque-control</name>
-  <version>1.6.2</version>
+  <version>1.6.3</version>
   <description>
     Collection of dynamic-graph entities aimed at implementing torque control
     on different robots.
