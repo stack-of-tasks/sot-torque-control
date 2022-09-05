@@ -6,6 +6,10 @@
 #ifndef _DeviceTorqueCtrl_H_
 #define _DeviceTorqueCtrl_H_
 
+#include <pinocchio/fwd.hpp>
+
+// include pinocchio first
+
 #include <dynamic-graph/entity.h>
 #include <dynamic-graph/linear-algebra.h>
 #include <dynamic-graph/signal-ptr.h>

@@ -24,6 +24,10 @@
 /* --- INCLUDE --------------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
+#include <pinocchio/fwd.hpp>
+
+// include pinocchio first
+
 #include <map>
 
 #include "boost/assign.hpp"
