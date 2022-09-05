@@ -1,8 +1,9 @@
 # sot-torque-control
 
-[![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![Pipeline status](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/pipeline.svg)](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/commits/master)
-[![Coverage report](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/coverage.svg?job=doc-coverage)](http://projects.laas.fr/gepetto/doc/stack-of-tasks/sot-torque-control/master/coverage/)
+[![Coverage report](https://gitlab.laas.fr/stack-of-tasks/sot-torque-control/badges/master/coverage.svg?job=doc-coverage)](https://gepettoweb.laas.fr/doc/stack-of-tasks/sot-torque-control/master/coverage/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/stack-of-tasks/sot-torque-control/master.svg)](https://results.pre-commit.ci/latest/github/stack-of-tasks/sot-torque-control)
 
 Collection of dynamic-graph entities aimed at implementing torque control on different robots.
 Read the project wiki to get a description of the main entities contained in this repository.
