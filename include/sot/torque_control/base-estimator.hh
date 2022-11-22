@@ -31,7 +31,7 @@
 #include <map>
 
 #include "boost/assign.hpp"
-//#include <boost/random/normal_distribution.hpp>
+// #include <boost/random/normal_distribution.hpp>
 #include <boost/math/distributions/normal.hpp>  // for normal_distribution
 
 /* Pinocchio */
