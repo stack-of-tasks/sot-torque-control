@@ -40,7 +40,9 @@ create_topic(robot.ros, robot.ctrl_manager.u, "i_des")
 create_topic(robot.ros, robot.current_ctrl.i_real, "i_real")
 
 robot.adm_ctrl.force_integral_saturation.value = (0, 0, 160.0, 20.0, 20.0, 0)
-kp_vel = 12 * [0.5,] + 18 * [
+kp_vel = 12 * [
+    0.5,
+] + 18 * [
     0.0,
 ]
 smoothly_set_signal(robot.adm_ctrl.kp_vel, tuple(kp_vel))

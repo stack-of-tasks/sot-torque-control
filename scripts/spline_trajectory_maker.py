@@ -123,7 +123,6 @@ for spl in cs.ms_interval_data:
             y_ddcom = np.append(y_ddcom, y[3:6], axis=1)
             y_dL = np.append(y_dL, y[6:9], axis=1)
     for y in spl.control_trajectory:
-
         if control_list.size == 0:
             control_list = y
         else:
@@ -163,7 +162,6 @@ lh_force = spline6(poly_control_list_lh, time_vector)
 
 
 def foot_lift0(initPos, z_amp=Z_AMP, timeToLift=TIME_TO_LIFT, totalTrajTime=TOTAL_TRAJ_TIME):
-
     # s = timeToLift[1] - timeToLift[0]
     s0 = timeToLift[0]
     s1 = timeToLift[1]
