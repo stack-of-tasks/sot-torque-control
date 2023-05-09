@@ -960,7 +960,12 @@ if FORCE_ESTIMATE_RECOMPUTATION or not FILE_READ_SUCCEEDED:
         )
 
 if USE_TORQUE_CTRL:
-    (delta_q_friction, delta_q_fb_pos, delta_q_fb_vel, delta_q_fb_force,) = compute_delta_q_components(
+    (
+        delta_q_friction,
+        delta_q_fb_pos,
+        delta_q_fb_vel,
+        delta_q_fb_force,
+    ) = compute_delta_q_components(
         enc[:, JOINT_ID],
         delta_q,
         dq,
