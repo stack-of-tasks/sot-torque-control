@@ -2,6 +2,7 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
+
 from __future__ import absolute_import, division, print_function
 
 import numpy
