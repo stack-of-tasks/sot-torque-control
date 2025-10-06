@@ -62,7 +62,7 @@ typedef DdpActuatorSolver EntityClassName;
 /* --- DG FACTORY ------------------------------------------------------- */
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(DdpActuatorSolver, "DdpActuatorSolver");
 
-DdpActuatorSolver::DdpActuatorSolver(const std::string &name)
+DdpActuatorSolver::DdpActuatorSolver(const std::string& name)
     : Entity(name),
       CONSTRUCT_SIGNAL_IN(pos_des, dynamicgraph::Vector),
       CONSTRUCT_SIGNAL_IN(pos_motor_measure, dynamicgraph::Vector),
@@ -96,17 +96,17 @@ DdpActuatorSolver::DdpActuatorSolver(const std::string &name)
 DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector) {
   /// ---- Get the information -----
   /// Desired position
-  const dynamicgraph::Vector &pos_des = m_pos_desSIN(iter);
+  const dynamicgraph::Vector& pos_des = m_pos_desSIN(iter);
   /// Measured position
-  const dynamicgraph::Vector &pos_joint_measure = m_pos_joint_measureSIN(iter);
+  const dynamicgraph::Vector& pos_joint_measure = m_pos_joint_measureSIN(iter);
   /// Measured speed
-  const dynamicgraph::Vector &dx_measure = m_dx_measureSIN(iter);
+  const dynamicgraph::Vector& dx_measure = m_dx_measureSIN(iter);
   /// Measured temperature
-  const dynamicgraph::Vector &temp_measure = m_temp_measureSIN(iter);
+  const dynamicgraph::Vector& temp_measure = m_temp_measureSIN(iter);
   /// Measured torque
-  const dynamicgraph::Vector &tau_measure = m_tau_measureSIN(iter);
+  const dynamicgraph::Vector& tau_measure = m_tau_measureSIN(iter);
   /// Desired torque
-  const dynamicgraph::Vector &tau_des = m_tau_desSIN(iter);
+  const dynamicgraph::Vector& tau_des = m_tau_desSIN(iter);
 
   DDPSolver<double, 5, 1>::stateVec_t xinit, xDes;
 
@@ -150,9 +150,9 @@ DEFINE_SIGNAL_OUT_FUNCTION(tau, dynamicgraph::Vector) {
   return s;
 }
 
-void DdpActuatorSolver::param_init(const double &timestep, const int &T,
-                                   const int &nbItMax,
-                                   const double &stopCriteria) {
+void DdpActuatorSolver::param_init(const double& timestep, const int& T,
+                                   const int& nbItMax,
+                                   const double& stopCriteria) {
   m_T = T;
   m_dt = timestep;
   m_iterMax = nbItMax;
@@ -161,7 +161,7 @@ void DdpActuatorSolver::param_init(const double &timestep, const int &T,
                            m_stopCrit);
 }
 
-void DdpActuatorSolver::display(std::ostream &os) const {
+void DdpActuatorSolver::display(std::ostream& os) const {
   os << " T: " << m_T << " timestep: " << m_dt << " nbItMax: " << m_iterMax
      << " stopCriteria: " << m_stopCrit << std::endl;
 }
