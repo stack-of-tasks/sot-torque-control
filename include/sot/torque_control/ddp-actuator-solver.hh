@@ -66,8 +66,8 @@ class SOTDDPACTUATORSOLVER_EXPORT DdpActuatorSolver
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /** Constructor */
-  DdpActuatorSolver(const std::string &name);
-  virtual void display(std::ostream &os) const;
+  DdpActuatorSolver(const std::string& name);
+  virtual void display(std::ostream& os) const;
 
  protected:
   /** Initialize the DDP.
@@ -76,8 +76,8 @@ class SOTDDPACTUATORSOLVER_EXPORT DdpActuatorSolver
    * @param nbItMax Maximum number of iterations.
    * @param stopCriteria The value of the stopping criteria.
    */
-  void param_init(const double &timestep, const int &T, const int &nbItMax,
-                  const double &stopCriteria);
+  void param_init(const double& timestep, const int& T, const int& nbItMax,
+                  const double& stopCriteria);
 };
 }  // namespace torque_control
 }  // namespace sot
